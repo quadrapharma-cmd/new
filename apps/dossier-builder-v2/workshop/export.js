@@ -18,7 +18,8 @@ export function clean(s, n = 48) {
   }
   return t.replace(BAD, ' ').replace(/\s+/g, ' ').trim().replace(/[ \-.,:;+/&]+$/, '') || 'x';
 }
-const ext = doc => (doc.madeBy === 'program' ? 'docx' : doc.kind === 'docx' ? 'docx' : doc.kind === 'doc' ? 'doc' : ['png', 'jpeg', 'tiff', 'gif', 'webp'].includes(doc.kind) ? doc.kind.replace('jpeg', 'jpg') : 'pdf');
+const ext = doc => (doc.pdf && doc.madeBy !== 'program' ? 'pdf' : doc.madeBy === 'program' ? 'docx' : doc.kind === 'docx' ? 'docx' : doc.kind === 'doc' ? 'doc'
+  : ['png', 'jpeg', 'tiff', 'gif', 'webp'].includes(doc.kind) ? doc.kind.replace('jpeg', 'jpg') : 'pdf');
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // Where each document goes in the folder: [{doc, path}] (documents of one place numbered (2), (3)…).
@@ -78,7 +79,8 @@ export async function readyZip(d, board, findings, needs, { getBlob, draftBytes 
   const layout = layoutOf(d, board);
   const files = [];
   for (const f of layout.files) {
-    const bytes = f.doc.madeBy === 'program' && draftBytes ? await draftBytes(f.doc) : await getBlob(d.id, f.doc.fixed || f.doc.sha);
+    const bytes = f.doc.madeBy === 'program' && !f.doc.editedBy && draftBytes ? await draftBytes(f.doc)
+      : await getBlob(d.id, (f.doc.pdf && f.doc.madeBy !== 'program' ? f.doc.pdf : null) || f.doc.fixed || f.doc.sha);
     if (bytes) files.push({ name: f.path, bytes });
   }
   const enc = s => new TextEncoder().encode(s);

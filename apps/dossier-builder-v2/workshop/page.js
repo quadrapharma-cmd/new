@@ -24,6 +24,8 @@ import { docxOf, htmlOf, gapsOf } from './docx.js';
 import { connect, sampleOf, converse, WHY as CLAUDE_WHY, STOP as CLAUDE_STOP } from './claude.js';
 import { workshopTools, ASK_SYSTEM } from './tools.js';
 import * as store from './store.js';
+import { createPrograms, programFor, available, PROGRAMS } from './programs.js';
+import { docxText } from '../prep/office.js';
 import { fold } from '../core/fold.js';
 
 globalThis.pdfjsWorker = pdfjsWorker;
@@ -117,6 +119,58 @@ function readerFor() {
     } } };
 }
 
+// ------------------------------------------------------------------------------------------------ the real programs
+const programs = createPrograms({ base: 'programs/', mount: iframe => { iframe.hidden = true; $('#program-frames').appendChild(iframe); } });
+function showProgram(app, title, note) {
+  for (const f of document.querySelectorAll('#program-frames iframe')) f.hidden = true;
+  programs.frame(app).hidden = false;
+  $('#program-title').textContent = title;
+  $('#program-note').textContent = note;
+  $('#program').hidden = false;
+}
+function hideProgram() { $('#program').hidden = true; state.programDoc = null; }
+async function openInProgram(docId) {
+  const d = state.d, doc = d.docs.find(x => x.id === docId);
+  if (!doc) return;
+  const kind = doc.madeBy === 'program' ? 'docx' : doc.kind;
+  const app = programFor(kind);
+  if (!app || !available(app)) { await openDocFile(docId); toast('اتفتح (أو اتنزّل). عدّله في برنامجه على جهازك واحفظه، وبعدين «ارفع نسخة جديدة».', 7000); return; }
+  const bytes = doc.madeBy === 'program' && !doc.editedBy ? await docxOf(draftFor(doc.place, d).model) : await store.getBlob(d.id, doc.fixed || doc.sha);
+  const name = (doc.madeBy === 'program' ? doc.name : doc.name.split('/').pop()).replace(/[\\/:*?"<>|]/g, ' ');
+  state.programDoc = { app, docId };
+  showProgram(app, `${PROGRAMS[app].ar} — ${name}`, 'عدّل واحفظ من جوه البرنامج (Ctrl+S): كل حفظة بترجع للملف هنا كنسخة جديدة.');
+  try { await programs.open(app, name, bytes); } catch (e) { toast(`${PROGRAMS[app].ar} ماقدرش يفتح: ${e.message}`, 9000); hideProgram(); }
+}
+// A file the program saved: a new version of the document it was given (a PDF the Word program exported is that Word file's PDF).
+programs.onMessage(async m => {
+  if (m.type !== `${m.app}:save` || !state.programDoc || state.programDoc.app !== m.app || state.converting) return;
+  const bytes = new Uint8Array(m.bytes), docId = state.programDoc.docId;
+  try {
+    if (m.app === 'wordcraft' && /\.pdf$/i.test(m.name || '')) await keepPdfOf(docId, bytes);
+    else await newVersion(docId, bytes, m.name, 'program');
+    toast(`اتحفظ في الملف: ${m.name}`);
+  } catch (e) { toast(`ماقدرتش أحفظ: ${e.message}`, 7000); }
+});
+async function keepPdfOf(docId, bytes) {
+  const d = state.d, doc = d.docs.find(x => x.id === docId);
+  const sha = await store.sha256(bytes);
+  await store.putBlob(d.id, sha, bytes);
+  doc.pdf = sha;
+  log(d, 'pdf-made', { doc: docId });
+  await changed();
+}
+async function wordToPdf(docId) {
+  const d = state.d, doc = d.docs.find(x => x.id === docId);
+  if (!available('wordcraft')) { toast('برنامج الـ Word مش موجود في النسخة دي.'); return; }
+  const bytes = doc.madeBy === 'program' && !doc.editedBy ? await docxOf(draftFor(doc.place, d).model) : await store.getBlob(d.id, doc.fixed || doc.sha);
+  const first = (doc.pages || []).map(p => p.text || '').join('\n').split('\n').map(l => l.trim()).find(l => l.length > 3) || '';
+  state.converting = true;
+  showProgram('wordcraft', `${PROGRAMS.wordcraft.ar} — بيعمل PDF`, `«${doc.name}» بيتحوّل PDF؛ استنى ثواني.`);
+  try { await keepPdfOf(docId, await programs.wordToPdf(doc.name.split('/').pop(), bytes, first)); toast('اتعمل PDF من المستند، وهيتحط في الفولدر بداله.'); }
+  catch (e) { toast(`ماقدرش يعمل PDF: ${e.message}`, 9000); }
+  finally { state.converting = false; hideProgram(); }
+}
+
 // ------------------------------------------------------------------------------------------------ the dossier: worked out again after every change
 const env = () => ({ knowledge: KNOW, getBlob: store.getBlob, putBlob: store.putBlob, today: today(), generators: GEN_NAMES });
 async function recompute() {
@@ -127,7 +181,7 @@ async function recompute() {
   state.drafts = {};
   for (const doc of d.docs.filter(x => x.madeBy === 'program' && x.place)) {
     const draft = draftFor(doc.place, d);
-    if (draft) state.drafts[doc.place] = { doc: doc.id, gaps: gapsOf(draft.model), ar: draft.ar };
+    if (draft) state.drafts[doc.place] = { doc: doc.id, gaps: doc.editedBy ? [] : gapsOf(draft.model), ar: draft.ar };   // an edited draft's gaps are the person's to know
   }
   state.needs = needsOf(d, state.board, state.findings, { drafts: state.drafts });
 }
@@ -333,6 +387,8 @@ function tabDocs() {
       ${fs.length ? `<details${lvl === 'red' ? ' open' : ''}><summary>ملاحظات (${fs.length})</summary><ul class="list">${fs.map(f => `<li class="fine">● ${esc(f.title)}</li>`).join('')}</ul></details>` : ''}
       ${factsTable(doc)}
       <div class="row"><button class="btn small quiet" data-act="doc-open" data-id="${esc(doc.id)}">افتح</button>${doc.madeBy === 'program' ? `<button class="btn small quiet" data-act="draft-view" data-id="${esc(doc.place)}">شوف المسودة</button>` : ''}
+        ${available(programFor(doc.madeBy === 'program' ? 'docx' : doc.kind)) ? `<button class="btn small quiet" data-act="doc-program" data-id="${esc(doc.id)}">افتحه في ${esc(PROGRAMS[programFor(doc.madeBy === 'program' ? 'docx' : doc.kind)].ar)}</button>` : ''}
+        ${['docx', 'doc'].includes(doc.kind) && available('wordcraft') ? `<button class="btn small quiet" data-act="word-pdf" data-id="${esc(doc.id)}">${doc.pdf ? 'اعمله PDF تاني' : 'اعمله PDF'}</button>` : ''}${doc.pdf ? '<span class="badge ok">ليه PDF</span>' : ''}
         <label class="btn small quiet"><input type="file" data-act="doc-upload" data-id="${esc(doc.id)}">ارفع نسخة جديدة</label><button class="btn small danger" data-act="doc-remove" data-id="${esc(doc.id)}">شيله من الملف</button></div></li>`;
   }).join('')}</ul>${dups.length ? `<p class="fine">${dups.length} ${dups.length === 1 ? 'ملف مكرر اتعرف' : 'ملفات مكررة اتعرفت'} ومادخلتش تاني: ${esc(dups.map(x => x.name).join('، '))}</p>` : ''}`;
 }
@@ -372,6 +428,7 @@ function needActions(n) {
     if (a === 'program') return n.doc ? `<button class="btn small quiet" data-act="doc-program" data-id="${esc(n.doc)}">${actionName(a)}</button>` : '';
     if (a === 'claude') return n.doc && claudeOn() ? `<button class="btn small quiet" data-act="need-claude" data-id="${esc(n.id)}">${actionName(a)}</button>` : '';
     if (a === 'create') return `<button class="btn small" data-act="create" data-id="${esc(n.place)}">${actionName(a)}</button>`;
+    if (a === 'pdf') return n.doc && available('wordcraft') ? `<button class="btn small" data-act="word-pdf" data-id="${esc(n.doc)}">${actionName(a)}</button>` : '';
     if (a === 'fill') return `<button class="btn small" data-act="tab" data-id="data">${actionName(a)}</button>`;
     if (a === 'place') return `<select data-act="move" data-id="${esc(n.doc)}">${placeOptions(null)}</select>${(n.suggestion || []).map(s => `<button class="chip" data-act="move-to" data-id="${esc(n.doc)}" data-place="${esc(s.id)}">${esc(s.ctd)} ${esc(s.ar)}</button>`).join('')}`;
     if (a === 'cut') return `<button class="btn small" data-act="cut-ok" data-id="${esc(n.doc)}">التقطيع صح</button><button class="btn small quiet" data-act="cut-undo" data-id="${esc(n.doc)}">رجّعه ملف واحد</button>`;
@@ -391,7 +448,9 @@ function tabNeeds() {
 
 function tabReady() {
   const d = state.d, r = readiness(d, state.board, state.findings, state.needs), layout = layoutOf(d, state.board);
-  return `<div class="status ${r.ready ? 'ok' : 'warn'}">${r.ready ? 'الملف جاهز: كل الأماكن المطلوبة فيها مستندات، ومفيش ملاحظة لازم تتحل.' : `لسه: ${count(r.required - r.filled, 'مكان مطلوب فاضي', 'مكانين مطلوبين فاضيين', 'أماكن مطلوبة فاضية', 'مكان مطلوب فاضي')}، و${count(r.red, 'ملاحظة لازم تتحل', 'ملاحظتين لازم يتحلوا', 'ملاحظات لازم تتحل', 'ملاحظة لازم تتحل')}. تقدر تنزّل الفولدر برضه، والتقرير بيقول الناقص.`}</div>
+  const left = [r.required > r.filled ? count(r.required - r.filled, 'مكان مطلوب فاضي', 'مكانين مطلوبين فاضيين', 'أماكن مطلوبة فاضية', 'مكان مطلوب فاضي') : '',
+                r.red ? count(r.red, 'ملاحظة لازم تتحل', 'ملاحظتين لازم يتحلوا', 'ملاحظات لازم تتحل', 'ملاحظة لازم تتحل') : ''].filter(Boolean).join('، و');
+  return `<div class="status ${r.ready ? 'ok' : 'warn'}">${r.ready ? 'الملف جاهز: كل الأماكن المطلوبة فيها مستندات، ومفيش ملاحظة لازم تتحل.' : `لسه: ${left}. تقدر تنزّل الفولدر برضه، والتقرير بيقول الناقص.`}</div>
     <div class="row"><button class="btn" data-act="ready-zip">نزّل فولدر الملف (ZIP) وتقرير الجاهزية</button><button class="btn quiet" data-act="ready-report">افتح تقرير الجاهزية</button></div>
     <p class="fine">الفولدر بشكل ملف ${esc(state.board.country.ar)}: موديول، وجواه مكان كل مستند، وكل ملف متسمّي باسم مكانه. ${layout.files.length} ملف.</p>
     <div class="scroll"><table class="facts"><tr><th>المكان</th><th>الملف في الفولدر</th></tr>${layout.files.map(f => `<tr><td><span class="ctd">${esc(f.place.ctd)}</span></td><td class="ltr" style="direction:ltr">${esc(f.path)}</td></tr>`).join('')}</table></div>`;
@@ -471,28 +530,33 @@ async function entriesOf(items) {
 }
 const pickedFiles = async list => (await filesFrom([...list])).filter(f => !SKIP.test(f.name));
 
-async function uploadVersion(docId, file) {
+async function newVersion(docId, bytes, name, how = 'upload') {
   const d = state.d, doc = d.docs.find(x => x.id === docId);
-  const bytes = new Uint8Array(await file.arrayBuffer());
   const { reader } = readerFor();
-  const [read] = await readFiles([{ name: file.name, bytes }], { pdfjs, ocr: reader, drawPdf, drawImage, unrar, keepBytes: true });
+  const [read] = await readFiles([{ name, bytes }], { pdfjs, ocr: reader, drawPdf, drawImage, unrar, keepBytes: true });
   const sha = await store.sha256(bytes);
   await store.putBlob(d.id, sha, bytes);
   doc.versions = [...(doc.versions || []), { sha: doc.fixed || doc.sha, at: new Date().toISOString(), name: doc.name }];
-  Object.assign(doc, { sha, size: bytes.length, kind: read?.kind || doc.kind, pages: read?.pages || [], name: file.name, madeBy: undefined, fixed: undefined, fixes: [], info: undefined });
+  const draft = doc.madeBy === 'program';
+  Object.assign(doc, { sha, size: bytes.length, kind: read?.kind || doc.kind, pages: read?.pages || [], fixed: undefined, fixes: [], info: undefined, pdf: undefined });
+  if (draft && how === 'program') doc.editedBy = 'you';          // a draft edited in the Word program: never written over by the program again
+  else { doc.madeBy = undefined; doc.name = name; }               // an upload (the signed scan) takes the draft's place
   delete doc.unread; delete doc.note;
   if (read?.unread) doc.unread = read.unread;
   const { factsByRules } = await import('./understand.js');
   doc.facts = factsByRules(doc.pages);
-  log(d, 'uploaded', { doc: doc.id, name: file.name });
+  log(d, 'uploaded', { doc: doc.id, name, how });
   await changed();
+}
+async function uploadVersion(docId, file) {
+  await newVersion(docId, new Uint8Array(await file.arrayBuffer()), file.name, 'upload');
   toast('النسخة الجديدة اتحطت مكان القديمة، والملف اتفحص تاني.');
 }
 
 async function openDocFile(docId) {
   const d = state.d, doc = d.docs.find(x => x.id === docId);
   if (!doc) return;
-  if (doc.madeBy === 'program') { const draft = draftFor(doc.place, d); download(doc.name, await docxOf(draft.model), TYPES.docx); return; }
+  if (doc.madeBy === 'program' && !doc.editedBy) { const draft = draftFor(doc.place, d); download(doc.name, await docxOf(draft.model), TYPES.docx); return; }
   const bytes = await store.getBlob(d.id, doc.fixed || doc.sha);
   if (!bytes) { toast('الملف ده مش محفوظ'); return; }
   if (doc.kind === 'pdf') { const url = URL.createObjectURL(new Blob([bytes], { type: TYPES.pdf })); window.open(url, '_blank'); setTimeout(() => URL.revokeObjectURL(url), 120000); return; }
@@ -590,7 +654,9 @@ document.addEventListener('click', async e => {
     else if (act === 'create') { await writeDrafts(state.d, state.board, env(), { only: [id] }); await changed(); state.drawer = { kind: 'draft', id }; render(); toast('المسودة اتعملت. كمّل الناقص فيها من «المعلومات».'); }
     else if (act === 'move-to') { moveDoc(state.d, id, el.dataset.place); await changed(); }
     else if (act === 'doc-open') await openDocFile(id);
-    else if (act === 'doc-program') { await openDocFile(id); toast('اتفتح (أو اتنزّل). عدّله في برنامجه واحفظه، وبعدين «ارفع نسخة جديدة».', 7000); }
+    else if (act === 'doc-program') await openInProgram(id);
+    else if (act === 'program-close') hideProgram();
+    else if (act === 'word-pdf') await wordToPdf(id);
     else if (act === 'doc-remove') { if (el.dataset.sure) { const d = state.d; d.docs = d.docs.filter(x => x.id !== id); log(d, 'removed', { doc: id }); await changed(); } else { el.dataset.sure = '1'; el.textContent = 'متأكد؟'; } }
     else if (act === 'need-accept') { const box = document.querySelector(`[data-accept="${CSS.escape(id)}"]`) || el.closest('.item')?.querySelector('.accept'); if (box) { box.hidden = false; box.dataset.target = id; box.querySelector('textarea').focus(); } }
     else if (act === 'accept-ok') { const box = el.closest('.accept'); accept(state.d, box.dataset.target || id, box.querySelector('textarea').value); await changed(); toast('اتقبل، والسبب اتسجّل.'); }
@@ -641,7 +707,7 @@ document.addEventListener('drop', async e => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && state.drawer) { state.drawer = null; render(); } });
 
 // for the tests: the same steps as the buttons
-window.__workshop = { state, runLine, openDossier, recompute, store, testKey, uploadVersion, askClaude };
+window.__workshop = { state, runLine, openDossier, recompute, store, testKey, uploadVersion, askClaude, programs, openInProgram, wordToPdf };
 
 (async () => {
   state.list = await store.listDossiers();

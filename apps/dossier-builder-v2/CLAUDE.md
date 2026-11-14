@@ -155,6 +155,41 @@ the licence's numbered conditions. No Claude: rules only.
   (its paths are from the repository's root; only changed files need sending); omit `capabilities` to keep `sample` with images.
 - Real products are tried locally only (`scratchpad/trial/`), never committed or published.
 
+### 4d. The workshop «تحضير الملف» — all of Part 2 on the computer (asked for on 14/11/2026: «عايز الجزء كامل بادواته بتعديله بتجهيزه بمخرجاته بكل حاجة عايز اجربه»; then Part 3 «تكوين الملف»)
+One folder he unzips and opens (`index.html` in Chrome or Edge, file://; no server, nothing to install), the library beside it. The
+eight stages of docs/PART-2-PLAN.md §3.3: a new dossier (country, application, product's case, every file or folder) → received
+(fingerprints, copies known, archives opened) → read (text, Word, scans by the scan reader or by Claude) → cut, typed, named, placed
+on the board → checked (each document on its place's rule card: PDF, searchable, version, protection, size, fonts, outline;
+validity from its dates and its type's months; the five cross-document checks; every required empty place) → fixed (a page never
+changed: saved again at a current version, an outline from its own table of contents, a picture made a page) and the company's
+papers written as Word drafts (Annex I with EDA's Arabic undertaking, composition, salt with its formula, translation declaration,
+CEP commitment, cover letter, tracking table, stability commitment; unknowns are marked gaps) → «needs you» (place a document,
+confirm a cut, the missing places, a draft's gaps, each finding: open it in its program, Claude, a new version, accept with a
+reason) → the ready folder (Egypt's shape, the program's own names because EDA names none for the CTD — the report says so — with
+the readiness report and a checklist). «شغّل لوحدك» runs it all; «خطوة بخطوة» stops before the fixes.
+- Claude: his own API key (console.anthropic.com, billed by use), typed in «الإعدادات» on his computer, never in the chat; checked by
+  listing the models it may use (the SDK sends it as a Bearer token, which the API takes); the most capable family first, he can
+  choose. Used for: scans as pictures (two halves, the instruction of his measure, effort low), documents the rules cannot place
+  (its answer must be a place of the board), «اسأل Claude» (the workshop's tools: list_documents, read_page, find_in_documents,
+  list_findings, board, search_knowledge, get_record, record_fact — words checked on the page — place_document). The key is kept in
+  memory, or on the computer if he ticks «افتكر» (said: every page opened from files can read it). No key: everything but Claude.
+- The programs: the Word and PDF programs (`vendor/craft`, built from source) in their own pages beside the workshop
+  (`programs/<app>.html`), run in «page» host mode with a relay (a file:// page is its own origin, so the programs' same-origin
+  frame mode cannot connect). Open a document, every save comes back as a new version (an edited draft is then never rewritten);
+  «اعمله PDF» has the Word program export a Word file without a person (it waits until the program has that document open). Both
+  carry a patch taking the ArtCraft logo and name out of their screens (`tools/craft/patches/`; the PDF program carries our OCR
+  patches too, and its brand licence asks a modified version to remove the logos); the copyright notices stay. Not here yet: the
+  photo and design programs (no host bridge in their releases), the PDF program's own OCR (its worker cannot start from a file).
+- Code `workshop/` (expr, board, understand, pipeline, checks, fixes, generators + templates/annex1.json, docx, zipw, store, export,
+  needs, claude, tools, programs, desktop-assets, page, body, style, build). The page loads as classic scripts only: pdf.js on its own
+  thread (`globalThis.pdfjsWorker`), the scan reader's files as scripts handing their content to `__dbAsset`, Tesseract's worker a
+  blob carrying its code, core and languages (a blob worker may import only blobs it makes itself), the ORT module from a blob.
+- Build `npm run build && node workshop/build.mjs [--zip]` → `dist/workshop/` (+ `dist/Dossier-Builder-Workshop.zip`).
+- Tests `node --test tests/workshop.test.mjs` (Node: the board for each case, rule cards' sources exist, the made-up dossier received,
+  cut, placed, checked, drafted, exported) and `tests/workshop-browser.test.mjs` (Chromium from file://: the scan reader, Claude
+  through `tests/helpers/fake-api.mjs`, a wrong key against the real API, the programs). Made-up files only.
+- Dossiers are kept in the browser's IndexedDB on his computer; «احفظ نسخة» gives one file (`.dossier.zip`) that opens again.
+
 ### 5. The open-source eCTD projects and the eCTD timelines (monthly, or when he asks)
 1. Last update of each project the plan uses (`docs/PART-2-PLAN.md` §3.9–3.10):
    `gh api -X GET search/repositories -f q="repo:<owner>/<name>" --jq '.items[] | "\(.full_name) \(.pushed_at) \(.license.spdx_id)"'`

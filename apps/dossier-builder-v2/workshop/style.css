@@ -168,6 +168,14 @@ blockquote.q { margin: 2px 0 0; padding: 6px 10px; background: var(--sunk); bord
 .tsteps li.no { color: var(--bad); }
 textarea.askbox { width: 100%; min-height: 70px; border: 1px solid var(--line); border-radius: var(--r); padding: 8px 10px; background: var(--surface); }
 
+/* a real program over the workshop */
+.program { position: fixed; inset: 0; z-index: 50; background: var(--surface); display: grid; grid-template-rows: auto 1fr; }
+.program-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 8px max(16px, env(safe-area-inset-right, 0px)) 8px max(16px, env(safe-area-inset-left, 0px));
+               border-bottom: 1px solid var(--line); }
+.program-bar #program-note { margin-inline-end: auto; }
+#program-frames { position: relative; min-height: 0; }
+#program-frames iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
 /* settings */
 dialog { border: 1px solid var(--line); border-radius: 12px; padding: 0; max-width: min(560px, calc(100vw - 32px)); width: 100%; background: var(--surface); color: var(--ink); }
 dialog::backdrop { background: rgba(0,0,0,.35); }

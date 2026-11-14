@@ -35,8 +35,8 @@ function formatFindings(doc, info) {
   const add = (id, level, title, detail, rule, fix) => out.push({ id: `${id}-${doc.id}`, kind: 'format', level, doc: doc.id, place: doc.place, title, detail,
                                                                 rule: { ar: rule.ar, cite: rule.cite }, fix });
   if (doc.kind !== 'pdf') {
-    if (['doc', 'docx'].includes(doc.kind) && WORD_OK.has(doc.place)) return out;
-    if (['doc', 'docx'].includes(doc.kind)) add('not-pdf', 'amber', `«${doc.name}» ملف Word، والملف لازم يبقى PDF`, 'المستند ده لازم يتقدّم PDF. افتحه في برنامج الـ Word واحفظه PDF، أو ارفع نسخته الـ PDF.', fmt('pdf'), { human: ['program', 'upload', 'accept'] });
+    if (['doc', 'docx'].includes(doc.kind) && (WORD_OK.has(doc.place) || doc.pdf)) return out;
+    if (['doc', 'docx'].includes(doc.kind)) add('not-pdf', 'amber', `«${doc.name}» ملف Word، والملف لازم يبقى PDF`, 'المستند ده لازم يتقدّم PDF. «اعمله PDF» ببرنامج الـ Word اللي جوه الورشة، أو ارفع نسخته الـ PDF.', fmt('pdf'), { human: ['pdf', 'upload', 'accept'] });
     else if (['png', 'jpeg', 'tiff', 'gif', 'webp'].includes(doc.kind)) add('not-pdf', 'amber', `«${doc.name}» صورة، والملف لازم يبقى PDF`, 'البرنامج يقدر يحوّل الصورة لصفحة PDF.', fmt('pdf'), { auto: 'picture', human: ['upload', 'accept'] });
     return out;
   }

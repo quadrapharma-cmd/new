@@ -1,0 +1,98 @@
+diff --git a/crates/engine/src/commands.rs b/crates/engine/src/commands.rs
+index 55a5d84..ccb4859 100644
+--- a/crates/engine/src/commands.rs
++++ b/crates/engine/src/commands.rs
+@@ -427,10 +427,10 @@ pub const COMMANDS: &[CommandSpec] = &[
+     c("prepress.hairlines", "Fix hairlines…", None, None, Modification, "minus"),
+     c("page.properties", "Page properties…", PAGES, None, Modification, "info"),
+     c("help.shortcuts", "Keyboard shortcuts", HELP, None, Nothing, "circle-help"),
+-    c("help.discord", "Join the ArtCraft Discord", HELP, None, Nothing, "messages-square"),
++    c("help.discord", "Community on Discord", HELP, None, Nothing, "messages-square"),
+     c("help.app_page", "PdfCraft web page", HELP, None, Nothing, "globe"),
+     c("help.github", "PdfCraft on GitHub", HELP, None, Nothing, "code-xml"),
+-    c("help.website", "ArtCraft website", HELP, None, Nothing, "external-link"),
++    c("help.website", "Project website", HELP, None, Nothing, "external-link"),
+     c("help.check_updates", "Check for updates…", HELP, None, Nothing, "cloud"),
+     c("help.about", "About PdfCraft", HELP, None, Nothing, "info"),
+ ];
+diff --git a/crates/engine/src/links.rs b/crates/engine/src/links.rs
+index da3f0fc..d9f33d7 100644
+--- a/crates/engine/src/links.rs
++++ b/crates/engine/src/links.rs
+@@ -24,10 +24,10 @@ pub struct Link {
+ 
+ /// In the order they are shown. Discord comes first: it is where people get help fastest.
+ pub const LINKS: &[Link] = &[
+-    Link { command: "help.discord", label: "Join the ArtCraft Discord", url: DISCORD, icon: "messages-square" },
++    Link { command: "help.discord", label: "Community on Discord", url: DISCORD, icon: "messages-square" },
+     Link { command: "help.app_page", label: "PdfCraft web page", url: APP_PAGE, icon: "globe" },
+     Link { command: "help.github", label: "PdfCraft on GitHub", url: GITHUB, icon: "code-xml" },
+-    Link { command: "help.website", label: "ArtCraft website", url: WEBSITE, icon: "external-link" },
++    Link { command: "help.website", label: "Project website", url: WEBSITE, icon: "external-link" },
+ ];
+ 
+ pub fn for_command(id: &str) -> Option<&'static Link> {
+diff --git a/crates/ui-egui/src/dialogs.rs b/crates/ui-egui/src/dialogs.rs
+index 8316b8b..e025597 100644
+--- a/crates/ui-egui/src/dialogs.rs
++++ b/crates/ui-egui/src/dialogs.rs
+@@ -1686,11 +1686,6 @@ fn dialog_about(ui: &mut egui::Ui, req: &mut Pending) -> bool {
+                 .small(),
+             );
+             ui.add_space(12.0);
+-            ui.horizontal(|ui| {
+-                ui.label(egui::RichText::new(tl!("Part of")).color(t.text_muted));
+-                widgets::artcraft_logo(ui, 16.0);
+-            });
+-            ui.add_space(6.0);
+             if let Some(cmd) = widgets::community_links(ui) {
+                 req.link_command = Some(cmd);
+             }
+diff --git a/crates/ui-egui/src/home.rs b/crates/ui-egui/src/home.rs
+index f935cba..ccb7bd3 100644
+--- a/crates/ui-egui/src/home.rs
++++ b/crates/ui-egui/src/home.rs
+@@ -83,7 +83,8 @@ pub fn show(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
+                     .font(theme::regular(14.0)),
+             );
+             ui.add_space(14.0);
+-            if !app.community_card_closed {
++            // The brand's community card is left out of this modified build (docs/brand/LICENSE-brand.txt).
++            if false && !app.community_card_closed {
+                 egui::Frame::NONE
+                     .fill(t.card)
+                     .stroke(Stroke::new(1.0, t.border))
+diff --git a/crates/ui-egui/src/widgets.rs b/crates/ui-egui/src/widgets.rs
+index 4a45817..afd2071 100644
+--- a/crates/ui-egui/src/widgets.rs
++++ b/crates/ui-egui/src/widgets.rs
+@@ -632,24 +632,15 @@ pub fn progress_notice(app: &PdfCraftApp, ctx: &egui::Context) -> bool {
+     cancel
+ }
+ 
+-/// The ArtCraft wordmark (Storyteller's brand, docs/brand/; not open source), sized to `height`.
++/// The brand's wordmark is left out of this modified build (docs/brand/LICENSE-brand.txt: modified versions remove it): an
++/// empty space of the same height where it was.
+ pub fn artcraft_logo(ui: &mut egui::Ui, height: f32) -> Response {
+-    let dark = ui.visuals().dark_mode;
+-    let (uri, bytes): (&str, &'static [u8]) = if dark {
+-        ("bytes://artcraft-logo-white.svg", include_bytes!("../../../docs/brand/artcraft-logo-white.svg"))
+-    } else {
+-        ("bytes://artcraft-logo.svg", include_bytes!("../../../docs/brand/artcraft-logo.svg"))
+-    };
+-    ui.add(egui::Image::from_bytes(uri, bytes).max_height(height).alt_text("ArtCraft"))
++    ui.allocate_response(vec2(0.0, height), egui::Sense::hover())
+ }
+ 
+-/// The ArtCraft mark (brand blue, works on light and dark), `size` points square.
++/// The brand's mark, left out the same way: an empty square of `size` points.
+ pub fn artcraft_mark(ui: &mut egui::Ui, size: f32) -> Response {
+-    ui.add(
+-        egui::Image::from_bytes("bytes://artcraft-mark.svg", include_bytes!("../../../docs/brand/artcraft-mark.svg"))
+-            .fit_to_exact_size(vec2(size, size))
+-            .alt_text("ArtCraft"),
+-    )
++    ui.allocate_response(vec2(size, size), egui::Sense::hover())
+ }
+ 
+ /// Buttons for every community link (`pdfcraft_engine::links`), Discord first and prominent.

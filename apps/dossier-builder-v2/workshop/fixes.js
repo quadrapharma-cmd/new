@@ -66,6 +66,7 @@ export async function writeDrafts(d, board, env, { only = null } = {}) {
     if (only && !only.includes(place.id)) continue;
     const existing = d.docs.find(x => x.place === place.id && x.madeBy === 'program');
     if (!existing && place.level !== 'R' && !only) continue;           // an optional place: only when asked
+    if (existing?.editedBy) { drafts[place.id] = { doc: existing.id, gaps: [], ar: GENERATORS[place.id].ar }; continue; }   // edited by the person: theirs now
     const draft = draftFor(place.id, d);
     const bytes = await docxOf(draft.model);
     const sha = await sha256(bytes);
