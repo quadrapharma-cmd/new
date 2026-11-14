@@ -28,6 +28,11 @@ function bestWithOsd() {
 
 // The same instruction Claude gets on the measuring page (tools/measure/claude-page.mjs).
 const ASK = 'The image is a scanned page of a pharmaceutical regulatory document. It may be rotated, skewed or faint. Read it in its correct orientation and transcribe every word on it exactly as written, in reading order: Arabic as Arabic, English as English, and every digit as it is drawn (keep Arabic-Indic digits as they are). Include headings, table cells and the text of stamps. Output only the transcription.';
+// The models measured through llama.cpp on 14/11/2026 (Hugging Face; fetch them again at these commits to repeat the measure):
+//   Qwen/Qwen3-VL-2B-Instruct-GGUF @ 52d6c8ffea26cc873ac5ad116f8631268d7eb503: Qwen3VL-2B-Instruct-Q4_K_M.gguf (sha256 089d75c5…),
+//     mmproj-Qwen3VL-2B-Instruct-Q8_0.gguf (f9a68fab…)
+//   PaddlePaddle/PaddleOCR-VL-1.6-GGUF @ 511b09642bb324401f15f97cc23bc67e8f0a291d: PaddleOCR-VL-1.6-GGUF.gguf (f3ae46ec…),
+//     PaddleOCR-VL-1.6-GGUF-mmproj.gguf (204d757d…); it needs --jinja (its own chat template) and the prompt «OCR:»
 // A vision-language model on this machine through llama.cpp's multimodal command line (LLAMA_MTMD_CLI), the model and its
 // image part named by QWEN3VL_MODEL and QWEN3VL_MMPROJ. The context is held at 8,192 tokens: by default llama.cpp reserves the
 // model's whole context (about 262,000 tokens for Qwen3-VL) and the machine runs out of memory.
