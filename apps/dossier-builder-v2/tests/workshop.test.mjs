@@ -136,3 +136,59 @@ test('the ZIP the workshop writes opens with Arabic names, and the PDF work keep
   assert.deepEqual((await doc.getOutline()).map(x => x.title), ['الإخطار', 'Stability']);
   assert.equal((await pdfInfo(await mergePdfs([cut, four]))).pages, 6);
 });
+
+test('the company papers are written as Word drafts from the dossier, gaps marked, the salt sum shown; needs and the ready folder follow', { timeout: 120000 }, async () => {
+  const { writeDrafts, fixAll, outlineFromToc } = await import('../workshop/fixes.js');
+  const { needsOf, accept } = await import('../workshop/needs.js');
+  const { readyZip, clean } = await import('../workshop/export.js');
+  const { draftFor, GENERATORS } = await import('../workshop/generators.js');
+  const { docxOf, htmlOf, gapsOf } = await import('../workshop/docx.js');
+  const { docxText } = await import('../prep/office.js');
+  const { d, board, env } = await madeUpDossier();
+  d.company = { company: 'Nile Test Pharma', signatory: 'Dr. Made Up' };
+  // the salt sum from the licence's citric acid monohydrate 11 g
+  const salt = draftFor('EG-EDA/M1-32', d);
+  assert.match(htmlOf(salt.model), /11 g × 192\.12 ÷ 210\.14 = 10\.057 g citric acid anhydrous/);
+  // every generator writes a Word file the program can read back, its values filled and its gaps marked
+  for (const place of Object.keys(GENERATORS)) {
+    const r = draftFor(place, d);
+    const text = (await docxText(await docxOf(r.model))).map(p => p.text).join('\n');
+    assert.ok(text.length > 100, place);
+    if (place !== 'EG-EDA/M1-44') assert.match(text, /Testamin powder for oral solution/, place);
+  }
+  const annex = draftFor('EG-EDA/M1-01', d);
+  const annexText = (await docxText(await docxOf(annex.model))).map(p => p.text).join('\n');
+  assert.match(annexText, /وأتعهد أنا الموقع أدناه Dr\. Made Up/);
+  assert.match(annexText, /\[صفته\]/);                                          // what is not known is a gap
+  assert.ok(gapsOf(annex.model).includes('Shelf Life'));
+  // the drafts step fills the empty required places that have a generator
+  const drafts = await writeDrafts(d, board, env);
+  assert.deepEqual(Object.keys(drafts).sort(), ['EG-EDA/M1-01', 'EG-EDA/M1-31', 'EG-EDA/M1-32', 'EG-EDA/M1-43', 'EG-EDA/M1-44']);
+  const findings = await checkDossier(d, board, { ...env, today: '2026-11-14', generators: Object.fromEntries(Object.entries(GENERATORS).map(([k, v]) => [k, v.name])) });
+  assert.ok(!findings.some(f => f.id === 'missing-EG-EDA/M1-01'), 'the drafted place is no longer empty');
+  await fixAll(d, findings, env);
+  const needs = needsOf(d, board, findings, { drafts });
+  assert.ok(needs.some(n => n.kind === 'draft' && n.place === 'EG-EDA/M1-01'));
+  const missing = needs.find(n => n.id === 'missing');
+  assert.ok(missing.places.some(p => p.id === 'EG-EDA/M1-37'));
+  assert.throws(() => accept(d, 'cross-manufacturer-changed', ''), /السبب/);
+  accept(d, 'cross-manufacturer-changed', 'the transfer approval is requested, letter attached');
+  const again = await checkDossier(d, board, { ...env, today: '2026-11-14' });
+  assert.ok(again.find(f => f.id === 'cross-manufacturer-changed').accepted);
+  // the ready folder: every placed document under its module and place, the drafts as Word, the report and the checklist
+  const draftBytes = async doc => docxOf(draftFor(doc.place, d).model);
+  const { zip, layout, readiness } = await readyZip(d, board, again, needs, { getBlob: env.getBlob, draftBytes });
+  const { files } = await unzip(zip);
+  const names = files.map(f => f.name);
+  assert.ok(names.includes('Testamin powder for oral solution/Module 1/1.1.4 Action Letter & Name Approval/1.1.4 Action Letter & Name Approval.pdf'), names.join('\n'));
+  assert.ok(names.some(n => /Module 1\/1\.1\.1 .*\.docx$/.test(n)));
+  assert.ok(names.some(n => n.endsWith('00 تقرير الجاهزية.html')));
+  assert.equal(readiness.ready, false);
+  const report = new TextDecoder().decode(files.find(f => f.name.endsWith('.html')).bytes);
+  assert.match(report, /the transfer approval is requested/);
+  assert.match(report, /مابتحددش أسماء الفولدرات/);
+  assert.equal(clean('Leaflet — One Submission: proposed SmPC & PIL (EN + AR, Word) + most u', 48), 'Leaflet - One Submission proposed SmPC & PIL');
+  assert.deepEqual(outlineFromToc([{ n: 1, text: 'Table of contents\n1. Scope ........ 2\n2. Results ....... 3' }, { n: 2, text: '' }, { n: 3, text: '' }]),
+                   [{ title: '1. Scope', page: 2 }, { title: '2. Results', page: 3 }]);
+  assert.ok(layout.files.length >= 9);
+});
