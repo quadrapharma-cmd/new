@@ -22,6 +22,11 @@ npm run verify     # checks every citation against the text of its source (knowl
 npm test           # the knowledge tests and the library in a real browser
 ```
 
+البحث في المكتبة: خانة واحدة بتدوّر في المعرفة كلها وجوه نص المستندات، بالعربي والإنجليزي («ذوبان» بتلاقي dissolution)، وكل نتيجة
+في مستند بتفتحه على صفحتها. نصوص المستندات بيطلّعها `npm run verify` (في `dist/texts/`) قبل `npm run build`.
+Search: one box looks through all the knowledge and inside the documents' text, in Arabic and English, and each page found opens
+at that page. The texts come from `npm run verify` (in `dist/texts/`), so run it before `npm run build`.
+
 المكتبة على الكمبيوتر: فك `dist/Dossier-Builder-Library.zip` وافتح `index.html` (شغالة من غير إنترنت، والمستندات جنبها في `sources/`).
 The library on the desktop: unzip `dist/Dossier-Builder-Library.zip` and open `index.html` (works offline; the source documents
 it opens are beside it in `sources/`). The same page, without its document shell (`dist/library-artifact.html`), is the

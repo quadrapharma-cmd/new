@@ -1,0 +1,130 @@
+# The words of the trade in Arabic and English, so a search in one language finds the other.
+# The program's own vocabulary (not a regulatory source): each line is one meaning, with its Arabic and English ways of saying it.
+- {ar: [ثبات, الثبات, دراسة الثبات, استقرار, الاستقرار], en: [stability]}
+- {ar: [ذوبان, الذوبان, اختبار الذوبان, انحلال, الانحلال, اختبار الانحلال], en: [dissolution]}
+- {ar: [ذوبانية], en: [solubility]}
+- {ar: [شوائب, الشوائب, مواد ذات صلة], en: [impurities, impurity, related substances, degradation products]}
+- {ar: [نيتروزامين, نيتروزامينات, النيتروزامين], en: [nitrosamine, nitrosamines, NDSRI]}
+- {ar: [مذيبات متبقية], en: [residual solvents]}
+- {ar: [شوائب عنصرية], en: [elemental impurities]}
+- {ar: [تكافؤ حيوي, التكافؤ الحيوي, تعادل حيوي, التعادل الحيوي], en: [bioequivalence, BE study]}
+- {ar: [إتاحة حيوية, الإتاحة الحيوية], en: [bioavailability]}
+- {ar: [إعفاء حيوي], en: [biowaiver]}
+- {ar: [مادة فعالة, المادة الفعالة, خامة], en: [active substance, API, active pharmaceutical ingredient, drug substance]}
+- {ar: [سواغ, سواغات, مواد مساعدة], en: [excipient, excipients]}
+- {ar: [مستحضر نهائي, المستحضر النهائي], en: [finished product, finished pharmaceutical product, FPP, drug product]}
+- {ar: [مواصفات, المواصفات, مواصفة], en: [specification, specifications]}
+- {ar: [حدود القبول, معايير القبول], en: [acceptance criteria, limits]}
+- {ar: [طريقة تحليل, طرق التحليل], en: [analytical procedure, test method, method of analysis]}
+- {ar: [التحقق, تحقق, المصادقة], en: [validation]}
+- {ar: [التحقق من الطريقة], en: [method validation, verification]}
+- {ar: [عبوة, العبوة, تعبئة], en: [packaging, container, pack]}
+- {ar: [عبوة أولية, العبوة الأولية], en: [primary packaging, immediate packaging, container closure]}
+- {ar: [عبوة خارجية, العبوة الخارجية], en: [secondary packaging, outer packaging]}
+- {ar: [حجم العبوة], en: [pack size]}
+- {ar: [نشرة, النشرة, النشرة الداخلية], en: [leaflet, package insert, patient information leaflet, PIL]}
+- {ar: [ملخص خصائص المستحضر], en: [SmPC, summary of product characteristics]}
+- {ar: [بطاقة, البطاقة, ملصق], en: [label, labelling, labeling]}
+- {ar: [تصميم العبوة, الماكيت], en: [mock-up, mockup, artwork]}
+- {ar: [تسجيل, التسجيل], en: [registration, marketing authorisation, marketing authorization]}
+- {ar: [إعادة تسجيل, إعادة التسجيل], en: [re-registration, renewal]}
+- {ar: [تغيير, تغييرات, متغير, متغيرات], en: [variation, variations, change]}
+- {ar: [تسعير, التسعير, سعر], en: [pricing, price]}
+- {ar: [موافقة استيرادية, الموافقة الاستيرادية, استيراد], en: [import approval, importation, import]}
+- {ar: [إفراج, الإفراج, الإفراج الجمركي], en: [release, customs release]}
+- {ar: [شهادة, الشهادة], en: [certificate]}
+- {ar: [ممارسة التصنيع الجيد, التصنيع الجيد, شهادة الجودة], en: [GMP, good manufacturing practice]}
+- {ar: [شهادة المستحضر الصيدلي, شهادة البيع الحر], en: [CPP, certificate of pharmaceutical product, free sale certificate]}
+- {ar: [خطاب التغطية, خطاب تغطية], en: [cover letter]}
+- {ar: [توكيل, التوكيل, خطاب تفويض], en: [power of attorney, letter of authorisation, letter of authorization]}
+- {ar: [عقد, العقد, اتفاقية], en: [contract, agreement]}
+- {ar: [تصنيع لدى الغير, التصنيع لدى الغير, تول], en: [toll manufacturing, contract manufacturing, toll]}
+- {ar: [مصنع, المصنع, الشركة المصنعة], en: [manufacturer, manufacturing site]}
+- {ar: [مورد, المورد], en: [supplier]}
+- {ar: [موقع التصنيع, مواقع التصنيع], en: [manufacturing site, site]}
+- {ar: [مدة الصلاحية, الصلاحية, تاريخ الانتهاء], en: [shelf life, shelf-life, expiry, validity]}
+- {ar: [إعادة الاختبار, فترة إعادة الاختبار], en: [retest, retest period]}
+- {ar: [ظروف التخزين, شروط التخزين, تخزين], en: [storage conditions, storage]}
+- {ar: [دفعة, تشغيلة, التشغيلة, باتش], en: [batch, lot]}
+- {ar: [حجم التشغيلة, حجم الدفعة], en: [batch size]}
+- {ar: [شهادة تحليل], en: [certificate of analysis, CoA]}
+- {ar: [ملف المادة الفعالة], en: [DMF, ASMF, drug master file, active substance master file]}
+- {ar: [شهادة الملاءمة, شهادة المطابقة الأوروبية], en: [CEP, certificate of suitability]}
+- {ar: [دستور, الدستور, دستور الأدوية], en: [pharmacopoeia, pharmacopeia, monograph]}
+- {ar: [مادة مرجعية, المادة المرجعية, مادة قياسية], en: [reference standard, working standard]}
+- {ar: [معقم, مستحضر معقم], en: [sterile]}
+- {ar: [تعقيم, التعقيم], en: [sterilisation, sterilization]}
+- {ar: [عقامة, اختبار العقامة, اختبار التعقيم], en: [sterility, sterility test]}
+- {ar: [سموم بكتيرية, اندوتوكسين], en: [endotoxin, bacterial endotoxins, pyrogen]}
+- {ar: [ميكروبيولوجي, ميكروبي, الحمل الميكروبي], en: [microbiological, microbial]}
+- {ar: [أقراص, قرص], en: [tablet, tablets]}
+- {ar: [كبسولات, كبسولة], en: [capsule, capsules]}
+- {ar: [شراب], en: [syrup]}
+- {ar: [حقن, حقنة, أمبول], en: [injection, ampoule, vial]}
+- {ar: [مرهم], en: [ointment]}
+- {ar: [كريم], en: [cream]}
+- {ar: [جل], en: [gel]}
+- {ar: [قطرة, نقط], en: [drops]}
+- {ar: [معلق], en: [suspension]}
+- {ar: [محلول], en: [solution]}
+- {ar: [بودرة, مسحوق], en: [powder]}
+- {ar: [فوار], en: [effervescent]}
+- {ar: [ممتد المفعول, ممتد الإطلاق, معدل الإطلاق], en: [prolonged release, modified release, extended release, MR]}
+- {ar: [فوري الإطلاق, سريع الإطلاق], en: [immediate release, IR]}
+- {ar: [مغلف معوي, مقاوم للمعدة], en: [gastro-resistant, enteric]}
+- {ar: [طلاء, تغليف القرص], en: [coating, film coating]}
+- {ar: [خط كسر], en: [score line]}
+- {ar: [تركيب, التركيبة], en: [composition, formula, formulation]}
+- {ar: [عملية التصنيع, التصنيع], en: [manufacturing process, manufacture]}
+- {ar: [اختبارات أثناء التصنيع, رقابة أثناء التصنيع], en: [in-process control, in-process tests, IPC]}
+- {ar: [سلسلة التبريد, التبريد], en: [cold chain, refrigerated]}
+- {ar: [اليقظة الدوائية, يقظة دوائية], en: [pharmacovigilance, vigilance]}
+- {ar: [خطة إدارة المخاطر, إدارة المخاطر], en: [risk management plan, RMP, risk management]}
+- {ar: [تقييم المخاطر], en: [risk assessment]}
+- {ar: [تقرير دوري], en: [PSUR, periodic safety update report, PBRER]}
+- {ar: [إكلينيكي, اكلينيكي, سريري], en: [clinical]}
+- {ar: [غير إكلينيكي, غير اكلينيكي, قبل إكلينيكي], en: [non-clinical, nonclinical, preclinical]}
+- {ar: [دراسة إكلينيكية, تجربة إكلينيكية], en: [clinical study, clinical trial]}
+- {ar: [سمية, السمية], en: [toxicity, toxicology]}
+- {ar: [حرائك دوائية], en: [pharmacokinetics, PK]}
+- {ar: [ملخص, الملخص], en: [summary, overview]}
+- {ar: [ملخص الجودة الشامل], en: [quality overall summary, QOS]}
+- {ar: [الموديول الأول, موديول 1], en: [module 1]}
+- {ar: [موديول الجودة, الموديول الثالث], en: [quality module, module 3]}
+- {ar: [ملف, الملف, ملف التسجيل], en: [dossier, file]}
+- {ar: [تقييم, التقييم], en: [assessment, evaluation]}
+- {ar: [مراجعة, المراجعة], en: [review]}
+- {ar: [ملاحظة, ملاحظات, نواقص], en: [deficiency, deficiencies, comment, query]}
+- {ar: [حرج, حرجة], en: [critical]}
+- {ar: [جوهري, جوهرية], en: [major]}
+- {ar: [بسيط, طفيف], en: [minor]}
+- {ar: [الاعتماد على هيئات, الاعتماد, هيئة مرجعية], en: [reliance, reference authority, SRA, stringent regulatory authority]}
+- {ar: [الدول المرجعية, دولة مرجعية], en: [reference countries, reference country]}
+- {ar: [اسم تجاري, الاسم التجاري], en: [trade name, brand name, invented name]}
+- {ar: [أسماء, اسم], en: [name, naming]}
+- {ar: [مستحضرات حيوية, حيوي, مثيل حيوي], en: [biological, biologics, biosimilar]}
+- {ar: [لقاح, لقاحات], en: [vaccine]}
+- {ar: [عشبي, أعشاب], en: [herbal]}
+- {ar: [بيطري], en: [veterinary]}
+- {ar: [مكملات غذائية, مكمل غذائي], en: [food supplement, supplement]}
+- {ar: [سجل تجاري, السجل التجاري], en: [commercial register, register of trade]}
+- {ar: [بطاقة ضريبية], en: [tax card]}
+- {ar: [رخصة, الرخصة, ترخيص], en: [licence, license]}
+- {ar: [مثيل, جنيس], en: [generic]}
+- {ar: [مبتكر, المستحضر الأصلي], en: [innovator, originator, reference product, comparator]}
+- {ar: [مستورد], en: [imported]}
+- {ar: [محلي, مصنع محلي], en: [local, locally manufactured]}
+- {ar: [التزام, تعهد, إقرار], en: [commitment, undertaking, declaration]}
+- {ar: [مخطط الدراسة, بروتوكول], en: [protocol]}
+- {ar: [ترجمة], en: [translation]}
+- {ar: [توقيع, ختم], en: [signature, stamp]}
+- {ar: [صلاحية الوثيقة, سارية], en: [valid, validity]}
+- {ar: [هيئة الدواء, هيئة الدواء المصرية], en: [EDA, Egyptian Drug Authority]}
+- {ar: [الملف الإلكتروني], en: [eCTD, electronic submission]}
+- {ar: [قرار وزاري], en: [ministerial decree, decree]}
+- {ar: [المسار السريع], en: [fast track]}
+- {ar: [تقرير السنة الخامسة], en: [fifth year report, fifth-year report]}
+- {ar: [تحليل العينة, سحب عينة], en: [sample analysis, sampling]}
+- {ar: [هيئة الغذاء والدواء الأمريكية], en: [FDA]}
+- {ar: [وكالة الأدوية الأوروبية], en: [EMA]}
+- {ar: [منظمة الصحة العالمية], en: [WHO, prequalification]}

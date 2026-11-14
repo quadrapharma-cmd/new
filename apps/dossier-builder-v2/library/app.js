@@ -1,6 +1,7 @@
 // The library: browse and search everything the program knows, each entry with the guideline it comes from.
 // Runs the same in the claude.ai artifact and opened from disk on the desktop; the knowledge is embedded in the page.
 import { createKnowledge } from '../core/knowledge.js';
+import { preparePages, findInPages } from '../core/search.js';
 import { T, STATUS, STATUS_HINT, SEVERITY, AREA, KIND, SCOPE, ISSUER, HOW, FORMAT, FORMAT_VALUE, EVIDENCE, RESULT, RESULT_HINT, VERDICT } from './i18n.js';
 
 const data = JSON.parse(document.getElementById('kdata').textContent);
@@ -41,6 +42,30 @@ const state = {
   reqSet: 'eg-eda-ctd', area: '', pac: '', verdict: '',
 };
 if (state.auth && !K.authority(state.auth)) state.auth = null;
+
+// ---------------------------------------------------------------- the text of the source documents
+// Each document's text is a file beside the page (texts/<source>.js), loaded the first time a search looks inside them.
+const TEXT = { raw: new Map(), prepared: new Map(), state: 'idle', done: 0, ids: data.textIds || [] };
+window.DBK_TEXT = (id, pages) => { TEXT.raw.set(id, pages); };
+function loadTexts() {
+  if (TEXT.state !== 'idle' || !TEXT.ids.length) return;
+  TEXT.state = 'loading';
+  const finish = () => { if (++TEXT.done >= TEXT.ids.length) TEXT.state = 'ready'; textsMoved(); };
+  for (const id of TEXT.ids) {
+    const el = document.createElement('script');
+    el.src = `texts/${encodeURIComponent(id)}.js`;
+    el.async = true;
+    el.onload = finish;
+    el.onerror = finish;
+    document.head.appendChild(el);
+  }
+}
+function preparedText(id) {
+  if (!TEXT.prepared.has(id) && TEXT.raw.has(id)) TEXT.prepared.set(id, preparePages(TEXT.raw.get(id)));
+  return TEXT.prepared.get(id) || null;
+}
+let moved;
+function textsMoved() { clearTimeout(moved); moved = setTimeout(() => { drawDocs(); drawDocSearch(); }, 80); }
 
 // ---------------------------------------------------------------- helpers
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -175,7 +200,10 @@ const views = {
         <span class="meta"><span>${t('srcCount', n(src))}</span>${rec ? `<span>${t('recCount', n(rec))}</span>` : ''}</span></button>`;
     }).join('');
     const reviewed = data.sources.map(s => s.checked?.on).filter(Boolean).sort().at(-1);
+    const examples = ['ذوبان', 'نيتروزامين', 'صلاحية الموافقة الاستيرادية', '3.2.P.8', 'NP.CAPP.065', 'PAC-II', 'shelf life', '"soft copies"'];
     return `<h1>${t('app')}</h1><p class="lede">${t('intro')}</p>
+      <section class="bigsearch"><h2>${t('searchAnything')}</h2><p>${t('searchAnythingHint')}</p>
+        <div class="kw">${examples.map(x => `<button type="button" class="chip" data-try="${esc(x)}">${esc(x)}</button>`).join('')}</div></section>
       <section class="group"><h3>${t('authorities')}</h3></section><div class="dir">${dir}</div>
       <section class="group"><h3>${t('statusLegend')}</h3></section><div class="legend">${legend}</div>
       <p class="foot">${esc(t('lastReview', reviewed))}</p>`;
@@ -256,11 +284,15 @@ const views = {
       <div class="tbl"><table class="persrc"><tr><th>${t('sources')}</th><th>${t('citationsN')}</th>${['verified', 'located', 'read', 'nothing-to-check', 'no-copy'].map(k => `<th title="${esc(pick(RESULT_HINT[k]))}">${word(RESULT, k)}</th>`).join('')}<th>${t('online')}</th></tr>${rows}</table></div>`;
   },
   search() {
-    const hits = K.search(state.q, { authority: state.auth || undefined, limit: 300 });
-    if (!hits.length) return `<h1>${t('results')}</h1>${empty()}`;
+    const parsed = K.parse(state.q);
+    const hits = K.search(parsed, { authority: state.auth || undefined, limit: 300 });
     const body = KIND_ORDER.map(k => groupBlock(word(KIND, k), hits.filter(h => h.kind === k),
       h => (h.type === 'source' ? sourceRow(h.item) : recordRow(h.item)))).join('');
-    return `<h1>${t('results')}</h1>${body}`;
+    const also = parsed.also.length ? `<p class="lede">${t('alsoSearched')}: ${parsed.also.slice(0, 8).map(w => `<span class="kwi">${esc(w)}</span>`).join(' ')}</p>` : '';
+    return `<h1>${t('results')}: «${esc(state.q.trim())}»</h1>${also}
+      <nav class="jump"><a href="#" data-jump="inKnow">${t('inKnowledge')} <span class="n">${n(hits.length)}</span></a><a href="#" data-jump="docResults">${t('inDocs')} <span class="n" id="docCount">…</span></a></nav>
+      <section id="inKnow"><h2 class="sec">${t('inKnowledge')}</h2>${body || empty()}</section>
+      <section id="docResults" class="docres"></section>`;
   },
 };
 function setRestsOn(set) {
@@ -332,6 +364,7 @@ const details = {
 
         [t('note'), esc(s.note)],
       ])}
+      ${TEXT.ids.includes(s.id) ? `<section class="block"><h3>${t('searchInDoc')}</h3><input id="docq" class="docq" type="search" data-src="${esc(s.id)}" placeholder="${esc(t('searchInDocHint'))}" autocomplete="off"><div id="docqOut"></div></section>` : ''}
       ${usedSets.length ? block(t('setRestsOn'), bullets(usedSets.map(st => st.title))) : ''}
       ${block(`${t('usedBy')} (${n(users.length)})`, usedList)}`;
   },
@@ -440,6 +473,60 @@ function parseCsv(text) {
 // ---------------------------------------------------------------- drawing and moving
 function drawMain() {
   $('main').innerHTML = state.q.trim() ? views.search() : views[state.view]();
+  if (state.q.trim()) drawDocs();
+}
+// What the documents themselves say, page by page, with the words found marked.
+function docHits(ids, limitFor) {
+  const parsed = K.parse(state.q);
+  if (!parsed.groups.length) return [];
+  const out = [];
+  for (const id of ids) {
+    const prep = preparedText(id);
+    if (!prep) continue;
+    const r = findInPages(prep, parsed.groups, { limit: limitFor(id) });
+    if (r.total) out.push({ id, ...r });
+  }
+  return out.sort((a, b) => b.score - a.score);
+}
+function docCard(h, all) {
+  const s = K.source(h.id);
+  const pages = h.pages.map(p => `<div class="hit"><span class="pg">${esc(t('pages', p.page))}</span><div class="snip">${p.html}</div>
+    ${fileHref(s, p.page) ? `<a class="openfile" href="${fileHref(s, p.page)}" target="_blank" rel="noopener">${t('openDoc')} · ${esc(t('pages', p.page))}</a>` : ''}</div>`).join('');
+  const more = h.total > h.pages.length && !all ? `<button type="button" class="x" data-docmore="${esc(h.id)}">${t('showAllPages', n(h.total))}</button>` : '';
+  return `<section class="doccard"><div class="line1"><a href="${srcHref(s.id)}">${srcCodeVer(s)}</a>${stamp(s.status)}<span class="tag">${esc(t('pagesFound', n(h.total)))}</span></div>
+    <div class="ttl">${L(s.title)}</div>${pages}${more}</section>`;
+}
+function drawDocs() {
+  const box = document.getElementById('docResults');
+  if (!box) return;
+  if (!TEXT.ids.length) { box.innerHTML = `<h2 class="sec">${t('inDocs')}</h2><p class="empty">${t('noTexts')}</p>`; return; }
+  if (TEXT.state === 'idle') loadTexts();
+  if (TEXT.state === 'loading') {
+    box.innerHTML = `<h2 class="sec">${t('inDocs')}</h2><p class="loading">${esc(t('loadingTexts', n(TEXT.done), n(TEXT.ids.length)))}</p>`;
+    return;
+  }
+  const ids = TEXT.ids.filter(id => !state.auth || K.source(id)?.authority === state.auth);
+  const hits = docHits(ids, id => (state.docAll === id ? 400 : 3)).slice(0, 25);
+  const pages = hits.reduce((a, h) => a + h.total, 0);
+  const count = document.getElementById('docCount');
+  if (count) count.textContent = n(pages);
+  box.innerHTML = `<h2 class="sec">${t('inDocs')} <span class="n">${esc(t('docsSummary', n(pages), n(hits.length)))}</span></h2>
+    ${hits.length ? hits.map(h => docCard(h, state.docAll === h.id)).join('') : `<p class="empty">${t('noResults')}</p>`}`;
+}
+// Inside one document, from its own page in the library.
+function drawDocSearch() {
+  const out = document.getElementById('docqOut');
+  const input = document.getElementById('docq');
+  if (!out || !input) return;
+  const q = input.value.trim();
+  if (!q) { out.innerHTML = ''; return; }
+  if (TEXT.state === 'idle') loadTexts();
+  if (TEXT.state === 'loading') { out.innerHTML = `<p class="loading">${esc(t('loadingTexts', n(TEXT.done), n(TEXT.ids.length)))}</p>`; return; }
+  const keep = state.q;
+  state.q = q;
+  const [h] = docHits([input.dataset.src], () => 60);
+  state.q = keep;
+  out.innerHTML = h ? docCard({ ...h, pages: h.pages }, true) : `<p class="empty">${t('noResults')}</p>`;
 }
 function drawDetail() {
   const d = $('detail');
@@ -501,6 +588,9 @@ document.addEventListener('click', e => {
   if (el.dataset.area !== undefined) { state.area = el.dataset.area; return drawMain(); }
   if (el.dataset.pac !== undefined) { state.pac = el.dataset.pac; return drawMain(); }
   if (el.dataset.verdict !== undefined) { state.verdict = el.dataset.verdict; return drawMain(); }
+  if (el.dataset.try !== undefined) { $('q').value = el.dataset.try; state.q = el.dataset.try; rail(); drawMain(); $('q').focus(); return; }
+  if (el.dataset.docmore !== undefined) { state.docAll = el.dataset.docmore; drawDocs(); return; }
+  if (el.dataset.jump !== undefined) { e.preventDefault(); document.getElementById(el.dataset.jump)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
   // A section link while a search is showing: leave the search.
   if (el.tagName === 'A' && VIEWS.includes((el.getAttribute('href') || '').slice(1)) && state.q) {
     state.q = ''; $('q').value = '';
@@ -510,7 +600,13 @@ document.addEventListener('click', e => {
 let timer;
 $('q').addEventListener('input', () => {
   clearTimeout(timer);
-  timer = setTimeout(() => { state.q = $('q').value; rail(); drawMain(); }, 120);
+  timer = setTimeout(() => { state.q = $('q').value; state.docAll = null; rail(); drawMain(); }, 200);
+});
+let docTimer;
+document.addEventListener('input', e => {
+  if (e.target.id !== 'docq') return;
+  clearTimeout(docTimer);
+  docTimer = setTimeout(drawDocSearch, 200);
 });
 $('searchForm').addEventListener('submit', e => { e.preventDefault(); clearTimeout(timer); state.q = $('q').value; rail(); drawMain(); });
 document.addEventListener('keydown', e => {

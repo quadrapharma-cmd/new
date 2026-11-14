@@ -41,7 +41,7 @@ export function loadKnowledge() {
     ectd: { index: ectdIndex, tables },
     recognition,
     templates: load('templates/eg-eda.yaml'),
-    vocab: { forms: load('vocab/forms.yaml'), countries: JSON.parse(read('vocab/countries.json')) },
+    vocab: { forms: load('vocab/forms.yaml'), countries: JSON.parse(read('vocab/countries.json')), glossary: load('vocab/glossary.yaml') },
     checks: {
       ...(fs.existsSync(path.join(KNOWLEDGE, 'checks', 'citations.json')) ? JSON.parse(read('checks/citations.json')) : { citations: [], sources: {}, summary: {} }),
       findings: fs.existsSync(path.join(KNOWLEDGE, 'checks', 'findings.yaml')) ? load('checks/findings.yaml') : { findings: [] },

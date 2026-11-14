@@ -17,7 +17,7 @@ Everything the program knows about the authorities lives here as data. **Every r
 | `documents/eg-eda-validity.yaml` | The documents a file keeps, and how long each stays valid. |
 | `countries.yaml` | What each country or region takes (formats, Module 1, validation criteria). |
 | `ectd/` | The eCTD tables as published (ICH 3.2.2 Appendix 4, the 4.0 controlled vocabularies, STF), with `index.yaml` citing them. |
-| `recognition/`, `templates/`, `vocab/` | The program's own aids (recognition keywords, the template in front of each item, dose forms and countries). |
+| `recognition/`, `templates/`, `vocab/` | The program's own aids (recognition keywords, the template in front of each item, dose forms and countries; `vocab/glossary.yaml`: the words of the trade in Arabic and English, so a search in one language finds the other). |
 | `checks/citations.json` | **Generated** by `tools/verify-sources.mjs`: what the check found for every citation (never edit by hand). |
 | `checks/findings.yaml` | What each review found and what was done, written by hand; the library's «Review» page shows it. |
 

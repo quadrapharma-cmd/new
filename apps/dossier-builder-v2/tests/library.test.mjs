@@ -246,3 +246,33 @@ test('the variations the guideline classes differently can be listed on their ow
   assert.equal(n, 15);
   await ctx.close();
 });
+
+test('search for anything: an Arabic word finds the English one, in the knowledge and inside the documents', async () => {
+  const { page, ctx, errors } = await open();
+  await page.fill('#q', 'ذوبان');
+  await page.waitForSelector('#docResults .doccard', { timeout: 60000 });
+  assert.match(await page.locator('main .lede').first().innerText(), /dissolution/);
+  assert.ok(await page.locator('#inKnow a.row').count() > 10, 'the knowledge holds dissolution questions');
+  assert.ok(await page.locator('#docResults mark').count() > 10, 'the words found are marked in the documents');
+  // each page found opens at that page
+  const href = await page.getAttribute('#docResults .hit a.openfile', 'href');
+  assert.match(href, /^sources\/.+\.pdf#page=\d+$/);
+  await shot(page, '08-search-docs-ar');
+  // a phrase in quotes is looked for as written
+  await page.fill('#q', '"soft copies must be fulfilled"');
+  await page.waitForFunction(() => /NP\.CAPP\.065/.test(document.querySelector('#docResults .doccard')?.innerText || ''), null, { timeout: 30000 });
+  assert.match(await page.locator('#docResults .doccard').first().innerText(), /soft copies must be fulfilled/i);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('search inside one document from its own page', async () => {
+  const { page, ctx, errors } = await open('#s-eda-gl-capp-026-v6');
+  await page.fill('#docq', 'score line');
+  await page.waitForSelector('#docqOut .hit', { timeout: 60000 });
+  const text = await page.locator('#docqOut').innerText();
+  assert.match(text, /score line/i);
+  assert.match(await page.getAttribute('#docqOut a.openfile', 'href'), /EDA_GL\.CAPP\.026_v6.+#page=\d+$/);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});

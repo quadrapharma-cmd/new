@@ -27,6 +27,9 @@ export async function build({ quiet = false } = {}) {
   }
   const dist = path.join(ROOT, 'dist');
   fs.mkdirSync(dist, { recursive: true });
+  // The text of each source kept in the project (read by tools/verify-sources.mjs into dist/texts/), for searching inside it.
+  const textDir = path.join(dist, 'texts');
+  data.textIds = data.sources.filter(s => s.held && fs.existsSync(path.join(textDir, `${s.id}.json`))).map(s => s.id);
   const json = JSON.stringify(data);
   fs.writeFileSync(path.join(dist, 'knowledge.json'), json);
 
@@ -79,6 +82,12 @@ ${body}
     fs.copyFileSync(path.join(REPO, s.file), path.join(libDir, 'sources', name));
     if (/\.(pdf|csv)$/i.test(name)) files[`sources/${name}`] = path.relative(REPO, path.join(REPO, s.file));
   }
+  fs.mkdirSync(path.join(libDir, 'texts'), { recursive: true });
+  for (const id of data.textIds) {
+    const { pages } = JSON.parse(fs.readFileSync(path.join(textDir, `${id}.json`), 'utf8'));
+    fs.writeFileSync(path.join(libDir, 'texts', `${id}.js`), `window.DBK_TEXT&&window.DBK_TEXT(${JSON.stringify(id)},${JSON.stringify(pages)});\n`);
+    files[`texts/${id}.js`] = path.relative(REPO, path.join(libDir, 'texts', `${id}.js`));
+  }
   fs.writeFileSync(path.join(dist, 'artifact-files.json'), JSON.stringify(files, null, 1));
   const zip = path.join(dist, 'Dossier-Builder-Library.zip');
   fs.rmSync(zip, { force: true });
@@ -91,7 +100,7 @@ ${body}
     `review rules ${data.rules.length}`, `variations ${data.variations.items.length}`, `document types ${data.doctypes.items.length}`,
     `countries ${data.countries.items.length}`, `eCTD tables ${Object.keys(data.ectd.tables).length}`, `warnings ${warnings.length}`,
   ].join(' · '));
-  log(`library: dist/library/index.html ${(fs.statSync(path.join(libDir, 'index.html')).size / 1024).toFixed(0)} KB, ${held.length} source copies beside it`);
+  log(`library: dist/library/index.html ${(fs.statSync(path.join(libDir, 'index.html')).size / 1024).toFixed(0)} KB, ${held.length} source copies and ${data.textIds.length} source texts beside it`);
   return { data, warnings };
 }
 

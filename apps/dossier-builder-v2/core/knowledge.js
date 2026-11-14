@@ -2,17 +2,9 @@
 // Pure JavaScript over the built data (dist/knowledge.json), so the desktop program and the browser library use the same code.
 import { allRecords, citationsOf } from './validate.js';
 
-// Arabic and English text folded for search: no diacritics or tatweel, one form of alef / ya / ta marbuta, Western digits.
-export function fold(text) {
-  return String(text ?? '')
-    .normalize('NFKD')
-    .replace(/[ً-ٰٟۖ-ۭـ]/g, '')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/ؤ/g, 'و').replace(/ئ/g, 'ي')
-    .replace(/[٠-٩]/g, d => String(d.charCodeAt(0) - 0x660))
-    .replace(/[۰-۹]/g, d => String(d.charCodeAt(0) - 0x6f0))
-    .toLowerCase();
-}
+import { fold } from './fold.js';
+import { indexGlossary, parseQuery, hasAlt } from './search.js';
+export { fold };
 
 const textOf = v => (v == null ? '' : typeof v === 'string' ? v : typeof v === 'object' ? Object.values(v).map(textOf).join(' ') : String(v));
 
@@ -21,6 +13,7 @@ export function createKnowledge(data) {
   const authorities = new Map(data.authorities.map(a => [a.id, a]));
   const sets = new Map(data.sets.map(s => [s.id, s]));
   const records = allRecords(data);
+  const glossary = indexGlossary(data.vocab?.glossary);
   const byId = new Map(records.map(r => [r.id, r]));
 
   // What the review found for each citation (knowledge/checks/citations.json).
@@ -38,14 +31,17 @@ export function createKnowledge(data) {
   const entries = [
     ...records.map(r => ({
       type: 'record', id: r.id, kind: r.kind, authority: r.authority,
-      head: fold([textOf(r.title), r.code, r.name].join(' ')),
+      head: fold([textOf(r.title), r.code, r.name].join(' ')).replace(/\s+/g, ' '),
       codes: fold([r.id, r.ctd, textOf(r.numbers), (r.ectd || []).join(' '), r.pac, r.type].join(' ')),
-      body: fold([r.acceptance, r.note, textOf(r.question), textOf(r.deficiency), textOf(r.conditions), textOf(r.requirements),
-                  r.group, r.area, r.module1, r.criteria, r.scope, (r.cite || []).map(c => [c.at, c.quote].join(' ')).join(' ')].join(' ')),
+      body: fold([r.acceptance, textOf(r.note), textOf(r.question), textOf(r.deficiency), textOf(r.conditions), textOf(r.requirements),
+                  r.group, r.area, r.type, r.module1, r.criteria, r.scope, r.note_source, textOf(r.evidence?.keywords), textOf(r.guideline),
+                  textOf(r.check?.note), r.doc_class, r.produced_by, r.form_type,
+                  [...(r.cite || []), ...(r.ectd_cite || []), ...(r.anchor_cite || [])].map(c => [c.at, c.quote, c.gist, c.note].join(' ')).join(' ')].join(' ')).replace(/\s+/g, ' '),
     })),
     ...data.sources.map(s => ({
       type: 'source', id: s.id, kind: 'source', authority: s.authority,
-      head: fold(textOf(s.title)), codes: fold([s.id, s.code, s.version, (s.aliases || []).join(' ')].join(' ')), body: fold([s.note, s.supersedes].join(' ')),
+      head: fold(textOf(s.title)).replace(/\s+/g, ' '), codes: fold([s.id, s.code, s.version, (s.aliases || []).join(' ')].join(' ')),
+      body: fold([s.note, s.supersedes, s.confirm, textOf(s.latest)].join(' ')).replace(/\s+/g, ' '),
     })),
   ];
 
@@ -66,22 +62,22 @@ export function createKnowledge(data) {
     check: (recId, field, cite) => checks.get(`${recId}|${field}|${cite.src}|${cite.at || ''}`) || null,
     // The records that cite a source.
     usedBy: sourceId => [...(users.get(sourceId) || [])].map(id => byId.get(id)),
-    // Every word of the query must appear; a hit in the title ranks first, then in the codes, then in the body.
+    // Every group of the query must appear (each with its other forms and the other language's words); a hit in the title
+    // ranks first, then in the codes, then in the body. With no record holding every group, the records holding most of them.
+    parse: query => parseQuery(query, glossary),
     search(query, { kind, authority, limit = 50 } = {}) {
-      const words = fold(query).split(/[\s,،;؛]+/).filter(Boolean);
-      if (!words.length) return [];
+      const { groups } = typeof query === 'string' ? parseQuery(query, glossary) : query;
+      if (!groups.length) return [];
       const hits = [];
       for (const e of entries) {
         if ((kind && e.kind !== kind) || (authority && e.authority !== authority)) continue;
         let score = 0;
-        let all = true;
-        for (const w of words) {
-          if (e.head.includes(w)) score += 5;
-          else if (e.codes.includes(w)) score += 3;
-          else if (e.body.includes(w)) score += 1;
-          else { all = false; break; }
+        let found = 0;
+        for (const g of groups) {
+          const where = g.alts.some(a => hasAlt(e.head, a)) ? 5 : g.alts.some(a => hasAlt(e.codes, a)) ? 3 : g.alts.some(a => hasAlt(e.body, a)) ? 1 : 0;
+          if (where) { found++; score += where; }
         }
-        if (all) hits.push({ ...e, score, item: e.type === 'source' ? sources.get(e.id) : byId.get(e.id) });
+        if (found === groups.length) hits.push({ ...e, score, item: e.type === 'source' ? sources.get(e.id) : byId.get(e.id) });
       }
       return hits.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id)).slice(0, limit)
         .map(({ type, id, kind: k, score, item }) => ({ type, id, kind: k, score, item }));

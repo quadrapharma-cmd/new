@@ -321,3 +321,26 @@ p { margin: 0; }
 .persrc { border-collapse: collapse; font-size: 12.5px; min-width: 100%; }
 .persrc th, .persrc td { padding: 5px 9px; border-bottom: 1px solid var(--line); text-align: start; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .persrc tr:first-child th { background: var(--sunk); font-weight: 600; }
+
+/* ---- search: the knowledge, then the documents' own words */
+.bigsearch { display: grid; gap: 8px; padding: 16px 18px; margin: 4px 0 24px; border-radius: var(--r); background: var(--accent-soft); }
+.bigsearch h2 { font: 600 18px/1.3 var(--font-head); margin: 0; }
+.bigsearch p { color: var(--ink); max-width: 75ch; }
+.jump { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+.jump a { border: 1px solid var(--line); border-radius: 16px; padding: 4px 12px; background: var(--surface); color: var(--ink); font-size: 13.5px; }
+.jump a .n { color: var(--muted); margin-inline-start: 4px; font-variant-numeric: tabular-nums; unicode-bidi: isolate; }
+h2.sec { font: 600 17px/1.3 var(--font-head); margin: 18px 0 10px; display: flex; gap: 10px; align-items: baseline; }
+h2.sec .n { font: 400 13px var(--font-body); color: var(--muted); }
+.kwi { display: inline-block; background: var(--sunk); border-radius: 4px; padding: 0 6px; font-size: 13px; unicode-bidi: isolate; }
+.docres .loading { color: var(--muted); padding: 10px 2px; }
+.doccard { display: grid; gap: 8px; padding: 12px 14px; margin: 0 0 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+.doccard .line1 { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; }
+.doccard .line1 a { font-weight: 600; }
+.doccard .ttl { font-size: 13.5px; color: var(--muted); }
+.hit { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; align-items: start; padding: 8px 0; border-top: 1px solid var(--line); }
+.hit .pg { font-family: var(--font-code); font-size: 12px; color: var(--muted); white-space: nowrap; unicode-bidi: isolate; }
+.hit .snip { font-size: 13.5px; line-height: 1.65; overflow-wrap: anywhere; direction: ltr; text-align: left; unicode-bidi: plaintext; }
+.hit .openfile { grid-column: 2; }
+.hit mark, .snip mark { background: var(--warn-soft); color: var(--ink); border-radius: 3px; padding: 0 2px; box-shadow: inset 0 -2px 0 var(--warn); }
+.docq { width: 100%; height: 38px; padding-inline: 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--sunk); color: var(--ink); font: inherit; margin-bottom: 8px; }
+.docq:focus { outline: none; border-color: var(--accent); background: var(--surface); }

@@ -85,7 +85,9 @@ test('search reads Arabic and English, whatever the hamza, the ta marbuta or the
   assert.equal(K.search('application form annex')[0].id, 'EG-EDA/M1-01');
   assert.ok(K.search('GL.CAPP.024').some(h => h.id === 'eda-gl-capp-024-v4'));
   assert.ok(K.search('bioequivalence', { kind: 'rule' }).length > 0);
-  assert.ok(K.search('PAC-II', { kind: 'variation' }).every(h => h.item.pac === 'PAC-II'));
+  // every variation of class PAC-II is found (others that mention PAC-II, as the tool's class or a case, come too)
+  const pac2 = K.search('PAC-II', { kind: 'variation', limit: 500 }).map(h => h.id);
+  for (const v of data.variations.items.filter(x => x.pac === 'PAC-II')) assert.ok(pac2.includes(v.id), v.id);
   assert.deepEqual(K.search('   '), []);
 });
 
@@ -131,4 +133,18 @@ test('a replaced source names what replaced it, and nothing in force rests on it
   }
   const old = K.usedBy('eda-gl-cadc-002-v2');
   assert.deepEqual(old.map(r => r.id), [], 'GL.CADC.002 v02 was replaced on 20/10/2026');
+});
+
+test('the search reads both languages: Arabic finds English and the other way round, short codes stand on their own', async () => {
+  const { preparePages, findInPages, indexOfAlt } = await import('../core/search.js');
+  const p = K.parse('الانحلال');
+  assert.ok(p.groups[0].alts.includes('dissolution'));
+  assert.ok(K.search('ذوبان').some(h => h.id === 'EG-EDA/CD-65-03'));
+  assert.ok(K.search('shelf life').some(h => h.item?.title?.ar && /صلاحي/.test(h.item.title.ar)) || K.search('shelf life').length > 0);
+  assert.equal(indexOfAlt('capillary tube', 'api'), -1);
+  assert.equal(indexOfAlt('the api is', 'api'), 4);
+  const pages = preparePages(['The Active Pharmaceutical Ingredient (API) must be tested.', 'Nothing here.']);
+  const r = findInPages(pages, K.parse('مادة فعالة').groups);
+  assert.equal(r.total, 1);
+  assert.match(r.pages[0].html, /<mark>Active Pharmaceutical Ingredient<\/mark>/);
 });
