@@ -84,7 +84,8 @@ ${body}
   }
   fs.mkdirSync(path.join(libDir, 'texts'), { recursive: true });
   for (const id of data.textIds) {
-    const { pages } = JSON.parse(fs.readFileSync(path.join(textDir, `${id}.json`), 'utf8'));
+    // characters a PDF's text layer could not name (U+FFFD) carry nothing to find: dropped
+    const pages = JSON.parse(fs.readFileSync(path.join(textDir, `${id}.json`), 'utf8')).pages.map(p => p.replace(/\uFFFD/g, ''));
     fs.writeFileSync(path.join(libDir, 'texts', `${id}.js`), `window.DBK_TEXT&&window.DBK_TEXT(${JSON.stringify(id)},${JSON.stringify(pages)});\n`);
     files[`texts/${id}.js`] = path.relative(REPO, path.join(libDir, 'texts', `${id}.js`));
   }
