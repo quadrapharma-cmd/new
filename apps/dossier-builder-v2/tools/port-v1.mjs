@@ -188,7 +188,7 @@ const vrPack = load(path.join(VR, 'pack.yaml'));
 const variations = load(path.join(VR, 'variations.yaml')).map(it => {
   const { id, source, request, ...rest } = it;
   return { id: `EG-EDA/var/${id}`, kind: 'variation', authority: 'EG-EDA', set: 'eg-eda-variations', title: { en: request, ar: null }, ...rest,
-           cite: [{ src: 'eda-variation-tool', at: `row ${source?.row ?? '?'}` }, { src: 'eda-gl-capp-026-v6' }] };
+           cite: [{ src: 'eda-variation-tool', at: `Human, ID ${source?.row ?? '?'}` }, { src: 'eda-gl-capp-026-v6' }] };
 });
 write('variations/eg-eda.yaml', {
   class_order: vrPack.class_order, ectd_submission_type: vrPack.ectd_submission_type,

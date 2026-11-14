@@ -39,7 +39,7 @@
   cite:
     - src: eda-np-capp-065-v5
       at: Annex I
-    - src: eda-eg-m1-ectd-spec-draft-v1
+    - src: eda-ectd-technical-guidance-draft-v1
       at: §3.2.4.1
   ectd_cite:
     - src: eda-eg-m1-ectd-spec-draft-v1
@@ -162,8 +162,9 @@
       at: 1.1.4
   ectd_cite:
     - src: eda-eg-m1-ectd-spec-draft-v1
-      at: 'App. 2 — writer picks: name approval (new) / registration licence + preliminary approval (re-reg)'
+      at: App. 2
       status: draft
+      note: 'writer picks: name approval (new) / registration licence + preliminary approval (re-reg)'
 - id: EG-EDA/M1-05
   kind: requirement
   authority: EG-EDA
@@ -354,7 +355,7 @@
   cite:
     - src: eda-np-capp-065-v5
       at: 1.1.9
-    - src: eda-eg-m1-ectd-spec-draft-v1
+    - src: eda-ectd-technical-guidance-draft-v1
       at: §2.9.10, §3.2.5
   ectd_cite:
     - src: eda-eg-m1-ectd-spec-draft-v1
@@ -399,8 +400,9 @@
       at: 1.1.9
   ectd_cite:
     - src: eda-eg-m1-submission-guidance-draft
-      at: 'p.36 (1.2.4.9 "may be but not limited to: Letter of access; SmPC/PIL declarations")'
+      at: p.36
       status: draft
+      note: '1.2.4.9 "may be but not limited to: Letter of access; SmPC/PIL declarations"'
 - id: EG-EDA/M1-11
   kind: requirement
   authority: EG-EDA
@@ -945,8 +947,9 @@
       at: 1.1.17.7
   ectd_cite:
     - src: eda-eg-m1-ectd-spec-draft-v1
-      at: App. 2 — one node per agreement type (manufacturing / storage / packaging / authorisation-agency)
+      at: App. 2
       status: draft
+      note: one node per agreement type (manufacturing / storage / packaging / authorisation-agency)
 - id: EG-EDA/M1-25
   kind: requirement
   authority: EG-EDA
@@ -1216,12 +1219,13 @@
   cite:
     - src: eda-np-capp-065-v5
       at: 1.1.20
-    - src: eda-eg-m1-ectd-spec-draft-v1
+    - src: eda-ectd-technical-guidance-draft-v1
       at: §4.4
   ectd_cite:
     - src: eda-eg-m1-submission-guidance-draft
-      at: 'p.36 (1.2.4.9 "may be but not limited to: Letter of access; SmPC/PIL declarations")'
+      at: p.36
       status: draft
+      note: '1.2.4.9 "may be but not limited to: Letter of access; SmPC/PIL declarations"'
 - id: EG-EDA/M1-31
   kind: requirement
   authority: EG-EDA
@@ -1341,8 +1345,9 @@
       at: 1.2.1 N.B. 5–8
   ectd_cite:
     - src: eda-eg-m1-ectd-spec-draft-v1
-      at: App. 2 — coating premix / capsule shell / pellets-premix
+      at: App. 2
       status: draft
+      note: coating premix / capsule shell / pellets-premix
 - id: EG-EDA/M1-34
   kind: requirement
   authority: EG-EDA
@@ -1384,8 +1389,9 @@
       at: 1.2.2
   ectd_cite:
     - src: eda-eg-m1-ectd-spec-draft-v1
-      at: App. 2 (Rolling legacy approvals)
+      at: App. 2
       status: draft
+      note: Rolling legacy approvals
 - id: EG-EDA/M1-35
   kind: requirement
   authority: EG-EDA
@@ -1537,8 +1543,9 @@
       at: 1.2.4.2
   ectd_cite:
     - src: eda-eg-m1-ectd-spec-draft-v1
-      at: App. 2 — 1.2.2.3 covers FPP and API GMP (M1 guidance p.13); 1.2.2.21 overlaps, not used
+      at: App. 2
       status: draft
+      note: 1.2.2.3 covers FPP and API GMP (M1 guidance p.13); 1.2.2.21 overlaps, not used
 - id: EG-EDA/M1-39
   kind: requirement
   authority: EG-EDA
@@ -1594,8 +1601,9 @@
       at: '#6'
   ectd_cite:
     - src: eda-ectd-technical-guidance-draft-v1
-      at: §3.4.1.1.1 (CEP copy in 3.2.R) — same document as S-16, one leaf
+      at: §3.4.1.1.1
       status: draft
+      note: CEP copy in 3.2.R — same document as S-16, one leaf
 - id: EG-EDA/M1-40
   kind: requirement
   authority: EG-EDA
@@ -1649,8 +1657,9 @@
     - src: eda-ctd-qm-v2
   ectd_cite:
     - src: program-assumption
-      at: CEP commitment placed with the CEP in 3.2.R (M1 guidance drops it as a separate item)
+      at: CEP commitment placed with the CEP in 3.2.R
       status: assumption
+      note: M1 guidance drops it as a separate item
 - id: EG-EDA/M1-41
   kind: requirement
   authority: EG-EDA
@@ -1759,14 +1768,15 @@
     G_IMP: R
     G_LOC: R
   cite:
-    - src: eda-eg-m1-ectd-spec-draft-v1
+    - src: eda-ectd-technical-guidance-draft-v1
       at: §3.2.3.1, §2.11
     - src: who-pq-screening
       at: '#2'
   ectd_cite:
     - src: eda-eg-m1-ectd-spec-draft-v1
-      at: App. 2 row 4 (cover-VAR.pdf)
+      at: App. 2 row 4
       status: draft
+      note: cover-VAR.pdf
 - id: EG-EDA/M1-44
   kind: requirement
   authority: EG-EDA
@@ -1799,12 +1809,13 @@
     G_IMP: R
     G_LOC: R
   cite:
-    - src: eda-eg-m1-ectd-spec-draft-v1
+    - src: eda-ectd-technical-guidance-draft-v1
       at: §3.2.3.2, Annex 2
   ectd_cite:
     - src: eda-eg-m1-ectd-spec-draft-v1
-      at: App. 2 row 4 (tracking-VAR.pdf)
+      at: App. 2 row 4
       status: draft
+      note: tracking-VAR.pdf
 - id: EG-EDA/M2-01
   kind: requirement
   authority: EG-EDA
@@ -1840,8 +1851,9 @@
     - src: ich-m4-r4
   ectd_cite:
     - src: ich-ectd-v322
-      at: App. 4 — 2.1 TOC is replaced by the backbone; 2.2 introduction only
+      at: App. 4
       status: in-force
+      note: 2.1 TOC is replaced by the backbone; 2.2 introduction only
 - id: EG-EDA/M2-02
   kind: requirement
   authority: EG-EDA
@@ -1875,7 +1887,7 @@
     G_LOC: NR
   cite:
     - src: eda-np-capp-065-v5
-    - src: eda-eg-m1-ectd-spec-draft-v1
+    - src: eda-ectd-technical-guidance-draft-v1
       at: §3.3.2
     - src: who-pq-qos-pd
       at: 01/2025
@@ -1883,8 +1895,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/M2-03
   kind: requirement
   authority: EG-EDA
@@ -1967,8 +1980,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/S-02
   kind: requirement
   authority: EG-EDA
@@ -2009,8 +2023,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/S-03
   kind: requirement
   authority: EG-EDA
@@ -2053,8 +2068,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/S-04
   kind: requirement
   authority: EG-EDA
@@ -2095,8 +2111,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/S-05
   kind: requirement
   authority: EG-EDA
@@ -2152,8 +2169,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/S-06
   kind: requirement
   authority: EG-EDA
@@ -2194,8 +2212,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/S-07
   kind: requirement
   authority: EG-EDA
@@ -2247,8 +2266,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/S-08
   kind: requirement
   authority: EG-EDA
@@ -2291,8 +2311,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/S-09
   kind: requirement
   authority: EG-EDA
@@ -2334,8 +2355,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/S-10
   kind: requirement
   authority: EG-EDA
@@ -2376,8 +2398,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/S-11
   kind: requirement
   authority: EG-EDA
@@ -2418,8 +2441,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/S-12
   kind: requirement
   authority: EG-EDA
@@ -2460,8 +2484,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/S-13
   kind: requirement
   authority: EG-EDA
@@ -2502,8 +2527,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/S-14
   kind: requirement
   authority: EG-EDA
@@ -2546,8 +2572,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/S-15
   kind: requirement
   authority: EG-EDA
@@ -2582,12 +2609,13 @@
     G_LOC: R
   cite:
     - src: eda-ctd-qm-v2
-    - src: eda-eg-m1-ectd-spec-draft-v1
+    - src: eda-ectd-technical-guidance-draft-v1
       at: §3.4.1.1
   ectd_cite:
     - src: eda-ectd-technical-guidance-draft-v1
-      at: §3.4.1.1 (statement at start of 3.2.S)
+      at: §3.4.1.1
       status: draft
+      note: statement at start of 3.2.S
 - id: EG-EDA/S-16
   kind: requirement
   authority: EG-EDA
@@ -2623,7 +2651,7 @@
     G_LOC: R
   logic_note: checklist condition column
   cite:
-    - src: eda-eg-m1-ectd-spec-draft-v1
+    - src: eda-ectd-technical-guidance-draft-v1
       at: §3.4.1.1.1
   ectd_cite:
     - src: eda-ectd-technical-guidance-draft-v1
@@ -2668,8 +2696,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/P-02
   kind: requirement
   authority: EG-EDA
@@ -2709,8 +2738,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/P-03
   kind: requirement
   authority: EG-EDA
@@ -2748,8 +2778,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/P-04
   kind: requirement
   authority: EG-EDA
@@ -2787,8 +2818,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/P-05
   kind: requirement
   authority: EG-EDA
@@ -2828,8 +2860,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/P-06
   kind: requirement
   authority: EG-EDA
@@ -2867,8 +2900,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/P-07
   kind: requirement
   authority: EG-EDA
@@ -2906,8 +2940,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/P-08
   kind: requirement
   authority: EG-EDA
@@ -2945,8 +2980,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/P-09
   kind: requirement
   authority: EG-EDA
@@ -2984,8 +3020,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/P-10
   kind: requirement
   authority: EG-EDA
@@ -3024,8 +3061,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/P-11
   kind: requirement
   authority: EG-EDA
@@ -3063,8 +3101,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/P-12
   kind: requirement
   authority: EG-EDA
@@ -3102,8 +3141,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/P-13
   kind: requirement
   authority: EG-EDA
@@ -3141,8 +3181,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/P-14
   kind: requirement
   authority: EG-EDA
@@ -3180,8 +3221,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/P-15
   kind: requirement
   authority: EG-EDA
@@ -3219,8 +3261,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/P-16
   kind: requirement
   authority: EG-EDA
@@ -3260,8 +3303,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/A-01
   kind: requirement
   authority: EG-EDA
@@ -3298,8 +3342,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/A-02
   kind: requirement
   authority: EG-EDA
@@ -3338,8 +3383,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/A-03
   kind: requirement
   authority: EG-EDA
@@ -3379,8 +3425,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/R-01
   kind: requirement
   authority: EG-EDA
@@ -3539,8 +3586,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/M4-01
   kind: requirement
   authority: EG-EDA
@@ -3577,8 +3625,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/M4-02
   kind: requirement
   authority: EG-EDA
@@ -3615,8 +3664,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/M5-01
   kind: requirement
   authority: EG-EDA
@@ -3649,12 +3699,13 @@
   cite:
     - src: eda-np-capp-065-v5
       at: M5
-    - src: eda-eg-m1-ectd-spec-draft-v1
+    - src: eda-ectd-technical-guidance-draft-v1
       at: §3.6
   ectd_cite:
     - src: ich-ectd-v322
-      at: no 5.1 node — the TOC is replaced by the backbone (CTD output only)
+      at: Appendix 4
       status: in-force
+      note: no 5.1 node — the TOC is replaced by the backbone (CTD output only)
 - id: EG-EDA/M5-02
   kind: requirement
   authority: EG-EDA
@@ -3692,7 +3743,8 @@
             ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
           cite:
             - src: eda-gl-capp-024-v4
-              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121
+              note: BCS I, III, II weak acids
         - level: R
     G_LOC:
       cases:
@@ -3703,19 +3755,21 @@
             ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
           cite:
             - src: eda-gl-capp-024-v4
-              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121
+              note: BCS I, III, II weak acids
         - level: R
   cite:
     - src: eda-np-capp-065-v5
       at: M5
-    - src: eda-eg-m1-ectd-spec-draft-v1
+    - src: eda-ectd-technical-guidance-draft-v1
       at: §3.6
   ectd_cite:
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/M5-03
   kind: requirement
   authority: EG-EDA
@@ -3753,7 +3807,8 @@
             ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
           cite:
             - src: eda-gl-capp-024-v4
-              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121
+              note: BCS I, III, II weak acids
         - level: O
     G_LOC:
       cases:
@@ -3764,19 +3819,21 @@
             ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
           cite:
             - src: eda-gl-capp-024-v4
-              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121
+              note: BCS I, III, II weak acids
         - level: O
   cite:
     - src: eda-np-capp-065-v5
       at: M5
-    - src: eda-eg-m1-ectd-spec-draft-v1
+    - src: eda-ectd-technical-guidance-draft-v1
       at: §3.6
   ectd_cite:
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/M5-04
   kind: requirement
   authority: EG-EDA
@@ -3818,7 +3875,8 @@
               ومواد مضافة مماثلة، وبيانات BCS لو مطلوبة) بدل تقرير الدراسة.
           cite:
             - src: eda-gl-capp-024-v4
-              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121
+              note: BCS I, III, II weak acids
         - when: local_equivalence
           level: R
           reason:
@@ -3846,7 +3904,8 @@
               ومواد مضافة مماثلة، وبيانات BCS لو مطلوبة) بدل تقرير الدراسة.
           cite:
             - src: eda-gl-capp-024-v4
-              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121
+              note: BCS I, III, II weak acids
         - when: local_equivalence
           level: R
           reason:
@@ -3864,14 +3923,15 @@
   cite:
     - src: eda-np-capp-065-v5
       at: M5
-    - src: eda-eg-m1-ectd-spec-draft-v1
+    - src: eda-ectd-technical-guidance-draft-v1
       at: §3.6
   ectd_cite:
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/M5-05
   kind: requirement
   authority: EG-EDA
@@ -3909,7 +3969,8 @@
             ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
           cite:
             - src: eda-gl-capp-024-v4
-              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121
+              note: BCS I, III, II weak acids
         - level: O
     G_LOC:
       cases:
@@ -3920,19 +3981,21 @@
             ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
           cite:
             - src: eda-gl-capp-024-v4
-              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121
+              note: BCS I, III, II weak acids
         - level: O
   cite:
     - src: eda-np-capp-065-v5
       at: M5
-    - src: eda-eg-m1-ectd-spec-draft-v1
+    - src: eda-ectd-technical-guidance-draft-v1
       at: §3.6
   ectd_cite:
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/M5-06
   kind: requirement
   authority: EG-EDA
@@ -3970,7 +4033,8 @@
             ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
           cite:
             - src: eda-gl-capp-024-v4
-              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121
+              note: BCS I, III, II weak acids
         - level: R
     G_LOC:
       cases:
@@ -3981,19 +4045,21 @@
             ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
           cite:
             - src: eda-gl-capp-024-v4
-              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121
+              note: BCS I, III, II weak acids
         - level: R
   cite:
     - src: eda-np-capp-065-v5
       at: M5
-    - src: eda-eg-m1-ectd-spec-draft-v1
+    - src: eda-ectd-technical-guidance-draft-v1
       at: §3.6
   ectd_cite:
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/M5-07
   kind: requirement
   authority: EG-EDA
@@ -4033,7 +4099,8 @@
             ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
           cite:
             - src: eda-gl-capp-024-v4
-              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121
+              note: BCS I, III, II weak acids
         - level: R
     G_LOC:
       cases:
@@ -4044,19 +4111,21 @@
             ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
           cite:
             - src: eda-gl-capp-024-v4
-              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121
+              note: BCS I, III, II weak acids
         - level: R
   cite:
     - src: eda-np-capp-065-v5
       at: M5
-    - src: eda-eg-m1-ectd-spec-draft-v1
+    - src: eda-ectd-technical-guidance-draft-v1
       at: §3.6
   ectd_cite:
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/M5-08
   kind: requirement
   authority: EG-EDA
@@ -4094,7 +4163,8 @@
             ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
           cite:
             - src: eda-gl-capp-024-v4
-              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121
+              note: BCS I, III, II weak acids
         - level: R
     G_LOC:
       cases:
@@ -4105,19 +4175,21 @@
             ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
           cite:
             - src: eda-gl-capp-024-v4
-              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121
+              note: BCS I, III, II weak acids
         - level: R
   cite:
     - src: eda-np-capp-065-v5
       at: M5
-    - src: eda-eg-m1-ectd-spec-draft-v1
+    - src: eda-ectd-technical-guidance-draft-v1
       at: §3.6
   ectd_cite:
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/M5-09
   kind: requirement
   authority: EG-EDA
@@ -4151,14 +4223,15 @@
   cite:
     - src: eda-np-capp-065-v5
       at: M5
-    - src: eda-eg-m1-ectd-spec-draft-v1
+    - src: eda-ectd-technical-guidance-draft-v1
       at: §3.6
   ectd_cite:
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/M5-10
   kind: requirement
   authority: EG-EDA
@@ -4196,7 +4269,8 @@
             ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
           cite:
             - src: eda-gl-capp-024-v4
-              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121
+              note: BCS I, III, II weak acids
         - level: R
     G_LOC:
       cases:
@@ -4207,19 +4281,21 @@
             ar: 'غير مطلوب: المستحضر معفي من دراسات التكافؤ (GL.CAPP.024 §2.2 / §4.5.1).'
           cite:
             - src: eda-gl-capp-024-v4
-              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)
+              at: §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121
+              note: BCS I, III, II weak acids
         - level: R
   cite:
     - src: eda-np-capp-065-v5
       at: M5
-    - src: eda-eg-m1-ectd-spec-draft-v1
+    - src: eda-ectd-technical-guidance-draft-v1
       at: §3.6
   ectd_cite:
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/M5-11
   kind: requirement
   authority: EG-EDA
@@ -4253,14 +4329,15 @@
   cite:
     - src: eda-np-capp-065-v5
       at: M5
-    - src: eda-eg-m1-ectd-spec-draft-v1
+    - src: eda-ectd-technical-guidance-draft-v1
       at: §3.6
   ectd_cite:
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: EG-EDA/M5-12
   kind: requirement
   authority: EG-EDA
@@ -4303,7 +4380,7 @@
   cite:
     - src: eda-np-capp-065-v5
       at: M5
-    - src: eda-eg-m1-ectd-spec-draft-v1
+    - src: eda-ectd-technical-guidance-draft-v1
       at: §3.6
   ectd_cite:
     - src: ich-m4-r4

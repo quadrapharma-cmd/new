@@ -18,6 +18,8 @@ Everything the program knows about the authorities lives here as data. **Every r
 | `countries.yaml` | What each country or region takes (formats, Module 1, validation criteria). |
 | `ectd/` | The eCTD tables as published (ICH 3.2.2 Appendix 4, the 4.0 controlled vocabularies, STF), with `index.yaml` citing them. |
 | `recognition/`, `templates/`, `vocab/` | The program's own aids (recognition keywords, the template in front of each item, dose forms and countries). |
+| `checks/citations.json` | **Generated** by `tools/verify-sources.mjs`: what the check found for every citation (never edit by hand). |
+| `checks/findings.yaml` | What each review found and what was done, written by hand; the library's «Review» page shows it. |
 
 ## شكل السجل — A record
 
@@ -34,7 +36,27 @@ Everything the program knows about the authorities lives here as data. **Every r
       quote: …                # the source's own words, where kept
   ectd_cite: […]              # where the eCTD placement comes from (requirements)
   anchor_cite: […]            # the international reference a review rule leans on
+  check: {verdict: …, note: {en, ar}}   # what a review changed or found in this record, said plainly
 ```
+
+A citation can also carry `gist` (what the source says, in our words — never shown as its words), `note` (a remark about the
+place) and `read: {how: page image, on: …}` (a page whose text layer cannot be read by machine, read from its image). A variation
+names its item in the guideline (`guideline: {section, heading, item, pac}`); its `pac` is the guideline's class, and `pac_tool`
+keeps EDA's tool's class where the two differ. A source carries `latest` (the last check on the authority's website),
+`superseded_by` when replaced, `url` (its page on the authority's site) and `numbering: true` when it sets the section numbers.
+
+## المراجعة — The review (`tools/verify-sources.mjs`)
+
+Reads the text of every source kept in the project (PDF, Word, Excel, zip) and checks each citation:
+- a **quote** must be in the source word for word (spacing and punctuation aside) or nearly, and on the page the citation names;
+- a **place** (section number, page, annex, option, step) must exist in the source;
+- a record's own **CTD number** must exist in a source that sets the numbers; a **variation's** class must be the class the guideline
+  prints right after its item, and its row in EDA's table must match its wording.
+
+Results: `verified` (the words are there), `located` (the place is there), `read` (read from a page image), `nothing-to-check`
+(a copy is kept but no place is named), `no-copy` (no copy kept: only the version and date were checked). `partly` and `not-found`
+must not stay: the tests fail on them. Run `node tools/verify-sources.mjs` after changing any citation; `node tools/find-in-source.mjs
+<source> <words>` shows where words sit in a source.
 
 ## القواعد — Rules the build enforces (`core/validate.js`)
 

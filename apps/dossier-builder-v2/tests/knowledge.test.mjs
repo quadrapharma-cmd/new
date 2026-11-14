@@ -101,3 +101,34 @@ test('every draft source is marked as one, and no in-force requirement leans on 
 test('each citation field holds only citations', () => {
   for (const r of allRecords(data)) for (const c of citationsOf(r)) assert.equal(typeof c.src, 'string', r.id);
 });
+
+test('the review covers every citation, and nothing it checked is left unresolved', () => {
+  const key = (rec, field, c) => `${rec}|${field}|${c.src}|${c.at || ''}`;
+  const checked = new Set(data.checks.citations.map(c => key(c.rec, c.field, c)));
+  const missing = [];
+  for (const r of allRecords(data)) {
+    for (const field of ['cite', 'ectd_cite', 'anchor_cite']) for (const c of r[field] || []) if (!checked.has(key(r.id, field, c))) missing.push(`${r.id} ${field} ${c.src}`);
+  }
+  assert.deepEqual(missing, [], 'run node tools/verify-sources.mjs after changing a citation');
+  const open = data.checks.citations.filter(c => c.result === 'not-found' || c.result === 'partly');
+  assert.deepEqual(open.map(c => `${c.rec} ${c.src} ${c.at || ''}`), []);
+});
+
+test('every variation names its item and class in the guideline, or says why it cannot', () => {
+  for (const v of data.variations.items) {
+    assert.ok(v.check?.verdict, `${v.id} has no review verdict`);
+    if (v.check.verdict === 'tool-only') continue;
+    assert.ok(v.guideline?.section && v.guideline?.pac, `${v.id} names no guideline item`);
+    if (v.check.verdict === 'differs') assert.ok(v.pac_tool && v.pac_tool !== v.pac, `${v.id} keeps no tool class`);
+    if (v.check.verdict === 'agrees') assert.equal(v.pac, v.guideline.pac, v.id);
+  }
+});
+
+test('a replaced source names what replaced it, and nothing in force rests on it alone', () => {
+  for (const s of K.sources({ status: 'superseded' })) {
+    if (!s.superseded_by) continue;
+    assert.ok(K.source(s.superseded_by), s.id);
+  }
+  const old = K.usedBy('eda-gl-cadc-002-v2');
+  assert.deepEqual(old.map(r => r.id), [], 'GL.CADC.002 v02 was replaced on 20/10/2026');
+});

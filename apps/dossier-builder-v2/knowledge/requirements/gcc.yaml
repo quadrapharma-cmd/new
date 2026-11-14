@@ -1005,6 +1005,7 @@
     - src: sfda-data-requirements-v4
       at: §3.2.R
   ectd_cite:
-    - src: gcc-m1-spec-v15
-      at: Appendix 2
+    - src: ich-ectd-v322
+      at: Appendix 4
+      note: 3.2.R (regional information) is an ICH node; the regional Module 1 specification does not define it
       status: in-force

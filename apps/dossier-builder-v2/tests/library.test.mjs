@@ -10,7 +10,7 @@ import { ROOT } from '../tools/load.mjs';
 
 const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
-const PAGE = 'file://' + path.join(ROOT, 'dist', 'library.html');
+const PAGE = 'file://' + path.join(ROOT, 'dist', 'library', 'index.html');
 const SHOTS = process.env.SHOTS || '';
 
 let browser;
@@ -203,5 +203,46 @@ test('the artifact edition (no document shell) works the same', async () => {
   assert.equal(await page.evaluate(() => document.documentElement.dir), 'rtl');
   assert.equal(await page.locator('.auth').count(), data.authorities.length);
   assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('every source kept in the project opens from the library, at the cited page', async () => {
+  const { page, ctx, errors } = await open('#r-EG-EDA-SC-SOFT-01');
+  await page.waitForSelector('#detail a.openfile');
+  const href = await page.getAttribute('#detail a.openfile', 'href');
+  assert.match(href, /^sources\/EDA_NP\.CAPP\.065_v5_2025_CTD-submission-guidance\.pdf#page=13$/);
+  // each held source has its button, and the file it names is beside the page
+  const missing = [];
+  for (const s of data.sources.filter(x => x.held && /\.pdf$/i.test(x.file))) {
+    await page.evaluate(h => { location.hash = h; }, '#s-' + s.id);
+    await page.waitForFunction(id => document.querySelector('#detail h1') && location.hash === '#s-' + id, s.id);
+    const h = await page.getAttribute('#detail .openbar a.openfile', 'href').catch(() => null);
+    if (!h || !fs.existsSync(path.join(ROOT, 'dist', 'library', decodeURIComponent(h.split('#')[0])))) missing.push(s.id);
+  }
+  assert.deepEqual(missing, []);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('the review page shows what the check found, and every finding links to its records', async () => {
+  const { page, ctx, errors } = await open('#review');
+  await page.waitForSelector('.results .res');
+  const tiles = await page.$$eval('.results .res b', bs => bs.map(b => Number(b.textContent.replace(/,/g, ''))));
+  assert.equal(tiles.reduce((a, b) => a + b, 0), data.checks.citations.length);
+  assert.equal(await page.locator('.finding').count(), data.checks.findings.findings.length);
+  await page.click('.finding a[href="#r-EG-EDA-var-H-21"]');
+  await page.locator('#detail .checknote').waitFor();
+  assert.match(await page.locator('#detail').innerText(), /PAC-A/);
+  await shot(page, '07-review-ar');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('the variations the guideline classes differently can be listed on their own', async () => {
+  const { page, ctx } = await open('#variations');
+  await page.click('[data-verdict="differs"]');
+  const n = await page.locator('main a.row').count();
+  assert.equal(n, data.variations.items.filter(v => v.check?.verdict === 'differs').length);
+  assert.equal(n, 15);
   await ctx.close();
 });

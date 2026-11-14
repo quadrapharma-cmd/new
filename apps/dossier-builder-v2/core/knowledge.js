@@ -23,6 +23,10 @@ export function createKnowledge(data) {
   const records = allRecords(data);
   const byId = new Map(records.map(r => [r.id, r]));
 
+  // What the review found for each citation (knowledge/checks/citations.json).
+  const checks = new Map();
+  for (const c of data.checks?.citations || []) checks.set(`${c.rec}|${c.field}|${c.src}|${c.at || ''}`, c);
+
   // Which records cite each source.
   const users = new Map();
   for (const r of records) for (const c of citationsOf(r)) {
@@ -58,6 +62,8 @@ export function createKnowledge(data) {
       records.filter(r => (!kind || r.kind === kind) && (!set || r.set === set) && (!authority || r.authority === authority) && (module == null || r.module === module)),
     // A record's citations, each with the source it names.
     citations: rec => citationsOf(rec).map(c => ({ ...c, source: sources.get(c.src) || null })),
+    // What the review found for one citation of a record.
+    check: (recId, field, cite) => checks.get(`${recId}|${field}|${cite.src}|${cite.at || ''}`) || null,
     // The records that cite a source.
     usedBy: sourceId => [...(users.get(sourceId) || [])].map(id => byId.get(id)),
     // Every word of the query must appear; a hit in the title ranks first, then in the codes, then in the body.

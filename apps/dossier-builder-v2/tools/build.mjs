@@ -1,13 +1,16 @@
 // Checks every piece of knowledge, then writes:
 //   dist/knowledge.json           the knowledge as one file, for the program
-//   dist/library.html             the library as one self-contained page, to open on the desktop
+//   dist/library/                 the library for the desktop: index.html and sources/ (the copies of the sources it opens)
+//   dist/Dossier-Builder-Library.zip   the same folder in one file, to hand over
 //   dist/library-artifact.html    the same page without the document shell, for the claude.ai artifact
+//   dist/artifact-files.json      the source copies to publish beside it (sources/<file> → the copy in the repository)
 // Stops on any error: a record without a source, a citation of an unregistered source, a broken reference, a missing copy.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
 import * as esbuild from 'esbuild';
-import { loadKnowledge, checkHeldFiles, ROOT } from './load.mjs';
+import { loadKnowledge, checkHeldFiles, ROOT, REPO } from './load.mjs';
 import { validate } from '../core/validate.js';
 
 const FONTS = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Readex+Pro:wght@500;600&display=swap';
@@ -49,7 +52,7 @@ export async function build({ quiet = false } = {}) {
   ].join('\n');
   // The artifact wraps the page in its own document shell; the desktop page carries one.
   fs.writeFileSync(path.join(dist, 'library-artifact.html'), `${head}\n${body}\n`);
-  fs.writeFileSync(path.join(dist, 'library.html'), `<!doctype html>
+  const page = `<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
@@ -61,13 +64,32 @@ ${head}
 ${body}
 </body>
 </html>
-`);
+`;
+  // The desktop library: the page and, beside it, the copies of the sources it opens.
+  const held = data.sources.filter(s => s.held && s.file && fs.existsSync(path.join(REPO, s.file)) && fs.statSync(path.join(REPO, s.file)).isFile());
+  const libDir = path.join(dist, 'library');
+  fs.rmSync(libDir, { recursive: true, force: true });
+  fs.mkdirSync(path.join(libDir, 'sources'), { recursive: true });
+  fs.writeFileSync(path.join(libDir, 'index.html'), page);
+  const files = {};
+  for (const s of held) {
+    const name = path.basename(s.file);
+    fs.copyFileSync(path.join(REPO, s.file), path.join(libDir, 'sources', name));
+    files[`sources/${name}`] = path.relative(ROOT, path.join(REPO, s.file));
+  }
+  fs.writeFileSync(path.join(dist, 'artifact-files.json'), JSON.stringify(files, null, 1));
+  const zip = path.join(dist, 'Dossier-Builder-Library.zip');
+  fs.rmSync(zip, { force: true });
+  if (!quiet || process.env.LIBRARY_ZIP) {
+    try { execFileSync('zip', ['-q', '-r', zip, '.'], { cwd: libDir }); }
+    catch { execFileSync('python3', ['-I', '-c', 'import shutil,sys; shutil.make_archive(sys.argv[1][:-4], "zip", sys.argv[2])', zip, libDir]); }
+  }
   log([
     `authorities ${data.authorities.length}`, `sources ${data.sources.length}`, `requirements ${data.requirements.length}`,
     `review rules ${data.rules.length}`, `variations ${data.variations.items.length}`, `document types ${data.doctypes.items.length}`,
     `countries ${data.countries.items.length}`, `eCTD tables ${Object.keys(data.ectd.tables).length}`, `warnings ${warnings.length}`,
   ].join(' · '));
-  log(`library: dist/library.html ${(fs.statSync(path.join(dist, 'library.html')).size / 1024).toFixed(0)} KB`);
+  log(`library: dist/library/index.html ${(fs.statSync(path.join(libDir, 'index.html')).size / 1024).toFixed(0)} KB, ${held.length} source copies beside it`);
   return { data, warnings };
 }
 

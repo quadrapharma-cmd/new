@@ -282,3 +282,42 @@ p { margin: 0; }
   .detail { animation: rise 0.16s ease-out; }
   @keyframes rise { from { translate: 0 8px; } to { translate: 0 0; } }
 }
+
+/* ---- the review: what the check found, said in form as well as words */
+.res-tag { font-size: 11.5px; font-weight: 600; padding: 1px 7px; border-radius: 4px; white-space: nowrap; }
+.res-verified { color: var(--ok); background: var(--ok-soft); }
+.res-located { color: var(--ref); background: var(--ref-soft); }
+.res-read { color: var(--accent); background: var(--accent-soft); }
+.res-nothing-to-check, .res-no-copy { color: var(--soft); background: var(--soft-bg); }
+.res-partly, .res-not-found { color: var(--bad); background: var(--bad-soft); }
+.results { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; margin: 8px 0 24px; }
+.results .res { display: grid; gap: 2px; padding: 12px 14px; border-radius: var(--r); border: 1px solid var(--line); background: var(--surface); }
+.results .res b { font: 600 22px/1.2 var(--font-head); font-variant-numeric: tabular-nums; }
+.results .res span { font-weight: 600; font-size: 13.5px; }
+.results .res small { color: var(--muted); font-size: 12px; line-height: 1.45; }
+.results .res.res-verified b { color: var(--ok); } .results .res.res-located b { color: var(--ref); } .results .res.res-read b { color: var(--accent); }
+.results .res.res-nothing-to-check b, .results .res.res-no-copy b { color: var(--soft); }
+.findings { display: grid; gap: 10px; margin: 8px 0 24px; }
+.finding { display: grid; gap: 8px; padding: 14px 16px; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); border-inline-start: 4px solid var(--accent); }
+.finding.fd-newer-version { border-inline-start-color: var(--warn); }
+.finding.fd-correction { border-inline-start-color: var(--bad); }
+.finding.fd-online-check { border-inline-start-color: var(--ok); }
+.finding.fd-open { border-inline-start-color: var(--soft); border-inline-start-style: dashed; }
+.finding .kw a { background: var(--sunk); border-radius: 4px; padding: 0 6px; font-size: 12.5px; }
+.checknote { margin: 0 0 14px; padding: 10px 12px; border-radius: 8px; background: var(--warn-soft); color: var(--ink); font-size: 13.5px; line-height: 1.6; }
+.checknote b { color: var(--warn); margin-inline-end: 6px; }
+.gist { font-size: 13px; color: var(--muted); }
+.gist > span:first-child { font-weight: 600; }
+.openbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+.openfile { justify-self: start; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; padding: 4px 12px; border-radius: 6px;
+  background: var(--accent); color: var(--accent-ink); }
+.openfile:hover { text-decoration: none; filter: brightness(1.08); }
+.openfile.big { font-size: 14px; padding: 7px 16px; }
+.openfile.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+.vd { font-size: 11.5px; font-weight: 600; padding: 1px 7px; border-radius: 4px; white-space: nowrap; }
+.vd-differs { color: var(--bad); background: var(--bad-soft); }
+.vd-split { color: var(--warn); background: var(--warn-soft); }
+.vd-tool-only, .vd-changed { color: var(--soft); background: var(--soft-bg); }
+.persrc { border-collapse: collapse; font-size: 12.5px; min-width: 100%; }
+.persrc th, .persrc td { padding: 5px 9px; border-bottom: 1px solid var(--line); text-align: start; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.persrc tr:first-child th { background: var(--sunk); font-weight: 600; }

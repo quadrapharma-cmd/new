@@ -30,6 +30,12 @@
   "taken": "2026-11-06"
  },
  {
+  "file": "EDA_GL.BIOINN-CAMD-CAPP.001_v2_2022_good-review-practice.pdf",
+  "sha256": "8b20558656e4f4fc4f57a679e334b367c361578f5bc8fdf82a3bb8eb2e29b276",
+  "size": 772008,
+  "taken": "2026-11-14"
+ },
+ {
   "file": "EDA_GL.Bioinn.004_v5_2026_biologics-file-content-M1-eCTD-aligned.pdf",
   "sha256": "d2ac5c391f80fbc23686ff89d7a3280dd7385948a68f48a387279208b7f592e9",
   "size": 512588,
@@ -42,16 +48,46 @@
   "taken": "2026-11-06"
  },
  {
+  "file": "EDA_GL.CADC.002_v3_2026_file-assessment.pdf",
+  "sha256": "4af58c8709aa8af07e404a5e586d04e79e1c60d1e593777618e3e2a8c0877283",
+  "size": 1160236,
+  "taken": "2026-11-14"
+ },
+ {
   "file": "EDA_GL.CAP.Care-CAPP.002_v4_2023_dossier-requirements.pdf",
   "sha256": "943d85b8f7518e57f7082deebef160b8c9136d657587c40f57788e47974b3af4",
   "size": 1337896,
   "taken": "2026-11-06"
  },
  {
+  "file": "EDA_GL.CAP.Care.032_v4_2024_medical-leaflets.pdf",
+  "sha256": "dd31b0fff9276e19f9151b7f140005f72a207548611f3907aedd67959bda4589",
+  "size": 412182,
+  "taken": "2026-11-14"
+ },
+ {
+  "file": "EDA_GL.CAPP.022_v3_2023_mock-up-design.pdf",
+  "sha256": "22f908fc203d9cfd6473f44c10aa88b9e3f396d6eff0de1e82fb6e9636672818",
+  "size": 246143,
+  "taken": "2026-11-14"
+ },
+ {
+  "file": "EDA_GL.CAPP.023_v4_2024_naming.pdf",
+  "sha256": "395759ac5cc49267b63b7a66bdbf2edfcd52566dbeeb9d4135dec39673d067dc",
+  "size": 287066,
+  "taken": "2026-11-14"
+ },
+ {
   "file": "EDA_GL.CAPP.024_v4_2026_BE-guideline.pdf",
   "sha256": "85079db5db88ac08b0984a971a29a197ba759526daea6727a839dae5c6b5f370",
   "size": 1263117,
   "taken": "2026-11-06"
+ },
+ {
+  "file": "EDA_GL.CAPP.025_v4_2024_reliance-registration.pdf",
+  "sha256": "94df69419d847e25ce8a05d1d3f2595a120ac48d8b5d9568a9469f0154897993",
+  "size": 159491,
+  "taken": "2026-11-14"
  },
  {
   "file": "EDA_GL.CAPP.026_v6_2025_variations-6th-ed.pdf",
@@ -72,10 +108,28 @@
   "taken": "2026-11-06"
  },
  {
+  "file": "EDA_GL.PPMA.004_v5_2026_import-and-customs-release_AR.pdf",
+  "sha256": "5d59f3c7b1c5cc384d7bd212da8253f1097fa558081b507e295b021b45f206c9",
+  "size": 819024,
+  "taken": "2026-11-14"
+ },
+ {
+  "file": "EDA_GL.multi.001_v1_2025_nitrosamines.pdf",
+  "sha256": "ef7bb654e9eb95ced28e9daca6790f95a59ed9172b736f2e699f607e5b53fe09",
+  "size": 144559,
+  "taken": "2026-11-14"
+ },
+ {
   "file": "EDA_NP.CAPP.040_v1_2022_QM-common-deficiencies.pdf",
   "sha256": "3bdbc0594062e0c3f61f7e15ae2f59b8660084afc893fae299c4c38cedf09114",
   "size": 125904,
   "taken": "2026-11-06"
+ },
+ {
+  "file": "EDA_NP.CAPP.063_v3_2024_variation-timeframes.pdf",
+  "sha256": "7fd2c19645e78093d91fb6b965371fcf7154f344a831b2a35682339acf618424",
+  "size": 326082,
+  "taken": "2026-11-14"
  },
  {
   "file": "EDA_NP.CAPP.065_v5_2025_CTD-submission-guidance.pdf",
@@ -90,16 +144,46 @@
   "taken": "2026-11-06"
  },
  {
+  "file": "EDA_NP.CAPP.089_v2_2026_reference-countries.pdf",
+  "sha256": "641bf1341682ccb095cc5049aecf98f39958ef2c4e95c72057c312859c559a0b",
+  "size": 169284,
+  "taken": "2026-11-14"
+ },
+ {
   "file": "EDA_NP.CAPP.090_v2_2026_stability-dossier-content.pdf",
   "sha256": "b4976d0e6be57c3852f055e49bf2bb06f9251e1f239edc4f9b8ed069b1cc2070",
   "size": 360591,
   "taken": "2026-11-06"
  },
  {
+  "file": "EDA_NP.CAPP.093_v1_2024_fifth-year-report.pdf",
+  "sha256": "e74524bd0d62e42bf8c668563c87c625c6727e24068052ac78d60d2d597dbfa3",
+  "size": 108562,
+  "taken": "2026-11-14"
+ },
+ {
+  "file": "EDA_NP.CAPP.108_v1_2025_type-II-variations.pdf",
+  "sha256": "4202d73cf72a60f8da2adea58bb00fd752357321d6e9c8690f80deadcc098627",
+  "size": 126120,
+  "taken": "2026-11-14"
+ },
+ {
+  "file": "EDA_NP.CAPP.109_v2_2026_variations-admin-documents-timeframes.pdf",
+  "sha256": "5c20d2f716dea0d5dfc0a8116ce05b29a509fc7d8cf7aedbb25f126851631b51",
+  "size": 686028,
+  "taken": "2026-11-14"
+ },
+ {
   "file": "EDA_NP.CAPP.112_v1_2026_variations-CTD-sections.pdf",
   "sha256": "994e6fbf7ab7a5d2d8ea1bf425150659bd6b86b321caeb5c87eab06cd8325170",
   "size": 108412,
   "taken": "2026-11-06"
+ },
+ {
+  "file": "EDA_NP.CIP.002_v3_2026_ICH-quality-adoption.pdf",
+  "sha256": "3230af90d7868eb21ac8fcdcbeefeb25d5d71d1a3d18714f431150d6b2a95e92",
+  "size": 268652,
+  "taken": "2026-11-14"
  },
  {
   "file": "EDA_Submission-Guidance-Module-I_old-draft.pdf",

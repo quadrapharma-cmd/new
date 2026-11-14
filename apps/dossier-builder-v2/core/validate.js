@@ -93,6 +93,13 @@ export function validate(data) {
   }
   if (data.variations.grouping_rule) checkCites('variations grouping rule', data.variations.grouping_rule.cite, true);
 
+  // The review's findings name only records and sources that exist; a replaced source names the one that replaced it.
+  for (const f of data.checks?.findings?.findings || []) {
+    for (const id of f.records || []) if (!ids.has(id)) err(`finding ${f.id}`, `names «${id}», which is no record`);
+    for (const id of f.sources || []) if (!sources.has(id)) err(`finding ${f.id}`, `names «${id}», which is not registered`);
+  }
+  for (const s of data.sources) if (s.superseded_by && !sources.has(s.superseded_by)) err(`source ${s.id}`, `replaced by «${s.superseded_by}», which is not registered`);
+
   return { errors, warnings };
 
   // Citations inside a record's logic (a case of «required» that names its own source).

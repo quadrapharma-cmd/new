@@ -922,10 +922,12 @@
     G_LOC: O
   cite:
     - src: ich-m4q-r1
-      at: §3.2.R (the examples marked «EU only»)
+      at: §3.2.R
+      note: the examples marked «EU only»
   ectd_cite:
-    - src: eu-m1-spec-v311
-      at: Appendix 2
+    - src: ich-ectd-v322
+      at: Appendix 4
+      note: 3.2.R (regional information) is an ICH node; the regional Module 1 specification does not define it
       status: in-force
 - id: EU/EU-3.2.R-DEV
   kind: requirement
@@ -951,10 +953,12 @@
     G_LOC: O
   cite:
     - src: ich-m4q-r1
-      at: §3.2.R (the examples marked «EU only»)
+      at: §3.2.R
+      note: the examples marked «EU only»
   ectd_cite:
-    - src: eu-m1-spec-v311
-      at: Appendix 2
+    - src: ich-ectd-v322
+      at: Appendix 4
+      note: 3.2.R (regional information) is an ICH node; the regional Module 1 specification does not define it
       status: in-force
 - id: EU/EU-3.2.R-CEP
   kind: requirement
@@ -993,8 +997,9 @@
     - src: eu-nta-vol2b
       at: Module 3, 3.2.R Regional information
   ectd_cite:
-    - src: eu-m1-spec-v311
-      at: Appendix 2
+    - src: ich-ectd-v322
+      at: Appendix 4
+      note: 3.2.R (regional information) is an ICH node; the regional Module 1 specification does not define it
       status: in-force
 - id: EU/EU-3.2.R-TSE
   kind: requirement
@@ -1028,6 +1033,7 @@
     - src: eu-nta-vol2b
       at: Module 3, 3.2.R Regional information
   ectd_cite:
-    - src: eu-m1-spec-v311
-      at: Appendix 2
+    - src: ich-ectd-v322
+      at: Appendix 4
+      note: 3.2.R (regional information) is an ICH node; the regional Module 1 specification does not define it
       status: in-force

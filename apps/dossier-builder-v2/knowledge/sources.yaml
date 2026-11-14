@@ -7,182 +7,233 @@
 
 # ---------------------------------------------------------------- Egyptian Drug Authority — in force
 - id: eda-np-capp-065-v5
-  authority: EG-EDA
-  code: NP.CAPP.065
-  version: '5'
-  title: {en: Submission Guidance for the CTD — Notice to Applicants, ar: دليل تقديم ملف الـ CTD — إشعار لمقدمي الطلبات}
-  status: in-force
-  issued: '2025-11-01'
-  effective: '2025-11-01'
-  file: docs/ctd/sources/EDA_NP.CAPP.065_v5_2025_CTD-submission-guidance.pdf
+  authority: "EG-EDA"
+  code: "NP.CAPP.065"
+  version: "5"
+  title: {en: "Submission Guidance for the CTD — Notice to Applicants", ar: "دليل تقديم ملف الـ CTD — إشعار لمقدمي الطلبات"}
+  status: "in-force"
+  url: "https://edaegypt.gov.eg/media/bsmpjjz0/submission-guidance-for-the-common-technical-document-for-human-pharmaceutical-products-registration_np.pdf"
+  numbering: true
+  issued: "2025-11-01"
+  effective: "2025-11-01"
+  supersedes: "NP.CAPP.065 v4 (2024-07-23)"
+  file: "docs/ctd/sources/EDA_NP.CAPP.065_v5_2025_CTD-submission-guidance.pdf"
   held: true
-  supersedes: NP.CAPP.065 v4 (2024-07-23)
-  checked: {on: '2026-11-06', how: cover}
-  aliases: ['NP.CAPP.065 v5/2025', 'NP.CAPP.065 v5', 'NP.CAPP.065']
+  checked: {on: "2026-11-06", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "current"}
+  aliases: ["NP.CAPP.065 v5/2025", "NP.CAPP.065 v5", "NP.CAPP.065"]
 - id: eda-ctd-qm-v2
-  authority: EG-EDA
-  code: Egyptian Guidelines on CTD Quality Module
-  version: '2'
-  title: {en: Egyptian Guidelines on the CTD Quality Module, ar: الإرشادات المصرية لموديول الجودة في ملف الـ CTD}
-  status: in-force
-  issued: '2023-03-12'
-  file: docs/ctd/sources/EDA_CTD-Quality-Module-guideline_v2_2023.pdf
+  authority: "EG-EDA"
+  code: "GL.CAPP.020"
+  version: "2"
+  title: {en: "Egyptian Guidelines on the CTD Quality Module", ar: "الإرشادات المصرية لموديول الجودة في ملف الـ CTD"}
+  status: "in-force"
+  url: "https://edaegypt.gov.eg/media/m0oaquv4/egyptian-guideline-on-ctd-quality-module-for-human-pharmaceuticals-version-2-coded_compressed-1.pdf"
+  issued: "2023-03-12"
+  effective: "2023-03-12"
+  file: "docs/ctd/sources/EDA_CTD-Quality-Module-guideline_v2_2023.pdf"
   held: true
-  checked: {on: '2026-11-06', how: cover}
-  aliases: ['CTD QM v2', 'CTD QM guideline v2', 'CTD Quality Module guideline', 'EDA Quality Module guideline v2/2023', 'EDA Quality Module guideline v2', 'EDA Quality Module guideline']
+  checked: {on: "2026-11-06", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "current", note: "the website copy carries the code GL.CAPP.020 on every page; the text is the same"}
+  aliases: ["CTD QM v2", "CTD QM guideline v2", "CTD Quality Module guideline", "EDA Quality Module guideline v2/2023", "EDA Quality Module guideline v2", "EDA Quality Module guideline", "GL.CAPP.020"]
 - id: eda-gl-capp-002-v4
-  authority: EG-EDA
-  code: GL.CAP.Care/CAPP.002
-  version: '4'
-  title: {en: Dossier Requirements — Registration and Re-registration, ar: متطلبات الملف — التسجيل وإعادة التسجيل}
-  status: in-force
-  issued: '2023-12-14'
-  effective: '2023-12-14'
-  file: docs/ctd/sources/EDA_GL.CAP.Care-CAPP.002_v4_2023_dossier-requirements.pdf
+  authority: "EG-EDA"
+  code: "GL.CAP.Care/CAPP.002"
+  version: "4"
+  title: {en: "Dossier Requirements — Registration and Re-registration", ar: "متطلبات الملف — التسجيل وإعادة التسجيل"}
+  status: "in-force"
+  url: "https://www.edaegypt.gov.eg/media/5qwhtm3s/dossier-requirements-of-human-pharmaceutical-products-for-registration-re-registration-version-4_.pdf"
+  issued: "2023-12-14"
+  effective: "2023-12-14"
+  supersedes: "v3 (2023-08-14)"
+  file: "docs/ctd/sources/EDA_GL.CAP.Care-CAPP.002_v4_2023_dossier-requirements.pdf"
   held: true
-  supersedes: v3 (2023-08-14)
-  checked: {on: '2026-11-06', how: cover}
-  aliases: ['GL.CAP.Care/CAPP.002', 'GL.CAPP.002 v4', 'GL.CAPP.002']
+  checked: {on: "2026-11-06", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "current"}
+  aliases: ["GL.CAP.Care/CAPP.002", "GL.CAPP.002 v4", "GL.CAPP.002"]
 - id: eda-gl-capp-024-v4
-  authority: EG-EDA
-  code: GL.CAPP.024
-  version: '4'
-  title: {en: Bioequivalence Guideline (generic marketing authorisation), ar: دليل التكافؤ الحيوي (تسجيل المثائل)}
-  status: in-force
-  issued: '2026-06-23'
-  effective: '2026-07-01'
-  file: docs/ctd/sources/EDA_GL.CAPP.024_v4_2026_BE-guideline.pdf
+  authority: "EG-EDA"
+  code: "GL.CAPP.024"
+  version: "4"
+  title: {en: "Bioequivalence Guideline (generic marketing authorisation)", ar: "دليل التكافؤ الحيوي (تسجيل المثائل)"}
+  status: "in-force"
+  url: "https://www.edaegypt.gov.eg/media/emojnonb/egyptian-be-guideline-v-4-pdf-en-up.pdf"
+  issued: "2026-06-23"
+  effective: "2026-07-01"
+  supersedes: "v3 (2023-07-17)"
+  file: "docs/ctd/sources/EDA_GL.CAPP.024_v4_2026_BE-guideline.pdf"
   held: true
-  supersedes: v3 (2023-07-17)
-  checked: {on: '2026-11-06', how: cover}
-  aliases: ['GL.CAPP.024 v4/2026', 'GL.CAPP.024 v4', 'GL.CAPP.024']
+  checked: {on: "2026-11-06", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "current"}
+  aliases: ["GL.CAPP.024 v4/2026", "GL.CAPP.024 v4", "GL.CAPP.024"]
 - id: eda-gl-capp-026-v6
-  authority: EG-EDA
-  code: GL.CAPP.026
-  version: '6'
-  title: {en: Human Pharmaceuticals Variations (6th edition), ar: متغيرات المستحضرات البشرية (الإصدار السادس)}
-  status: in-force
-  issued: '2025-12-01'
-  effective: '2026-01-01'
-  file: docs/ctd/sources/EDA_GL.CAPP.026_v6_2025_variations-6th-ed.pdf
+  authority: "EG-EDA"
+  code: "GL.CAPP.026"
+  version: "6"
+  title: {en: "Human Pharmaceuticals Variations (6th edition)", ar: "متغيرات المستحضرات البشرية (الإصدار السادس)"}
+  status: "in-force"
+  url: "https://edaegypt.gov.eg/media/i3tgke4a/sixth-edition-of-human-pharmaceuticals-variat.pdf"
+  issued: "2025-12-01"
+  effective: "2026-01-01"
+  supersedes: "v4 (2023-11-15), v5 (2024)"
+  file: "docs/ctd/sources/EDA_GL.CAPP.026_v6_2025_variations-6th-ed.pdf"
   held: true
-  supersedes: v4 (2023-11-15), v5 (2024)
-  checked: {on: '2026-11-06', how: cover}
-  aliases: ['GL.CAPP.026 v6', 'GL.CAPP.026', 'EDA GL.CAPP.026']
+  checked: {on: "2026-11-06", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "current"}
+  aliases: ["GL.CAPP.026 v6", "GL.CAPP.026", "EDA GL.CAPP.026"]
 - id: eda-gl-capp-027-v5
-  authority: EG-EDA
-  code: GL.CAPP.027
-  version: '5'
-  title: {en: Regulatory guide to Decree 450/2023, ar: الدليل الإرشادي للقرار 450 لسنة 2023}
-  status: in-force
-  issued: '2025-10-30'
-  effective: '2025-11-01'
-  file: docs/ctd/sources/EDA_GL.CAPP.027_v5_2025_guide-decree-450.pdf
+  authority: "EG-EDA"
+  code: "GL.CAPP.027"
+  version: "5"
+  title: {en: "Regulatory guide to Decree 450/2023", ar: "الدليل الإرشادي للقرار 450 لسنة 2023"}
+  status: "in-force"
+  url: "https://www.edaegypt.gov.eg/media/gnudqh4e/%D8%A7%D9%84%D8%AF%D9%84%D9%8A%D9%84-%D8%A7%D9%84%D8%AA%D9%86%D8%B8%D9%8A%D9%85%D9%89%D9%89-%D9%84%D9%82%D8%B1%D8%A7%D8%B1-%D8%B1%D8%A6%D9%8A%D8%B3-%D8%A7%D9%84%D9%87%D9%8A%D8%A6%D8%A9-450-%D8%A7%D9%84%D8%A7%D8%B5%D8%AF%D8%A7_ver5.pdf"
+  issued: "2025-10-30"
+  effective: "2025-11-01"
+  file: "docs/ctd/sources/EDA_GL.CAPP.027_v5_2025_guide-decree-450.pdf"
   held: true
-  checked: {on: '2026-11-06', how: cover}
-  aliases: ['GL.CAPP.027']
+  checked: {on: "2026-11-06", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "current", note: "the website publishes the Arabic edition of the same version (issued 30/10/2025)"}
+  aliases: ["GL.CAPP.027"]
 - id: eda-decree-150-guide-v7
-  authority: EG-EDA
-  code: Regulatory guide to Decree 150/2022 (re-registration)
-  version: '7'
-  title: {en: Regulatory guide to Decree 150/2022 — re-registration, ar: الدليل الإرشادي للقرار 150 لسنة 2022 — إعادة التسجيل}
-  status: in-force
-  issued: '2025-12-30'
-  effective: '2026-01-01'
-  file: docs/ctd/sources/EDA_guide-decree-150_v7_2025.pdf
+  authority: "EG-EDA"
+  code: "Regulatory guide to Decree 150/2022 (re-registration)"
+  version: "7"
+  title: {en: "Regulatory guide to Decree 150/2022 — re-registration", ar: "الدليل الإرشادي للقرار 150 لسنة 2022 — إعادة التسجيل"}
+  status: "in-force"
+  url: "https://www.edaegypt.gov.eg/media/fhopxitw/regulatory-guide-of-eda-chairman-150-2022-version-7-3-_en-2026.pdf"
+  issued: "2025-12-30"
+  effective: "2026-01-01"
+  supersedes: "GL.CAPP.030 v5 (2023-11-30)"
+  file: "docs/ctd/sources/EDA_guide-decree-150_v7_2025.pdf"
   held: true
-  supersedes: GL.CAPP.030 v5 (2023-11-30)
-  checked: {on: '2026-11-06', how: cover}
-  note: The cover carries no EDREX code; older records call it GL.CAPP.030.
-  aliases: ['EDA GL.CAPP.030', 'GL.CAPP.030', 'Decree 150']
+  checked: {on: "2026-11-06", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "current"}
+  note: "The cover carries no EDREX code; older records call it GL.CAPP.030."
+  aliases: ["EDA GL.CAPP.030", "GL.CAPP.030", "Decree 150"]
 - id: eda-gl-capp-039-v1
-  authority: EG-EDA
-  code: GL.CAPP.039
-  version: '1'
-  title: {en: Quality Module for products for re-registration, ar: موديول الجودة للمستحضرات المقدمة لإعادة التسجيل}
-  status: in-force
-  issued: '2025-04-30'
-  effective: '2026-01-01'
-  file: docs/ctd/sources/EDA_GL.CAPP.039_v1_2025_QM-re-registration.pdf
+  authority: "EG-EDA"
+  code: "GL.CAPP.039"
+  version: "1"
+  title: {en: "Quality Module for products for re-registration", ar: "موديول الجودة للمستحضرات المقدمة لإعادة التسجيل"}
+  status: "in-force"
+  url: "https://edaegypt.gov.eg/media/cfpbtrpq/egyptian-guidelines-on-quality-module-for-human-pharmaceuticals-for-products-submitted-for-re-registeration2.pdf"
+  issued: "2025-04-30"
+  effective: "2026-01-01"
+  file: "docs/ctd/sources/EDA_GL.CAPP.039_v1_2025_QM-re-registration.pdf"
   held: true
-  checked: {on: '2026-11-06', how: cover}
-  aliases: ['GL.CAPP.039 v1/2025', 'GL.CAPP.039 v1', 'GL.CAPP.039']
+  checked: {on: "2026-11-06", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "current"}
+  aliases: ["GL.CAPP.039 v1/2025", "GL.CAPP.039 v1", "GL.CAPP.039"]
 - id: eda-np-capp-040-v1
-  authority: EG-EDA
-  code: NP.CAPP.040
-  version: '1'
-  title: {en: Quality Module file — most common deficiencies (Notice to Applicants), ar: ملف موديول الجودة — أشهر النواقص (إشعار لمقدمي الطلبات)}
-  status: in-force
-  issued: '2022-03-09'
-  file: docs/ctd/sources/EDA_NP.CAPP.040_v1_2022_QM-common-deficiencies.pdf
+  authority: "EG-EDA"
+  code: "NP.CAPP.040"
+  version: "1"
+  title: {en: "Quality Module file — most common deficiencies (Notice to Applicants)", ar: "ملف موديول الجودة — أشهر النواقص (إشعار لمقدمي الطلبات)"}
+  status: "in-force"
+  url: "https://edaegypt.gov.eg/media/shmbx5of/note-to-applicant-quality-module-file-most-common-deficiencies_.pdf"
+  issued: "2022-03-09"
+  file: "docs/ctd/sources/EDA_NP.CAPP.040_v1_2022_QM-common-deficiencies.pdf"
   held: true
-  checked: {on: '2026-11-06', how: cover}
-  aliases: ['NP.CAPP.040 v1/2022', 'NP.CAPP.040 v1', 'NP.CAPP.040']
+  checked: {on: "2026-11-06", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "current"}
+  aliases: ["NP.CAPP.040 v1/2022", "NP.CAPP.040 v1", "NP.CAPP.040"]
 - id: eda-np-capp-090-v2
-  authority: EG-EDA
-  code: NP.CAPP.090
-  version: '2'
-  title: {en: File content of the stability study dossier (Notice to Applicants), ar: محتوى ملف دراسة الثبات (إشعار لمقدمي الطلبات)}
-  status: in-force
-  issued: '2026-08-06'
-  file: docs/ctd/sources/EDA_NP.CAPP.090_v2_2026_stability-dossier-content.pdf
+  authority: "EG-EDA"
+  code: "NP.CAPP.090"
+  version: "2"
+  title: {en: "File content of the stability study dossier (Notice to Applicants)", ar: "محتوى ملف دراسة الثبات (إشعار لمقدمي الطلبات)"}
+  status: "in-force"
+  url: "https://www.edaegypt.gov.eg/media/x5nafcon/%D8%AF%D9%84%D9%8A%D9%84-%D9%85%D8%AD%D8%AA%D9%88%D9%89-%D9%85%D9%84%D9%81-%D8%AF%D8%B1%D8%A7%D8%B3%D8%A9-%D8%A7%D9%84%D8%AB%D8%A8%D8%A7%D8%AA-%D8%B9%D8%B1%D8%A8%D9%8A_ar-up-2-2026.pdf"
+  issued: "2026-08-06"
+  file: "docs/ctd/sources/EDA_NP.CAPP.090_v2_2026_stability-dossier-content.pdf"
   held: true
-  checked: {on: '2026-11-06', how: cover}
-  aliases: ['NP.CAPP.090 v2/2026', 'NP.CAPP.090 v2', 'NP.CAPP.090', 'EDA stability guidelines']
+  checked: {on: "2026-11-06", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "current", note: "the website publishes the Arabic edition of the same version (issued 6/8/2026)"}
+  aliases: ["NP.CAPP.090 v2/2026", "NP.CAPP.090 v2", "NP.CAPP.090", "EDA stability guidelines"]
 - id: eda-np-capp-112-v1
-  authority: EG-EDA
-  code: NP.CAPP.112
-  version: '1'
-  title: {en: Relevant sections of the CTD for human variations (Notice to Applicants), ar: أقسام الـ CTD المطلوبة لمتغيرات المستحضرات البشرية (إشعار لمقدمي الطلبات)}
-  status: in-force
-  issued: '2026-07-01'
-  file: docs/ctd/sources/EDA_NP.CAPP.112_v1_2026_variations-CTD-sections.pdf
+  authority: "EG-EDA"
+  code: "NP.CAPP.112"
+  version: "1"
+  title: {en: "Relevant sections of the CTD for human variations (Notice to Applicants)", ar: "أقسام الـ CTD المطلوبة لمتغيرات المستحضرات البشرية (إشعار لمقدمي الطلبات)"}
+  status: "in-force"
+  url: "https://edaegypt.gov.eg/media/xmifvevo/final-sections-parts-final_2026.pdf"
+  issued: "2026-07-01"
+  file: "docs/ctd/sources/EDA_NP.CAPP.112_v1_2026_variations-CTD-sections.pdf"
   held: true
-  checked: {on: '2026-11-06', how: cover}
-  aliases: ['NP.CAPP.112']
+  checked: {on: "2026-11-06", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "current"}
+  aliases: ["NP.CAPP.112"]
 - id: eda-gl-cadc-002-v2
-  authority: EG-EDA
-  code: GL.CADC.002
-  version: '02'
-  title: {en: Guidelines for file assessment of pharmaceutical products for human use (CADC), ar: إرشادات تقييم ملفات التحليل للمستحضرات البشرية (الإدارة المركزية للرقابة الدوائية)}
-  status: in-force
-  issued: '2024-05-23'
-  effective: '2024-06-01'
-  file: docs/ctd/sources/EDA_GL.CADC.002_v02_2024_CADC-file-assessment_IN-FORCE.pdf
+  authority: "EG-EDA"
+  code: "GL.CADC.002"
+  version: "02"
+  title: {en: "Guidelines for file assessment of pharmaceutical products for human use (CADC)", ar: "إرشادات تقييم ملفات التحليل للمستحضرات البشرية (الإدارة المركزية للرقابة الدوائية)"}
+  status: "superseded"
+  issued: "2024-05-23"
+  effective: "2024-06-01"
+  superseded_by: "eda-gl-cadc-002-v3"
+  file: "docs/ctd/sources/EDA_GL.CADC.002_v02_2024_CADC-file-assessment_IN-FORCE.pdf"
   held: true
-  checked: {on: '2026-11-06', how: cover}
-  aliases: ['GL.CADC.002 v02/2024', 'GL.CADC.002 v02', 'GL.CADC.002']
+  checked: {on: "2026-11-06", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "replaced by version 3 (issued 18/10/2026, in force from 20/10/2026)"}
+  aliases: ["GL.CADC.002 v02/2024", "GL.CADC.002 v02", "GL.CADC.002"]
+- id: eda-gl-cadc-002-v3
+  authority: "EG-EDA"
+  code: "GL.CADC.002"
+  version: "3"
+  title: {en: "Guidelines for File Assessment for Pharmaceutical Products for Human Use (Central Administration of Drug Control)", ar: "إرشادات تقييم ملفات المستحضرات الصيدلية البشرية (الإدارة المركزية للرقابة الدوائية)"}
+  status: "in-force"
+  url: "https://www.edaegypt.gov.eg/media/4bsliucu/final-guidelines_for_technical_assessment_of_finished_pharmaceutical_products_for_human_ver3en-2026.pdf"
+  issued: "2026-10-18"
+  effective: "2026-10-20"
+  supersedes: "GL.CADC.002 v02 (2024)"
+  file: "docs/ctd/sources/EDA_GL.CADC.002_v3_2026_file-assessment.pdf"
+  held: true
+  checked: {on: "2026-11-14", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "current"}
+  aliases: ["GL.CADC.002 v3/2026", "GL.CADC.002 v3"]
 - id: eda-gl-bioinn-004-v5
-  authority: EG-EDA
-  code: GL.Bioinn.004
-  version: '5'
-  title: {en: Biological products — file content (aligned with Module 1 eCTD), ar: المستحضرات الحيوية — محتوى الملف (متوافق مع الموديول الأول للـ eCTD)}
-  status: in-force
-  issued: '2026-05-25'
-  file: docs/ctd/sources/EDA_GL.Bioinn.004_v5_2026_biologics-file-content-M1-eCTD-aligned.pdf
+  authority: "EG-EDA"
+  code: "GL.Bioinn.004"
+  version: "5"
+  title: {en: "Biological products — file content (aligned with Module 1 eCTD)", ar: "المستحضرات الحيوية — محتوى الملف (متوافق مع الموديول الأول للـ eCTD)"}
+  status: "in-force"
+  url: "https://edaegypt.gov.eg/media/hnyderkn/update-of-file-content-guideline-ver05_2026.pdf"
+  issued: "2026-05-25"
+  file: "docs/ctd/sources/EDA_GL.Bioinn.004_v5_2026_biologics-file-content-M1-eCTD-aligned.pdf"
   held: true
-  checked: {on: '2026-11-06', how: index}
-  aliases: ['GL.Bioinn.004', 'GL.BioInn.004']
+  checked: {on: "2026-11-06", how: "index"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "current"}
+  aliases: ["GL.Bioinn.004", "GL.BioInn.004"]
 - id: eda-gl-cap-care-032-v4
-  authority: EG-EDA
-  code: GL.CAP.Care.032
-  version: '4'
-  title: {en: Egyptian guidelines for medical leaflets, ar: الإرشادات المصرية للنشرات الطبية}
-  status: in-force
-  issued: '2024'
-  held: false
-  checked: {on: '2026-11-06', how: index}
-  aliases: ['EDA GL.CAP.Care.032', 'GL.CAP.Care.032']
+  authority: "EG-EDA"
+  code: "GL.CAP.Care.032"
+  version: "4"
+  title: {en: "Egyptian guidelines for medical leaflets", ar: "الإرشادات المصرية للنشرات الطبية"}
+  status: "in-force"
+  url: "https://edaegypt.gov.eg/media/hcnldkhw/guide-line-edrex-gl-cap-care-032-egyptian-guidelines.pdf"
+  issued: "2024"
+  effective: "2024-09-20"
+  file: "docs/ctd/sources/EDA_GL.CAP.Care.032_v4_2024_medical-leaflets.pdf"
+  held: true
+  checked: {on: "2026-11-14", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "current"}
+  aliases: ["EDA GL.CAP.Care.032", "GL.CAP.Care.032"]
 - id: eda-gl-ppma-004-v5
-  authority: EG-EDA
-  code: GL.PPMA.004
-  version: '5'
-  title: {en: EDA guideline GL.PPMA.004 — import approvals (Pharmaceutical Policies and Market Access), ar: دليل الهيئة GL.PPMA.004 — الموافقات الاستيرادية (السياسات الدوائية ودعم الأسواق)}
-  status: in-force
-  held: false
-  checked: {on: '2026-11-06', how: record}
-  confirm: the exact title, from the official copy
-  aliases: ['EDA GL.PPMA.004', 'GL.PPMA.004']
+  authority: "EG-EDA"
+  code: "GL.PPMA.004"
+  version: "5"
+  title: {en: "Rules and procedures for importing medicinal products, their raw materials and packaging materials, and their medical customs release (Pharmaceutical Policies and Market Access)", ar: "الدليل التنظيمي للقواعد والإجراءات المنظمة لعملية الاستيراد والإفراج الطبي الجمركي للمستحضرات الطبية وخاماتها ومستلزمات التعبئة والتغليف"}
+  status: "in-force"
+  url: "https://www.edaegypt.gov.eg/media/yr1bwx2z/edrex-ppma-gl-004-version-5-ar-10.pdf"
+  issued: "2026-04-05"
+  effective: "2026-04-05"
+  file: "docs/ctd/sources/EDA_GL.PPMA.004_v5_2026_import-and-customs-release_AR.pdf"
+  held: true
+  checked: {on: "2026-11-14", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "current"}
+  aliases: ["EDA GL.PPMA.004", "GL.PPMA.004"]
 - id: eda-pricing-decision-480-2026
   authority: EG-EDA
   code: EDA decision 480/2026
@@ -203,23 +254,33 @@
   checked: {on: '2026-11-06', how: record}
   aliases: ['EDA GL.CAO.005', 'GL.CAO.005']
 - id: eda-np-capp-093-v1
-  authority: EG-EDA
-  code: NP.CAPP.093
-  version: '1'
-  title: {en: Fifth-year report after registration (Notice to Applicants), ar: تقرير السنة الخامسة بعد التسجيل (إشعار لمقدمي الطلبات)}
-  status: in-force
-  held: false
-  checked: {on: '2026-11-06', how: record}
-  aliases: ['NP.CAPP.093']
+  authority: "EG-EDA"
+  code: "NP.CAPP.093"
+  version: "1"
+  title: {en: "Guideline for the fifth-year report submission (Notice to Applicants)", ar: "إرشادات تقديم تقرير السنة الخامسة (إشعار لمقدمي الطلبات)"}
+  status: "in-force"
+  url: "https://edaegypt.gov.eg/media/lbfa435e/guidline-for-fifth-year-report-submission.pdf"
+  issued: "2024-09-01"
+  effective: "2024-09-01"
+  file: "docs/ctd/sources/EDA_NP.CAPP.093_v1_2024_fifth-year-report.pdf"
+  held: true
+  checked: {on: "2026-11-14", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "current"}
+  aliases: ["NP.CAPP.093"]
 - id: eda-np-capp-109-v2
-  authority: EG-EDA
-  code: NP.CAPP.109
-  version: '2'
-  title: {en: Notice to Applicants NP.CAPP.109, ar: إشعار لمقدمي الطلبات NP.CAPP.109}
-  status: in-force
-  held: false
-  checked: {on: '2026-11-06', how: record}
-  aliases: ['NP.CAPP.109']
+  authority: "EG-EDA"
+  code: "NP.CAPP.109"
+  version: "2"
+  title: {en: "Administrative, relevant documents and time frames for human pharmaceutical variations (Notice to Applicants)", ar: "المستندات الإدارية والمستندات ذات الصلة والمدد الزمنية لتغييرات المستحضرات البشرية (إشعار لمقدمي الطلبات)"}
+  status: "in-force"
+  url: "https://www.edaegypt.gov.eg/media/n0gjk4zk/notice-to-applicant-version-2_adminstrative-en-up-2026.pdf"
+  issued: "2026-10-15"
+  effective: "2026-10-15"
+  file: "docs/ctd/sources/EDA_NP.CAPP.109_v2_2026_variations-admin-documents-timeframes.pdf"
+  held: true
+  checked: {on: "2026-11-14", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "current"}
+  aliases: ["NP.CAPP.109"]
 - id: eda-submission-procedures
   authority: EG-EDA
   code: Submission Procedures for Registration Dossiers — a step-by-step overview
@@ -242,6 +303,131 @@
   checked: {on: '2026-11-06', how: download}
   aliases: ['EDA Variation Self-Guided Tool']
 
+- id: eda-gl-nitrosamines-v1
+  authority: "EG-EDA"
+  code: "GL.BIOINN/CADC/CAPCARE/CAPP/CIP/PPMA.001"
+  version: "1"
+  title: {en: "Guideline on the control of nitrosamine impurities (joint guideline of six EDA central administrations)", ar: "الدليل التنظيمي للتحكم في شوائب النيتروزامين (دليل مشترك لست إدارات مركزية بالهيئة)"}
+  status: "in-force"
+  url: "https://www.edaegypt.gov.eg/media/nthhc0ol/final-guidelines-for-nitrosamine-issue-date2026.pdf"
+  issued: "2025-12-30"
+  effective: "2025-12-30"
+  file: "docs/ctd/sources/EDA_GL.multi.001_v1_2025_nitrosamines.pdf"
+  held: true
+  checked: {on: "2026-11-14", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "current"}
+  aliases: ["EDA nitrosamine guideline", "GL.BIOINN/CADC/CAPCARE/CAPP/CIP/PPMA.001"]
+- id: eda-gl-grp-v2
+  authority: "EG-EDA"
+  code: "GL.BIOINN/CAMD/CAPP.001"
+  version: "2"
+  title: {en: "Good Review Practice Guideline (EDA Chairman Decree 512/2022)", ar: "دليل الممارسة الجيدة للمراجعة (قرار رئيس الهيئة 512 لسنة 2022)"}
+  status: "in-force"
+  url: "https://edaegypt.gov.eg/media/vfuh5llb/good-review-practice-guideline.pdf"
+  issued: "2022-10-02"
+  effective: "2022-10-02"
+  file: "docs/ctd/sources/EDA_GL.BIOINN-CAMD-CAPP.001_v2_2022_good-review-practice.pdf"
+  held: true
+  checked: {on: "2026-11-14", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "current"}
+  aliases: ["EDA good review practice", "GL.BIOINN/CAMD/CAPP.001"]
+- id: eda-gl-capp-025-v4
+  authority: "EG-EDA"
+  code: "GL.CAPP.025"
+  version: "4"
+  title: {en: "Guidelines on reliance practices during registration of medicinal products", ar: "إرشادات الاعتماد على قرارات الهيئات المرجعية أثناء تسجيل المستحضرات"}
+  status: "in-force"
+  url: "https://edaegypt.gov.eg/media/wjmbodsf/guide-line-reliance-practices-during-registration-of-medicinal-products.pdf"
+  issued: "2024-08-11"
+  effective: "2024-08-11"
+  file: "docs/ctd/sources/EDA_GL.CAPP.025_v4_2024_reliance-registration.pdf"
+  held: true
+  checked: {on: "2026-11-14", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "current"}
+  aliases: ["GL.CAPP.025", "EDA reliance guideline"]
+- id: eda-gl-capp-022-v3
+  authority: "EG-EDA"
+  code: "GL.CAPP.022"
+  version: "3.0"
+  title: {en: "Guidelines for mock-up design of human pharmaceutical products", ar: "إرشادات تصميم العبوات (Mock-up) للمستحضرات البشرية"}
+  status: "in-force"
+  url: "https://edaegypt.gov.eg/media/muiemubl/guidelines-for-mock-up-design-of-human-pharmaceutical-products-_compressed.pdf"
+  issued: "2023-05-01"
+  file: "docs/ctd/sources/EDA_GL.CAPP.022_v3_2023_mock-up-design.pdf"
+  held: true
+  checked: {on: "2026-11-14", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "current"}
+  aliases: ["GL.CAPP.022", "EDA mock-up guideline"]
+- id: eda-gl-capp-023-v4
+  authority: "EG-EDA"
+  code: "GL.CAPP.023"
+  version: "4"
+  title: {en: "Naming guidelines for human pharmaceutical products", ar: "إرشادات أسماء المستحضرات البشرية"}
+  status: "in-force"
+  url: "https://edaegypt.gov.eg/media/cg0pldcu/naming-guidelines-version-4.pdf"
+  issued: "2024-04-22"
+  effective: "2024-04-30"
+  file: "docs/ctd/sources/EDA_GL.CAPP.023_v4_2024_naming.pdf"
+  held: true
+  checked: {on: "2026-11-14", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "current"}
+  aliases: ["GL.CAPP.023", "EDA naming guideline"]
+- id: eda-np-capp-108-v1
+  authority: "EG-EDA"
+  code: "NP.CAPP.108"
+  version: "1"
+  title: {en: "Guidance for human pharmaceutical type II variations (Notice to Applicants)", ar: "إرشادات تغييرات المستحضرات البشرية من النوع الثاني (إشعار لمقدمي الطلبات)"}
+  status: "in-force"
+  url: "https://edaegypt.gov.eg/media/1c1guytq/guidance-for-human-pharmaceutical-type-ii-var.pdf"
+  issued: "2025-12-15"
+  effective: "2026-01-01"
+  file: "docs/ctd/sources/EDA_NP.CAPP.108_v1_2025_type-II-variations.pdf"
+  held: true
+  checked: {on: "2026-11-14", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "current"}
+  aliases: ["NP.CAPP.108"]
+- id: eda-np-capp-089-v2
+  authority: "EG-EDA"
+  code: "NP.CAPP.089"
+  version: "2"
+  title: {en: "EDA reference countries (Notice to Applicants)", ar: "الدول المرجعية لهيئة الدواء (إشعار لمقدمي الطلبات)"}
+  status: "in-force"
+  url: "https://edaegypt.gov.eg/media/5d0kjyzg/notice-to-app-eda-reference-countries_ver2-2026.pdf"
+  issued: "2026-06-01"
+  effective: "2027-01-01"
+  file: "docs/ctd/sources/EDA_NP.CAPP.089_v2_2026_reference-countries.pdf"
+  held: true
+  checked: {on: "2026-11-14", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "current"}
+  note: "Issued June 2026; applies from 1/1/2027."
+  aliases: ["NP.CAPP.089", "EDA reference countries"]
+- id: eda-np-capp-063-v3
+  authority: "EG-EDA"
+  code: "NP.CAPP.063"
+  version: "3"
+  title: {en: "Time frames for human pharmaceutical variations (Notice to Applicants)", ar: "المدد الزمنية لتغييرات المستحضرات البشرية (إشعار لمقدمي الطلبات)"}
+  status: "in-force"
+  url: "https://www.edaegypt.gov.eg/media/ninjm4s4/note-to-applicant-hum-var-time-frames_.pdf"
+  issued: "2024-01-21"
+  effective: "2024-01-21"
+  file: "docs/ctd/sources/EDA_NP.CAPP.063_v3_2024_variation-timeframes.pdf"
+  held: true
+  checked: {on: "2026-11-14", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "current"}
+  aliases: ["NP.CAPP.063"]
+- id: eda-np-cip-002-v3
+  authority: "EG-EDA"
+  code: "NP.CIP.002"
+  version: "3.0"
+  title: {en: "Adoption of the ICH quality guidelines (Central Administration of Inspection, Notice to Applicants)", ar: "اعتماد إرشادات الجودة الصادرة عن ICH (الإدارة المركزية للتفتيش، إشعار لمقدمي الطلبات)"}
+  status: "in-force"
+  url: "https://www.edaegypt.gov.eg/media/r2clgjp0/notice-to-applicant-2026-ich-final-_en-03-2026.pdf"
+  issued: "2026-05-01"
+  file: "docs/ctd/sources/EDA_NP.CIP.002_v3_2026_ICH-quality-adoption.pdf"
+  held: true
+  checked: {on: "2026-11-14", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "current"}
+  aliases: ["NP.CIP.002"]
 # ---------------------------------------------------------------- Egyptian Drug Authority — drafts (never cited as a requirement)
 - id: eda-np-capp-065-v6-draft
   authority: EG-EDA
@@ -249,6 +435,7 @@
   version: 6 (draft)
   title: {en: Submission Guidance for the CTD — version 6 (draft for consultation), ar: دليل تقديم ملف الـ CTD — الإصدار 6 (مسودة للاستشارة)}
   status: draft
+  numbering: true
   issued: '2026-10-15'
   file: docs/ctd/sources/EDA_NP.CAPP.065_v6_DRAFT_2026_CTD-submission-guidance.pdf
   held: true
@@ -261,6 +448,7 @@
   version: 1.0 (draft)
   title: {en: EG Module 1 eCTD Specification (draft), ar: مواصفة الموديول الأول للـ eCTD المصري (مسودة)}
   status: draft
+  numbering: true
   issued: '2026-09-02'
   file: docs/ctd/sources/EDA_EG-Module1-eCTD-Specification_DRAFT_v1.0_2026.pdf
   held: true
@@ -285,20 +473,23 @@
   version: 1/2026 (draft)
   title: {en: Technical Guidance for eCTD Submissions in Egypt (draft), ar: الإرشادات الفنية لتقديم ملفات الـ eCTD في مصر (مسودة)}
   status: draft
+  numbering: true
   file: docs/ctd/sources/EDA_eCTD-technical-guidance_DRAFT_v1_2026.pdf
   held: true
   checked: {on: '2026-11-06', how: cover}
   aliases: ['EG eCTD TG draft', 'EG eCTD TG', 'EG eCTD Technical Guidance']
 - id: eda-gl-cadc-002-v3-draft
-  authority: EG-EDA
-  code: GL.CADC.002
-  version: 3/2025 (draft)
-  title: {en: CADC file assessment guidelines — finished products (draft), ar: إرشادات تقييم ملفات التحليل — المستحضرات النهائية (مسودة)}
-  status: draft
-  file: docs/ctd/sources/EDA_CADC_Guidelines-File-Assessment-FPP_DRAFT.pdf
+  authority: "EG-EDA"
+  code: "GL.CADC.002"
+  version: "3/2025 (draft)"
+  title: {en: "CADC file assessment guidelines — finished products (draft)", ar: "إرشادات تقييم ملفات التحليل — المستحضرات النهائية (مسودة)"}
+  status: "superseded"
+  superseded_by: "eda-gl-cadc-002-v3"
+  file: "docs/ctd/sources/EDA_CADC_Guidelines-File-Assessment-FPP_DRAFT.pdf"
   held: true
-  checked: {on: '2026-11-06', how: cover}
-  aliases: ['GL.CADC.002 v3']
+  checked: {on: "2026-11-06", how: "cover"}
+  latest: {on: "2026-11-14", where: "edaegypt.gov.eg (regulatory guidelines and notices to applicants)", result: "published as final (version 3, 18/10/2026)"}
+  aliases: ["GL.CADC.002 v3 draft"]
 - id: eda-module1-guidance-old-draft
   authority: EG-EDA
   code: Submission Guidance for Module I
@@ -327,6 +518,7 @@
   version: R4
   title: {en: Organisation of the Common Technical Document (with the granularity annex), ar: تنظيم ملف الـ CTD (مع ملحق التقسيم)}
   status: in-force
+  numbering: true
   issued: '2016-06-15'
   file: docs/ctd/sources/ICH_M4_R4_organisation-granularity.pdf
   held: true
@@ -338,6 +530,7 @@
   version: R1
   title: {en: The CTD — Quality (Module 2.3 and Module 3), ar: ملف الـ CTD — الجودة (الموديول 2.3 والموديول 3)}
   status: in-force
+  numbering: true
   issued: '2002-09-12'
   file: docs/ctd/sources/ICH_M4Q_R1.pdf
   held: true
@@ -380,6 +573,7 @@
   version: 3.2.2
   title: {en: ICH eCTD Specification v3.2.2 (with the DTD and the empty folder template), ar: مواصفة الـ eCTD من ICH الإصدار 3.2.2 (مع الـ DTD وقالب الفولدرات)}
   status: in-force
+  numbering: true
   issued: '2008-07-16'
   file: docs/ctd/sources/ectd/ICH_eCTD_Specification_v3.2.2_2008.pdf
   held: true
@@ -513,6 +707,7 @@
   version: 3.1.1
   title: {en: EU Module 1 eCTD Specification, ar: مواصفة الموديول الأول الأوروبي للـ eCTD}
   status: in-force
+  numbering: true
   issued: '2025-06'
   url: https://esubmission.ema.europa.eu/eumodule1/
   file: docs/ctd/sources/ectd/EU_M1_Specification_v3.1.1_2025.pdf
@@ -580,6 +775,7 @@
   version: '1.5'
   title: {en: GCC Module 1 Specifications, ar: مواصفات الموديول الأول الخليجي}
   status: in-force
+  numbering: true
   issued: '2015-11'
   url: https://sfda.gov.sa/sites/default/files/2021-03/GCC%20Module%201%20Specifications_v1.5-EN.pdf
   file: docs/ctd/sources/ectd/SFDA_GCC_Module1_Specifications_v1.5_2015.pdf
@@ -605,6 +801,7 @@
   version: 2.3.3
   title: {en: FDA — the comprehensive table of contents headings and hierarchy, ar: هيئة الغذاء والدواء الأمريكية — جدول العناوين الشامل وترتيبها}
   status: in-force
+  numbering: true
   issued: '2020-11-09'
   url: https://www.fda.gov/media/76444/download
   file: docs/ctd/sources/ectd/FDA_Comprehensive_TOC_Headings_Hierarchy.pdf
@@ -617,6 +814,7 @@
   version: '2.6'
   title: {en: FDA eCTD backbone files specification for Module 1, ar: مواصفة ملفات الهيكل للموديول الأول الأمريكي}
   status: in-force
+  numbering: true
   file: docs/ctd/sources/ectd/FDA_eCTD_Backbone_Module1_Specification_v2.6.pdf
   held: true
   checked: {on: '2026-11-13', how: cover}

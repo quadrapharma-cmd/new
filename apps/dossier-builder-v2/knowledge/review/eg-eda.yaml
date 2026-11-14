@@ -33,8 +33,9 @@
       - صحيحة وكاملة
   cite:
     - src: eda-np-capp-065-v5
-      at: 1.0 cover letter (eCTD) · general notes
-      quote: The soft copy must be complete for the file to be accepted for assessment
+      at: p.13, note 1
+      gist: The soft copy must be complete for the file to be accepted for assessment
+      quote: In order to accept the registration file for assessment soft copies must be fulfilled.
   anchor_cite:
     - src: who-pq-screening
       at: §1 cover letter
@@ -68,8 +69,9 @@
       - board.missing_required
   cite:
     - src: eda-np-capp-065-v5
-      at: General notes, note 1
-      quote: The soft copy must be complete for the file to be accepted for assessment
+      at: p.13, note 1
+      gist: The soft copy must be complete for the file to be accepted for assessment
+      quote: In order to accept the registration file for assessment soft copies must be fulfilled.
 - id: EG-EDA/SC-PDF-01
   kind: rule
   authority: EG-EDA
@@ -137,7 +139,7 @@
   cite:
     - src: eda-np-capp-065-v5
       at: 1.1.5 pricing certificate · 1.1.17.2 register of trade · 1.2.4 GMP
-      quote: Must be valid
+      gist: Must be valid
 - id: EG-EDA/SC-CEP-01
   kind: rule
   authority: EG-EDA
@@ -179,11 +181,13 @@
       - apis.cep_status
   cite:
     - src: eda-np-capp-040-v1
-      at: Option 2 — CEP
+      at: Option 2
       quote: Box of authorization in the CEP is not filled or signed by the CEP holder
+      note: CEP
   anchor_cite:
     - src: who-pq-screening
-      at: CEP — check the valid version on the EDQM site
+      at: CEP
+      note: check the valid version on the EDQM site
 - id: EG-EDA/SC-CEP-02
   kind: rule
   authority: EG-EDA
@@ -217,8 +221,9 @@
       - inform
   cite:
     - src: eda-np-capp-040-v1
-      at: Option 2 — CEP
+      at: Option 2
       quote: Absence of the acknowledgement commitment letter by the applicant to EDA in case of CEP withdrawal or updates
+      note: CEP
 - id: EG-EDA/SC-SITE-01
   kind: rule
   authority: EG-EDA
@@ -346,7 +351,7 @@
   cite:
     - src: eda-np-capp-065-v5
       at: 1.1.13 CPP · 1.1.17.7 agreements
-      quote: legalised
+      gist: legalised
 - id: EG-EDA/SC-WHO-QOS
   kind: rule
   authority: EG-EDA
@@ -379,8 +384,12 @@
       - 2.3.P
   cite:
     - src: who-pq-screening
-      at: QOS / QIS
-      quote: QOS and QIS as Word, in the latest template, unaltered
+      at: items 9(a), 9(b)
+      gist: QOS and QIS as Word, in the latest template, unaltered
+      quote: >-
+        Has the applicant submitted Quality Overall Summary – Product Dossier (QOS-PD) and Quality Information Summary (QIS) as Word
+        documents using the most recent version? · Has the QOS and/or QIS template been altered (missing sections, subsections, tables,
+        etc)?
   anchor_cite:
     - src: who-pq-qos-pd
       at: PD template 01/2025
@@ -419,9 +428,15 @@
       - N-nitroso
       - نيتروزامين
   cite:
+    - src: eda-gl-nitrosamines-v1
+      at: §5.3.1.1
+      quote: >-
+        Manufacturers should conduct a comprehensive risk assessment for all chemically synthesized APIs and drug products to evaluate the
+        potential for nitrosamine formation or contamination.
     - src: who-pq-screening
-      at: nitrosamine
-      quote: Nitrosamine RA declared
+      at: item 11(a)
+      gist: Nitrosamine RA declared
+      quote: Has risk assessment for the potential presence of nitrosamines impurity been conducted and the outcome declared?
   anchor_cite:
     - src: ema-nitrosamines-qa
       at: rev.
@@ -1185,10 +1200,11 @@
       - batches
   cite:
     - src: eda-np-capp-040-v1
-      at: Option 2 — CEP
+      at: Option 2
       quote: >-
         Specifying a different reference quality standard for the API other than the European Pharmacopeia (ex: USP, In-House) · Absence of
         Batch Analysis for 2 API batches
+      note: CEP
 - id: EG-EDA/QM-P1-01
   kind: rule
   authority: EG-EDA
@@ -1717,7 +1733,8 @@
         of numerical value
   anchor_cite:
     - src: who-trs986-annex6
-      at: FPP batch analysis — at least 2 batches of at least pilot scale
+      at: FPP batch analysis
+      note: at least 2 batches of at least pilot scale
 - id: EG-EDA/QM-P55-01
   kind: rule
   authority: EG-EDA
@@ -1983,8 +2000,9 @@
       - stability
   cite:
     - src: who-trs986-annex6
-      at: stability — primary batches
+      at: stability
       quote: at least 2 batches of at least pilot scale
+      note: primary batches
   anchor_cite:
     - src: who-pq-screening
       at: ≥ 6 months accelerated + ≥ 6 months long-term on ≥ 2 pilot-scale FPP batches
@@ -2025,10 +2043,11 @@
   cite:
     - src: eda-np-capp-040-v1
       at: 3.2.R.1.1
-      quote: executed records of the three manufactured batches
+      gist: executed records of the three manufactured batches
   anchor_cite:
     - src: who-trs986-annex6
-      at: 3.2.R.1.1 — executed records of the biobatch
+      at: 3.2.R.1.1
+      note: executed records of the biobatch
 - id: EG-EDA/QM-QOS-01
   kind: rule
   authority: EG-EDA
@@ -2063,8 +2082,9 @@
       - Quality Overall Summary
   cite:
     - src: eda-ctd-qm-v2
-      at: 4.1 Module 3 — structured CTD format
+      at: 4.1 Module 3
       quote: Information on Quality should be presented in the structured CTD format
+      note: structured CTD format
   anchor_cite:
     - src: ich-m4q-r1
       at: 2.3 QOS
@@ -2107,8 +2127,8 @@
       - BP
     data: []
   cite:
-    - src: eda-gl-cadc-002-v2
-      at: §6.5.2
+    - src: eda-gl-cadc-002-v3
+      at: §5.6.2
       quote: Whenever a pharmacopeia is used as a reference, this shall always refer to the most recent version thereof.
 - id: EG-EDA/CD-65-02
   kind: rule
@@ -2152,8 +2172,8 @@
       - not applicable
     data: []
   cite:
-    - src: eda-gl-cadc-002-v2
-      at: §6.5.3 and §6.5.7
+    - src: eda-gl-cadc-002-v3
+      at: §5.6.3 and §5.6.7
       quote: >-
         if the monograph specifies certain tests that are not stated in this guideline, the manufacturer/MAH should add those tests, or
         otherwise justify waiving those tests.
@@ -2197,9 +2217,19 @@
       - similarity
     data: []
   cite:
-    - src: eda-gl-cadc-002-v2
-      at: §6.5.4 and §6.5.5
-      quote: For new pharmaceutical drug products, a complete dissolution study with scientific justification should be submitted.
+    - src: eda-gl-cadc-002-v3
+      at: §5.6.5
+      quote: Complete comparative dissolution study in different media may be required.
+  check:
+    verdict: changed
+    note:
+      en: >-
+        GL.CADC.002 v3 (in force 20/10/2026) no longer has v2's §6.5.4 «For new pharmaceutical drug products, a complete dissolution study
+        with scientific justification should be submitted»; §5.6.5 keeps only that a complete comparative dissolution study in different
+        media may be required.
+      ar: >-
+        الإصدار 3 من GL.CADC.002 (ساري من 20/10/2026) شال جملة الإصدار 2 (§6.5.4) عن دراسة الذوبان الكاملة بمبرر علمي للمستحضرات الجديدة؛
+        و§5.6.5 بقت بتقول بس إن دراسة ذوبان مقارنة كاملة في أوساط مختلفة ممكن تتطلب.
 - id: EG-EDA/CD-65-04
   kind: rule
   authority: EG-EDA
@@ -2242,8 +2272,8 @@
       - marketing authori
     data: []
   cite:
-    - src: eda-gl-cadc-002-v2
-      at: §6.5.6.1
+    - src: eda-gl-cadc-002-v3
+      at: §5.6.6.1
       quote: >-
         The products are assessed and analyzed according to their specifications that have been previously approved by the reference
         country‘s NRA.
@@ -2290,8 +2320,8 @@
     data:
       - specs.product
   cite:
-    - src: eda-gl-cadc-002-v2
-      at: §6.5.8
+    - src: eda-gl-cadc-002-v3
+      at: §5.6.8
       quote: The products are assessed and analyzed according to shelf-life specifications.
 - id: EG-EDA/CD-66-01
   kind: rule
@@ -2338,8 +2368,8 @@
       - composition
       - apis
   cite:
-    - src: eda-gl-cadc-002-v2
-      at: §6.6.1.1 and §6.6.1.3
+    - src: eda-gl-cadc-002-v3
+      at: §5.7.1.1 and §5.7.1.3
       quote: The reference specified in the product composition (BP, USP etc.) must comply with the registration license.
 - id: EG-EDA/CD-66-02
   kind: rule
@@ -2381,8 +2411,8 @@
     data:
       - composition
   cite:
-    - src: eda-gl-cadc-002-v2
-      at: §6.6.1.2
+    - src: eda-gl-cadc-002-v3
+      at: §5.7.1.2
       quote: >-
         The function of inactive materials in product should be clarified according to Handbook of Pharmaceutical Excipients or any other
         reliable reference.
@@ -2431,8 +2461,8 @@
     data:
       - composition
   cite:
-    - src: eda-gl-cadc-002-v2
-      at: §6.6.2.1 and §6.6.2.2
+    - src: eda-gl-cadc-002-v3
+      at: §5.7.2.1 and §5.7.2.2
       quote: There should be a separate calculation sheet to calculate equivalency of salt to the base.
 - id: EG-EDA/CD-66-04
   kind: rule
@@ -2475,8 +2505,8 @@
     data:
       - packs
   cite:
-    - src: eda-gl-cadc-002-v2
-      at: §6.6.3.1 and §6.6.3.2
+    - src: eda-gl-cadc-002-v3
+      at: §5.7.3.1 and §5.7.3.2
       quote: A full description of the package , concordant with the attached samples , should be stated.
 - id: EG-EDA/CD-66-05
   kind: rule
@@ -2521,8 +2551,8 @@
       - specs.product
       - apis
   cite:
-    - src: eda-gl-cadc-002-v2
-      at: §6.6.4
+    - src: eda-gl-cadc-002-v3
+      at: §5.7.4
       quote: >-
         The finished product specification and certificate of analysis of production should contain the active material as stated in
         registration license and product composition.
@@ -2569,8 +2599,8 @@
       - receipt
     data: []
   cite:
-    - src: eda-gl-cadc-002-v2
-      at: §6.6.5
+    - src: eda-gl-cadc-002-v3
+      at: §5.7.5
       quote: In case of using updated method, the following shall be submitted
 - id: EG-EDA/CD-A1-01
   kind: rule
@@ -2618,7 +2648,7 @@
     data:
       - specs.product
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex I, tables 2, 7, 9, 12 and 14
       quote: Not more than 2 of the individual masses deviate from the average mass (actual) by more than the percentage deviation.
 - id: EG-EDA/CD-A1-02
@@ -2667,11 +2697,12 @@
     data:
       - specs.product
   cite:
-    - src: eda-gl-cadc-002-v2
-      at: Annex I, table 2 (capsules) and table 14 (tablets)
+    - src: eda-gl-cadc-002-v3
+      at: Annex I, table 2 (capsules) and table 14
       quote: >-
         Disintegration could substitute dissolution as a performance test if a justification submitted by the manufacturer that it obeys the
         ICH Q6A guidelines.
+      note: tablets
   anchor_cite:
     - src: ich-q6a
 - id: EG-EDA/CD-A1-03
@@ -2722,7 +2753,7 @@
     data:
       - specs.product
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex I, table 2 (capsules), item 4 Dissolution
       quote: Filter type (common types Nylon, PVDF & PTFE) o Media composition & pH o Media volume o Apparatus type o RPM o Temperature
 - id: EG-EDA/CD-A1-04
@@ -2775,7 +2806,7 @@
     data:
       - specs.product
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex I, table 14 (tablets), items 5–7
       quote: NMT 1 individual mass is outside the limits of 85- 115 % of the average mass.
 - id: EG-EDA/CD-A1-05
@@ -2820,7 +2851,7 @@
     data:
       - specs.product
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex I, table 14 (tablets), item 8 Water content
       quote: 'If not stated by manufacturer: Need justification to skip test'
 - id: EG-EDA/CD-A1-06
@@ -2867,7 +2898,7 @@
     data:
       - specs.product
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex I, table 10 (solutions), items 6, 11 and 12
       quote: Particulate Matter In Injections for Extra-ocular solutions for injections and for parenteral solutions
 - id: EG-EDA/CD-A1-07
@@ -2917,7 +2948,7 @@
     data:
       - specs.product
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex I, table 3 (creams, gels, ointments), item 2 Minimum fill
       quote: In case of single unit containers where the test for content uniformity is applied, the test for minimum fill is not required.
 - id: EG-EDA/CD-A1-08
@@ -2964,7 +2995,7 @@
     data:
       - specs.product
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex I, table 13 (suspensions), items 3 and 4
       quote: Aqueous suspensions It is formulation dependent, According to manufacturer specifications.
 - id: EG-EDA/CD-A1-09
@@ -3015,7 +3046,7 @@
     data:
       - specs.product
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex I, table 1 (aerosols), items 5–11
       quote: Perform these tests only on inhalation and nasal aerosol (metered dose)
 - id: EG-EDA/CD-A2-01
@@ -3069,7 +3100,7 @@
       - 500 mL
     data: []
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex II §1, Guide I
       quote: >-
         (1) Basket method: 100 rpm. (2) Paddle method: 50 rpm (or 75 rpm with appropriate justification) Dissolution criteria Q=80% in 30
@@ -3129,7 +3160,7 @@
       - rpm
     data: []
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex II §1, Guide II
       quote: An aqueous medium with pH range 1.2 to 6.8 (ionic strength of buffers the same as in USP) should be used.
   anchor_cite:
@@ -3180,7 +3211,7 @@
       - comparative dissolution
     data: []
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex II §2 Comparative dissolution study
       quote: Generally, f1 values up to 15 (0-15) and f2 values greater than 50 (50-100) ensure sameness or equivalence of the two curves
   anchor_cite:
@@ -3233,7 +3264,7 @@
     data:
       - apis
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex III §1.1
       quote: >-
         specifications of the API supplier are accepted only if they comply with the specifications listed in the pharmacopeia or tighter
@@ -3281,7 +3312,7 @@
     data:
       - specs.product
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex III §2.1.3
       quote: Identification test item must be included in the specification sheet and finished product certificate of analysis (CoA)
 - id: EG-EDA/CD-A3-03
@@ -3333,7 +3364,7 @@
       - specs.product
       - composition
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex III §2.1.4
       quote: General acceptance limit for the API is 90-110% of the Labeled claim.
 - id: EG-EDA/CD-A3-04
@@ -3382,13 +3413,20 @@
     data:
       - specs.product
   cite:
-    - src: eda-gl-cadc-002-v2
-      at: Annex III §2.1.5.1
-      quote: >-
-        Presence of unjustified peaks may require the performance of this test where applicable, which will be assessed according to ICH Q3B
-        guideline.
+    - src: eda-gl-cadc-002-v3
+      at: Annex III §2.1.5
+      quote: Test of impurities
   anchor_cite:
     - src: ich-q3b-r2
+  check:
+    verdict: changed
+    note:
+      en: >-
+        v3 removed v2's sentence on evaluating unjustified peaks per ICH Q3B (Annex III §2.1.5.1) and added tests for elemental and
+        mutagenic impurities (ICH Q3D, M7).
+      ar: >-
+        الإصدار 3 شال جملة الإصدار 2 عن تقييم القمم غير المبررة حسب ICH Q3B (الملحق III §2.1.5.1)، وضاف اختبارات الشوائب العنصرية والمطفّرة
+        (ICH Q3D وM7).
 - id: EG-EDA/CD-A3-05
   kind: rule
   authority: EG-EDA
@@ -3436,7 +3474,7 @@
     data:
       - specs.product
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex III §2.1.5.2
       quote: Assessment of residual solvents impurities will be according to ICH Q3C, unless otherwise specified in the specific monograph.
   anchor_cite:
@@ -3488,7 +3526,7 @@
     data:
       - specs.product
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex III §2.1.5 Uniformity of dosage unit
       quote: >-
         Uniformity of dosage units USP <905>, Ph.Eur. 2.9.40. and JP 6.02 where target Value (T) =100% otherwise stated in the product
@@ -3537,9 +3575,10 @@
       - specific
     data: []
   cite:
-    - src: eda-gl-cadc-002-v2
-      at: Annex III §2.2 Method of analysis (MOA)
+    - src: eda-gl-cadc-002-v3
+      at: Annex III §2.2 Method of analysis
       quote: A specific, stability -indicating assay method to determine strength (content) should be included for all drug products.
+      note: MOA
 - id: EG-EDA/CD-A3-08
   kind: rule
   authority: EG-EDA
@@ -3584,7 +3623,7 @@
       - USP RS
     data: []
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex III §2.4.1 Standards
       quote: EDA template for COA of a working standard is mandatory, and the lot number for the primary standard used in its qualification
 - id: EG-EDA/CD-A3-09
@@ -3630,7 +3669,7 @@
       - without placebo
     data: []
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex III §2.4.3 Placebo
       quote: >-
         If the placebo is unavailable the company should send a declaration of acceptance to start the analysis of impurities without
@@ -3685,7 +3724,7 @@
     data:
       - specs.product
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex IV §1, Table 1 and Note (3)
       quote: >-
         101 cfu: maximum acceptable count =20, 102 cfu: maximum acceptable count =200, 103 cfu: maximum acceptable count =2000; and so
@@ -3737,9 +3776,18 @@
     data:
       - specs.product
   cite:
-    - src: eda-gl-cadc-002-v2
-      at: Annex IV §2 Sterility testing, 2.2 Test specifications
-      quote: Sterilization method of the product By filtration, steam, dry heat, irradiation or ethylene oxide gas
+    - src: eda-gl-cadc-002-v3
+      at: Annex IV §3.1
+      quote: Membrane filtration or direct inoculation of the culture media
+  check:
+    verdict: changed
+    note:
+      en: >-
+        v3's sterility test specification (Annex IV §3.1) no longer asks for the product's sterilization method; it asks for the technique,
+        the nature of the product, the acceptance criteria and the pharmacopoeia.
+      ar: >-
+        مواصفة اختبار العقامة في الإصدار 3 (الملحق IV §3.1) ماعادتش بتطلب طريقة تعقيم المستحضر؛ بتطلب طريقة الاختبار وطبيعة المستحضر وحدود
+        القبول والدستور.
 - id: EG-EDA/CD-A4-03
   kind: rule
   authority: EG-EDA
@@ -3790,7 +3838,7 @@
     data:
       - specs.product
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex IV §5 Bacterial endotoxins test, Table 4
       quote: 5 EU/kg of body weight Maximum dose per kilogram administered in 1 h
 - id: EG-EDA/CD-A5-01
@@ -3842,11 +3890,12 @@
       - range
     data: []
   cite:
-    - src: eda-gl-cadc-002-v2
-      at: Annex V Table 1 (with Annex III §2.3.1)
+    - src: eda-gl-cadc-002-v3
+      at: Annex V Table 1
       quote: >-
         Minimum five standard solutions covering: o 80-120% (assay) o 70-130% (content uniformity) o Reporting level - 120% of
         specifications (impurities)
+      note: with Annex III §2.3.1
   anchor_cite:
     - src: ich-q2-r2
 - id: EG-EDA/CD-A5-02
@@ -3900,7 +3949,7 @@
       - RSD
     data: []
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex V Table 1, Accuracy and System suitability
       quote: >-
         Matrix spiked at 3 levels covering linearity range (nine determinations) (i.e., three concentrations and three replicates of each
@@ -3953,7 +4002,7 @@
       - recovery
     data: []
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex V Table 2
       quote: >-
         The difference in the mean value for dissolution results between any two conditions does not exceed an absolute 10% at time points
@@ -4006,11 +4055,12 @@
       - actual conditions of use
     data: []
   cite:
-    - src: eda-gl-cadc-002-v2
-      at: Annex V §2 (with Annex III §2.3.3)
+    - src: eda-gl-cadc-002-v3
+      at: Annex V §2
       quote: >-
         The verification process for compendial test procedures is the assessment of whether the procedure can be used for its intended
         purpose, under the actual conditions
+      note: with Annex III §2.3.3
   anchor_cite:
     - src: usp-1226
       at: Verification of Compendial Procedures
@@ -4065,11 +4115,18 @@
       - sample collection
     data: []
   cite:
-    - src: eda-gl-cadc-002-v2
-      at: Annex VI, Group 2 Files, Regulatory folder
+    - src: eda-gl-cadc-002-v3
+      at: Annex VI, Regulatory folder
       quote: >-
-        Regulatory folder contains the following: 1. Registration license and other relevant approvals (eg. variation approvals) 2.
-        Registration Form 3. Quantitative composition
+        Regulatory folder contains the following 1. Sample analysis request and sample collection report, and renewed report if present. 2.
+        Registration license and other relevant approvals
+  check:
+    verdict: changed
+    note:
+      en: >-
+        v3 revised the technical quality folder requirements (Annex VI); the regulatory folder now opens with the sample analysis request
+        and sample collection report.
+      ar: الإصدار 3 عدّل متطلبات الملف (الملحق VI)؛ الملف الإداري بقى بيبدأ بطلب تحليل العينة ومحضر سحبها.
 - id: EG-EDA/CD-A6-02
   kind: rule
   authority: EG-EDA
@@ -4106,7 +4163,7 @@
     data:
       - composition
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex VI Table 1, 3.2.P.4.1
       quote: Specification of in-house excipients or monograph of compendial excipients
 - id: EG-EDA/CD-A6-03
@@ -4155,7 +4212,7 @@
     data:
       - specs.product
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex VI Table 1, 3.2.P.5.1
       quote: 'Two separate sets of specifications may be set out: after packaging of the FPP (release) and at the end of shelf-life.'
 - id: EG-EDA/CD-A6-04
@@ -4202,7 +4259,7 @@
     data:
       - batches
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex VI Table 1, 3.2.P.5.4
       quote: A description of batch (include strength, batch number, date, site of production and results of batch analyses should be provided.
 - id: EG-EDA/CD-A6-05
@@ -4240,7 +4297,7 @@
       - HPLC
     data: []
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex VI Table 1, 3.2.P.5.2
       quote: Copies of the in-house analytical procedures used should be provided
 - id: EG-EDA/CD-A6-06
@@ -4282,7 +4339,7 @@
       - acceptance criteria
     data: []
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex VI Table 1, 3.2.P.5.6
       quote: >-
         A discussion should be provided on the omission or inclusion of particular tests, evolution of tests, analytical procedures and
@@ -4329,8 +4386,9 @@
     data: []
   cite:
     - src: eda-np-capp-090-v2
-      at: Regulatory Documents Folder, item 1 (Administrative Documents)
+      at: Regulatory Documents Folder, item 1
       quote: Preliminary re-registration approval for expired registration license
+      note: Administrative Documents
 - id: EG-EDA/ST-02
   kind: rule
   authority: EG-EDA
@@ -4369,10 +4427,11 @@
     data: []
   cite:
     - src: eda-np-capp-090-v2
-      at: Regulatory Documents Folder, item 1 (Administrative Documents)
+      at: Regulatory Documents Folder, item 1
       quote: >-
         (Electronic) Certificate of Pharmaceutical Product ((e)CPP) / free sale attached with Summary of product characteristics (SmPC) /
         Insert
+      note: Administrative Documents
 - id: EG-EDA/ST-03
   kind: rule
   authority: EG-EDA
@@ -4466,8 +4525,9 @@
     data: []
   cite:
     - src: eda-np-capp-090-v2
-      at: Regulatory Documents Folder, item 2/3 (EDA Reports)
+      at: Regulatory Documents Folder, item 2/3
       quote: Central Administration of Drug Control (CADC) detailed final report of submitted batch(es) with its attachment(s)
+      note: EDA Reports
 - id: EG-EDA/ST-05
   kind: rule
   authority: EG-EDA
@@ -4510,8 +4570,9 @@
     data: []
   cite:
     - src: eda-np-capp-090-v2
-      at: Regulatory Documents Folder, item 4 (Applicant documents)
+      at: Regulatory Documents Folder, item 4
       quote: A review of all changes carried out to the product, process & analytical method
+      note: Applicant documents
 - id: EG-EDA/ST-06
   kind: rule
   authority: EG-EDA
@@ -4644,8 +4705,9 @@
     data: []
   cite:
     - src: eda-np-capp-090-v2
-      at: Regulatory Documents Folder, item 6 (Outsourcing Documents)
+      at: Regulatory Documents Folder, item 6
       quote: Both contract and annex must be legalized (bank signatures and EDA legal affairs)
+      note: Outsourcing Documents
 - id: EG-EDA/ST-09
   kind: rule
   authority: EG-EDA
@@ -4683,8 +4745,9 @@
     data: []
   cite:
     - src: eda-np-capp-090-v2
-      at: Regulatory Documents Folder, item 7 (Fees)
+      at: Regulatory Documents Folder, item 7
       quote: 'Payment code / Receipt copy In case of change in the following from last stability approval / reg. license): 1- Shelf-life extension'
+      note: Fees
 - id: EG-EDA/ST-10
   kind: rule
   authority: EG-EDA
@@ -4917,8 +4980,9 @@
     data: []
   cite:
     - src: eda-np-capp-090-v2
-      at: Technical Documents Folder, Post approval stability protocol and stability commitment (Annex IX, Annex X)
+      at: Technical Documents Folder, Post approval stability protocol and stability commitment
       quote: To complete shelf study (12 and/ or 24 months) on the submitted pilot batches
+      note: Annex IX, Annex X
 - id: EG-EDA/ST-15
   kind: rule
   authority: EG-EDA
@@ -5054,8 +5118,9 @@
     data: []
   cite:
     - src: eda-np-capp-090-v2
-      at: Technical Documents Folder, P-Part Note (bulk holding time)
+      at: Technical Documents Folder, P-Part Note
       quote: The holding time should be supported by the submission of stability data, if longer than 30 days.
+      note: bulk holding time
   anchor_cite:
     - src: who-trs986-annex6
 - id: EG-EDA/ST-18
@@ -5301,8 +5366,9 @@
     data: []
   cite:
     - src: eda-np-capp-090-v2
-      at: Technical Documents Folder, Method of analysis (3.2.P.5.2)
+      at: Technical Documents Folder, Method of analysis
       quote: Should include stability-indicating analytical- procedures used for physical, chemical and microbiological analysis
+      note: 3.2.P.5.2
 - id: EG-EDA/ST-23
   kind: rule
   authority: EG-EDA
@@ -6978,8 +7044,9 @@
     data: []
   cite:
     - src: eda-gl-capp-024-v4
-      at: 2.21 Requirement to perform incurred sample reanalysis (ISR)
+      at: 2.21 Requirement to perform incurred sample reanalysis
       quote: 10% of the samples should be reanalysed in case the number of samples is less than 1000 samples
+      note: ISR
 - id: EG-EDA/BE-28
   kind: rule
   authority: EG-EDA
@@ -7118,10 +7185,11 @@
       - be
   cite:
     - src: eda-gl-capp-024-v4
-      at: 2.23 Acceptance ranges (2.23.1 AUC-ratio, 2.23.2 Cmax-ratio, 2.23.3 Tmax-difference)
+      at: 2.23 Acceptance ranges
       quote: >-
         The 90% confidence interval for this measure of relative bioavailability should lie within a bioequivalence range of 0.80–1.25 (80 –
         125%).
+      note: 2.23.1 AUC-ratio, 2.23.2 Cmax-ratio, 2.23.3 Tmax-difference
 - id: EG-EDA/BE-31
   kind: rule
   authority: EG-EDA
@@ -7623,8 +7691,9 @@
       - composition
   cite:
     - src: eda-gl-capp-024-v4
-      at: 4.5.1 Biowaivers based on the BCS (4.5.1.1-4.5.1.3 and exclusions)
+      at: 4.5.1 Biowaivers based on the BCS
       quote: Either very rapid (> 85 % within 15 minutes) or similarly rapid (85 % within 30 minutes) in vitro dissolution characteristics
+      note: 4.5.1.1-4.5.1.3 and exclusions
   anchor_cite:
     - src: ich-m9
 - id: EG-EDA/BE-41
@@ -7777,8 +7846,9 @@
       - be
   cite:
     - src: eda-gl-capp-024-v4
-      at: Section 7 Bioequivalence Summary Tables (Tables 1-17)
+      at: Section 7 Bioequivalence Summary Tables
       quote: Please provide a separate table for each Bioequivalence Study.
+      note: Tables 1-17
 - id: EG-EDA/BE-44
   kind: rule
   authority: EG-EDA
@@ -7921,8 +7991,9 @@
     data: []
   cite:
     - src: eda-gl-capp-039-v1
-      at: 'In case of Option 2: Certificate of Suitability (CEP)'
+      at: 'In case of Option 2: Certificate of Suitability'
       quote: a written commitment should be included that the applicant will inform EDA in the event of changes, or if the CEP is withdrawn
+      note: CEP
 - id: EG-EDA/RR-03
   kind: rule
   authority: EG-EDA
@@ -8017,8 +8088,9 @@
     data: []
   cite:
     - src: eda-gl-capp-039-v1
-      at: 3.2.S.2 Manufacture (3.2.S.2.2)
+      at: 3.2.S.2 Manufacture
       quote: Brief Information should be provided to adequately describe the manufacturing process and process controls of the drug substance.
+      note: 3.2.S.2.2
 - id: EG-EDA/RR-05
   kind: rule
   authority: EG-EDA
@@ -8293,8 +8365,9 @@
     data: []
   cite:
     - src: eda-gl-capp-039-v1
-      at: 3.2.P.2 Pharmaceutical Development (all subsections)
+      at: 3.2.P.2 Pharmaceutical Development
       quote: Brief description of studies related to development of drug product should be submitted.
+      note: all subsections
   anchor_cite:
     - src: ich-q8-r2
 - id: EG-EDA/RR-11
@@ -8433,8 +8506,9 @@
     data: []
   cite:
     - src: eda-gl-capp-039-v1
-      at: 3.2.P.4 Control of Excipients (3.2.P.4.1-3.2.P.4.6)
+      at: 3.2.P.4 Control of Excipients
       quote: The specifications for excipients should be provided. CoAs could be accepted.
+      note: 3.2.P.4.1-3.2.P.4.6
 - id: EG-EDA/RR-14
   kind: rule
   authority: EG-EDA
@@ -8665,8 +8739,9 @@
       - stability
   cite:
     - src: eda-gl-capp-039-v1
-      at: 3.2.P.8 Stability (3.2.P.8.1-3.2.P.8.3)
+      at: 3.2.P.8 Stability
       quote: The post-approval stability protocol and stability commitment should be provided.
+      note: 3.2.P.8.1-3.2.P.8.3
   anchor_cite:
     - src: ich-q1a-r2
 - id: EG-EDA/RR-19
@@ -8834,7 +8909,7 @@
   cite:
     - src: eda-np-capp-065-v5
       at: 1.1.9
-      quote: Leaflet translation declaration (non-English leaflets)
+      gist: Leaflet translation declaration (non-English leaflets)
 - id: EG-EDA/LB-ART-01
   kind: rule
   authority: EG-EDA
@@ -8949,7 +9024,7 @@
   cite:
     - src: eda-np-capp-065-v5
       at: 1.2.5.1
-      quote: Reference (online/textbook) OR Non-Reference Approval
+      gist: Reference (online/textbook) OR Non-Reference Approval
 - id: EG-EDA/LB-QRD-01
   kind: rule
   authority: EG-EDA
@@ -9206,7 +9281,7 @@
   cite:
     - src: eda-np-capp-065-v5
       at: Module 2 (2.4–2.7)
-      quote: Non-clinical & clinical overviews and summaries
+      gist: Non-clinical & clinical overviews and summaries
   anchor_cite:
     - src: ich-m4s-r2
 - id: EG-EDA/CL-M25-01
@@ -9250,7 +9325,7 @@
   cite:
     - src: eda-np-capp-065-v5
       at: Module 2 (2.4–2.7)
-      quote: Non-clinical & clinical overviews and summaries
+      gist: Non-clinical & clinical overviews and summaries
   anchor_cite:
     - src: ich-m4e-r2
 - id: EG-EDA/CL-M4-01
@@ -9294,7 +9369,7 @@
   cite:
     - src: eda-np-capp-065-v5
       at: 4.2.x
-      quote: Non-clinical study reports (pharmacology, PK, toxicology)
+      gist: Non-clinical study reports (pharmacology, PK, toxicology)
   anchor_cite:
     - src: ich-m4s-r2
     - src: oecd-glp
@@ -9342,7 +9417,7 @@
   cite:
     - src: eda-np-capp-065-v5
       at: 5.3.5
-      quote: Other clinical sections
+      gist: Other clinical sections
   anchor_cite:
     - src: ich-e3
     - src: ich-e9-r1
@@ -9483,7 +9558,7 @@
   cite:
     - src: eda-np-capp-065-v5
       at: Module 2
-      quote: clinical overviews and summaries
+      gist: clinical overviews and summaries
   anchor_cite:
     - src: ich-e11-r1
     - src: ich-e7
@@ -9573,12 +9648,24 @@
       - acceptable intake
       - confirmatory
   cite:
+    - src: eda-gl-nitrosamines-v1
+      at: §5.3.1.1
+      quote: >-
+        Manufacturers should conduct a comprehensive risk assessment for all chemically synthesized APIs and drug products to evaluate the
+        potential for nitrosamine formation or contamination.
+    - src: eda-gl-nitrosamines-v1
+      at: §5.3 (limits)
+      quote: >-
+        Predicted Carcinogenic Potency Categorization Approach (CPCA): For NDSRIs lacking compound-specific data, AI limits can be assigned
+        based on predicted carcinogenic potency categorization
     - src: who-pq-screening
-      at: nitrosamine
-      quote: Nitrosamine RA declared
+      at: item 11(a)
+      gist: Nitrosamine RA declared
+      quote: Has risk assessment for the potential presence of nitrosamines impurity been conducted and the outcome declared?
   anchor_cite:
     - src: ema-nitrosamines-qa
-      at: Q&A (rev. 2024)
+      at: Q&A
+      note: rev. 2024
     - src: fda-nitrosamines
     - src: ich-m7-r2
 - id: EG-EDA/IN-Q8-01
@@ -9664,12 +9751,22 @@
       - medium
       - profile
   cite:
-    - src: eda-gl-cadc-002-v2
-      at: 6.5.4
-      quote: For new pharmaceutical drug products, a complete dissolution study with scientific justification should be submitted
+    - src: eda-gl-cadc-002-v3
+      at: §5.6.5
+      quote: Complete comparative dissolution study in different media may be required.
   anchor_cite:
     - src: fda-dissolution-ir-1997
     - src: ema-dissolution-reflection
+  check:
+    verdict: changed
+    note:
+      en: >-
+        GL.CADC.002 v3 (in force 20/10/2026) no longer has v2's §6.5.4 «For new pharmaceutical drug products, a complete dissolution study
+        with scientific justification should be submitted»; §5.6.5 keeps only that a complete comparative dissolution study in different
+        media may be required.
+      ar: >-
+        الإصدار 3 من GL.CADC.002 (ساري من 20/10/2026) شال جملة الإصدار 2 (§6.5.4) عن دراسة الذوبان الكاملة بمبرر علمي للمستحضرات الجديدة؛
+        و§5.6.5 بقت بتقول بس إن دراسة ذوبان مقارنة كاملة في أوساط مختلفة ممكن تتطلب.
 - id: EG-EDA/IN-PV-01
   kind: rule
   authority: EG-EDA
@@ -9717,7 +9814,8 @@
       quote: Absence of Process Validation on 3 primary batches
   anchor_cite:
     - src: ema-process-validation
-      at: Rev1 (process validation)
+      at: Rev1
+      note: process validation
     - src: fda-process-validation-2011
 - id: EG-EDA/IN-HOLD-01
   kind: rule
@@ -9849,7 +9947,7 @@
       - Q2(R2)
       - Q2
   cite:
-    - src: eda-gl-cadc-002-v2
+    - src: eda-gl-cadc-002-v3
       at: Annex V
       quote: Revision of method validation and verification requirements (Annex V) to be aligned with ICH Q2(R2)
   anchor_cite:
@@ -9938,8 +10036,12 @@
       - leak
   cite:
     - src: who-pq-screening
-      at: sterile products (Part C)
-      quote: container integrity (microbial or dye ingress)
+      at: sterile products (Part C), ii
+      gist: container integrity (microbial or dye ingress)
+      note: Part C
+      quote: >-
+        Suitability of container closure — compatibility with API, demonstration of seal integrity (e.g. by microbial ingress test, dye
+        ingress test)
   anchor_cite:
     - src: usp-1207
     - src: eu-gmp-annex1
@@ -9989,8 +10091,12 @@
       - F0
   cite:
     - src: who-pq-screening
-      at: sterile products (Part C)
-      quote: media-fill results … filter validation … sterilisation and depyrogenation validation
+      at: sterile products (Part C), viii
+      gist: media-fill results … filter validation … sterilisation and depyrogenation validation
+      note: Part C
+      quote: >-
+        Evidence of validation of the conditions/parameters used for the sterilization/depyrogenation of the processing equipment and
+        accessories, filters and packaging components.
   anchor_cite:
     - src: ema-sterilisation
       at: of the medicinal product (2019)
@@ -10181,8 +10287,10 @@
       - sampling schedule
   cite:
     - src: eda-gl-capp-024-v4
-      at: references — ICH M13A
-      quote: ICH M 13A
+      at: p.181 (revision history), p.113
+      gist: ICH M 13A
+      note: ICH M13A
+      quote: Implementation of ICH -M10 & ICH - M13A Guidelines
   anchor_cite:
     - src: ich-m13a
 - id: EG-EDA/IN-M10-01
@@ -10323,6 +10431,11 @@
       - identical
       - approved by
   cite:
+    - src: eda-gl-capp-025-v4
+      at: VII
+      quote: >-
+        EDA relies on Stringent Regulatory Authorities (SRAs) included in the list of reference countries approved by the Technical
+        Committee of Drug Control
     - src: eda-eg-m1-submission-guidance-draft
       at: 1.2.7.2 unredacted assessment report
       quote: complete version of assessment report of the SRA in which no information has been blacked out
@@ -10366,8 +10479,15 @@
       - approved
       - valid
   cite:
-    - src: eda-gl-cadc-002-v2
-      at: 6.5.6
+    - src: eda-gl-capp-025-v4
+      at: VII
+      quote: >-
+        EDA relies on Stringent Regulatory Authorities (SRAs) included in the list of reference countries approved by the Technical
+        Committee of Drug Control
+    - src: eda-np-capp-089-v2
+      note: the list of reference countries issued June 2026, which applies from 1/1/2027
+    - src: eda-gl-cadc-002-v3
+      at: §5.6.6
       quote: >-
         The products are assessed and analyzed according to their specifications that have been previously approved by the reference
         country‘s NRA

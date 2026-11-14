@@ -13,17 +13,19 @@
 |---|---|---|
 | 1a | المعرفة في الكود: كل الهيئات، وكل سجل مربوط بمصدره (`knowledge/`) | اتعمل واتجرّب |
 | 1b | المكتبة: تصفّح وبحث بالعربي والإنجليزي، في المتصفح وعلى الكمبيوتر (`library/`) | اتعملت واتجرّبت |
-| 1c | مراجعة كل سجل على مصدره الرسمي (النص، والإصدار الأحدث) | الجاي |
+| 1c | مراجعة كل سجل على مصدره الرسمي (النص، والإصدار الأحدث) | اتعملت لمصادر الهيئة، ولسه مراجعة إصدارات ICH وEMA وFDA ومنظمة الصحة والخليج أونلاين |
 
 ```
 npm install        # once
-npm run build      # checks every record; writes dist/knowledge.json and the library (dist/library.html)
+npm run build      # checks every record; writes dist/knowledge.json and the library (dist/library/ and its zip)
+npm run verify     # checks every citation against the text of its source (knowledge/checks/citations.json)
 npm test           # the knowledge tests and the library in a real browser
 ```
 
-المكتبة على الكمبيوتر: افتح `dist/library.html` في أي متصفح (ملف واحد، شغال من غير إنترنت).
-The library on the desktop: open `dist/library.html` in any browser (one file, works offline). The same page, without
-its document shell (`dist/library-artifact.html`), is the claude.ai artifact.
+المكتبة على الكمبيوتر: فك `dist/Dossier-Builder-Library.zip` وافتح `index.html` (شغالة من غير إنترنت، والمستندات جنبها في `sources/`).
+The library on the desktop: unzip `dist/Dossier-Builder-Library.zip` and open `index.html` (works offline; the source documents
+it opens are beside it in `sources/`). The same page, without its document shell (`dist/library-artifact.html`), is the
+claude.ai artifact, published with the same `sources/` files.
 
 ---
 
@@ -41,4 +43,4 @@ The new workspace. The old program stays as it is in `apps/dossier-builder/`, un
 |---|---|---|
 | 1a | Knowledge in code: every authority, every record tied to its source (`knowledge/`) | built and tested |
 | 1b | The library: browse and search in Arabic and English, in the browser and on the desktop (`library/`) | built and tested |
-| 1c | Review every record against its official source (the text, and the latest version) | next |
+| 1c | Review every record against its official source (the text, and the latest version) | done for EDA's sources; the online version check of ICH, EMA, FDA, WHO and GCC sources is open |

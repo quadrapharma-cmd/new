@@ -84,6 +84,25 @@ export const T = {
     filterAll: 'الكل',
     open: 'افتح',
     sourcesOf: 'مراجع',
+    review: 'المراجعة',
+    reviewLede: d => `كل استشهاد في المعرفة اتراجع على نص مصدره يوم ${d}: الاقتباس موجود بالنص؟ رقم البند أو الصفحة موجود؟ وكل مصدر للهيئة اتراجع على موقعها علشان نعرف إذا كان فيه إصدار أحدث.`,
+    findings: 'اللي اتلقى واتعمل',
+    byResult: 'نتيجة كل استشهاد',
+    perSource: 'كل مصدر',
+    citationsN: 'استشهادات',
+    online: 'آخر مراجعة على موقع الهيئة',
+    replacedBy: 'اتبدل بـ',
+    gist: 'ملخص (مش كلام المصدر بالنص)',
+    changed: 'اتغير في المراجعة',
+    guideline: 'البند في الإرشاد',
+    toolClass: 'فئة أداة الهيئة',
+    guidelineClass: 'فئة الإرشاد',
+    classes: 'الفئات حسب الحالة',
+    verdictAll: 'كل التغييرات',
+    pages: n => `ص ${n}`,
+    heldCount: (a, b) => `${a} من ${b}`,
+    open_: 'مفتوح',
+    openDoc: 'افتح المستند',
   },
   en: {
     app: 'Knowledge Library',
@@ -169,6 +188,25 @@ export const T = {
     filterAll: 'All',
     open: 'Open',
     sourcesOf: 'Sources of',
+    review: 'Review',
+    reviewLede: d => `Every citation in the knowledge was checked against its source's text on ${d}: is the quote there word for word? does the section or page exist? And every EDA source was checked on EDA's website for a newer version.`,
+    findings: 'What was found and done',
+    byResult: 'Result of each citation',
+    perSource: 'Each source',
+    citationsN: 'citations',
+    online: 'Last checked on the authority\'s website',
+    replacedBy: 'Replaced by',
+    gist: 'Summary (not the source\'s words)',
+    changed: 'Changed in the review',
+    guideline: 'The item in the guideline',
+    toolClass: 'Class in EDA\'s tool',
+    guidelineClass: 'Class in the guideline',
+    classes: 'Classes by case',
+    verdictAll: 'All variations',
+    pages: n => `p. ${n}`,
+    heldCount: (a, b) => `${a} of ${b}`,
+    open_: 'Open',
+    openDoc: 'Open the document',
   },
 };
 
@@ -232,4 +270,29 @@ export const FORMAT_VALUE = {
 export const EVIDENCE = {
   official: { ar: 'نص رسمي', en: 'Official text' }, 'official-draft': { ar: 'مسودة رسمية', en: 'Official draft' },
   secondary: { ar: 'مصدر ثانوي', en: 'Secondary' },
+};
+
+// What the check found for one citation.
+export const RESULT = {
+  verified: { ar: 'اتأكد من النص', en: 'Confirmed in the text' },
+  located: { ar: 'المكان موجود في النص', en: 'Place found in the text' },
+  read: { ar: 'اتقرا من صورة الصفحة', en: 'Read from the page image' },
+  'nothing-to-check': { ar: 'المصدر محفوظ؛ الاستشهاد مالوش مكان محدد', en: 'Source kept; no place named' },
+  'no-copy': { ar: 'مفيش نسخة محفوظة', en: 'No copy kept' },
+  partly: { ar: 'محتاج مراجعة', en: 'Needs a look' },
+  'not-found': { ar: 'مش لاقيه في النص', en: 'Not found in the text' },
+};
+export const RESULT_HINT = {
+  verified: { ar: 'الاقتباس موجود بنصه في المصدر (أو الصف في جدول الهيئة مطابق)', en: 'The quote is in the source word for word (or the row of EDA\'s table matches)' },
+  located: { ar: 'رقم البند أو الصفحة أو الملحق اللي الاستشهاد بيقول عليه موجود في المصدر', en: 'The section, page or annex the citation names exists in the source' },
+  read: { ar: 'نص الملف مش مقروء آلياً، فالصفحة اتقرت من صورتها', en: 'The file\'s text cannot be read by machine; the page was read from its image' },
+  'nothing-to-check': { ar: 'عندنا نسخة من المصدر، لكن الاستشهاد بيذكر المصدر كله من غير مكان', en: 'A copy of the source is kept, but the citation names the whole source' },
+  'no-copy': { ar: 'مفيش نسخة من المصدر في المشروع؛ اتراجع إصداره وتاريخه بس', en: 'No copy of the source is kept; only its version and date were checked' },
+};
+export const VERDICT = {
+  agrees: { ar: 'زي الإرشاد', en: 'Agrees with the guideline' },
+  differs: { ar: 'الأداة مختلفة عن الإرشاد', en: 'The tool differs from the guideline' },
+  split: { ar: 'على حسب الحالة', en: 'Depends on the case' },
+  'tool-only': { ar: 'مش في الإرشاد', en: 'Not in the guideline' },
+  changed: { ar: 'اتغير مع الإصدار الجديد', en: 'Changed with the new version' },
 };

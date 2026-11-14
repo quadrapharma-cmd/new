@@ -129,11 +129,27 @@ types:
     warn_days: 120
     status: in-force
     note_source: >-
-      EDA GL.PPMA.004 v5 p.3, p.5 (valid one year from issue; apply for the next annual approval at least 4 months before expiry; 6 months
-      for unregistered products from a reference country, p.22-23)
+      EDA GL.PPMA.004 v5 (2026) p.5: the annual import approval for active substances is valid one year from issue, and the next one is
+      applied for at least four months before the current one expires.
     cite:
       - src: eda-gl-ppma-004-v5
-        at: p.3, p.5, p.22-23
+        at: p.5
+        quote: >-
+          تكون صلاحية الموافقة الاستيرادية السنوية للشحن الكلي والجزئي عام منذ تاريخ صدورها · تلتزم الشركات بالتقدم للحصول على الموافقة
+          الاستيرادية السنوية لعام آخر بفترة لا تقل عن أربعة أشهر قبل انتهاء صلاحية الموافقة السارية
+        read:
+          how: page image
+          'on': '2026-11-14'
+        note: the PDF's Arabic text layer cannot be read by machine; the quote was read from the page image
+    check:
+      verdict: changed
+      note:
+        en: >-
+          The old note also said «6 months for unregistered products from a reference country, p.22–23»; the 2026 edition does not say that
+          there (p.22 sets a 6-month minimum remaining shelf life for donated batches), so it was removed.
+        ar: >-
+          الملاحظة القديمة كانت بتقول «6 شهور للمستحضرات غير المسجلة من دولة مرجعية، ص 22–23»؛ إصدار 2026 مابيقولش كده هناك (ص 22 بتحدد 6
+          شهور كحد أدنى للصلاحية المتبقية للتشغيلات الواردة كمنح)، فاتشالت.
   - id: EG-EDA/doc/gmp_certificate
     kind: doctype
     authority: EG-EDA
@@ -172,6 +188,7 @@ types:
     cite:
       - src: eda-np-capp-109-v2
         at: p.8-10
+        quote: GMP. ▪ ISO 9001 – 2015 (for Minerals, Vitamins and Extracts only). ▪ CPP. ▪ Written confirmation letter.
       - src: eu-dir-2011-62
         at: Art. 46b
   - id: EG-EDA/doc/api_coa
@@ -253,6 +270,7 @@ types:
     cite:
       - src: eda-np-capp-109-v2
         at: p.5, 7
+        quote: Last Updated Commercial Register
       - src: eda-np-capp-065-v5
         at: §1.1.17.2
       - src: eg-law-34-1976

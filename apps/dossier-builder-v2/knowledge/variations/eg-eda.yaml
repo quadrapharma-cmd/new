@@ -30,9 +30,18 @@ variations:
       - The manufacturing site and all manufacturing operations must remain the same.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 1
       - src: eda-gl-capp-026-v6
+        at: §3.1.3 a)
+        quote: a) Manufacturer of the active substance (API)
+      - src: eda-variation-tool
+        at: Human, ID 1
+    guideline:
+      section: 3.1.3
+      heading: Change in the name and/or address
+      item: a) Manufacturer of the active substance (API)
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-02
     kind: variation
     authority: EG-EDA
@@ -49,9 +58,18 @@ variations:
       - The manufacturing site and all manufacturing operations must remain the same.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 2
       - src: eda-gl-capp-026-v6
+        at: §3.1.3 b)
+        quote: b) Manufacturer of starting material, reagent or intermediate used in the manufacture of the active substance.
+      - src: eda-variation-tool
+        at: Human, ID 2
+    guideline:
+      section: 3.1.3
+      heading: Change in the name and/or address
+      item: b) Manufacturer of starting material, reagent or intermediate used in the manufacture of the active substance.
+      pac: PAC-A
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-03
     kind: variation
     authority: EG-EDA
@@ -68,9 +86,22 @@ variations:
         by the deletion.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 3
       - src: eda-gl-capp-026-v6
+        at: §3.1.4 a)
+        quote: >-
+          Deletion of manufacturing sites for an active substance, intermediate or finished product, packaging site, manufacturer
+          responsible for batch release, site where batch control takes place, or storage site of finished product · a) Active Substances
+      - src: eda-variation-tool
+        at: Human, ID 3
+    guideline:
+      section: 3.1.4
+      heading: >-
+        Deletion of manufacturing sites for an active substance, intermediate or finished product, packaging site, manufacturer responsible
+        for batch release, site where batch control takes place, or storage site of finished product
+      item: a) Active Substances
+      pac: PAC-A
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-04
     kind: variation
     authority: EG-EDA
@@ -82,16 +113,37 @@ variations:
       ar: null
     group: Drug Substance
     type: Manufacturing site
-    pac: PAC-A
+    pac: PAC-N
     conditions:
       - No adverse change in qualitative and quantitative impurity profile or in physico-chemical properties
       - The specifications of the active substance are unchanged.
       - The particle size specification of the active substance and the corresponding analytical method remain the same.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 4
       - src: eda-gl-capp-026-v6
+        at: §3.2.1.1 A)
+        quote: >-
+          A) Starting material/reagent/intermediate used in the manufacturing process of the active substance. 1- Addition or Replacement of
+          a new manufacturer.
+      - src: eda-variation-tool
+        at: Human, ID 4
+    guideline:
+      section: 3.2.1.1
+      heading: Change in the manufacturer
+      item: >-
+        A) Starting material/reagent/intermediate used in the manufacturing process of the active substance. 1- Addition or Replacement of a
+        new manufacturer.
+      pac: PAC-N
+    pac_tool: PAC-A
+    check:
+      verdict: differs
+      note:
+        en: >-
+          EDA's variation tool says PAC-A; the guideline GL.CAPP.026 v6 (in force from 1/1/2026) says PAC-N. The guideline is the rule —
+          confirm with EDA before filing.
+        ar: >-
+          أداة الهيئة للتغييرات بتقول PAC-A، والإرشاد GL.CAPP.026 الإصدار 6 (ساري من 1/1/2026) بيقول PAC-N. الإرشاد هو المرجع — اتأكد مع
+          الهيئة قبل التقديم.
   - id: EG-EDA/var/H-05
     kind: variation
     authority: EG-EDA
@@ -115,9 +167,18 @@ variations:
         manufactured from the new API manufacturer against the innovator product. (Or may be changed to 3 different PH media in addition to
         the most suitable medium or Bioequivalence study according to category of API & its BCs Class).
     cite:
-      - src: eda-variation-tool
-        at: row 5
       - src: eda-gl-capp-026-v6
+        at: §3.2.1.1 B)
+        quote: B) The Active Substance. 1- Addition or Replacement of a new manufacturer.
+      - src: eda-variation-tool
+        at: Human, ID 5
+    guideline:
+      section: 3.2.1.1
+      heading: Change in the manufacturer
+      item: B) The Active Substance. 1- Addition or Replacement of a new manufacturer.
+      pac: PAC-II
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-06
     kind: variation
     authority: EG-EDA
@@ -138,9 +199,22 @@ variations:
          the same.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 6
       - src: eda-gl-capp-026-v6
+        at: §3.2.1.1 2-
+        quote: >-
+          2- Changes to quality control testing arrangements for the active substance-replacement or addition of a site where batch
+          control/testing takes place
+      - src: eda-variation-tool
+        at: Human, ID 6
+    guideline:
+      section: 3.2.1.1
+      heading: Change in the manufacturer
+      item: >-
+        2- Changes to quality control testing arrangements for the active substance-replacement or addition of a site where batch
+        control/testing takes place
+      pac: PAC-A
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-07
     kind: variation
     authority: EG-EDA
@@ -155,9 +229,18 @@ variations:
       - The specifications of the active substance are unchanged.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 7
       - src: eda-gl-capp-026-v6
+        at: §3.2.1.1 3-
+        quote: 3- Addition or replacement of a manufacturing site responsible for micronisation of the active substance
+      - src: eda-variation-tool
+        at: Human, ID 7
+    guideline:
+      section: 3.2.1.1
+      heading: Change in the manufacturer
+      item: 3- Addition or replacement of a manufacturing site responsible for micronisation of the active substance
+      pac: PAC-A
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-08
     kind: variation
     authority: EG-EDA
@@ -173,9 +256,34 @@ variations:
       - The specifications of the active substance are unchanged.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 8
       - src: eda-gl-capp-026-v6
+        at: §3.2.1.2 a)
+        quote: a) Minor change in the manufacturing process of the active substance
+      - src: eda-variation-tool
+        at: Human, ID 8
+    guideline:
+      section: 3.2.1.2
+      heading: Changes in the manufacturing process of the active substance
+      item: a) Minor change in the manufacturing process of the active substance
+      pac: PAC-A
+      classes:
+        - item: a) Minor change in the manufacturing process of the active substance
+          pac: PAC-A
+        - item: >-
+            b) Substantial change to the manufacturing process of the active substance which may have a significant impact on the quality,
+            safety or efficacy of the medicinal product
+          pac: PAC-II
+        - item: c) Minor change to the restricted part of an Active Substance Master File
+          pac: PAC-B
+        - item: d) Deletion of a manufacturing process
+          pac: PAC-A
+    check:
+      verdict: split
+      note:
+        en: >-
+          EDA's tool gives one class (PAC-A) for what the guideline splits into 4 items with their own classes; the class depends on the
+          case.
+        ar: أداة الهيئة بتدي فئة واحدة (PAC-A) لحاجة الإرشاد بيقسمها 4 بنود، كل بند بفئته؛ الفئة على حسب الحالة.
   - id: EG-EDA/var/H-09
     kind: variation
     authority: EG-EDA
@@ -196,9 +304,20 @@ variations:
       - The specifications of the active substance remain the same.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 9
       - src: eda-gl-capp-026-v6
+        at: §3.2.1.3 a)
+        quote: a) An increase to the originally approved batch size
+      - src: eda-variation-tool
+        at: Human, ID 9
+    guideline:
+      section: 3.2.1.3
+      heading: >-
+        Change in batch size (including batch size ranges) of active substance or intermediate used in the manufacturing process of the
+        active substance
+      item: a) An increase to the originally approved batch size
+      pac: PAC-A
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-10
     kind: variation
     authority: EG-EDA
@@ -222,9 +341,38 @@ variations:
         of any in-process tests).
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 10
       - src: eda-gl-capp-026-v6
+        at: §3.2.1.4 a)
+        quote: a) Minor change of in-process control limits
+      - src: eda-variation-tool
+        at: Human, ID 10
+    guideline:
+      section: 3.2.1.4
+      heading: Change to in-process tests or limits applied during the manufacture of the active substance
+      item: a) Minor change of in-process control limits
+      pac: PAC-A
+      classes:
+        - item: a) Minor change of in-process control limits
+          pac: PAC-A
+        - item: b) Addition of new in-process control and limits with its corresponding analytical procedure
+          pac: PAC-A
+        - item: c) Deletion of a non-significant or obsolete in- process control
+          pac: PAC-A
+        - item: >-
+            d) Widening of the approved in-process control limits, which may have a significant effect on the overall quality of the active
+            substance
+          pac: PAC-II
+        - item: e) Deletion of an in-process test which may have a significant effect on the overall quality of the active substance
+          pac: PAC-II
+        - item: f) Replacement of an in-process control with its corresponding analytical procedure
+          pac: PAC-B
+    check:
+      verdict: split
+      note:
+        en: >-
+          EDA's tool gives one class (PAC-A) for what the guideline splits into 6 items with their own classes; the class depends on the
+          case.
+        ar: أداة الهيئة بتدي فئة واحدة (PAC-A) لحاجة الإرشاد بيقسمها 6 بنود، كل بند بفئته؛ الفئة على حسب الحالة.
   - id: EG-EDA/var/H-11
     kind: variation
     authority: EG-EDA
@@ -243,9 +391,20 @@ variations:
       - The test procedure remains the same, or changes in the test procedure are minor.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 11
       - src: eda-gl-capp-026-v6
+        at: §3.2.1.5 a)
+        quote: a) Change within the specification acceptance criteria
+      - src: eda-variation-tool
+        at: Human, ID 11
+    guideline:
+      section: 3.2.1.5
+      heading: >-
+        Change in the specification parameters and/or limits of an active substance, starting material/intermediate/reagent used in the
+        manufacturing process of the active substance
+      item: a) Change within the specification acceptance criteria
+      pac: PAC-A
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-12
     kind: variation
     authority: EG-EDA
@@ -255,7 +414,7 @@ variations:
       ar: null
     group: Drug Substance
     type: Specification
-    pac: PAC-N
+    pac: PAC-A
     conditions:
       - >-
         The change does not result from unexpected events arising during manufacture, e.g. new unqualified impurity; change in total
@@ -266,9 +425,28 @@ variations:
         Pharmacopoeia.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 12
       - src: eda-gl-capp-026-v6
+        at: §3.2.1.5 b)
+        quote: b) Addition of a new specification parameter to the specification with its corresponding test method
+      - src: eda-variation-tool
+        at: Human, ID 12
+    guideline:
+      section: 3.2.1.5
+      heading: >-
+        Change in the specification parameters and/or limits of an active substance, starting material/intermediate/reagent used in the
+        manufacturing process of the active substance
+      item: b) Addition of a new specification parameter to the specification with its corresponding test method
+      pac: PAC-A
+    pac_tool: PAC-N
+    check:
+      verdict: differs
+      note:
+        en: >-
+          EDA's variation tool says PAC-N; the guideline GL.CAPP.026 v6 (in force from 1/1/2026) says PAC-A. The guideline is the rule —
+          confirm with EDA before filing.
+        ar: >-
+          أداة الهيئة للتغييرات بتقول PAC-N، والإرشاد GL.CAPP.026 الإصدار 6 (ساري من 1/1/2026) بيقول PAC-A. الإرشاد هو المرجع — اتأكد مع
+          الهيئة قبل التقديم.
   - id: EG-EDA/var/H-13
     kind: variation
     authority: EG-EDA
@@ -290,9 +468,20 @@ variations:
         particle size, bulk or tapped density, identity test, water, any request for skip testing.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 13
       - src: eda-gl-capp-026-v6
+        at: §3.2.1.5 c)
+        quote: c) Deletion of a non-significant specification parameter (e.g. deletion of an obsolete parameter)
+      - src: eda-variation-tool
+        at: Human, ID 13
+    guideline:
+      section: 3.2.1.5
+      heading: >-
+        Change in the specification parameters and/or limits of an active substance, starting material/intermediate/reagent used in the
+        manufacturing process of the active substance
+      item: c) Deletion of a non-significant specification parameter (e.g. deletion of an obsolete parameter)
+      pac: PAC-A
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-14
     kind: variation
     authority: EG-EDA
@@ -318,9 +507,24 @@ variations:
         manufactured from the new specification against the innovator product. (Or may be changed to 3 different PH media in addition to the
         most suitable medium according to category of API & & its BCs Class), If the change affect dissolution.
     cite:
-      - src: eda-variation-tool
-        at: row 14
       - src: eda-gl-capp-026-v6
+        at: §3.2.1.5 d)
+        quote: >-
+          d) Deletion of a specification parameter which may have a significant effect on the overall quality of the active substance and/or
+          the finished product
+      - src: eda-variation-tool
+        at: Human, ID 14
+    guideline:
+      section: 3.2.1.5
+      heading: >-
+        Change in the specification parameters and/or limits of an active substance, starting material/intermediate/reagent used in the
+        manufacturing process of the active substance
+      item: >-
+        d) Deletion of a specification parameter which may have a significant effect on the overall quality of the active substance and/or
+        the finished product
+      pac: PAC-II
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-15
     kind: variation
     authority: EG-EDA
@@ -344,9 +548,20 @@ variations:
         manufactured from the new specification against the innovator product. (Or may be changed to 3 different PH media in addition to the
         most suitable medium according to category of API & & its BCs Class), If the change affect dissolution.
     cite:
-      - src: eda-variation-tool
-        at: row 15
       - src: eda-gl-capp-026-v6
+        at: §3.2.1.5 e)
+        quote: e) Change outside the approved specifications limits range for the active substance
+      - src: eda-variation-tool
+        at: Human, ID 15
+    guideline:
+      section: 3.2.1.5
+      heading: >-
+        Change in the specification parameters and/or limits of an active substance, starting material/intermediate/reagent used in the
+        manufacturing process of the active substance
+      item: e) Change outside the approved specifications limits range for the active substance
+      pac: PAC-II
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-16
     kind: variation
     authority: EG-EDA
@@ -372,9 +587,24 @@ variations:
         manufactured from the new specification against the innovator product. (Or may be changed to 3 different PH media in addition to the
         most suitable medium according to category of API & & its BCs Class), If the change affect dissolution.
     cite:
-      - src: eda-variation-tool
-        at: row 16
       - src: eda-gl-capp-026-v6
+        at: §3.2.1.5 f)
+        quote: >-
+          f) Change outside the approved specifications limits for starting materials/intermediates, which may have a significant effect on
+          the overall quality of the active substance and/or the finished product
+      - src: eda-variation-tool
+        at: Human, ID 16
+    guideline:
+      section: 3.2.1.5
+      heading: >-
+        Change in the specification parameters and/or limits of an active substance, starting material/intermediate/reagent used in the
+        manufacturing process of the active substance
+      item: >-
+        f) Change outside the approved specifications limits for starting materials/intermediates, which may have a significant effect on
+        the overall quality of the active substance and/or the finished product
+      pac: PAC-II
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-17
     kind: variation
     authority: EG-EDA
@@ -400,9 +630,22 @@ variations:
         manufactured from the new specification against the innovator product. (Or may be changed to 3 different PH media in addition to the
         most suitable medium according to category of API & & its BCs Class), If the change affect dissolution.
     cite:
-      - src: eda-variation-tool
-        at: row 17
       - src: eda-gl-capp-026-v6
+        at: §3.2.1.5 g)
+        quote: >-
+          g) Addition or replacement of a specification parameter with its corresponding test method as a result of a safety or quality
+          issue
+      - src: eda-variation-tool
+        at: Human, ID 17
+    guideline:
+      section: 3.2.1.5
+      heading: >-
+        Change in the specification parameters and/or limits of an active substance, starting material/intermediate/reagent used in the
+        manufacturing process of the active substance
+      item: g) Addition or replacement of a specification parameter with its corresponding test method as a result of a safety or quality issue
+      pac: PAC-B
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-18
     kind: variation
     authority: EG-EDA
@@ -426,8 +669,16 @@ variations:
     requirements: []
     cite:
       - src: eda-variation-tool
-        at: row 18
-      - src: eda-gl-capp-026-v6
+        at: Human, ID 18
+    check:
+      verdict: tool-only
+      note:
+        en: >-
+          The guideline (GL.CAPP.026 v6) has no item for moving an active substance specification from a pharmacopoeia to an in-house one;
+          the class is the tool's until EDA confirms it.
+        ar: >-
+          الإرشاد (GL.CAPP.026 v6) مفيهوش بند لتحويل مواصفة المادة الفعالة من الدستور لمواصفة داخلية؛ الفئة هنا من الأداة لحد ما الهيئة
+          تأكدها.
   - id: EG-EDA/var/H-19
     kind: variation
     authority: EG-EDA
@@ -437,15 +688,32 @@ variations:
       ar: null
     group: Drug Substance
     type: Test procedure
-    pac: PAC-A
+    pac: PAC-B
     conditions:
       - There have been no changes of the total impurity limits; no new unqualified impurities are detected.
       - Notification/Approval from CADC for new test procedure.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 19
       - src: eda-gl-capp-026-v6
+        at: §3.2.1.6
+        quote: Change to an analytical procedure (including replacement or addition) for an active substance.
+      - src: eda-variation-tool
+        at: Human, ID 19
+    guideline:
+      section: 3.2.1.6
+      heading: Change in analytical procedure for active substance
+      item: Change to an analytical procedure (including replacement or addition) for an active substance.
+      pac: PAC-B
+    pac_tool: PAC-A
+    check:
+      verdict: differs
+      note:
+        en: >-
+          EDA's variation tool says PAC-A; the guideline GL.CAPP.026 v6 (in force from 1/1/2026) says PAC-B. The guideline is the rule —
+          confirm with EDA before filing.
+        ar: >-
+          أداة الهيئة للتغييرات بتقول PAC-A، والإرشاد GL.CAPP.026 الإصدار 6 (ساري من 1/1/2026) بيقول PAC-B. الإرشاد هو المرجع — اتأكد مع
+          الهيئة قبل التقديم.
   - id: EG-EDA/var/H-20
     kind: variation
     authority: EG-EDA
@@ -461,9 +729,30 @@ variations:
       - Approval on stability study for new packaging material from API Manufacturer(s).
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 20
       - src: eda-gl-capp-026-v6
+        at: §3.2.1.7 a)
+        quote: a) Change in immediate packaging of non-liquid active substance
+      - src: eda-variation-tool
+        at: Human, ID 20
+    guideline:
+      section: 3.2.1.7
+      heading: Change in immediate packaging of the active substance
+      item: a) Change in immediate packaging of non-liquid active substance
+      pac: PAC-A
+      classes:
+        - item: a) Change in immediate packaging of non-liquid active substance
+          pac: PAC-A
+        - item: b) Change in immediate packaging of sterile liquid active substance
+          pac: PAC-II
+        - item: c) Change in immediate packaging of nonsterile liquid active substance
+          pac: PAC-B
+    check:
+      verdict: split
+      note:
+        en: >-
+          EDA's tool gives one class (PAC-A) for what the guideline splits into 3 items with their own classes; the class depends on the
+          case.
+        ar: أداة الهيئة بتدي فئة واحدة (PAC-A) لحاجة الإرشاد بيقسمها 3 بنود، كل بند بفئته؛ الفئة على حسب الحالة.
   - id: EG-EDA/var/H-21
     kind: variation
     authority: EG-EDA
@@ -473,14 +762,31 @@ variations:
       ar: null
     group: Drug Substance
     type: Shelf-life / Storage condition
-    pac: PAC-N
+    pac: PAC-A
     conditions:
       - The change should not be the result of unexpected events arising during manufacture or because of stability concerns.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 21
       - src: eda-gl-capp-026-v6
+        at: §3.2.1.10 a)
+        quote: a) Retest period/storage period 1. Reduction
+      - src: eda-variation-tool
+        at: Human, ID 21
+    guideline:
+      section: 3.2.1.10
+      heading: Change in the retest period/storage period or storage conditions of the active substance
+      item: a) Retest period/storage period 1. Reduction
+      pac: PAC-A
+    pac_tool: PAC-N
+    check:
+      verdict: differs
+      note:
+        en: >-
+          EDA's variation tool says PAC-N; the guideline GL.CAPP.026 v6 (in force from 1/1/2026) says PAC-A. The guideline is the rule —
+          confirm with EDA before filing.
+        ar: >-
+          أداة الهيئة للتغييرات بتقول PAC-N، والإرشاد GL.CAPP.026 الإصدار 6 (ساري من 1/1/2026) بيقول PAC-A. الإرشاد هو المرجع — اتأكد مع
+          الهيئة قبل التقديم.
   - id: EG-EDA/var/H-22
     kind: variation
     authority: EG-EDA
@@ -490,14 +796,31 @@ variations:
       ar: null
     group: Drug Substance
     type: Shelf-life / Storage condition
-    pac: PAC-N
+    pac: PAC-B
     conditions:
       - Approval on stability study from API Manufacturer(s).
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 22
       - src: eda-gl-capp-026-v6
+        at: §3.2.1.10 2-
+        quote: 2-Extension or introduction of a retest period / storage period supported by real time data
+      - src: eda-variation-tool
+        at: Human, ID 22
+    guideline:
+      section: 3.2.1.10
+      heading: Change in the retest period/storage period or storage conditions of the active substance
+      item: 2-Extension or introduction of a retest period / storage period supported by real time data
+      pac: PAC-B
+    pac_tool: PAC-N
+    check:
+      verdict: differs
+      note:
+        en: >-
+          EDA's variation tool says PAC-N; the guideline GL.CAPP.026 v6 (in force from 1/1/2026) says PAC-B. The guideline is the rule —
+          confirm with EDA before filing.
+        ar: >-
+          أداة الهيئة للتغييرات بتقول PAC-N، والإرشاد GL.CAPP.026 الإصدار 6 (ساري من 1/1/2026) بيقول PAC-B. الإرشاد هو المرجع — اتأكد مع
+          الهيئة قبل التقديم.
   - id: EG-EDA/var/H-23
     kind: variation
     authority: EG-EDA
@@ -507,15 +830,32 @@ variations:
       ar: null
     group: Drug Substance
     type: Storage condition
-    pac: PAC-N
+    pac: PAC-A
     conditions:
       - The change should not be the result of unexpected events arising during manufacture or because of stability concerns.
       - Approval on stability study from API Manufacturer(s).
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 23
       - src: eda-gl-capp-026-v6
+        at: §3.2.1.10 b)
+        quote: b) Storage conditions 1. Change to more restrictive storage conditions of the active substance
+      - src: eda-variation-tool
+        at: Human, ID 23
+    guideline:
+      section: 3.2.1.10
+      heading: Change in the retest period/storage period or storage conditions of the active substance
+      item: b) Storage conditions 1. Change to more restrictive storage conditions of the active substance
+      pac: PAC-A
+    pac_tool: PAC-N
+    check:
+      verdict: differs
+      note:
+        en: >-
+          EDA's variation tool says PAC-N; the guideline GL.CAPP.026 v6 (in force from 1/1/2026) says PAC-A. The guideline is the rule —
+          confirm with EDA before filing.
+        ar: >-
+          أداة الهيئة للتغييرات بتقول PAC-N، والإرشاد GL.CAPP.026 الإصدار 6 (ساري من 1/1/2026) بيقول PAC-A. الإرشاد هو المرجع — اتأكد مع
+          الهيئة قبل التقديم.
   - id: EG-EDA/var/H-24
     kind: variation
     authority: EG-EDA
@@ -525,15 +865,32 @@ variations:
       ar: null
     group: Drug Substance
     type: Storage condition
-    pac: PAC-N
+    pac: PAC-B
     conditions:
       - The change should not be the result of unexpected events arising during manufacture or because of stability concerns.
       - Approval on stability study from API Manufacturer(s).
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 24
       - src: eda-gl-capp-026-v6
+        at: §3.2.1.10 2.
+        quote: 2. Change in storage conditions of the active substance
+      - src: eda-variation-tool
+        at: Human, ID 24
+    guideline:
+      section: 3.2.1.10
+      heading: Change in the retest period/storage period or storage conditions of the active substance
+      item: 2. Change in storage conditions of the active substance
+      pac: PAC-B
+    pac_tool: PAC-N
+    check:
+      verdict: differs
+      note:
+        en: >-
+          EDA's variation tool says PAC-N; the guideline GL.CAPP.026 v6 (in force from 1/1/2026) says PAC-B. The guideline is the rule —
+          confirm with EDA before filing.
+        ar: >-
+          أداة الهيئة للتغييرات بتقول PAC-N، والإرشاد GL.CAPP.026 الإصدار 6 (ساري من 1/1/2026) بيقول PAC-B. الإرشاد هو المرجع — اتأكد مع
+          الهيئة قبل التقديم.
   - id: EG-EDA/var/H-25
     kind: variation
     authority: EG-EDA
@@ -549,9 +906,20 @@ variations:
       - No adverse change in qualitative and quantitative impurity profile or in physico-chemical properties.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 25
       - src: eda-gl-capp-026-v6
+        at: §3.2.1.11 1.
+        quote: 1. New certificate from an approved manufacturer
+      - src: eda-variation-tool
+        at: Human, ID 25
+    guideline:
+      section: 3.2.1.11
+      heading: >-
+        Submission of a new or updated Ph. Eur. certificate of suitability or deletion of Ph. Eur. certificate of suitability for an active
+        substance
+      item: 1. New certificate from an approved manufacturer
+      pac: PAC-A
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-26
     kind: variation
     authority: EG-EDA
@@ -561,15 +929,34 @@ variations:
       ar: null
     group: Drug Substance
     type: Administrative
-    pac: PAC-A
+    pac: PAC-N
     conditions:
       - New / Updated CEP.
       - No adverse change in qualitative and quantitative impurity profile or in physico-chemical properties.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 26
       - src: eda-gl-capp-026-v6
+        at: §3.2.1.11 2.
+        quote: 2. Updated certificate from an already approved manufacturer
+      - src: eda-variation-tool
+        at: Human, ID 26
+    guideline:
+      section: 3.2.1.11
+      heading: >-
+        Submission of a new or updated Ph. Eur. certificate of suitability or deletion of Ph. Eur. certificate of suitability for an active
+        substance
+      item: 2. Updated certificate from an already approved manufacturer
+      pac: PAC-N
+    pac_tool: PAC-A
+    check:
+      verdict: differs
+      note:
+        en: >-
+          EDA's variation tool says PAC-A; the guideline GL.CAPP.026 v6 (in force from 1/1/2026) says PAC-N. The guideline is the rule —
+          confirm with EDA before filing.
+        ar: >-
+          أداة الهيئة للتغييرات بتقول PAC-A، والإرشاد GL.CAPP.026 الإصدار 6 (ساري من 1/1/2026) بيقول PAC-N. الإرشاد هو المرجع — اتأكد مع
+          الهيئة قبل التقديم.
   - id: EG-EDA/var/H-27
     kind: variation
     authority: EG-EDA
@@ -581,15 +968,38 @@ variations:
       ar: null
     group: Drug Substance
     type: Administrative
-    pac: PAC-A
+    pac: PAC-B
     conditions:
       - New / Updated CEP.
       - No adverse change in qualitative and quantitative impurity profile or in physico-chemical properties.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 27
       - src: eda-gl-capp-026-v6
+        at: §3.2.1.11 3.
+        quote: >-
+          3. New certificate for a non-sterile active substance that is to be used in a sterile medicinal product, where water is used in
+          the last steps of the synthesis and the material is not claimed to be endotoxin free
+      - src: eda-variation-tool
+        at: Human, ID 27
+    guideline:
+      section: 3.2.1.11
+      heading: >-
+        Submission of a new or updated Ph. Eur. certificate of suitability or deletion of Ph. Eur. certificate of suitability for an active
+        substance
+      item: >-
+        3. New certificate for a non-sterile active substance that is to be used in a sterile medicinal product, where water is used in the
+        last steps of the synthesis and the material is not claimed to be endotoxin free
+      pac: PAC-B
+    pac_tool: PAC-A
+    check:
+      verdict: differs
+      note:
+        en: >-
+          EDA's variation tool says PAC-A; the guideline GL.CAPP.026 v6 (in force from 1/1/2026) says PAC-B. The guideline is the rule —
+          confirm with EDA before filing.
+        ar: >-
+          أداة الهيئة للتغييرات بتقول PAC-A، والإرشاد GL.CAPP.026 الإصدار 6 (ساري من 1/1/2026) بيقول PAC-B. الإرشاد هو المرجع — اتأكد مع
+          الهيئة قبل التقديم.
   - id: EG-EDA/var/H-28
     kind: variation
     authority: EG-EDA
@@ -608,9 +1018,18 @@ variations:
         Amendment of FPP with the new name/Address of the LH/MAH information (i.e. Inner leaflet‎‏ ‏and ‎Mock up) that will be followed up
         by Central Administration of Operation (Inspection Department).
     cite:
-      - src: eda-variation-tool
-        at: row 28
       - src: eda-gl-capp-026-v6
+        at: §3.1.1
+        quote: Change in Name / Address of Finished Product LH/MAH
+      - src: eda-variation-tool
+        at: Human, ID 28
+    guideline:
+      section: 3.1.1
+      heading: Change in Name / Address of Finished Product LH/MAH
+      item: null
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-29
     kind: variation
     authority: EG-EDA
@@ -629,9 +1048,18 @@ variations:
         Amendment of FPP with the new name/Address of the LH/MAH information (i.e. Inner leaflet‎‏ ‏and ‎Mock up) that will be followed up
         by Central Administration of Operation (Inspection Department).
     cite:
-      - src: eda-variation-tool
-        at: row 29
       - src: eda-gl-capp-026-v6
+        at: §3.1.1
+        quote: Change in Name / Address of Finished Product LH/MAH
+      - src: eda-variation-tool
+        at: Human, ID 29
+    guideline:
+      section: 3.1.1
+      heading: Change in Name / Address of Finished Product LH/MAH
+      item: null
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-30
     kind: variation
     authority: EG-EDA
@@ -652,9 +1080,18 @@ variations:
         Amendment of FPP with the new name/Address of Manufacturing ‎sites information (i.e. Inner leaflet‎‏ ‏and ‎Mock up) that will be
         followed up by Central Administration of Operation (Inspection Department).
     cite:
-      - src: eda-variation-tool
-        at: row 30
       - src: eda-gl-capp-026-v6
+        at: §3.1.5
+        quote: Change in Name / Address of Manufacturing sites (including bulk manufacturer, packager, quality control testing & batch releaser)
+      - src: eda-variation-tool
+        at: Human, ID 30
+    guideline:
+      section: 3.1.5
+      heading: Change in Name / Address of Manufacturing sites (including bulk manufacturer, packager, quality control testing & batch releaser)
+      item: null
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-31
     kind: variation
     authority: EG-EDA
@@ -675,9 +1112,18 @@ variations:
         Amendment of FPP with the new name/Address of Manufacturing ‎sites information (i.e. Inner leaflet‎‏ ‏and ‎Mock up) that will be
         followed up by Central Administration of Operation (Inspection Department).
     cite:
-      - src: eda-variation-tool
-        at: row 31
       - src: eda-gl-capp-026-v6
+        at: §3.1.5
+        quote: Change in Name / Address of Manufacturing sites (including bulk manufacturer, packager, quality control testing & batch releaser)
+      - src: eda-variation-tool
+        at: Human, ID 31
+    guideline:
+      section: 3.1.5
+      heading: Change in Name / Address of Manufacturing sites (including bulk manufacturer, packager, quality control testing & batch releaser)
+      item: null
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-32
     kind: variation
     authority: EG-EDA
@@ -692,9 +1138,18 @@ variations:
       - The applicant shall be authorized for registration.‎
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 32
       - src: eda-gl-capp-026-v6
+        at: §3.1.6
+        quote: For Imported Finished Products
+      - src: eda-variation-tool
+        at: Human, ID 32
+    guideline:
+      section: 3.1.6
+      heading: Change in Applicant for Registration
+      item: For Imported Finished Products
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-33
     kind: variation
     authority: EG-EDA
@@ -712,9 +1167,18 @@ variations:
     requirements:
       - NA
     cite:
-      - src: eda-variation-tool
-        at: row 33
       - src: eda-gl-capp-026-v6
+        at: §3.1.7
+        quote: Modification of Registration license (including but not limited to trade name, price, storage site) · 1 NA
+      - src: eda-variation-tool
+        at: Human, ID 33
+    guideline:
+      section: 3.1.7
+      heading: Modification of Registration license (including but not limited to trade name, price, storage site)
+      item: 1 NA
+      pac: PAC-A
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-34
     kind: variation
     authority: EG-EDA
@@ -734,9 +1198,18 @@ variations:
         Amendment of FPP with the new LH/MAH information (i.e. Inner leaflet‎‏ ‏and ‎Mock up) that will be followed up by Central
         Administration of Operation (Inspection Department).
     cite:
-      - src: eda-variation-tool
-        at: row 34
       - src: eda-gl-capp-026-v6
+        at: §3.1.8
+        quote: 'License Holder: a) For local Finished Product'
+      - src: eda-variation-tool
+        at: Human, ID 34
+    guideline:
+      section: 3.1.8
+      heading: Finished Product LH/ MAH Transfer
+      item: 'License Holder: a) For local Finished Product'
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-35
     kind: variation
     authority: EG-EDA
@@ -755,9 +1228,18 @@ variations:
         Amendment of FPP with the new LH/MAH information (i.e. Inner leaflet‎‏ ‏and ‎Mock up) that will be followed up by Central
         Administration of Operation (Inspection Department).
     cite:
-      - src: eda-variation-tool
-        at: row 35
       - src: eda-gl-capp-026-v6
+        at: §3.1.8 b)
+        quote: b) For Bulk or Under license Finished Product
+      - src: eda-variation-tool
+        at: Human, ID 35
+    guideline:
+      section: 3.1.8
+      heading: Finished Product LH/ MAH Transfer
+      item: b) For Bulk or Under license Finished Product
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-36
     kind: variation
     authority: EG-EDA
@@ -776,9 +1258,18 @@ variations:
         Amendment of FPP with the new LH/MAH information (i.e. Inner leaflet‎‏ ‏and ‎Mock up) that will be followed up by Central
         Administration of Operation (Inspection Department).
     cite:
-      - src: eda-variation-tool
-        at: row 36
       - src: eda-gl-capp-026-v6
+        at: §3.1.8 c)
+        quote: c) For Imported Finished Product
+      - src: eda-variation-tool
+        at: Human, ID 36
+    guideline:
+      section: 3.1.8
+      heading: Finished Product LH/ MAH Transfer
+      item: c) For Imported Finished Product
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-37
     kind: variation
     authority: EG-EDA
@@ -797,9 +1288,18 @@ variations:
         Amendment of FPP with the new LH/MAH information (i.e. Inner leaflet‎‏ ‏and ‎Mock up) that will be followed up by Central
         Administration of Operation (Inspection Department).
     cite:
-      - src: eda-variation-tool
-        at: row 37
       - src: eda-gl-capp-026-v6
+        at: §3.1.8
+        quote: 'Marketing Authorization Holder: a) For Bulk or Under license Finished Product'
+      - src: eda-variation-tool
+        at: Human, ID 37
+    guideline:
+      section: 3.1.8
+      heading: Finished Product LH/ MAH Transfer
+      item: 'Marketing Authorization Holder: a) For Bulk or Under license Finished Product'
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-38
     kind: variation
     authority: EG-EDA
@@ -818,9 +1318,18 @@ variations:
         Amendment of FPP with the new LH/MAH information (i.e. Inner leaflet‎‏ ‏and ‎Mock up) that will be followed up by Central
         Administration of Operation (Inspection Department).
     cite:
-      - src: eda-variation-tool
-        at: row 38
       - src: eda-gl-capp-026-v6
+        at: §3.1.8 b)
+        quote: b) For Imported Finished Product
+      - src: eda-variation-tool
+        at: Human, ID 38
+    guideline:
+      section: 3.1.8
+      heading: Finished Product LH/ MAH Transfer
+      item: b) For Imported Finished Product
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-39
     kind: variation
     authority: EG-EDA
@@ -841,9 +1350,18 @@ variations:
         Amendment of FPP information if reflected (i.e. Inner leaflet‎‏ ‏and ‎Mock up) that will be followed up by Central Administration of
         Operation (Inspection Department).
     cite:
-      - src: eda-variation-tool
-        at: row 39
       - src: eda-gl-capp-026-v6
+        at: §3.1.9
+        quote: For Imported /Bulk & Under License Finished Products
+      - src: eda-variation-tool
+        at: Human, ID 39
+    guideline:
+      section: 3.1.9
+      heading: Addition/Change of Finished Product MAH in Egypt
+      item: For Imported /Bulk & Under License Finished Products
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-40
     kind: variation
     authority: EG-EDA
@@ -865,9 +1383,18 @@ variations:
         Operation (Inspection Department).
       - In use stability study on one production batch.‎
     cite:
-      - src: eda-variation-tool
-        at: row 40
       - src: eda-gl-capp-026-v6
+        at: §3.1.11 a)
+        quote: Change/addition of solvent/diluent manufacturer supplied for a Finished Product · a) Lidocaine or other solvent
+      - src: eda-variation-tool
+        at: Human, ID 40
+    guideline:
+      section: 3.1.11
+      heading: Change/addition of solvent/diluent manufacturer supplied for a Finished Product
+      item: a) Lidocaine or other solvent
+      pac: PAC-B
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-41
     kind: variation
     authority: EG-EDA
@@ -888,9 +1415,18 @@ variations:
         Amendment of FPP information if reflected (i.e. Inner leaflet‎‏ ‏and ‎Mock up) that will be followed up by Central Administration of
         Operation (Inspection Department).
     cite:
-      - src: eda-variation-tool
-        at: row 41
       - src: eda-gl-capp-026-v6
+        at: §3.1.11 b)
+        quote: Change/addition of solvent/diluent manufacturer supplied for a Finished Product · b) Water for injection
+      - src: eda-variation-tool
+        at: Human, ID 41
+    guideline:
+      section: 3.1.11
+      heading: Change/addition of solvent/diluent manufacturer supplied for a Finished Product
+      item: b) Water for injection
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-42
     kind: variation
     authority: EG-EDA
@@ -922,9 +1458,22 @@ variations:
         available, tests ‎must be done against the innovator product). (Or Bioequivalence study according to ‎category of API).‎
       - Process validation reports for three batches from the proposed manufacturing site.‎
     cite:
-      - src: eda-variation-tool
-        at: row 42
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.5 a)
+        quote: >-
+          a) Addition or replacement of a Site where any manufacturing operation(s) take place except batch control and/or release testing
+          and Primary / secondary packaging.
+      - src: eda-variation-tool
+        at: Human, ID 42
+    guideline:
+      section: 3.2.2.5
+      heading: Change in the manufacturing site for part or all of the manufacturing process of the Finished Product
+      item: >-
+        a) Addition or replacement of a Site where any manufacturing operation(s) take place except batch control and/or release testing and
+        Primary / secondary packaging.
+      pac: PAC-B
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-43
     kind: variation
     authority: EG-EDA
@@ -955,9 +1504,18 @@ variations:
         available, tests ‎must be done against the innovator product). (Or Bioequivalence study according to ‎category of API).‎
       - Process validation reports for three batches from the proposed manufacturing site.‎
     cite:
-      - src: eda-variation-tool
-        at: row 43
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.5 d)
+        quote: d) Addition or replacement of Primary packaging site
+      - src: eda-variation-tool
+        at: Human, ID 43
+    guideline:
+      section: 3.2.2.5
+      heading: Change in the manufacturing site for part or all of the manufacturing process of the Finished Product
+      item: d) Addition or replacement of Primary packaging site
+      pac: PAC-B
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-44
     kind: variation
     authority: EG-EDA
@@ -980,9 +1538,18 @@ variations:
         Amendment of FPP with the new manufacturer / packager /Batch release site if reflected information (i.e. Inner leaflet‏ ‏and ‎Mock
         up) that will be followed up by Central Administration of Operation (Inspection ‎Department). ‎
     cite:
-      - src: eda-variation-tool
-        at: row 44
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.5 e)
+        quote: e) Addition or replacement of Secondary packaging site (Non-Functional)
+      - src: eda-variation-tool
+        at: Human, ID 44
+    guideline:
+      section: 3.2.2.5
+      heading: Change in the manufacturing site for part or all of the manufacturing process of the Finished Product
+      item: e) Addition or replacement of Secondary packaging site (Non-Functional)
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-45
     kind: variation
     authority: EG-EDA
@@ -1001,9 +1568,18 @@ variations:
         Amendment of FPP with the new manufacturer / packager /Batch release site if reflected information (i.e. Inner leaflet‏ ‏and ‎Mock
         up) that will be followed up by Central Administration of Operation (Inspection ‎Department). ‎
     cite:
-      - src: eda-variation-tool
-        at: row 45
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.5 f)
+        quote: f) Addition or replacement of Batch release site/ Quality control testing
+      - src: eda-variation-tool
+        at: Human, ID 45
+    guideline:
+      section: 3.2.2.5
+      heading: Change in the manufacturing site for part or all of the manufacturing process of the Finished Product
+      item: f) Addition or replacement of Batch release site/ Quality control testing
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-46
     kind: variation
     authority: EG-EDA
@@ -1022,9 +1598,18 @@ variations:
         Amendment of FPP with the new manufacturer / packager /Batch release site if reflected information (i.e. Inner leaflet‏ ‏and ‎Mock
         up) that will be followed up by Central Administration of Operation (Inspection ‎Department). ‎
     cite:
-      - src: eda-variation-tool
-        at: row 46
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.5 g)
+        quote: g) Addition or replacement of Storage site
+      - src: eda-variation-tool
+        at: Human, ID 46
+    guideline:
+      section: 3.2.2.5
+      heading: Change in the manufacturing site for part or all of the manufacturing process of the Finished Product
+      item: g) Addition or replacement of Storage site
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-47
     kind: variation
     authority: EG-EDA
@@ -1048,9 +1633,20 @@ variations:
       - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
       - Process validation reports for three batches of the proposed batch size.‎
     cite:
-      - src: eda-variation-tool
-        at: row 47
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.7 a)
+        quote: >-
+          a) Scaling up/down to and including a factor of 10 folds for Immediate Release oral pharmaceutical forms or non-sterile solutions
+          .
+      - src: eda-variation-tool
+        at: Human, ID 47
+    guideline:
+      section: 3.2.2.7
+      heading: Change in the batch size of the finished product
+      item: a) Scaling up/down to and including a factor of 10 folds for Immediate Release oral pharmaceutical forms or non-sterile solutions .
+      pac: PAC-B
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-48
     kind: variation
     authority: EG-EDA
@@ -1072,9 +1668,22 @@ variations:
         Bioequivalence ‎study according to category of API)‎
       - Process validation reports for three batches of the proposed batch size.‎
     cite:
-      - src: eda-variation-tool
-        at: row 48
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.7 b)
+        quote: >-
+          b) Scaling up/down to and including a factor of 10 folds for pharmaceutical forms manufactured by complex manufacturing process
+          e.g Modified Release (MR), etc.
+      - src: eda-variation-tool
+        at: Human, ID 48
+    guideline:
+      section: 3.2.2.7
+      heading: Change in the batch size of the finished product
+      item: >-
+        b) Scaling up/down to and including a factor of 10 folds for pharmaceutical forms manufactured by complex manufacturing process e.g
+        Modified Release (MR), etc.
+      pac: PAC-II
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-49
     kind: variation
     authority: EG-EDA
@@ -1102,9 +1711,18 @@ variations:
         batch of Finished Pharmaceutical product manufactured with the new batch size.
       - Process validation reports for three batches of the proposed batch size.‎
     cite:
-      - src: eda-variation-tool
-        at: row 49
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.7 c)
+        quote: c) Scaling up more than factor of 10 folds for Immediate Release oral pharmaceutical forms
+      - src: eda-variation-tool
+        at: Human, ID 49
+    guideline:
+      section: 3.2.2.7
+      heading: Change in the batch size of the finished product
+      item: c) Scaling up more than factor of 10 folds for Immediate Release oral pharmaceutical forms
+      pac: PAC-B
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-50
     kind: variation
     authority: EG-EDA
@@ -1131,9 +1749,22 @@ variations:
         Bioequivalence ‎study according to category of API)‎
       - Process validation reports for three batches of the proposed batch size.‎
     cite:
-      - src: eda-variation-tool
-        at: row 50
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.7 d)
+        quote: >-
+          d) Scaling up more than a factor of 10 folds for pharmaceutical forms manufactured by complex manufacturing process e.g Modified
+          Release (MR), etc.
+      - src: eda-variation-tool
+        at: Human, ID 50
+    guideline:
+      section: 3.2.2.7
+      heading: Change in the batch size of the finished product
+      item: >-
+        d) Scaling up more than a factor of 10 folds for pharmaceutical forms manufactured by complex manufacturing process e.g Modified
+        Release (MR), etc.
+      pac: PAC-II
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-51
     kind: variation
     authority: EG-EDA
@@ -1148,9 +1779,18 @@ variations:
       - The active substance must remain the same.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 51
       - src: eda-gl-capp-026-v6
+        at: §3.1.2
+        quote: Change in name of the active substance or of an excipient
+      - src: eda-variation-tool
+        at: Human, ID 51
+    guideline:
+      section: 3.1.2
+      heading: Change in name of the active substance or of an excipient
+      item: null
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-52
     kind: variation
     authority: EG-EDA
@@ -1165,9 +1805,18 @@ variations:
       - The excipient must remain the same.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 52
       - src: eda-gl-capp-026-v6
+        at: §3.1.2
+        quote: Change in name of the active substance or of an excipient
+      - src: eda-variation-tool
+        at: Human, ID 52
+    guideline:
+      section: 3.1.2
+      heading: Change in name of the active substance or of an excipient
+      item: null
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-53
     kind: variation
     authority: EG-EDA
@@ -1184,9 +1833,20 @@ variations:
       - Any product markings used to differentiate strengths should not be completely deleted.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 53
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.1 a)
+        quote: a) Change in imprints, embossing or other markings
+      - src: eda-variation-tool
+        at: Human, ID 53
+    guideline:
+      section: 3.2.2.1
+      heading: >-
+        Change or addition of imprints, bossing (embossing/debossing) or other markings including replacement, or addition of inks used for
+        product marking
+      item: a) Change in imprints, embossing or other markings
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-54
     kind: variation
     authority: EG-EDA
@@ -1202,9 +1862,22 @@ variations:
       - The scoring is not intended to divide the FPP into equal doses.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 54
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.1 b)
+        quote: >-
+          Change or addition of imprints, bossing (embossing/debossing) or other markings including replacement, or addition of inks used
+          for product marking · b) Deletion of a score line
+      - src: eda-variation-tool
+        at: Human, ID 54
+    guideline:
+      section: 3.2.2.1
+      heading: >-
+        Change or addition of imprints, bossing (embossing/debossing) or other markings including replacement, or addition of inks used for
+        product marking
+      item: b) Deletion of a score line
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-55
     kind: variation
     authority: EG-EDA
@@ -1226,9 +1899,22 @@ variations:
         Amendment of Product Information (i.e. Inner leaflet and Mock up) that will be followed up by Central Administration of operation
         (Inspection Department).
     cite:
-      - src: eda-variation-tool
-        at: row 55
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.1 c)
+        quote: >-
+          Change or addition of imprints, bossing (embossing/debossing) or other markings including replacement, or addition of inks used
+          for product marking · c) Addition of a score line
+      - src: eda-variation-tool
+        at: Human, ID 55
+    guideline:
+      section: 3.2.2.1
+      heading: >-
+        Change or addition of imprints, bossing (embossing/debossing) or other markings including replacement, or addition of inks used for
+        product marking
+      item: c) Addition of a score line
+      pac: PAC-B
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-56
     kind: variation
     authority: EG-EDA
@@ -1246,9 +1932,22 @@ variations:
       - The scoring is not intended to divide the FPP into equal doses.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 56
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.1 c)
+        quote: >-
+          Change or addition of imprints, bossing (embossing/debossing) or other markings including replacement, or addition of inks used
+          for product marking · c) Addition of a score line
+      - src: eda-variation-tool
+        at: Human, ID 56
+    guideline:
+      section: 3.2.2.1
+      heading: >-
+        Change or addition of imprints, bossing (embossing/debossing) or other markings including replacement, or addition of inks used for
+        product marking
+      item: c) Addition of a score line
+      pac: PAC-B
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-57
     kind: variation
     authority: EG-EDA
@@ -1269,9 +1968,30 @@ variations:
         manufactured from the new shape/dimension against the innovator product. (Or may be changed to 3 different PH media in addition to
         the most suitable medium or Bioequivalence study according to category of API & its BCs Class).
     cite:
-      - src: eda-variation-tool
-        at: row 57
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.2 a)
+        quote: a) Immediate release tablets, capsules, suppositories and pessaries.
+      - src: eda-variation-tool
+        at: Human, ID 57
+    guideline:
+      section: 3.2.2.2
+      heading: Change in the shape or dimensions of the pharmaceutical form
+      item: a) Immediate release tablets, capsules, suppositories and pessaries.
+      pac: PAC-N
+      classes:
+        - item: a) Immediate release tablets, capsules, suppositories and pessaries.
+          pac: PAC-N
+        - item: >-
+            b) Gastro - resistant , modified or prolonged release pharmaceutical forms and scored tablets intended to be divided into equal
+            doses.
+          pac: PAC-B
+    check:
+      verdict: split
+      note:
+        en: >-
+          EDA's tool gives one class (PAC-B) for what the guideline splits into 2 items with their own classes; the class depends on the
+          case.
+        ar: أداة الهيئة بتدي فئة واحدة (PAC-B) لحاجة الإرشاد بيقسمها 2 بنود، كل بند بفئته؛ الفئة على حسب الحالة.
   - id: EG-EDA/var/H-58
     kind: variation
     authority: EG-EDA
@@ -1281,7 +2001,7 @@ variations:
       ar: null
     group: Drug Product
     type: Dimension, shape
-    pac: PAC-II
+    pac: PAC-B
     conditions: []
     requirements:
       - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
@@ -1291,9 +2011,30 @@ variations:
         manufactured from the new shape/dimension against the innovator product. (Or may be changed to 3 different PH media in addition to
         the most suitable medium or Bioequivalence study according to category of API & its BCs Class).
     cite:
-      - src: eda-variation-tool
-        at: row 58
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.2 b)
+        quote: >-
+          b) Gastro - resistant , modified or prolonged release pharmaceutical forms and scored tablets intended to be divided into equal
+          doses.
+      - src: eda-variation-tool
+        at: Human, ID 58
+    guideline:
+      section: 3.2.2.2
+      heading: Change in the shape or dimensions of the pharmaceutical form
+      item: >-
+        b) Gastro - resistant , modified or prolonged release pharmaceutical forms and scored tablets intended to be divided into equal
+        doses.
+      pac: PAC-B
+    pac_tool: PAC-II
+    check:
+      verdict: differs
+      note:
+        en: >-
+          EDA's variation tool says PAC-II; the guideline GL.CAPP.026 v6 (in force from 1/1/2026) says PAC-B. The guideline is the rule —
+          confirm with EDA before filing.
+        ar: >-
+          أداة الهيئة للتغييرات بتقول PAC-II، والإرشاد GL.CAPP.026 الإصدار 6 (ساري من 1/1/2026) بيقول PAC-B. الإرشاد هو المرجع — اتأكد مع
+          الهيئة قبل التقديم.
   - id: EG-EDA/var/H-59
     kind: variation
     authority: EG-EDA
@@ -1326,9 +2067,18 @@ variations:
         Result of stability testing generated on one production batch with a minimum of 6 months accelerated testing, and to be released to
         the market by central administration of operation (Inspection department) after evaluating the result of a minimum of 3 months.
     cite:
-      - src: eda-variation-tool
-        at: row 59
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.3 a)
+        quote: a) Changes in components of the flavoring or coloring system 1. Addition, deletion or replacement
+      - src: eda-variation-tool
+        at: Human, ID 59
+    guideline:
+      section: 3.2.2.3
+      heading: Changes in the composition (excipients) of the Finished Pharmaceutical product
+      item: a) Changes in components of the flavoring or coloring system 1. Addition, deletion or replacement
+      pac: PAC-B
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-60
     kind: variation
     authority: EG-EDA
@@ -1351,9 +2101,18 @@ variations:
       - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
       - Batch Analysis for first production batch at CADC labs.
     cite:
-      - src: eda-variation-tool
-        at: row 60
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.3 2.
+        quote: Changes in the composition (excipients) of the Finished Pharmaceutical product · 2. Increase or reduction
+      - src: eda-variation-tool
+        at: Human, ID 60
+    guideline:
+      section: 3.2.2.3
+      heading: Changes in the composition (excipients) of the Finished Pharmaceutical product
+      item: 2. Increase or reduction
+      pac: PAC-B
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-61
     kind: variation
     authority: EG-EDA
@@ -1383,9 +2142,22 @@ variations:
         Result of stability testing generated on one production batch with a minimum of 6 months accelerated testing, and to be released to
         the market by central administration of operation (Inspection department) after evaluating the result of a minimum of 3 months.
     cite:
-      - src: eda-variation-tool
-        at: row 61
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.3 b)
+        quote: >-
+          b) other excipients 1. Any minor adjustment of the quantitative composition of the Finished Pharmaceutical product with respect to
+          excipients (according to Annex III)
+      - src: eda-variation-tool
+        at: Human, ID 61
+    guideline:
+      section: 3.2.2.3
+      heading: Changes in the composition (excipients) of the Finished Pharmaceutical product
+      item: >-
+        b) other excipients 1. Any minor adjustment of the quantitative composition of the Finished Pharmaceutical product with respect to
+        excipients (according to Annex III)
+      pac: PAC-B
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-62
     kind: variation
     authority: EG-EDA
@@ -1409,9 +2181,22 @@ variations:
         Comparative in-vitro dissolution study at 3 different PH media (1.2,4.5,6.8) & most suitable medium (D3/4) on one production batch
         against the innovator product. (Or Bioequivalence study according to category of API).
     cite:
-      - src: eda-variation-tool
-        at: row 62
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.3 2.
+        quote: >-
+          2. Qualitative or quantitative changes in one or more excipients that may have a significant impact on the safety, quality or
+          efficacy of the medicinal product
+      - src: eda-variation-tool
+        at: Human, ID 62
+    guideline:
+      section: 3.2.2.3
+      heading: Changes in the composition (excipients) of the Finished Pharmaceutical product
+      item: >-
+        2. Qualitative or quantitative changes in one or more excipients that may have a significant impact on the safety, quality or
+        efficacy of the medicinal product
+      pac: PAC-II
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-63
     kind: variation
     authority: EG-EDA
@@ -1435,9 +2220,22 @@ variations:
         Comparative in-vitro dissolution study at 3 different PH media (1.2,4.5,6.8) & most suitable medium (D3/4) on one production batch
         against the innovator product. (Or Bioequivalence study according to category of API).
     cite:
-      - src: eda-variation-tool
-        at: row 63
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.3 3.
+        quote: >-
+          3. Any new excipient that includes the use of materials of animal origin for which assessment is required of viral safety data or
+          TSE risk
+      - src: eda-variation-tool
+        at: Human, ID 63
+    guideline:
+      section: 3.2.2.3
+      heading: Changes in the composition (excipients) of the Finished Pharmaceutical product
+      item: >-
+        3. Any new excipient that includes the use of materials of animal origin for which assessment is required of viral safety data or
+        TSE risk
+      pac: PAC-II
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-64
     kind: variation
     authority: EG-EDA
@@ -1460,9 +2258,18 @@ variations:
         Comparative in-vitro dissolution study at 3 different PH media (1.2,4.5,6.8) & most suitable medium (D3/4) on one production batch
         against the innovator product. (Or Bioequivalence study according to category of API).
     cite:
-      - src: eda-variation-tool
-        at: row 64
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.3 4.
+        quote: 4. Replacement of excipient(s) with a comparable excipient(s) with the same functional characteristics.
+      - src: eda-variation-tool
+        at: Human, ID 64
+    guideline:
+      section: 3.2.2.3
+      heading: Changes in the composition (excipients) of the Finished Pharmaceutical product
+      item: 4. Replacement of excipient(s) with a comparable excipient(s) with the same functional characteristics.
+      pac: PAC-B
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-65
     kind: variation
     authority: EG-EDA
@@ -1485,9 +2292,18 @@ variations:
         Result of stability testing generated on one production batch with a minimum of 6 months accelerated testing, and to be released to
         the market by central administration of operation (Inspection department) after evaluating the result of a minimum of 3 months.
     cite:
-      - src: eda-variation-tool
-        at: row 65
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.4 a)
+        quote: a) Solid oral pharmaceutical forms.
+      - src: eda-variation-tool
+        at: Human, ID 65
+    guideline:
+      section: 3.2.2.4
+      heading: Change in coating weight of oral dosage forms or change in weight of capsule shell
+      item: a) Solid oral pharmaceutical forms.
+      pac: PAC-B
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-66
     kind: variation
     authority: EG-EDA
@@ -1511,9 +2327,28 @@ variations:
         Comparative in-vitro dissolution study at 3 different PH media (1.2,4.5,6.8) & most suitable medium (D3/4) on one production batch
         against the innovator product. (Or Bioequivalence study according to category of API).
     cite:
-      - src: eda-variation-tool
-        at: row 66
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.4 c)
+        quote: c) Modified or prolonged release pharmaceutical forms where the coating is a critical factor for the release mechanism.
+      - src: eda-variation-tool
+        at: Human, ID 66
+    guideline:
+      section: 3.2.2.4
+      heading: Change in coating weight of oral dosage forms or change in weight of capsule shell
+      item: c) Modified or prolonged release pharmaceutical forms where the coating is a critical factor for the release mechanism.
+      pac: PAC-II
+      classes:
+        - item: b) Gastro-resistant pharmaceutical forms where the coating is a critical factor for the release mechanism.
+          pac: PAC-B
+        - item: c) Modified or prolonged release pharmaceutical forms where the coating is a critical factor for the release mechanism.
+          pac: PAC-II
+    check:
+      verdict: split
+      note:
+        en: >-
+          EDA's tool gives one class (PAC-II) for what the guideline splits into 2 items with their own classes; the class depends on the
+          case.
+        ar: أداة الهيئة بتدي فئة واحدة (PAC-II) لحاجة الإرشاد بيقسمها 2 بنود، كل بند بفئته؛ الفئة على حسب الحالة.
   - id: EG-EDA/var/H-67
     kind: variation
     authority: EG-EDA
@@ -1531,9 +2366,18 @@ variations:
       - Any change should be within the range of currently approved limits.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 67
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.10 a)
+        quote: a) Change within the approved specification acceptance criteria.
+      - src: eda-variation-tool
+        at: Human, ID 67
+    guideline:
+      section: 3.2.2.10
+      heading: Change in the specification attributes and/or limits of the Finished Pharmaceutical product
+      item: a) Change within the approved specification acceptance criteria.
+      pac: PAC-A
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-68
     kind: variation
     authority: EG-EDA
@@ -1557,9 +2401,18 @@ variations:
         Comparative in-vitro dissolution study at 3 different PH media (1.2,4.5,6.8) & most suitable medium (D3/4) on one production batch
         against the innovator product. (Or Bioequivalence study according to API category), If the added test affect dissolution.
     cite:
-      - src: eda-variation-tool
-        at: row 68
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.10 b)
+        quote: b) Addition of a new specification parameter to the specification with its corresponding test method
+      - src: eda-variation-tool
+        at: Human, ID 68
+    guideline:
+      section: 3.2.2.10
+      heading: Change in the specification attributes and/or limits of the Finished Pharmaceutical product
+      item: b) Addition of a new specification parameter to the specification with its corresponding test method
+      pac: PAC-B
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-69
     kind: variation
     authority: EG-EDA
@@ -1571,7 +2424,7 @@ variations:
       ar: null
     group: Drug Product
     type: Specification
-    pac: PAC-N
+    pac: PAC-A
     conditions:
       - >-
         The change does not result from unexpected events arising during manufacture, e.g. new unqualified impurity; change in total
@@ -1581,9 +2434,30 @@ variations:
         impurities or critical physical characteristics .
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 69
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.10 c)
+        quote: >-
+          c) Deletion of a non-significant specification parameter (e.g., deletion of an obsolete parameter such as odor and taste or
+          identification test for a coloring or flavoring material)
+      - src: eda-variation-tool
+        at: Human, ID 69
+    guideline:
+      section: 3.2.2.10
+      heading: Change in the specification attributes and/or limits of the Finished Pharmaceutical product
+      item: >-
+        c) Deletion of a non-significant specification parameter (e.g., deletion of an obsolete parameter such as odor and taste or
+        identification test for a coloring or flavoring material)
+      pac: PAC-A
+    pac_tool: PAC-N
+    check:
+      verdict: differs
+      note:
+        en: >-
+          EDA's variation tool says PAC-N; the guideline GL.CAPP.026 v6 (in force from 1/1/2026) says PAC-A. The guideline is the rule —
+          confirm with EDA before filing.
+        ar: >-
+          أداة الهيئة للتغييرات بتقول PAC-N، والإرشاد GL.CAPP.026 الإصدار 6 (ساري من 1/1/2026) بيقول PAC-A. الإرشاد هو المرجع — اتأكد مع
+          الهيئة قبل التقديم.
   - id: EG-EDA/var/H-70
     kind: variation
     authority: EG-EDA
@@ -1598,9 +2472,18 @@ variations:
       - The change should not be the result of unexpected events arising during manufacture or because of stability concerns.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 70
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.20 a)
+        quote: a) Reduction of the shelf life of the Finished Pharmaceutical product 1. As packaged for sale
+      - src: eda-variation-tool
+        at: Human, ID 70
+    guideline:
+      section: 3.2.2.20
+      heading: Change in the shelf-life or storage conditions of the Finished Pharmaceutical product
+      item: a) Reduction of the shelf life of the Finished Pharmaceutical product 1. As packaged for sale
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-71
     kind: variation
     authority: EG-EDA
@@ -1615,9 +2498,18 @@ variations:
       - The change should not be the result of unexpected events arising during manufacture or because of stability concerns.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 71
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.20 2.
+        quote: Change in the shelf-life or storage conditions of the Finished Pharmaceutical product · 2. After first opening
+      - src: eda-variation-tool
+        at: Human, ID 71
+    guideline:
+      section: 3.2.2.20
+      heading: Change in the shelf-life or storage conditions of the Finished Pharmaceutical product
+      item: 2. After first opening
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-72
     kind: variation
     authority: EG-EDA
@@ -1632,9 +2524,18 @@ variations:
       - The change should not be the result of unexpected events arising during manufacture or because of stability concerns.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 72
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.20 3.
+        quote: 3. After dilution or reconstitution
+      - src: eda-variation-tool
+        at: Human, ID 72
+    guideline:
+      section: 3.2.2.20
+      heading: Change in the shelf-life or storage conditions of the Finished Pharmaceutical product
+      item: 3. After dilution or reconstitution
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-73
     kind: variation
     authority: EG-EDA
@@ -1649,9 +2550,18 @@ variations:
       - Approval from Stability Administration for proposed Change.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 73
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.20 b)
+        quote: b) Extension of the shelf life of the Finished Pharmaceutical product 1. As packaged for sale (supported by real time data)
+      - src: eda-variation-tool
+        at: Human, ID 73
+    guideline:
+      section: 3.2.2.20
+      heading: Change in the shelf-life or storage conditions of the Finished Pharmaceutical product
+      item: b) Extension of the shelf life of the Finished Pharmaceutical product 1. As packaged for sale (supported by real time data)
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-74
     kind: variation
     authority: EG-EDA
@@ -1666,9 +2576,18 @@ variations:
       - Approval from Stability Administration for proposed Change.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 74
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.20 2.
+        quote: 2. After first opening (supported by real time data)
+      - src: eda-variation-tool
+        at: Human, ID 74
+    guideline:
+      section: 3.2.2.20
+      heading: Change in the shelf-life or storage conditions of the Finished Pharmaceutical product
+      item: 2. After first opening (supported by real time data)
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-75
     kind: variation
     authority: EG-EDA
@@ -1683,9 +2602,18 @@ variations:
       - Approval from Stability Administration for proposed Change.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 75
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.20 3.
+        quote: 3. After dilution or reconstitution (supported by real time data)
+      - src: eda-variation-tool
+        at: Human, ID 75
+    guideline:
+      section: 3.2.2.20
+      heading: Change in the shelf-life or storage conditions of the Finished Pharmaceutical product
+      item: 3. After dilution or reconstitution (supported by real time data)
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-76
     kind: variation
     authority: EG-EDA
@@ -1700,9 +2628,18 @@ variations:
       - Approval from Stability Administration for proposed Change.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 76
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.20 c)
+        quote: c) Change in storage conditions of the Finished Pharmaceutical product or the diluted/reconstituted product
+      - src: eda-variation-tool
+        at: Human, ID 76
+    guideline:
+      section: 3.2.2.20
+      heading: Change in the shelf-life or storage conditions of the Finished Pharmaceutical product
+      item: c) Change in storage conditions of the Finished Pharmaceutical product or the diluted/reconstituted product
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-77
     kind: variation
     authority: EG-EDA
@@ -1712,14 +2649,31 @@ variations:
       ar: null
     group: Drug Product
     type: Test procedure
-    pac: PAC-N
+    pac: PAC-A
     conditions:
       - Notification/Approval from CADC for new test procedure.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 77
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.11
+        quote: Change in Analytical procedure for the Finished Pharmaceutical product
+      - src: eda-variation-tool
+        at: Human, ID 77
+    guideline:
+      section: 3.2.2.11
+      heading: Change in Analytical procedure for the Finished Pharmaceutical product
+      item: null
+      pac: PAC-A
+    pac_tool: PAC-N
+    check:
+      verdict: differs
+      note:
+        en: >-
+          EDA's variation tool says PAC-N; the guideline GL.CAPP.026 v6 (in force from 1/1/2026) says PAC-A. The guideline is the rule —
+          confirm with EDA before filing.
+        ar: >-
+          أداة الهيئة للتغييرات بتقول PAC-N، والإرشاد GL.CAPP.026 الإصدار 6 (ساري من 1/1/2026) بيقول PAC-A. الإرشاد هو المرجع — اتأكد مع
+          الهيئة قبل التقديم.
   - id: EG-EDA/var/H-78
     kind: variation
     authority: EG-EDA
@@ -1740,9 +2694,18 @@ variations:
         Result of stability testing generated on one production batch with a minimum of 6 months accelerated testing, and to be released to
         the market by central administration of operation (Inspection department) after evaluating the result of a minimum of 3 months.
     cite:
-      - src: eda-variation-tool
-        at: row 78
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.12 a)
+        quote: a) Qualitative and quantitative composition of an approved container 1. Solid pharmaceutical forms
+      - src: eda-variation-tool
+        at: Human, ID 78
+    guideline:
+      section: 3.2.2.12
+      heading: Change in immediate packaging of the Finished Pharmaceutical product
+      item: a) Qualitative and quantitative composition of an approved container 1. Solid pharmaceutical forms
+      pac: PAC-B
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-79
     kind: variation
     authority: EG-EDA
@@ -1763,9 +2726,18 @@ variations:
         Result of stability testing generated on one production batch with a minimum of 6 months accelerated testing, and to be released to
         the market by central administration of operation (Inspection department) after evaluating the result of a minimum of 3 months.
     cite:
-      - src: eda-variation-tool
-        at: row 79
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.12 3.
+        quote: 3. Sterile pharmaceutical products.
+      - src: eda-variation-tool
+        at: Human, ID 79
+    guideline:
+      section: 3.2.2.12
+      heading: Change in immediate packaging of the Finished Pharmaceutical product
+      item: 3. Sterile pharmaceutical products.
+      pac: PAC-II
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-80
     kind: variation
     authority: EG-EDA
@@ -1784,9 +2756,28 @@ variations:
         Result of stability testing generated on one production batch with a minimum of 6 months accelerated testing, and to be released to
         the market by central administration of operation (Inspection department) after evaluating the result of a minimum of 3 months.
     cite:
-      - src: eda-variation-tool
-        at: row 80
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.12 b)
+        quote: b) Change in type of container or addition of a new container 1. Solid, semi-solid and non-sterile liquid pharmaceutical forms
+      - src: eda-variation-tool
+        at: Human, ID 80
+    guideline:
+      section: 3.2.2.12
+      heading: Change in immediate packaging of the Finished Pharmaceutical product
+      item: b) Change in type of container or addition of a new container 1. Solid, semi-solid and non-sterile liquid pharmaceutical forms
+      pac: PAC-B
+      classes:
+        - item: b) Change in type of container or addition of a new container 1. Solid, semi-solid and non-sterile liquid pharmaceutical forms
+          pac: PAC-B
+        - item: 2. Sterile pharmaceutical products.
+          pac: PAC-II
+    check:
+      verdict: split
+      note:
+        en: >-
+          EDA's tool gives one class (PAC-II) for what the guideline splits into 2 items with their own classes; the class depends on the
+          case.
+        ar: أداة الهيئة بتدي فئة واحدة (PAC-II) لحاجة الإرشاد بيقسمها 2 بنود، كل بند بفئته؛ الفئة على حسب الحالة.
   - id: EG-EDA/var/H-81
     kind: variation
     authority: EG-EDA
@@ -1796,7 +2787,7 @@ variations:
       ar: null
     group: Drug Product
     type: Container closure system
-    pac: PAC-N
+    pac: PAC-B
     conditions:
       - No change in the qualitative or quantitative composition of the container.
       - >-
@@ -1805,9 +2796,26 @@ variations:
     requirements:
       - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products
     cite:
-      - src: eda-variation-tool
-        at: row 81
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.15 a)
+        quote: a) Non-sterile medicinal products
+      - src: eda-variation-tool
+        at: Human, ID 81
+    guideline:
+      section: 3.2.2.15
+      heading: Change in shape of the container
+      item: a) Non-sterile medicinal products
+      pac: PAC-B
+    pac_tool: PAC-N
+    check:
+      verdict: differs
+      note:
+        en: >-
+          EDA's variation tool says PAC-N; the guideline GL.CAPP.026 v6 (in force from 1/1/2026) says PAC-B. The guideline is the rule —
+          confirm with EDA before filing.
+        ar: >-
+          أداة الهيئة للتغييرات بتقول PAC-N، والإرشاد GL.CAPP.026 الإصدار 6 (ساري من 1/1/2026) بيقول PAC-B. الإرشاد هو المرجع — اتأكد مع
+          الهيئة قبل التقديم.
   - id: EG-EDA/var/H-82
     kind: variation
     authority: EG-EDA
@@ -1817,7 +2825,7 @@ variations:
       ar: null
     group: Drug Product
     type: Container closure system
-    pac: PAC-II
+    pac: PAC-B
     conditions: []
     requirements:
       - Amendment of the relevant section(s) of the dossier concerning the change for the prequalified quality products.
@@ -1826,9 +2834,26 @@ variations:
         Result of stability testing generated on one production batch with a minimum of 6 months accelerated testing, and to be released to
         the market by central administration of operation (Inspection department) after evaluating the result of a minimum of 3 months.
     cite:
-      - src: eda-variation-tool
-        at: row 82
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.15 c)
+        quote: Change in shape of the container · c) Sterile medicinal products
+      - src: eda-variation-tool
+        at: Human, ID 82
+    guideline:
+      section: 3.2.2.15
+      heading: Change in shape of the container
+      item: c) Sterile medicinal products
+      pac: PAC-B
+    pac_tool: PAC-II
+    check:
+      verdict: differs
+      note:
+        en: >-
+          EDA's variation tool says PAC-II; the guideline GL.CAPP.026 v6 (in force from 1/1/2026) says PAC-B. The guideline is the rule —
+          confirm with EDA before filing.
+        ar: >-
+          أداة الهيئة للتغييرات بتقول PAC-II، والإرشاد GL.CAPP.026 الإصدار 6 (ساري من 1/1/2026) بيقول PAC-B. الإرشاد هو المرجع — اتأكد مع
+          الهيئة قبل التقديم.
   - id: EG-EDA/var/H-83
     kind: variation
     authority: EG-EDA
@@ -1851,9 +2876,18 @@ variations:
         (Inspection Department).
       - Pricing
     cite:
-      - src: eda-variation-tool
-        at: row 83
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.16 a)
+        quote: a) Change in the number of units (e.g., tablets, ampoules, etc.) in a pack
+      - src: eda-variation-tool
+        at: Human, ID 83
+    guideline:
+      section: 3.2.2.16
+      heading: Change in pack size of the Finished Pharmaceutical product
+      item: a) Change in the number of units (e.g., tablets, ampoules, etc.) in a pack
+      pac: PAC-B
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-84
     kind: variation
     authority: EG-EDA
@@ -1870,9 +2904,18 @@ variations:
         product information leaflet.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 84
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.16 b)
+        quote: Change in pack size of the Finished Pharmaceutical product · b) Deletion of pack size(s)
+      - src: eda-variation-tool
+        at: Human, ID 84
+    guideline:
+      section: 3.2.2.16
+      heading: Change in pack size of the Finished Pharmaceutical product
+      item: b) Deletion of pack size(s)
+      pac: PAC-A
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-85
     kind: variation
     authority: EG-EDA
@@ -1899,9 +2942,18 @@ variations:
         Result of stability testing generated on one production batch with a minimum of 6 months accelerated testing, and to be released to
         the market by central administration of operation (Inspection department) after evaluating the result of a minimum of 3 months.
     cite:
-      - src: eda-variation-tool
-        at: row 85
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.16 c)
+        quote: c) Change/Addition in the fill weight/fill volume of sterile multidose pharmaceutical products.
+      - src: eda-variation-tool
+        at: Human, ID 85
+    guideline:
+      section: 3.2.2.16
+      heading: Change in pack size of the Finished Pharmaceutical product
+      item: c) Change/Addition in the fill weight/fill volume of sterile multidose pharmaceutical products.
+      pac: PAC-II
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-86
     kind: variation
     authority: EG-EDA
@@ -1927,9 +2979,18 @@ variations:
         Result of stability testing generated on one production batch with a minimum of 6 months accelerated testing, and to be released to
         the market by central administration of operation (Inspection department) after evaluating the result of a minimum of 3 months
     cite:
-      - src: eda-variation-tool
-        at: row 86
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.16 d)
+        quote: d) Change/Addition in the fill weight/fill volume of non- sterile multi-dose medicinal products
+      - src: eda-variation-tool
+        at: Human, ID 86
+    guideline:
+      section: 3.2.2.16
+      heading: Change in pack size of the Finished Pharmaceutical product
+      item: d) Change/Addition in the fill weight/fill volume of non- sterile multi-dose medicinal products
+      pac: PAC-B
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-87
     kind: variation
     authority: EG-EDA
@@ -1948,9 +3009,20 @@ variations:
         Pharmaceutical product
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 87
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.17 a)
+        quote: a) Change that affects the product information
+      - src: eda-variation-tool
+        at: Human, ID 87
+    guideline:
+      section: 3.2.2.17
+      heading: >-
+        Change in any part of the (primary) packaging material not in contact with the Finished Pharmaceutical product formulation (such as
+        color of flip-off caps, color code rings on ampoules, change of needle shield (different plastic used)
+      item: a) Change that affects the product information
+      pac: PAC-N
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-88
     kind: variation
     authority: EG-EDA
@@ -1969,9 +3041,20 @@ variations:
         Pharmaceutical product
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 88
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.17 b)
+        quote: b) Change that does not affect the product information
+      - src: eda-variation-tool
+        at: Human, ID 88
+    guideline:
+      section: 3.2.2.17
+      heading: >-
+        Change in any part of the (primary) packaging material not in contact with the Finished Pharmaceutical product formulation (such as
+        color of flip-off caps, color code rings on ampoules, change of needle shield (different plastic used)
+      item: b) Change that does not affect the product information
+      pac: PAC-A
+    check:
+      verdict: agrees
   - id: EG-EDA/var/H-89
     kind: variation
     authority: EG-EDA
@@ -1987,8 +3070,14 @@ variations:
     requirements: []
     cite:
       - src: eda-variation-tool
-        at: row 89
-      - src: eda-gl-capp-026-v6
+        at: Human, ID 89
+    check:
+      verdict: tool-only
+      note:
+        en: >-
+          The guideline (§3.2.2.18) lists adding or replacing a packaging-component supplier, not deleting one; the class is the tool's
+          until EDA confirms it.
+        ar: الإرشاد (§3.2.2.18) فيه إضافة أو تغيير مورّد مكونات العبوة، مش حذفه؛ الفئة هنا من الأداة لحد ما الهيئة تأكدها.
   - id: EG-EDA/var/H-90
     kind: variation
     authority: EG-EDA
@@ -1998,7 +3087,7 @@ variations:
       ar: null
     group: Drug Product
     type: Container closure system
-    pac: PAC-N
+    pac: PAC-A
     conditions:
       - No deletion of packaging component or device.
       - The qualitative and quantitative composition of the packaging components/device and design specifications remain the same.
@@ -2006,6 +3095,23 @@ variations:
       - The sterilization method and conditions remain the same, if applicable.
     requirements: []
     cite:
-      - src: eda-variation-tool
-        at: row 90
       - src: eda-gl-capp-026-v6
+        at: §3.2.2.18 a)
+        quote: a) Addition or replacement of a manufacturer or supplier
+      - src: eda-variation-tool
+        at: Human, ID 90
+    guideline:
+      section: 3.2.2.18
+      heading: Change in manufacturer, sterilization process or supplier of packaging components (when mentioned in the dossier)
+      item: a) Addition or replacement of a manufacturer or supplier
+      pac: PAC-A
+    pac_tool: PAC-N
+    check:
+      verdict: differs
+      note:
+        en: >-
+          EDA's variation tool says PAC-N; the guideline GL.CAPP.026 v6 (in force from 1/1/2026) says PAC-A. The guideline is the rule —
+          confirm with EDA before filing.
+        ar: >-
+          أداة الهيئة للتغييرات بتقول PAC-N، والإرشاد GL.CAPP.026 الإصدار 6 (ساري من 1/1/2026) بيقول PAC-A. الإرشاد هو المرجع — اتأكد مع
+          الهيئة قبل التقديم.

@@ -23,13 +23,11 @@
     G_LOC: R
   cite:
     - src: ich-m4-r4
-    - src: ich-m4q-r1
-    - src: ich-m4s-r2
-    - src: ich-m4e-r2
   ectd_cite:
     - src: ich-ectd-v322
-      at: the XML backbone is the table of contents, so no document goes into an eCTD for it (a CTD-folder item only)
+      at: Appendix 4
       status: in-force
+      note: the XML backbone is the table of contents, so no document goes into an eCTD for it — a CTD-folder item only
 - id: ICH/M2-INTRO
   kind: requirement
   authority: ICH
@@ -53,15 +51,13 @@
     G_LOC: R
   cite:
     - src: ich-m4-r4
-    - src: ich-m4q-r1
-    - src: ich-m4s-r2
-    - src: ich-m4e-r2
   ectd_cite:
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: Appendix 4 (the same number as the CTD section)
+      at: Appendix 4
       status: in-force
+      note: the same number as the CTD section
 - id: ICH/M2-02
   kind: requirement
   authority: ICH
@@ -98,8 +94,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/M2-NCO
   kind: requirement
   authority: ICH
@@ -130,15 +127,14 @@
     G_LOC: O
   cite:
     - src: ich-m4-r4
-    - src: ich-m4q-r1
     - src: ich-m4s-r2
-    - src: ich-m4e-r2
   ectd_cite:
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: Appendix 4 (the same number as the CTD section)
+      at: Appendix 4
       status: in-force
+      note: the same number as the CTD section
 - id: ICH/M2-CO
   kind: requirement
   authority: ICH
@@ -169,15 +165,14 @@
     G_LOC: R
   cite:
     - src: ich-m4-r4
-    - src: ich-m4q-r1
-    - src: ich-m4s-r2
     - src: ich-m4e-r2
   ectd_cite:
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: Appendix 4 (the same number as the CTD section)
+      at: Appendix 4
       status: in-force
+      note: the same number as the CTD section
 - id: ICH/M2-NCS
   kind: requirement
   authority: ICH
@@ -206,15 +201,14 @@
     G_LOC: NR
   cite:
     - src: ich-m4-r4
-    - src: ich-m4q-r1
     - src: ich-m4s-r2
-    - src: ich-m4e-r2
   ectd_cite:
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: Appendix 4 (the same number as the CTD section)
+      at: Appendix 4
       status: in-force
+      note: the same number as the CTD section
 - id: ICH/M2-CS
   kind: requirement
   authority: ICH
@@ -245,15 +239,14 @@
     G_LOC: O
   cite:
     - src: ich-m4-r4
-    - src: ich-m4q-r1
-    - src: ich-m4s-r2
     - src: ich-m4e-r2
   ectd_cite:
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: Appendix 4 (the same number as the CTD section)
+      at: Appendix 4
       status: in-force
+      note: the same number as the CTD section
 - id: ICH/M3-TOC
   kind: requirement
   authority: ICH
@@ -278,8 +271,9 @@
     - src: ich-m4q-r1
   ectd_cite:
     - src: ich-ectd-v322
-      at: the XML backbone is the table of contents, so no document goes into an eCTD for it (a CTD-folder item only)
+      at: Appendix 4
       status: in-force
+      note: the XML backbone is the table of contents, so no document goes into an eCTD for it — a CTD-folder item only
 - id: ICH/S-01
   kind: requirement
   authority: ICH
@@ -313,8 +307,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/S-02
   kind: requirement
   authority: ICH
@@ -348,8 +343,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/S-03
   kind: requirement
   authority: ICH
@@ -385,8 +381,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/S-04
   kind: requirement
   authority: ICH
@@ -420,8 +417,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/S-05
   kind: requirement
   authority: ICH
@@ -469,8 +467,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/S-06
   kind: requirement
   authority: ICH
@@ -504,8 +503,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/S-07
   kind: requirement
   authority: ICH
@@ -549,8 +549,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/S-08
   kind: requirement
   authority: ICH
@@ -586,8 +587,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/S-09
   kind: requirement
   authority: ICH
@@ -622,8 +624,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/S-10
   kind: requirement
   authority: ICH
@@ -657,8 +660,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/S-11
   kind: requirement
   authority: ICH
@@ -692,8 +696,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/S-12
   kind: requirement
   authority: ICH
@@ -727,8 +732,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/S-13
   kind: requirement
   authority: ICH
@@ -762,8 +768,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/S-14
   kind: requirement
   authority: ICH
@@ -799,8 +806,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/P-01
   kind: requirement
   authority: ICH
@@ -833,8 +841,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/P-02
   kind: requirement
   authority: ICH
@@ -867,8 +876,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/P-03
   kind: requirement
   authority: ICH
@@ -899,8 +909,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/P-04
   kind: requirement
   authority: ICH
@@ -931,8 +942,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/P-05
   kind: requirement
   authority: ICH
@@ -965,8 +977,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/P-06
   kind: requirement
   authority: ICH
@@ -997,8 +1010,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/P-07
   kind: requirement
   authority: ICH
@@ -1029,8 +1043,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/P-08
   kind: requirement
   authority: ICH
@@ -1061,8 +1076,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/P-09
   kind: requirement
   authority: ICH
@@ -1093,8 +1109,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/P-10
   kind: requirement
   authority: ICH
@@ -1126,8 +1143,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/P-11
   kind: requirement
   authority: ICH
@@ -1158,8 +1176,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/P-12
   kind: requirement
   authority: ICH
@@ -1190,8 +1209,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/P-13
   kind: requirement
   authority: ICH
@@ -1222,8 +1242,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/P-14
   kind: requirement
   authority: ICH
@@ -1254,8 +1275,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/P-15
   kind: requirement
   authority: ICH
@@ -1286,8 +1308,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/P-16
   kind: requirement
   authority: ICH
@@ -1320,8 +1343,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/A-01
   kind: requirement
   authority: ICH
@@ -1352,8 +1376,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/A-02
   kind: requirement
   authority: ICH
@@ -1385,8 +1410,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/A-03
   kind: requirement
   authority: ICH
@@ -1417,8 +1443,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/R-04
   kind: requirement
   authority: ICH
@@ -1448,8 +1475,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/M4-TOC
   kind: requirement
   authority: ICH
@@ -1479,8 +1507,9 @@
     - src: ich-m4s-r2
   ectd_cite:
     - src: ich-ectd-v322
-      at: the XML backbone is the table of contents, so no document goes into an eCTD for it (a CTD-folder item only)
+      at: Appendix 4
       status: in-force
+      note: the XML backbone is the table of contents, so no document goes into an eCTD for it — a CTD-folder item only
 - id: ICH/M4-01
   kind: requirement
   authority: ICH
@@ -1510,8 +1539,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/M4-02
   kind: requirement
   authority: ICH
@@ -1541,8 +1571,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/M5-01
   kind: requirement
   authority: ICH
@@ -1570,8 +1601,9 @@
     - src: ich-m4e-r2
   ectd_cite:
     - src: ich-ectd-v322
-      at: no 5.1 node — the TOC is replaced by the backbone (CTD output only)
+      at: Appendix 4
       status: in-force
+      note: no 5.1 node — the TOC is replaced by the backbone (CTD output only)
 - id: ICH/M5-02
   kind: requirement
   authority: ICH
@@ -1628,8 +1660,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/M5-03
   kind: requirement
   authority: ICH
@@ -1686,8 +1719,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/M5-04
   kind: requirement
   authority: ICH
@@ -1784,8 +1818,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/M5-05
   kind: requirement
   authority: ICH
@@ -1842,8 +1877,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/M5-06
   kind: requirement
   authority: ICH
@@ -1900,8 +1936,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/M5-07
   kind: requirement
   authority: ICH
@@ -1960,8 +1997,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/M5-08
   kind: requirement
   authority: ICH
@@ -2018,8 +2056,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/M5-09
   kind: requirement
   authority: ICH
@@ -2050,8 +2089,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/M5-10
   kind: requirement
   authority: ICH
@@ -2108,8 +2148,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/M5-11
   kind: requirement
   authority: ICH
@@ -2140,8 +2181,9 @@
     - src: ich-m4-r4
       status: in-force
     - src: ich-ectd-v322
-      at: App. 4 (same number as the CTD section)
+      at: App. 4
       status: in-force
+      note: same number as the CTD section
 - id: ICH/M5-12
   kind: requirement
   authority: ICH

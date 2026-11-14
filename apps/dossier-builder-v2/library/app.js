@@ -1,12 +1,12 @@
 // The library: browse and search everything the program knows, each entry with the guideline it comes from.
 // Runs the same in the claude.ai artifact and opened from disk on the desktop; the knowledge is embedded in the page.
 import { createKnowledge } from '../core/knowledge.js';
-import { T, STATUS, STATUS_HINT, SEVERITY, AREA, KIND, SCOPE, ISSUER, HOW, FORMAT, FORMAT_VALUE, EVIDENCE } from './i18n.js';
+import { T, STATUS, STATUS_HINT, SEVERITY, AREA, KIND, SCOPE, ISSUER, HOW, FORMAT, FORMAT_VALUE, EVIDENCE, RESULT, RESULT_HINT, VERDICT } from './i18n.js';
 
 const data = JSON.parse(document.getElementById('kdata').textContent);
 const K = createKnowledge(data);
 
-const VIEWS = ['home', 'sources', 'requirements', 'rules', 'variations', 'documents', 'countries', 'ectd'];
+const VIEWS = ['home', 'review', 'sources', 'requirements', 'rules', 'variations', 'documents', 'countries', 'ectd'];
 const VIEW_OF = { requirement: 'requirements', rule: 'rules', variation: 'variations', doctype: 'documents', country: 'countries', table: 'ectd' };
 const KIND_ORDER = ['source', 'requirement', 'rule', 'variation', 'doctype', 'country', 'table'];
 
@@ -20,6 +20,9 @@ for (const r of [...data.requirements, ...data.rules, ...data.variations.items, 
   slugOf.set(r.id, s);
 }
 const recHref = id => '#' + slugOf.get(id);
+// The copy of a source published beside the page (sources/<file>), opened at a page when one is known.
+const fileHref = (s, page) => (s?.held && s.file ? `sources/${encodeURIComponent(s.file.split('/').pop())}${page ? `#page=${page}` : ''}` : null);
+const pageOf = (c, check) => check?.pages?.[0] || (/\bp\.?\s*(\d+)/.exec(c.at || '') || [])[1] || null;
 const srcHref = id => '#s-' + id;
 
 const store = {
@@ -30,7 +33,7 @@ const state = {
   lang: store.get('lang', 'ar') === 'en' ? 'en' : 'ar',
   auth: store.get('auth', '') || null,
   view: 'home', q: '', open: null,
-  reqSet: 'eg-eda-ctd', area: '', pac: '',
+  reqSet: 'eg-eda-ctd', area: '', pac: '', verdict: '',
 };
 if (state.auth && !K.authority(state.auth)) state.auth = null;
 
@@ -73,6 +76,7 @@ const lists = {
   documents: () => byAuth(data.doctypes.items),
   countries: () => (state.auth ? data.countries.items.filter(c => countryAuthority(c) === state.auth) : data.countries.items),
   ectd: () => (state.auth && state.auth !== 'ICH' ? [] : data.ectd.index),
+  review: () => data.checks?.findings?.findings || [],
 };
 function countryAuthority(c) {
   return { EG: 'EG-EDA', EU: 'EU', US: 'US-FDA', GCC: 'GCC' }[c.code] || 'OTHER';
@@ -134,7 +138,7 @@ function recordRow(r) {
     case 'rule':
       return row(recHref(r.id), esc(short(r.id)), L(r.title), `<span class="sev sev-${esc(r.severity)}">${word(SEVERITY, r.severity)}</span>`, state.q ? word(AREA, r.area) : '', isOpen(r.id));
     case 'variation':
-      return row(recHref(r.id), esc(short(r.id)), L(r.title), `${authTag(r)}<span class="pac pac-${esc(r.pac)}">${esc(r.pac)}</span>`, en(r.type), isOpen(r.id));
+      return row(recHref(r.id), esc(short(r.id)), L(r.title), `${authTag(r)}${r.check && r.check.verdict !== 'agrees' ? `<span class="vd vd-${esc(r.check.verdict)}">${word(VERDICT, r.check.verdict)}</span>` : ''}<span class="pac pac-${esc(r.pac)}">${esc(r.pac)}</span>`, en(r.type), isOpen(r.id));
     case 'doctype':
       return row(recHref(r.id), esc(validityText(r.validity_months)), L(r.title), stamp(r.status), word(SCOPE, r.scope), isOpen(r.id));
     case 'country':
@@ -202,12 +206,14 @@ const views = {
   },
   variations() {
     const all = lists.variations();
-    const list = state.pac ? all.filter(v => v.pac === state.pac) : all;
+    const list = all.filter(v => (!state.pac || v.pac === state.pac) && (!state.verdict || v.check?.verdict === state.verdict));
+    const verdicts = ['differs', 'split', 'tool-only'].map(k => [k, word(VERDICT, k), all.filter(v => v.check?.verdict === k).length]).filter(x => x[2]);
     const types = [...new Set(list.map(v => `${v.group} — ${v.type}`))];
     const body = types.map(g => groupBlock(en(g), list.filter(v => `${v.group} — ${v.type}` === g), recordRow)).join('');
     const rule = data.variations.grouping_rule;
     return `<h1>${t('variations')}</h1>
       ${chips('pac', data.variations.class_order.map(c => [c, `<span class="code">${esc(c)}</span>`, all.filter(v => v.pac === c).length]), state.pac)}
+      ${verdicts.length ? chips('verdict', verdicts, state.verdict) : ''}
       ${all.length ? `<p class="lede">${L(rule)}</p>${setRestsOn(K.set('eg-eda-variations'))}` : ''}${body || empty()}`;
   },
   documents() {
@@ -222,6 +228,27 @@ const views = {
   ectd() {
     const list = lists.ectd();
     return `<h1>${t('ectd')}</h1>${groupBlock(t('ectd'), list, recordRow) || empty()}`;
+  },
+  review() {
+    const ch = data.checks || {};
+    const f = ch.findings || {};
+    const order = ['verified', 'located', 'read', 'nothing-to-check', 'no-copy', 'partly', 'not-found'];
+    const total = (ch.citations || []).length;
+    const tiles = order.filter(k => ch.summary?.[k]).map(k => `<div class="res res-${k}"><b>${n(ch.summary[k])}</b><span>${word(RESULT, k)}</span><small>${esc(pick(RESULT_HINT[k]))}</small></div>`).join('');
+    const cards = (f.findings || []).map(x => `<section class="finding fd-${esc(x.kind)}"><h3>${L(x.title)}</h3><p class="prose">${L(x.text)}</p>
+      ${x.records?.length ? `<div class="kw">${x.records.map(id => `<a href="${recHref(id)}" class="ltr">${esc(short(id))}</a>`).join('')}</div>` : ''}
+      ${x.sources?.length ? `<div class="kw">${x.sources.map(id => `<a href="${srcHref(id)}">${srcCodeVer(K.source(id))}</a>`).join('')}</div>` : ''}</section>`).join('');
+    const rows = data.sources.filter(s => !state.auth || s.authority === state.auth).map(s => {
+      const r = ch.sources?.[s.id] || {};
+      if (!r.citations && !s.latest) return '';
+      const cells = ['verified', 'located', 'read', 'nothing-to-check', 'no-copy'].map(k => `<td>${r[k] ? n(r[k]) : ''}</td>`).join('');
+      return `<tr><th><a href="${srcHref(s.id)}">${srcCodeVer(s)}</a></th><td>${n(r.citations || 0)}</td>${cells}<td>${s.latest ? esc(s.latest.result) : ''}</td></tr>`;
+    }).join('');
+    return `<h1>${t('review')}</h1><p class="lede">${esc(t('reviewLede', f.reviewed || ''))}</p>
+      <section class="group"><h3>${t('byResult')}<span class="n">${n(total)}</span></h3></section><div class="results">${tiles}</div>
+      <section class="group"><h3>${t('findings')}<span class="n">${n((f.findings || []).length)}</span></h3></section><div class="findings">${cards}</div>
+      <section class="group"><h3>${t('perSource')}</h3></section>
+      <div class="tbl"><table class="persrc"><tr><th>${t('sources')}</th><th>${t('citationsN')}</th>${['verified', 'located', 'read', 'nothing-to-check', 'no-copy'].map(k => `<th title="${esc(pick(RESULT_HINT[k]))}">${word(RESULT, k)}</th>`).join('')}<th>${t('online')}</th></tr>${rows}</table></div>`;
   },
   search() {
     const hits = K.search(state.q, { authority: state.auth || undefined, limit: 300 });
@@ -240,16 +267,25 @@ function setRestsOn(set) {
 }
 
 // ---------------------------------------------------------------- an entry
-function citeCard(c) {
+function citeCard(c, rec, field) {
   const s = K.source(c.src);
+  const check = rec ? K.check(rec.id, field, c) : null;
+  const page = pageOf(c, check);
+  const href = fileHref(s, page);
+  const arabic = /[\u0600-\u06FF]/.test(c.quote || '');
   return `<div class="cite ${esc(s.status)}">
-    <div class="line1"><a href="${srcHref(s.id)}">${srcCodeVer(s)}</a>${stamp(s.status)}</div>
+    <div class="line1"><a href="${srcHref(s.id)}">${srcCodeVer(s)}</a>${stamp(s.status)}${check ? `<span class="res-tag res-${esc(check.result)}" title="${esc(pick(RESULT_HINT[check.result]))}">${word(RESULT, check.result)}${check.pages?.length ? ` · ${esc(t('pages', check.pages.join(', ')))}` : ''}</span>` : ''}</div>
     <div class="ttl">${L(s.title)}</div>
     ${c.at ? `<div class="at">${t('at')}: <b class="ltr">${esc(c.at)}</b></div>` : ''}
-    ${c.quote ? `<blockquote lang="en" dir="ltr">${esc(c.quote)}</blockquote>` : ''}
+    ${c.quote ? `<blockquote ${arabic ? 'lang="ar" dir="rtl"' : 'lang="en" dir="ltr"'}>${esc(c.quote)}</blockquote>` : ''}
+    ${c.gist ? `<div class="gist"><span>${t('gist')}</span> <span lang="en" dir="ltr" class="ltr">${esc(c.gist)}</span></div>` : ''}
+    ${c.note ? `<div class="at">${esc(c.note)}</div>` : ''}
+    ${href ? `<a class="openfile" href="${href}" target="_blank" rel="noopener">${t('openDoc')}${page ? ` · ${esc(t('pages', page))}` : ''}</a>` : ''}
   </div>`;
 }
-const citeList = (title, list) => (list?.length ? `<section class="cites"><h3>${title}</h3>${list.map(citeCard).join('')}</section>` : '');
+const citeList = (title, list, rec, field = 'cite') => (list?.length ? `<section class="cites"><h3>${title}</h3>${list.map(c => citeCard(c, rec, field)).join('')}</section>` : '');
+// What the review changed in a record, said plainly above its sources.
+const checkNote = r => (r.check?.note ? `<div class="checknote"><b>${word(VERDICT, r.check.verdict)}</b> ${L(r.check.note)}</div>` : '');
 const facts = pairs => {
   const rows = pairs.filter(([, v]) => v !== undefined && v !== null && v !== '').map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
   return rows ? `<dl class="facts">${rows}</dl>` : '';
@@ -278,13 +314,17 @@ const details = {
     return `<div class="d-head"><div class="eyebrow">${word(KIND, 'source')} · ${L(K.authority(s.authority)?.name)}</div>
         <h1>${L(s.title)}</h1><div class="eyebrow">${code(s.code)}${stamp(s.status)}</div></div>
       ${s.confirm ? `<p class="confirm">${t('toConfirm')}: ${esc(s.confirm)}</p>` : ''}
+      ${s.superseded_by ? `<div class="checknote"><b>${t('replacedBy')}</b> <a href="${srcHref(s.superseded_by)}">${srcCodeVer(K.source(s.superseded_by))}</a> — ${L(K.source(s.superseded_by).title)}</div>` : ''}
+      ${fileHref(s) || s.url ? `<div class="openbar">${fileHref(s) ? `<a class="openfile big" href="${fileHref(s)}" target="_blank" rel="noopener">${t('openDoc')}</a>` : ''}${s.url ? `<a class="openfile big ghost" href="${esc(s.url)}" target="_blank" rel="noopener">${t('official')}</a>` : ''}</div>` : ''}
       ${facts([
         [t('version'), s.version && s.version !== '—' ? `<span class="ltr">${esc(s.version)}</span>` : ''],
         [t('issued'), esc(s.issued)], [t('effective'), esc(s.effective)], [t('supersedes'), esc(s.supersedes)],
         [t('status'), esc(pick(STATUS_HINT[s.status]))],
         [t('checked'), s.checked ? `${esc(s.checked.on)} — ${word(HOW, s.checked.how)}` : ''],
+        [t('online'), s.latest ? `${esc(s.latest.on)} — ${esc(s.latest.result)}${s.latest.note ? ` <span class="at">(${esc(s.latest.note)})</span>` : ''}` : ''],
+        [t('byResult'), (() => { const r = data.checks?.sources?.[s.id]; return r?.citations ? ['verified', 'located', 'read', 'nothing-to-check', 'no-copy'].filter(k => r[k]).map(k => `${word(RESULT, k)}: ${n(r[k])}`).join(' · ') : ''; })()],
         [t('copy'), s.held && s.file ? code(s.file) : ''],
-        [t('official'), s.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener" class="ltr">${esc(s.url)}</a>` : ''],
+
         [t('note'), esc(s.note)],
       ])}
       ${usedSets.length ? block(t('setRestsOn'), bullets(usedSets.map(st => st.title))) : ''}
@@ -297,7 +337,7 @@ const details = {
       ? `<div class="tbl"><table class="levels"><tr>${cols.map(c => `<th>${L(set.columns[c])}</th>`).join('')}</tr>
          <tr>${cols.map(c => `<td>${esc(typeof r.matrix[c] === 'object' ? JSON.stringify(r.matrix[c]) : r.matrix[c] ?? '—')}</td>`).join('')}</tr></table></div>
          <p class="eyebrow" style="margin-top:6px">${t('levelKey')}</p>` : '';
-    const cases = innerCases(r.required).map(cs => `${cs.reason || cs.note ? `<p class="prose">${L(cs.reason || cs.note)}</p>` : ''}${cs.cite.map(citeCard).join('')}`).join('');
+    const cases = innerCases(r.required).map(cs => `${cs.reason || cs.note ? `<p class="prose">${L(cs.reason || cs.note)}</p>` : ''}${cs.cite.map(c => citeCard(c, r, 'case')).join('')}`).join('');
     return `<div class="d-head"><div class="eyebrow">${word(KIND, 'requirement')} · ${L(set?.title)}</div>
         <h1>${L(r.title)}</h1><div class="eyebrow">${code(r.ctd)}${r.module ? `<span class="mod mod-${esc(r.module)}">M${esc(r.module)}</span>` : ''}${stamp(r.status)}</div></div>
       ${facts([
@@ -309,26 +349,36 @@ const details = {
       ${block(t('acceptance'), r.acceptance ? `<p class="prose" lang="en" dir="ltr">${esc(r.acceptance)}</p>` : '')}
       ${block(t('note'), r.note ? `<p class="prose">${typeof r.note === 'object' ? L(r.note) : `<span lang="en" dir="ltr" class="ltr">${esc(r.note)}</span>`}</p>` : '')}
       ${block(t('levels'), levels)}
-      ${citeList(t('whereFrom'), r.cite)}
-      ${citeList(t('ectdFrom'), r.ectd_cite)}
+      ${citeList(t('whereFrom'), r.cite, r)}
+      ${citeList(t('ectdFrom'), r.ectd_cite, r, 'ectd_cite')}
       ${cases ? `<section class="cites"><h3>${t('note')}</h3>${cases}</section>` : ''}`;
   },
   rule(r) {
     return `<div class="d-head"><div class="eyebrow">${word(KIND, 'rule')} · ${word(AREA, r.area)}</div>
         <h1>${L(r.title)}</h1><div class="eyebrow">${code(short(r.id))}<span class="sev sev-${esc(r.severity)}">${word(SEVERITY, r.severity)}</span>${r.ctd ? code(r.ctd) : ''}</div></div>
+      ${checkNote(r)}
       ${block(t('question'), `<p class="prose">${L(r.question)}</p>`)}
       ${block(t('deficiency'), r.deficiency ? `<p class="prose">${L(r.deficiency)}</p>` : '')}
       ${block(t('keywords'), r.evidence?.keywords?.length ? `<div class="kw">${r.evidence.keywords.map(k => `<span>${esc(k)}</span>`).join('')}</div>` : '')}
-      ${citeList(t('whereFrom'), r.cite)}
-      ${citeList(t('anchorFrom'), r.anchor_cite)}`;
+      ${citeList(t('whereFrom'), r.cite, r)}
+      ${citeList(t('anchorFrom'), r.anchor_cite, r, 'anchor_cite')}`;
   },
   variation(v) {
+    const g = v.guideline;
+    const gl = g ? facts([
+      [t('guideline'), `<span class="ltr">§${esc(g.section)}</span> — <span lang="en" dir="ltr" class="ltr">${esc(g.heading)}</span>${g.item ? `<br><span lang="en" dir="ltr" class="ltr">${esc(g.item)}</span>` : ''}`],
+      [t('guidelineClass'), `<span class="pac pac-${esc(g.pac)}">${esc(g.pac)}</span>`],
+      [t('toolClass'), v.pac_tool ? `<span class="pac pac-${esc(v.pac_tool)}">${esc(v.pac_tool)}</span>` : ''],
+      [t('classes'), g.classes?.length ? `<ul lang="en" dir="ltr">${g.classes.map(x => `<li>${esc(x.item || '—')} <span class="pac pac-${esc(x.pac)}">${esc(x.pac)}</span></li>`).join('')}</ul>` : ''],
+    ]) : '';
     return `<div class="d-head"><div class="eyebrow">${word(KIND, 'variation')} · ${en(v.group)}</div>
         <h1>${L(v.title)}</h1><div class="eyebrow">${code(short(v.id))}<span class="pac pac-${esc(v.pac)}">${esc(v.pac)}</span>${state.lang === 'ar' && !v.title.ar ? `<span class="tag">${t('enOnly')}</span>` : ''}</div></div>
+      ${checkNote(v)}
       ${facts([[t('pac'), `<span class="pac pac-${esc(v.pac)}">${esc(v.pac)}</span>`], [t('group'), en(v.group)], [t('type'), en(v.type)]])}
+      ${gl}
       ${block(t('conditions'), v.conditions?.length ? `<div lang="en" dir="ltr">${bullets(v.conditions)}</div>` : `<p>${t('none')}</p>`)}
       ${block(t('docsNeeded'), v.requirements?.length ? `<div lang="en" dir="ltr">${bullets(v.requirements)}</div>` : `<p>${t('none')}</p>`)}
-      ${citeList(t('whereFrom'), v.cite)}`;
+      ${citeList(t('whereFrom'), v.cite, v)}`;
   },
   doctype(d) {
     return `<div class="d-head"><div class="eyebrow">${word(KIND, 'doctype')} · ${word(SCOPE, d.scope)}</div>
@@ -338,8 +388,9 @@ const details = {
         [t('warnBefore'), d.warn_days ? esc(t('days', d.warn_days)) : ''],
         [t('scope'), word(SCOPE, d.scope)], [t('issuer'), word(ISSUER, d.issuer_kind)],
       ])}
+      ${checkNote(d)}
       ${block(t('note'), d.note_source ? `<p class="prose" lang="en" dir="ltr">${esc(d.note_source)}</p>` : '')}
-      ${citeList(t('whereFrom'), d.cite)}`;
+      ${citeList(t('whereFrom'), d.cite, d)}`;
   },
   country(c) {
     const formats = Object.entries(c.formats || {}).map(([k, v]) => `<tr><th>${esc(FORMAT[k] || k)}</th><td>${esc(pick(FORMAT_VALUE[v]) || v)}</td></tr>`).join('');
@@ -348,7 +399,7 @@ const details = {
       ${block(t('formats'), formats ? `<div class="tbl"><table class="levels">${formats}</table></div>` : '')}
       ${facts([[t('module1'), `<span lang="en" dir="ltr" class="ltr">${esc(c.module1)}</span>`], [t('criteria'), `<span lang="en" dir="ltr" class="ltr">${esc(c.criteria)}</span>`]])}
       ${block(t('note'), c.note ? `<p class="prose" lang="en" dir="ltr">${esc(c.note)}</p>` : '')}
-      ${citeList(t('whereFrom'), c.cite)}`;
+      ${citeList(t('whereFrom'), c.cite, c)}`;
   },
   table(tb) {
     const files = Object.keys(data.ectd.tables).filter(f => f === tb.file || (tb.file.endsWith('/') && f.startsWith(tb.file)));
@@ -361,7 +412,7 @@ const details = {
         <tr>${head.map(h => `<th>${esc(h)}</th>`).join('')}</tr>${body.map(r => `<tr>${r.map(x => `<td>${esc(x)}</td>`).join('')}</tr>`).join('')}</table></div>`;
     };
     return `<div class="d-head"><div class="eyebrow">${word(KIND, 'table')}</div><h1>${L(tb.title)}</h1><div class="eyebrow">${code(tb.file)}</div></div>
-      ${citeList(t('whereFrom'), tb.cite)}${files.map(f => block(code(f), show(f))).join('')}`;
+      ${citeList(t('whereFrom'), tb.cite, tb)}${files.map(f => block(code(f), show(f))).join('')}`;
   },
 };
 
@@ -444,6 +495,7 @@ document.addEventListener('click', e => {
   if (el.dataset.set !== undefined) { state.reqSet = el.dataset.set || K.sets({ kind: 'requirements' })[0].id; return drawMain(); }
   if (el.dataset.area !== undefined) { state.area = el.dataset.area; return drawMain(); }
   if (el.dataset.pac !== undefined) { state.pac = el.dataset.pac; return drawMain(); }
+  if (el.dataset.verdict !== undefined) { state.verdict = el.dataset.verdict; return drawMain(); }
   // A section link while a search is showing: leave the search.
   if (el.tagName === 'A' && VIEWS.includes((el.getAttribute('href') || '').slice(1)) && state.q) {
     state.q = ''; $('q').value = '';
