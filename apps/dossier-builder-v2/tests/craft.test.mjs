@@ -81,7 +81,14 @@ d.save(sys.argv[1])`, out]);
   return out;
 }
 
+// The PDF's text as a reader of PDFs takes it: poppler's pdftotext where the machine has it (it reads WordCraft's Arabic in
+// order; pdf.js reads the same file's Arabic as broken letters and control characters — a known limit), pdf.js otherwise.
 async function pdfText(bytes) {
+  try {
+    const f = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'craftpdf-')), 'out.pdf');
+    fs.writeFileSync(f, bytes);
+    return execFileSync('pdftotext', ['-enc', 'UTF-8', f, '-'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  } catch { /* no poppler here: pdf.js below */ }
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
   const task = pdfjs.getDocument({ data: new Uint8Array(bytes), useSystemFonts: false });
   const doc = await task.promise;
@@ -103,8 +110,10 @@ test('WordCraft opens a Word letter in Arabic and English and exports it as a PD
     const text = await pdfText(Buffer.from(pdf, 'base64'));
     assert.match(text, /Testaphen/);
     assert.match(text, /TP-24A117/);
-    // Arabic may come out in presentation forms and in either order, depending on how the PDF writes it
-    assert.match(text.normalize('NFKC').replace(/\s+/g, ''), /تيستافين|نيفاتسيت/, 'the Arabic words are in the PDF\'s text');
+    // Arabic may come out in presentation forms, with direction marks and with spaces inside words (glyph positions)
+    const plain = text.normalize('NFKC').replace(/[\u200E\u200F\u202A-\u202E\u2066-\u2069\s]/g, '');
+    assert.match(plain, /تيستافين/, 'the Arabic words are in the PDF\'s text');
+    assert.match(plain, /شركةالنيلالتجريبيةللأدوية/);
     assert.deepEqual(errors, []);
   });
 });
