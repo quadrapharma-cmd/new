@@ -1,5 +1,6 @@
 // Builds the Crafting Apps the dossier tools rest on, from their source at the pinned release (tools/craft/PINS.json):
 //   node tools/craft/build.mjs <app> web [--keep]   → vendor/craft/<app>-web/  the program in the browser (index.html, .js, .wasm)
+//   node tools/craft/build.mjs <app> wasi [--keep]  → vendor/craft/<app>-wasi/ the command-line program for the browser (WASI, gzipped)
 //   node tools/craft/build.mjs <app> cli [--keep]   → vendor/craft/<app>-cli/  the command-line program for this machine
 // The source is fetched once into .cache/<app>-src at the pinned commit (checked), our patches (tools/craft/patches/<app>/*.patch)
 // are applied, and the program's licence files are copied beside what the build writes; build-info.json records the version,
@@ -7,6 +8,7 @@
 // unless --keep. Needs: cargo, the wasm32-unknown-unknown target, trunk and wasm-bindgen at the pinned versions, wasm-opt.
 import fs from 'node:fs';
 import path from 'node:path';
+import zlib from 'node:zlib';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
@@ -83,7 +85,16 @@ export function build(app, kind, { keep = false } = {}) {
       fs.copyFileSync(exe, path.join(out, path.basename(exe)));
       fs.chmodSync(path.join(out, path.basename(exe)), 0o755);
     }
-  } else throw new Error(`build what? «web» or «cli», not «${kind}»`);
+  } else if (kind === 'wasi') {
+    // The command-line program built for WebAssembly with a file system of its own (WASI): the browser runs it in a worker
+    // over an in-memory folder, without its screen — the engine behind the automatic steps. No MCP server in it.
+    r = spawnSync('cargo', ['build', '--release', '--locked', '--target', 'wasm32-wasip1', '-p', pin.cli, '--no-default-features'],
+      { cwd: src, env: { ...env, CARGO_PROFILE_RELEASE_STRIP: 'symbols' }, stdio: 'inherit' });
+    if (r.status === 0) {
+      const wasm = fs.readFileSync(path.join(target, 'wasm32-wasip1', 'release', `${pin.cli}.wasm`));
+      fs.writeFileSync(path.join(out, `${pin.cli}.wasm.gz`), zlib.gzipSync(wasm, { level: 9 }));
+    }
+  } else throw new Error(`build what? «web», «wasi» or «cli», not «${kind}»`);
   const seconds = Math.round((Date.now() - t0) / 1000);
   if (r.status !== 0) throw new Error(`${app} ${kind}: the build failed after ${seconds} s (exit ${r.status})`);
   copyLicences(src, out);

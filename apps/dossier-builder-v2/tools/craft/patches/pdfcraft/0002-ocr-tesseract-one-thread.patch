@@ -1,0 +1,88 @@
+Tesseract reads on one thread unless the caller sets OMP_THREAD_LIMIT (passed through to it).
+Its OpenMP threads spin while they wait, so several readings at once (two documents read together)
+each taking every core slowed each other to a standstill: four pages read together took more than
+two minutes instead of 1.3 s with one thread each; a page alone reads as fast on one thread.
+
+diff --git a/crates/ocr/src/tesseract.rs b/crates/ocr/src/tesseract.rs
+index 7b97923..dfe6c1c 100644
+--- a/crates/ocr/src/tesseract.rs
++++ b/crates/ocr/src/tesseract.rs
+@@ -368,24 +368,33 @@ impl TesseractCli {
+             // output files above are unaffected.
+             command.creation_flags(0x0800_0000);
+         }
+-        let mut child =
+-            command
+-                .args(args)
+-                .stdin(std::process::Stdio::null())
+-                .stdout(out_file)
+-                .stderr(err_file)
+-                .current_dir(&dir.path)
+-                // A minimal environment: nothing from the document or the caller's shell beyond
+-                // what an installed tesseract needs — its data prefix, the PATH (bare-name lookup
+-                // and DLL loading), the Windows system root, and a temp dir it may write to.
+-                .env_clear()
+-                .envs(std::env::vars().filter(|(k, _)| {
+-                    k.eq_ignore_ascii_case("TESSDATA_PREFIX") || k.eq_ignore_ascii_case("PATH") || k.eq_ignore_ascii_case("SystemRoot")
+-                }))
+-                .env("TMP", &dir.path)
+-                .env("TEMP", &dir.path)
+-                .spawn()
+-                .map_err(|e| OcrError::NoTesseract(format!("{} could not start: {e}", self.program.display())))?;
++        command
++            .args(args)
++            .stdin(std::process::Stdio::null())
++            .stdout(out_file)
++            .stderr(err_file)
++            .current_dir(&dir.path)
++            // A minimal environment: nothing from the document or the caller's shell beyond
++            // what an installed tesseract needs — its data prefix, the PATH (bare-name lookup
++            // and DLL loading), the Windows system root, its thread limit, and a temp dir it may
++            // write to.
++            .env_clear()
++            .envs(std::env::vars().filter(|(k, _)| {
++                k.eq_ignore_ascii_case("TESSDATA_PREFIX")
++                    || k.eq_ignore_ascii_case("PATH")
++                    || k.eq_ignore_ascii_case("SystemRoot")
++                    || k.eq_ignore_ascii_case("OMP_THREAD_LIMIT")
++            }))
++            .env("TMP", &dir.path)
++            .env("TEMP", &dir.path);
++        if std::env::var_os("OMP_THREAD_LIMIT").is_none() {
++            // One thread unless the caller says otherwise: tesseract's OpenMP threads spin while
++            // they wait, so several readings at once (two documents read together) each taking
++            // every core slow each other to a standstill — four pages read together took more
++            // than two minutes instead of a second and a half. A page alone reads as fast on one.
++            command.env("OMP_THREAD_LIMIT", "1");
++        }
++        let mut child = command.spawn().map_err(|e| OcrError::NoTesseract(format!("{} could not start: {e}", self.program.display())))?;
+         let started = Instant::now();
+         let status = loop {
+             match child.try_wait() {
+@@ -845,6 +854,26 @@ mod tests {
+         assert_eq!(complete.iter().map(|line| line.words.len()).sum::<usize>(), MAX_WORDS);
+     }
+ 
++    /// Tesseract runs on one thread unless the caller says otherwise (several readings at once
++    /// each taking every core slowed each other to a standstill). Unix: a fake `tesseract` script
++    /// that writes down the limit it was given.
++    #[cfg(unix)]
++    #[test]
++    fn tesseract_runs_on_one_thread_unless_the_caller_says_otherwise() {
++        let dir = TempDir::create().unwrap();
++        let script = dir.path.join("tesseract-threads");
++        std::fs::write(dir.path.join("reading.tsv"), "5\t1\t1\t1\t1\t1\t0\t0\t1\t1\t95\tword\n").unwrap();
++        std::fs::write(
++            &script,
++            "#!/bin/sh\nprintf '%s' \"$OMP_THREAD_LIMIT\" > \"$(dirname \"$0\")/threads.txt\"\ncat \"$(dirname \"$0\")/reading.tsv\"\n",
++        )
++        .unwrap();
++        make_executable(&script);
++        let _ = TesseractCli::new(script).recognize(&blot(8, 8, 0, 0, 4, 4), &RecognizeOptions::default());
++        let want = std::env::var("OMP_THREAD_LIMIT").unwrap_or_else(|_| "1".into());
++        assert_eq!(std::fs::read_to_string(dir.path.join("threads.txt")).unwrap(), want);
++    }
++
+     /// A hung binary is killed at the timeout and reported (Unix: a fake `tesseract` script;
+     /// this test needs a real process, so it is off the web and off Windows).
+     #[cfg(unix)]
