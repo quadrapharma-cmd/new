@@ -1,6 +1,7 @@
 // One dossier being prepared, as the tools see it: its files (by content, never by name), the facts read from them (each with the
 // words on its page that hold it), and the log of every tool call. The same code in the browser and on the desktop: nothing here
-// touches a disk or the network — the page or the bridge hands the files in.
+// touches a disk or the network — the page or the bridge hands the files in, either their bytes or, for a folder on a computer, a
+// way to read them when a tool needs them (a dossier folder can hold gigabytes) with a sample of their first and last bytes.
 export const KINDS = ['pdf', 'docx', 'xlsx', 'pptx', 'zip', 'rar', '7z', 'png', 'jpeg', 'tiff', 'gif', 'webp', 'heic', 'text', 'unknown'];
 
 const starts = (b, ...sig) => sig.every((v, i) => b[i] === v);
@@ -45,8 +46,12 @@ async function sha256(bytes) {
 export async function createWorkspace({ files = [], now = () => new Date().toISOString() } = {}) {
   const list = [];
   for (const f of files) {
-    const bytes = f.bytes instanceof Uint8Array ? f.bytes : new Uint8Array(f.bytes);
-    list.push({ id: `f${list.length + 1}`, name: f.name, path: f.path || f.name, bytes, size: bytes.length, kind: kindOf(bytes), sha256: await sha256(bytes) });
+    let bytes = f.bytes ? (f.bytes instanceof Uint8Array ? f.bytes : new Uint8Array(f.bytes)) : null;
+    const entry = { id: `f${list.length + 1}`, name: f.name, path: f.path || f.name, size: bytes ? bytes.length : f.size,
+                    kind: kindOf(bytes || f.sample), sha256: bytes ? await sha256(bytes) : null };
+    // read when a tool first needs it (never part of what is saved or listed)
+    Object.defineProperty(entry, 'bytes', { enumerable: false, get() { if (!bytes) bytes = f.read(); return bytes; } });
+    list.push(entry);
   }
   const facts = [];
   const log = [];
@@ -73,7 +78,7 @@ export async function createWorkspace({ files = [], now = () => new Date().toISO
     undoLast() { const u = undo.pop(); if (!u) return false; u(); return true; },
     record(entry) { log.push({ n: log.length + 1, at: now(), ...entry }); },
     toJSON() {
-      return { files: list.map(({ bytes, ...f }) => f), facts, log };
+      return { files: list.map(f => ({ ...f })), facts, log };
     },
   };
 }

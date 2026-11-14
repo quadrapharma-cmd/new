@@ -35,7 +35,8 @@ export function manifest() {
       dossier_folder: { type: 'directory', title: 'Dossier folder', description: 'The folder that holds the dossier\'s files. They are read, never changed.', required: true },
     },
     tools: TOOLS.map(t => ({ name: t.name, description: t.description })),
-    compatibility: { platforms: ['darwin', 'win32'], runtimes: { node: '>=18.0.0' } },
+    // pdf.js 6 asks for Node.js 22.13 or later
+    compatibility: { platforms: ['darwin', 'win32'], runtimes: { node: '>=22.13.0' } },
   };
 }
 

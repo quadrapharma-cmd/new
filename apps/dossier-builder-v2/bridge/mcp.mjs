@@ -15,13 +15,26 @@ import { createKnowledge } from '../core/knowledge.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const VERSIONS = ['2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05'];
-const MAX_FILES = 5000, MAX_BYTES = 512 * 1024 * 1024;
+const MAX_FILES = 5000, MAX_BYTES = 512 * 1024 * 1024, SAMPLE = 64 * 1024;
 const note = (...a) => process.stderr.write(a.join(' ') + '\n');
 console.log = console.info = console.warn = console.debug = note;          // nothing may reach standard output but MCP
 
 const arg = name => { const i = process.argv.indexOf(name); return i > 0 ? process.argv[i + 1] : null; };
 
-// The dossier folder's files, every level down, hidden files and folders left out.
+// A file's first and last bytes: enough to tell what it is (a zip names its parts at its end) without reading all of it.
+function sampleOf(p, size) {
+  const fd = fs.openSync(p, 'r');
+  try {
+    const head = Buffer.alloc(Math.min(SAMPLE, size));
+    fs.readSync(fd, head, 0, head.length, 0);
+    if (size <= 2 * SAMPLE) return new Uint8Array(size <= SAMPLE ? head : Buffer.concat([head, (() => { const t = Buffer.alloc(size - head.length); fs.readSync(fd, t, 0, t.length, head.length); return t; })()]));
+    const tail = Buffer.alloc(SAMPLE);
+    fs.readSync(fd, tail, 0, SAMPLE, size - SAMPLE);
+    return new Uint8Array(Buffer.concat([head, tail]));
+  } finally { fs.closeSync(fd); }
+}
+
+// The dossier folder's files, every level down, hidden files and folders left out; each read only when a tool needs it.
 function readFolder(root) {
   const out = [], skipped = [];
   const walk = dir => {
@@ -33,7 +46,7 @@ function readFolder(root) {
       const rel = path.relative(root, p).split(path.sep).join('/');
       const size = fs.statSync(p).size;
       if (out.length >= MAX_FILES || size > MAX_BYTES) { skipped.push(rel); continue; }
-      out.push({ name: e.name, path: rel, bytes: new Uint8Array(fs.readFileSync(p)) });
+      out.push({ name: e.name, path: rel, size, sample: sampleOf(p, size), read: () => new Uint8Array(fs.readFileSync(p)) });
     }
   };
   walk(root);
