@@ -36,11 +36,18 @@ function bar(part) {
 // ---- what the page gives the reader: the scan reader, pages drawn at 300 dpi, pictures, RAR in a worker
 const ocr = createOcr({ base: 'ocr/', onLoad: e => { if (e.part !== 'ready') status(`بيحمّل قارئ المسح… <span class="fine">(أول مرة حوالي 35 م.ب، وبعدها بيبقى أسرع)</span>`); } });
 function canvasOf(w, h) { const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; }
+// A scanned page drawn with its long side 4,200 pixels — an A4 page at about 360 dpi — whatever size its PDF claims (a phone's scanner
+// app writes pages of 28 × 42 inches): Tesseract is told that resolution when the page has the shape of an A4 or Letter sheet, and
+// estimates it otherwise (a resolution read from such a PDF misled it into skipping a letter's heading). On real licences and
+// letters, 360 dpi kept lines that 300 lost (an ingredient's line, a decision's limit) in about the same time.
+const LONG_SIDE = 4200, LONG_DPI = Math.round(300 * 4200 / 3508);
 async function drawPdf(page) {
-  const v1 = page.getViewport({ scale: 1 }), k = Math.min(300 / 72, Math.sqrt(30e6 / Math.max(1, v1.width * v1.height)));
+  const v1 = page.getViewport({ scale: 1 }), k = LONG_SIDE / Math.max(1, v1.width, v1.height);
   const vp = page.getViewport({ scale: k }), c = canvasOf(vp.width, vp.height), g = c.getContext('2d');
   g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
   await page.render({ canvasContext: g, viewport: vp, canvas: c }).promise;
+  const shape = Math.max(v1.width, v1.height) / Math.max(1, Math.min(v1.width, v1.height));
+  c.dpi = Math.abs(shape - 1.414) < 0.08 || Math.abs(shape - 1.294) < 0.06 ? LONG_DPI : 0;
   return c;
 }
 async function drawImage(bytes, kind) {

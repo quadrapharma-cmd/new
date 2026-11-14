@@ -9,7 +9,8 @@
 //      Tesseract's reading of the Latin words it is sure of (the Arabic model drops them) and the model's of the rest.
 // Nothing leaves the browser. Its files come from `base` (written there by prep/build.mjs: the scripts, and the models, the runtime's
 // WebAssembly and the language data as gzip in base64 text, which the artifact host serves).
-//   createOcr({base, onLoad}) → {page(canvas, {dpi}) → text, load()}   (dpi when known: a PDF page drawn at 300 dpi)
+//   createOcr({base, onLoad}) → {page(canvas, {dpi}) → text, load(), lanes}   (dpi when known: a PDF page drawn at 300 dpi; lanes: how
+//   many pages it reads at once — two where the computer has cores to spare)
 const HEIGHT = 48, MIN_WIDTH = 320, SURE = 0.8;
 
 const rtl = c => { const o = c.codePointAt(0); return (o >= 0x0590 && o <= 0x08ff) || (o >= 0xfb1d && o <= 0xfdff) || (o >= 0xfe70 && o <= 0xfeff); };
@@ -121,16 +122,34 @@ export function createOcr({ base = 'ocr/', onLoad = () => {} } = {}) {
   const simd = () => { try { return WebAssembly.validate(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1, 8, 0, 65, 0, 253, 15, 253, 98, 11])); } catch { return false; } };
 
   const stats = { pages: 0, tesseract: 0, paddle: 0, paddleRuns: 0, upright: 0 };   // where the time goes (ms), for the measure
+  // Two pages read at once on a computer with cores to spare: one in Tesseract (its own worker) while the Arabic model reads the
+  // other's lines on the page's thread — the two took about the same time on a dense scan. A phone or a small computer: one.
+  const lanes = (navigator.hardwareConcurrency || 2) >= 4 && (navigator.deviceMemory || 8) >= 4 ? 2 : 1;
+  const idle = [], waiting = [];                                    // Tesseract's workers, each lent to one page at a time
+  const take = () => (idle.length ? Promise.resolve(idle.pop()) : new Promise(ok => waiting.push(ok)));
+  const give = w => (waiting.length ? waiting.shift()(w) : idle.push(w));
+  async function recognize(m, canvas, dpi) {
+    const w = await take();
+    try {
+      await w.setParameters({ user_defined_dpi: String(dpi || 0) });
+      return (await w.recognize(canvas, {}, { text: false, tsv: true })).data;
+    } finally { give(w); }
+  }
   let loading = null;
   function load() {
     return loading || (loading = (async () => {
       if (!(await wasmAllowed())) throw failed('wasm', 'this view does not let a page run WebAssembly, which the scan reader needs');
       onLoad({ part: 'tesseract' });
       await script(url('tess/tesseract.min.js'));
-      const tess = await within(180000, window.Tesseract.createWorker(['ara', 'eng'], 1, {
-        workerPath: url('tess/worker.boot.js'), corePath: url(simd() ? 'tess/tesseract-core-simd-lstm.wasm.js' : 'tess/tesseract-core-lstm.wasm.js'),
-        langPath: url('tess').replace(/\/$/, ''), gzip: true, workerBlobURL: false, cacheMethod: 'none' }), 'timeout');
-      await tess.setParameters({ tessedit_pageseg_mode: '3' });                // automatic page layout, as the tesseract command
+      const one = async () => {
+        const w = await within(180000, window.Tesseract.createWorker(['ara', 'eng'], 1, {
+          workerPath: url('tess/worker.boot.js'), corePath: url(simd() ? 'tess/tesseract-core-simd-lstm.wasm.js' : 'tess/tesseract-core-lstm.wasm.js'),
+          langPath: url('tess').replace(/\/$/, ''), gzip: true, workerBlobURL: false, cacheMethod: 'none' }), 'timeout');
+        await w.setParameters({ tessedit_pageseg_mode: '3' });                  // automatic page layout, as the tesseract command
+        return w;
+      };
+      const tess = [await one()];
+      for (let i = 1; i < lanes; i++) tess.push(await one());
       onLoad({ part: 'paddle' });
       const ort = await import(/* @vite-ignore */ url('ort/ort.wasm.bundle.min.js'));
       ort.env.wasm.numThreads = 1; ort.env.wasm.proxy = false;
@@ -138,6 +157,7 @@ export function createOcr({ base = 'ocr/', onLoad = () => {} } = {}) {
       const sess = await ort.InferenceSession.create(await packed('paddle/arabic_PP-OCRv5_rec_mobile.onnx'), { executionProviders: ['wasm'] });
       const chars = await (await fetch(url('paddle/characters.json'))).json();
       onLoad({ part: 'ready' });
+      for (const w of tess) give(w);
       return { tess, ort, sess, chars: ['\u0000', ...chars, ' '] };   // index 0: the blank; the last: the space
     })().catch(e => { loading = null; throw e; }));
   }
@@ -225,17 +245,17 @@ export function createOcr({ base = 'ocr/', onLoad = () => {} } = {}) {
     g.translate(c.width / 2, c.height / 2); g.rotate(rot * Math.PI / 180); g.drawImage(src, -src.width / 2, -src.height / 2);
     return c;
   }
-  async function sureness(m, src) {                                  // how sure Tesseract is of its words of three letters or more, at half size
+  async function sureness(m, src, dpi) {                             // how sure Tesseract is of its words of three letters or more, at half size
     const half = canvasOf(src.width / 2, src.height / 2), g = half.getContext('2d');
     g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(src, 0, 0, half.width, half.height);
-    const { data } = await m.tess.recognize(half, {}, { text: false, tsv: true });
+    const data = await recognize(m, half, dpi ? dpi / 2 : 0);
     const words = layout(data.tsv).flatMap(l => l.words).filter(w => [...w.text].length >= 3);
     return words.length ? words.reduce((a, w) => a + w.conf, 0) / words.length * Math.min(1, words.length / 20) : 0;
   }
-  async function upright(m, src) {
+  async function upright(m, src, dpi) {
     if (!sideways(src)) return { canvas: src, rot: 0 };
     const [a, b] = [turned(src, 90), turned(src, 270)];
-    return (await sureness(m, a)) >= (await sureness(m, b)) ? { canvas: a, rot: 90 } : { canvas: b, rot: 270 };
+    return (await sureness(m, a, dpi)) >= (await sureness(m, b, dpi)) ? { canvas: a, rot: 90 } : { canvas: b, rot: 270 };
   }
 
   function straightened(src) {
@@ -285,11 +305,10 @@ export function createOcr({ base = 'ocr/', onLoad = () => {} } = {}) {
 
   async function page(source, { dpi = 0 } = {}) {
     const m = await load();
-    await m.tess.setParameters({ user_defined_dpi: String(dpi || 0) });
     let t0 = performance.now();
-    const { canvas } = straightened((await upright(m, source)).canvas);
+    const { canvas } = straightened((await upright(m, source, dpi)).canvas);
     stats.upright += performance.now() - t0; t0 = performance.now();
-    const { data } = await m.tess.recognize(canvas, {}, { text: false, tsv: true });
+    const data = await recognize(m, canvas, dpi);
     stats.tesseract += performance.now() - t0; stats.pages++;
     const pix = canvas.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, canvas.width, canvas.height);
     const out = [];
@@ -299,11 +318,16 @@ export function createOcr({ base = 'ocr/', onLoad = () => {} } = {}) {
       const [text] = await read(m, rgb, w, h);
       // a line without Arabic: Tesseract's own reading; with Arabic: the model's, its numbers read again — in parts when it holds
       // Latin words Tesseract is sure of
-      out.push(l.words.length && ![...text].some(rtl) ? l.words.map(wd => wd.text).join(' ')
+      const tessText = l.words.map(wd => wd.text).join(' ');
+      // Tesseract (Arabic and English together) writes Arabic letters wherever it sees Arabic: a line it reads all in Latin letters is
+      // an English line, whatever shapes the Arabic model made of it (a company's Latin name came out of it as Arabic letters)
+      const latinLine = l.words.length && !/[\u0600-\u06ff]/.test(tessText) && (tessText.match(/[A-Za-z]/g) || []).length >= 3;
+      out.push(latinLine || (l.words.length && ![...text].some(rtl)) ? tessText
         : l.words.some(sureLatin) && l.words.some(wd => !sureLatin(wd)) ? await mixed(m, pix, l) : await numbers(m, pix, l.box, l.words, text));
       await new Promise(r => setTimeout(r, 0));
     }
-    return out.filter(s => s.trim()).join('\n');
+    // the direction marks tesseract.js leaves at the ends of right-to-left lines are not text
+    return out.map(t => t.replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '').trim()).filter(Boolean).join('\n');
   }
-  return { load, page, stats };
+  return { load, page, stats, lanes };
 }

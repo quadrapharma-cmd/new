@@ -68,8 +68,9 @@ const UNIT = '(mg|g|gm|grams?|mcg|[µμ]g|ug|iu)';   // what one unit of the pro
 const STEPS = /^(take|transfer|add|dissolve|weigh|dilute|inject|prepare|mix|heat|cool|fill|pipette|use|accurately|about|approximately|equivalent|containing|of)\b/;   // a method's steps, not an ingredient
 // an ingredient's line: a number or a table's rule before it, or the label «Strength(s):», then the name and the amount
 const AMOUNT = new RegExp(`^[\\s|_—–\\-:;.]*(?:strengths?\\s*(?:\\(s\\))?\\s*[:：]\\s*)?(?:\\d{1,2}\\s*[.)|\\-]\\s*)?([a-z][a-z \\-(),]{2,60}?)[\\s|.:…]+(\\d+(?:\\.\\d+)?)\\s*${UNIT}\\b`, 'd');
-const CONTAINS = new RegExp(`contains?\\s*:?\\s+([a-z][a-z \\-]{2,60}?)\\s+(\\d+(?:\\.\\d+)?)\\s*${UNIT}\\b`, 'gd');
-const COMPOSITION = /each\s+\w+(?:\s+\w+)?\s+contains?|active ingredients?|active substances?|^composition\b|التركيب|المواد الفعاله|المكونات الفعاله/;
+const CONTAINS = new RegExp(`conta[il1]ns?\\s*:?\\s+([a-z][a-z \\-]{2,60}?)\\s+(\\d+(?:\\.\\d+)?)\\s*${UNIT}\\b`, 'gd');
+// «Each sachet contains», as a scan may read it too («Fach sachet contalns»)
+const COMPOSITION = /\b[a-z]?ach\s+\w+(?:\s+\w+)?\s+conta[il1]ns?|active ingredients?|active substances?|^composition\b|التركيب|المواد الفعاله|المكونات الفعاله/;
 const CONDITIONS = /^(?:special |registration )?conditions?\b|^(?:ال)?شروط(?:\s|:|$)|بالشروط (?:الاتيه|التاليه)|with the following conditions|subject to the following|مع الالتزام بالاتي/;
 const CONDITION = /^(\d{1,2})\s*[.\-)]\s*(.{15,})$/d;
 const REGISTRATION = /(?:registration no\.?|registration number|reg\.? no\.?|رقم التسجيل|رقم الاخطار)\s*[:：|]?\s*(\d{3,7}\s*\/\s*\d{4})/;
@@ -83,7 +84,10 @@ const TRANSFER = /(?:approv\w*|الموافقه علي|وافقت)\s.{0,40}(?:ma
 export const RULES = [...LABELS.map(x => x[1]), ...DATES.map(x => x[1]), AMOUNT, CONTAINS, STEPS, COMPOSITION, CONDITIONS, CONDITION, REGISTRATION, LIMIT,
                       DECISION, APPROVES, ...FEE, TRANSFER];
 
-const clean = s => String(s).replace(/\s+/g, ' ').replace(/^[\s:：|\[{(.\-–—―_~]+|[\s|\]}),.:\-–—―_~]+$/g, '').trim();
+// a value without what a scan leaves around it: direction marks, and rules, dashes and stray signs before its first letter or after
+// its last («~=—— Delta Test …» → «Delta Test …»); a closing bracket, a % or a unit's dot stay
+const clean = s => String(s).replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '').replace(/\s+/g, ' ')
+  .replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N})%\]]+$/gu, '').trim();
 const value = s => clean(String(s).split(/\s{3,}|\t|\s\|\s/)[0]);
 const firm = s => value(String(s).split(/\s[—–-]\s|[,،؛;]/)[0]);   // a company's name, without what follows it on the line
 const grams = (n, u) => { const v = Number(digits(n)); const k = u.toLowerCase(); return k === 'mg' ? v / 1000 : /^(mcg|[µμ]g|ug)$/.test(k) ? v / 1e6 : v; };
@@ -98,7 +102,7 @@ export function factsOf(pages) {
   };
   let conditions = false;
   for (const { n, text } of pages) {
-    const lines = String(text || '').split(/\n/).map(l => l.trim()).filter(Boolean);
+    const lines = String(text || '').replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '').split(/\n/).map(l => l.trim()).filter(Boolean);
     // the company that wrote the document: an upper-case company name among the first lines (a specification's header)
     head: for (const l of lines.slice(0, 5)) {
       for (const cell of l.split(/\s*\|\s*|\s{3,}|\t/)) {

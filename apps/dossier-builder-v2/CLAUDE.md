@@ -123,6 +123,30 @@ workbench/build.mjs`, test with `node --test tests/workbench.test.mjs`, then pub
 characters: the build writes them as escapes (`escapeControls`). The bridge for the Claude app: `node bridge/pack.mjs` →
 `dist/Dossier-Builder.mcpb` (installed from the Claude app: Settings → Extensions → Advanced settings → Install Extension).
 
+### 4c. «الفحص الأول للملف» (Part 2's first slice, asked for with «أبدا» on 14/11/2026; built, not yet published)
+The viewer chooses a product's files or folder; the page opens every file by its content (PDF with text, scanned PDF and pictures
+through the scan reader, Word .doc and .docx, ZIP and RAR, archives inside archives), types each document and places it in the CTD
+(the library's records), reads its facts by rule (each with its page and words), and checks the documents side by side: the
+licence's manufacturer against the others (and a transfer approval or only fee receipts), an approved limit missing from the
+specification/monograph/method, one substance in two hydrate forms (the molecular-weight sum shown), review and end dates passed,
+the licence's numbered conditions. No Claude: rules only.
+- Code `prep/` (read.js, zip.js, office.js, rar.js — v1's reader ported, ocr.js — the scan reader, doctype.js, facts.js, chem.js,
+  checks.js, index.js, page.js, build.mjs). Needs `vendor/ocr` (`node tools/ocr/fetch.mjs`).
+- Build `npm run build && node prep/build.mjs` → `dist/prep-artifact.html` (0.6 MB) + `dist/prep-files.json` (18 files, 40 MB: the
+  scan reader's models and WebAssembly as gzip in base64 text, since the artifact host serves text and 16 MB a file).
+- Tests `node --test tests/prep.test.mjs tests/read.test.mjs tests/prep-files.test.mjs tests/prep-browser.test.mjs` (they use `zip`,
+  `rar`, `soffice` and Chromium; made-up files only). Check as published: `node tools/check-published.mjs prep <folder>`.
+- The scan reader needs WebAssembly in the frame (the old program's Pyodide edition ran there); a view that forbids it is told so,
+  and the files with text are still checked. Scanned pages are drawn 4,200 px long (A4 at ~360 dpi; a phone scanner's PDF claims
+  28 × 42 inches, so its own size is not used). Speed here: a dense scanned page 13–48 s, two at a time on a computer with 4 cores;
+  a real product's folder tried locally (13 documents, 28 scanned pages): about 6 minutes, 4 of its 5 known problems found (not
+  the licence's conditions: its Arabic reads too blurred; not the receipts: a phone photo the reader cannot read).
+- OCR slips the rules already take (keep adding, each with a made-up test): «Fach» for «Each», «contalns», a % read as a digit,
+  «هينة» for «هيئة», «الركزية» for «المركزية», direction marks and stray signs around values.
+- Publish only after his yes, as a NEW private artifact: `file_path` `apps/dossier-builder-v2/dist/prep-artifact.html`, `files` =
+  `dist/prep-files.json`, icon «checklist».
+- Real products are tried locally only (`scratchpad/trial/`), never committed or published.
+
 ### 5. The open-source eCTD projects and the eCTD timelines (monthly, or when he asks)
 1. Last update of each project the plan uses (`docs/PART-2-PLAN.md` §3.9–3.10):
    `gh api -X GET search/repositories -f q="repo:<owner>/<name>" --jq '.items[] | "\(.full_name) \(.pushed_at) \(.license.spdx_id)"'`

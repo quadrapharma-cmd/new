@@ -119,12 +119,19 @@ test('what a document says, each fact with its page and its words — Arabic rea
   assert.equal(typeOf(blurred).type, 'registration_licence');
   assert.deepEqual(get(factsOf(blurred), 'composition'), ['SODIUM PICOSULFATE 10.000 mg', 'LIGHT MAGNESIUM OXIDE 3.500 gm', 'CITRIC ACID MONOHYDRATE 11.000 gm']);
   assert.deepEqual(get(factsOf(blurred), 'manufacturer'), ['Delta Test Manufacturing,EGYPT']);
+  // «Each … contains» as a scan may read it
+  assert.deepEqual(get(factsOf([page(1, 'Fach sachet contalns:\nCitric Acid Monohydrate 11.000 g')]), 'composition'), ['Citric Acid Monohydrate 11.000 g']);
+  // what a scan leaves around a value: direction marks and stray signs
+  assert.deepEqual(get(factsOf([page(1, 'Manufacturer: ~=~—~—~ Delta Test Manufacturing,EGYPT =\u200f')]), 'manufacturer'), ['Delta Test Manufacturing,EGYPT']);
   assert.deepEqual(get(factsOf(blurred), 'invalidation_date'), ['2031-12-09']);   // a label in the middle of a line is read too
   // a decision letter whose stability comes far below its title, its % read as a digit by the scan
   const letter = [page(1, 'Egyptian Drug Authority\nالإدارة المركزية للمستحضرات الصيدلية\nAppeal/Request Decision Letter\n' + 'تحية طيبة وبعد، '.repeat(30)
     + '\nبشأن تعديل المواصفة المرفقة بموافقة الثبات الخاصة بالمستحضر\ne Limit of ascorbic acid to be 40-110 ٠\nالموافقة على طلب الشركة'),
     page(2, 'Specifications of Testamin Powder for oral solution\nAssay of Ascorbic acid 40 — 110 % of the labeled amount')];
   assert.equal(typeOf(letter).type, 'stability_approval');
+  // EDA's name as a scan may read it
+  const blurredLetter = letter.map(p => ({ ...p, text: p.text.replace('Egyptian Drug Authority', 'هينة الدواء المصرا').replace('الإدارة المركزية', 'الإدارة الركزية') }));
+  assert.equal(typeOf(blurredLetter).type, 'stability_approval');
   assert.deepEqual(get(factsOf(letter), 'approved_limit'), ['ascorbic acid 40–110%']);
 
   // a table's review date with the month in words; a method's steps after «Each … contain» are not ingredients

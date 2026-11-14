@@ -42,29 +42,44 @@ async function pdfPages(bytes, env, tell) {
   try {
     const pages = [];
     let scans = 0, skipped = 0, read = 0;
+    // the scanned pages are read as many at once as the scan reader has lanes (two on a computer with cores to spare)
+    const lanes = Math.max(1, env.ocr?.lanes || 1), running = new Set();
+    const scan = async (n, page, text, slot) => {
+      try {
+        if (env.ocrFailed) throw env.ocrFailed;
+        const canvas = await env.drawPdf(page);
+        page.cleanup();
+        const got = await env.ocr.page(canvas, { dpi: canvas.dpi ?? 300 });
+        slot.text = letters(got) > letters(text) ? got : text;
+        slot.by = 'ocr';
+      } catch (e) {                                       // the scan reader cannot run here: the page stays unread, and says why
+        env.ocrFailed = e;
+        slot.unreadScan = true;
+      }
+    };
     for (let n = 1; n <= doc.numPages; n++) {
       const page = await doc.getPage(n);
       const text = pageTextOf(await page.getTextContent());
       if (letters(text) >= SCANNED || !env.ocr || !env.drawPdf || env.ocrFailed) {   // once the scan reader cannot run, it is not tried again
         if (letters(text) < SCANNED) scans++;
         pages.push({ n, text, by: 'text' });
+        page.cleanup();
       } else if (doc.numPages > LONG && read >= FIRST) {
         skipped++;
         pages.push({ n, text, by: 'text' });
+        page.cleanup();
       } else {
         read++;
         tell({ stage: 'ocr', page: n, pages: doc.numPages });
-        try {
-          const read = await env.ocr.page(await env.drawPdf(page), { dpi: 300 });
-          pages.push({ n, text: letters(read) > letters(text) ? read : text, by: 'ocr' });
-        } catch (e) {                                   // the scan reader cannot run here: the page stays unread, and says why
-          env.ocrFailed = e;
-          scans++;
-          pages.push({ n, text, by: 'text' });
-        }
+        const slot = { n, text, by: 'text' };
+        pages.push(slot);
+        const job = scan(n, page, text, slot).finally(() => running.delete(job));
+        running.add(job);
+        if (running.size >= lanes) await Promise.race(running);
       }
-      page.cleanup();
     }
+    await Promise.all(running);
+    for (const p of pages) if (p.unreadScan) { delete p.unreadScan; scans++; }
     return { pages, scans, skipped };
   } finally { await task.destroy(); }
 }
