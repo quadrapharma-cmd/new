@@ -11,6 +11,9 @@ import { core as rarCore } from './rar.js';
 
 // A PDF page with fewer letters than this in its own text is a scan (a stamp, a page number or a header line is not a text layer).
 export const SCANNED = 40;
+// A long document (over LONG pages: a validation report with its chromatograms, a batch record) has only its first FIRST scanned
+// pages read: who wrote it, what it is and for which product are on its first pages, and each scanned page takes seconds.
+export const LONG = 20, FIRST = 4;
 const letters = s => (String(s).match(/[\p{L}\p{N}]/gu) || []).length;
 const WHY = {
   password: 'محمي بكلمة سر', damaged: 'الملف تالف أو مش كامل', unsupported: 'نوعه أو طريقة ضغطه مش بتتقري لسه', unreadable: 'محتواه مش مطابق للي متسجل له في الأرشيف',
@@ -38,22 +41,31 @@ async function pdfPages(bytes, env, tell) {
   const doc = await task.promise;
   try {
     const pages = [];
-    let scans = 0;
+    let scans = 0, skipped = 0, read = 0;
     for (let n = 1; n <= doc.numPages; n++) {
       const page = await doc.getPage(n);
       const text = pageTextOf(await page.getTextContent());
-      if (letters(text) >= SCANNED || !env.ocr || !env.drawPdf) {
+      if (letters(text) >= SCANNED || !env.ocr || !env.drawPdf || env.ocrFailed) {   // once the scan reader cannot run, it is not tried again
         if (letters(text) < SCANNED) scans++;
         pages.push({ n, text, by: 'text' });
+      } else if (doc.numPages > LONG && read >= FIRST) {
+        skipped++;
+        pages.push({ n, text, by: 'text' });
       } else {
+        read++;
         tell({ stage: 'ocr', page: n, pages: doc.numPages });
-        const canvas = await env.drawPdf(page);
-        const read = await env.ocr.page(canvas);
-        pages.push({ n, text: letters(read) > letters(text) ? read : text, by: 'ocr' });
+        try {
+          const read = await env.ocr.page(await env.drawPdf(page), { dpi: 300 });
+          pages.push({ n, text: letters(read) > letters(text) ? read : text, by: 'ocr' });
+        } catch (e) {                                   // the scan reader cannot run here: the page stays unread, and says why
+          env.ocrFailed = e;
+          scans++;
+          pages.push({ n, text, by: 'text' });
+        }
       }
       page.cleanup();
     }
-    return { pages, scans };
+    return { pages, scans, skipped };
   } finally { await task.destroy(); }
 }
 
@@ -75,9 +87,10 @@ export async function readFiles(files, env = {}) {
         return;
       }
       if (kind === 'pdf') {
-        const { pages, scans } = await pdfPages(bytes, env, e => tell({ ...e, name }));
+        const { pages, scans, skipped } = await pdfPages(bytes, env, e => tell({ ...e, name }));
         const d = add(name, kind, { pages });
         if (scans) d.note = scans === pages.length ? 'no-ocr' : `no-ocr:${scans}`;
+        else if (skipped) d.note = `long:${skipped}`;
         return;
       }
       if (kind === 'doc') { add(name, kind, { pages: docText(bytes) }); return; }
@@ -87,7 +100,7 @@ export async function readFiles(files, env = {}) {
         if (!env.ocr || !env.drawImage) { add(name, kind, { unread: 'no-ocr' }); return; }
         const pics = await env.drawImage(bytes, kind);
         const pages = [];
-        for (let i = 0; i < pics.length; i++) { tell({ stage: 'ocr', name, page: i + 1, pages: pics.length }); pages.push({ n: i + 1, text: await env.ocr.page(pics[i]), by: 'ocr' }); }
+        for (let i = 0; i < pics.length; i++) { tell({ stage: 'ocr', name, page: i + 1, pages: pics.length }); pages.push({ n: i + 1, text: await env.ocr.page(pics[i]), by: 'ocr' }); }   // a failure: the file is unread (below)
         add(name, kind, { pages });
         return;
       }

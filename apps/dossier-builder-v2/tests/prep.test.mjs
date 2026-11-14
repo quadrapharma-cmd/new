@@ -112,6 +112,21 @@ test('what a document says, each fact with its page and its words — Arabic rea
   assert.deepEqual(get(ar, 'manufacturer'), ['شركة دلتا للصناعات الدوائية']);
   assert.deepEqual(get(ar, 'registration_number'), ['98765/2024']);
   assert.deepEqual(get(ar, 'review_date'), ['2025-02-01']);
+  // a licence whose title a scan blurred, read as scans give it: a label's rule before the ingredient, a dash before the maker
+  const blurred = [page(1, 'Arab Republic of Egypt\nEgyptian Drug Authority\nCentral Administration\nقررت الموافقه عل تسجيل المستحضر\n'
+    + 'Active Ingredient(s)& | Each sachet contains; | 0 _\nStrength(s): SODIUM PICOSULFATE 10.000 mg\nLIGHT MAGNESIUM OXIDE 3.500 gm\n'
+    + '_|CITRIC ACID MONOHYDRATE 11.000 gm\nRegistration No.: 98765/2024 Invalidation Date: 09-12-2031\nManufacturer : —— Delta Test Manufacturing,EGYPT')];
+  assert.equal(typeOf(blurred).type, 'registration_licence');
+  assert.deepEqual(get(factsOf(blurred), 'composition'), ['SODIUM PICOSULFATE 10.000 mg', 'LIGHT MAGNESIUM OXIDE 3.500 gm', 'CITRIC ACID MONOHYDRATE 11.000 gm']);
+  assert.deepEqual(get(factsOf(blurred), 'manufacturer'), ['Delta Test Manufacturing,EGYPT']);
+  assert.deepEqual(get(factsOf(blurred), 'invalidation_date'), ['2031-12-09']);   // a label in the middle of a line is read too
+  // a decision letter whose stability comes far below its title, its % read as a digit by the scan
+  const letter = [page(1, 'Egyptian Drug Authority\nالإدارة المركزية للمستحضرات الصيدلية\nAppeal/Request Decision Letter\n' + 'تحية طيبة وبعد، '.repeat(30)
+    + '\nبشأن تعديل المواصفة المرفقة بموافقة الثبات الخاصة بالمستحضر\ne Limit of ascorbic acid to be 40-110 ٠\nالموافقة على طلب الشركة'),
+    page(2, 'Specifications of Testamin Powder for oral solution\nAssay of Ascorbic acid 40 — 110 % of the labeled amount')];
+  assert.equal(typeOf(letter).type, 'stability_approval');
+  assert.deepEqual(get(factsOf(letter), 'approved_limit'), ['ascorbic acid 40–110%']);
+
   // a table's review date with the month in words; a method's steps after «Each … contain» are not ingredients
   const method = factsOf([page(1, 'Revision date: | 14/Mar/2025\nProcedure\nEach 1 sachet contain Citric acid anhydrous 10.06 g.\nTake 7.15 ml of previous solution\nTransfer 363.7 mg of Citric acid anhydrous')]);
   assert.deepEqual(get(method, 'review_date'), ['2025-03-14']);
@@ -140,7 +155,7 @@ test('the made-up dossier: the five problems found, each with the words on its p
   assert.match(limit.detail, /«specification\.doc» بيذكر ascorbic acid من غير الحد ده/);
   assert.ok(limit.evidence.some(e => e.doc === 'd2' && /Assay of ascorbic acid/.test(e.quote)));
   assert.equal(form.level, 'amber');
-  assert.match(form.detail, /11 × 192\.12 ÷ 210\.14 = 10\.057/);
+  assert.match(form.detail, /\u206611 × 192\.12 ÷ 210\.14 = 10\.057 g\u2069/);   // kept left to right inside the Arabic sentence
   assert.equal(review.level, 'amber');
   assert.match(review.detail, /2025-02-01/);
   assert.equal(conds.level, 'amber');
@@ -177,7 +192,7 @@ test('what must not be found: the same maker, an approved transfer, the limit in
   const wrongAmount = { ...SPEC, pages: [page(1, SPEC.pages[0].text.replace('Citric Acid Anhydrous 10.06 g', 'Citric Acid Anhydrous 9.50 g'))] };
   const form = prepare([LICENCE, wrongAmount], { today: TODAY }).findings.find(f => f.id.startsWith('form-'));
   assert.equal(form.level, 'red');
-  assert.match(form.detail, /والمكتوب 9\.5 جم/);
+  assert.match(form.detail, /والمكتوب \u20669\.5 g\u2069/);
 
   const expired = { id: 'd8', name: 'old licence.pdf', pages: [page(1, LICENCE.pages[0].text + '\nValid until: 01/01/2026')] };
   assert.equal(prepare([expired], { today: TODAY }).findings.find(f => f.id.startsWith('invalidation_date')).level, 'red');

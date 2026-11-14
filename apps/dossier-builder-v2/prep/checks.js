@@ -6,6 +6,8 @@ import { companyKey } from './facts.js';
 import { convert, formOf, namesOf } from './chem.js';
 
 const ev = (doc, f) => ({ doc: doc.id, name: doc.name, page: f.page, quote: f.quote });
+// a sum, a formula or a date kept left to right inside an Arabic sentence (Unicode isolates; invisible), so it reads as written
+const ltr = s => `\u2066${s}\u2069`;
 const factsOf = (docs, field, types) => docs.flatMap(d => (types && !types.includes(d.type) ? [] : d.facts.filter(f => f.field === field).map(f => ({ doc: d, f }))));
 const MAKERS = ['specification', 'coa', 'validation', 'method'];   // documents a manufacturer writes on its own paper
 
@@ -112,31 +114,37 @@ function approvedLimits(docs) {
   return out;
 }
 
-// 3. One substance in two forms (a hydrate and the anhydrous form) in the licence and in another document: the same amount or not.
+// 3. One substance in two forms (a hydrate and the anhydrous form) in the licence and in other documents: the same amount or not.
+// The documents that give the same form and amount make one finding together.
 function forms(docs) {
   const out = [];
   const lic = factsOf(docs, 'composition', ['registration_licence']);
   const rest = factsOf(docs, 'composition').filter(x => x.doc.type !== 'registration_licence');
-  const seen = new Set();
+  const w = n => (n ? `·${n === 1 ? '' : n}H2O` : '');
+  const done = new Set();
   for (const a of lic) {
     const fa = formOf(a.f.substance);
+    const groups = new Map();                                       // the other form and its amount → the documents that give it
     for (const b of rest) {
       const fb = formOf(b.f.substance);
-      if (fa.base !== fb.base || (fa.water ?? 0) === (fb.water ?? 0)) continue;
-      const c = convert(a.f.substance, a.f.grams, b.f.substance);
-      if (!c) continue;
-      const key = `${fa.base}|${b.doc.id}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
+      if (fa.base !== fb.base || (fa.water ?? 0) === (fb.water ?? 0) || !convert(a.f.substance, a.f.grams, b.f.substance)) continue;
+      const key = `${fa.base}|${fb.water ?? 0}|${b.f.grams}`;
+      if (!groups.has(key)) groups.set(key, []);
+      if (!groups.get(key).some(x => x.doc.id === b.doc.id)) groups.get(key).push(b);
+    }
+    for (const [key, bs] of groups) {
+      if (done.has(key)) continue;
+      done.add(key);
+      const b = bs[0], c = convert(a.f.substance, a.f.grams, b.f.substance);
       const same = Math.abs(c.amount - b.f.grams) / b.f.grams <= 0.01;
-      const w = n => (n ? `·${n === 1 ? '' : n}H2O` : '');
+      const names = bs.map(x => `«${x.doc.name}»`).join(' و');
       out.push({
         id: `form-${fa.base.replace(/\W+/g, '-')}-${b.doc.id}`, level: same ? 'amber' : 'red',
-        title: same ? `${fa.base}: نفس الكمية مكتوبة بصورتين — لازم التحويل يتوضح في الملف` : `${fa.base}: الكمية في «${b.doc.name}» مش بتساوي اللي في الإخطار`,
-        detail: `الإخطار: «${a.f.value}»، و«${b.doc.name}»: «${b.f.value}». بالحساب: ${a.f.grams} × ${c.ratio} = ${c.amount.toFixed(3)} جم `
-          + `(من ${c.formula}${w(c.from.water)} إلى ${c.formula}${w(c.to.water)})`
-          + (same ? '، يعني الكميتين واحد.' : `، والمكتوب ${b.f.grams} جم.`),
-        evidence: [ev(a.doc, a.f), ev(b.doc, b.f)],
+        title: same ? `${fa.base}: نفس الكمية مكتوبة بصورتين — لازم التحويل يتوضح في الملف` : `${fa.base}: الكمية في ${names} مش بتساوي اللي في الإخطار`,
+        detail: `الإخطار: «${a.f.value}»، و${names}: «${b.f.value}». بالحساب: ${ltr(`${a.f.grams} × ${c.ratio} = ${c.amount.toFixed(3)} g`)} `
+          + `(من ${ltr(c.formula + w(c.from.water))} إلى ${ltr(c.formula + w(c.to.water))})`
+          + (same ? '، يعني الكميتين واحد.' : `، والمكتوب ${ltr(`${b.f.grams} g`)}.`),
+        evidence: [ev(a.doc, a.f), ...bs.map(x => ev(x.doc, x.f))],
       });
     }
   }
@@ -151,7 +159,7 @@ function dates(docs, today) {
     const review = f.field === 'review_date';
     out.push({ id: `${f.field}-${doc.id}`, level: review ? 'amber' : 'red',
       title: review ? `معاد مراجعة «${doc.name}» عدّى` : `«${doc.name}» انتهت صلاحيته`,
-      detail: `${review ? 'تاريخ المراجعة' : 'تاريخ الانتهاء'} ${f.value}، والنهارده ${today}.${review ? ' لازم نسخة متراجعة، أو سبب مكتوب إنها لسه سارية.' : ''}`,
+      detail: `${review ? 'تاريخ المراجعة' : 'تاريخ الانتهاء'} ${ltr(f.value)}، والنهارده ${ltr(today)}.${review ? ' لازم نسخة متراجعة، أو سبب مكتوب إنها لسه سارية.' : ''}`,
       evidence: [ev(doc, f)] });
   }
   return out;

@@ -7,11 +7,11 @@
 import { fold } from '../core/fold.js';
 
 export const TYPES = [
-  { type: 'registration_licence', ar: 'إخطار / رخصة تسجيل', rx: /final registration licen[cs]e|registration licen[cs]e for (pharmaceutical|human)|اخطار (ال)?تسجيل (ال)?نهايي|ترخيص تسجيل/i,
+  { type: 'registration_licence', ar: 'إخطار / رخصة تسجيل', rx: /final registration licen[cs]e|registration licen[cs]e for (pharmaceutical|human)|اخطار (ال)?تسجيل (ال)?نهايي|ترخيص تسجيل|invalidation date|type of licen[cs]e|type of marketing|الموافقه علي تسجيل/i,
     doctype: 'EG-EDA/doc/registration_licence', places: ['EG-EDA/M1-04'] },
   { type: 'transfer_approval', ar: 'موافقة على نقل التصنيع', rx: /(approv\w*|الموافقه علي)\s.{0,30}(manufacturing\s+transfer|transfer of manufactur|نقل (ال)?تصنيع)/i,
     also: /egyptian drug authority|هييه الدواء|central administration|الاداره المركزيه|committee|لجنه|edaegypt/, doctype: 'EG-EDA/doc/variation_approval', places: [] },
-  { type: 'stability_approval', ar: 'موافقة / قرار الثبات', rx: /(decision letter|قرار|موافقه)[^]{0,200}(ثبات|stability)|(ثبات|stability)[^]{0,200}(decision letter|approval|committee|لجنه)/i,
+  { type: 'stability_approval', ar: 'موافقة / قرار الثبات', rx: /(decision letter|قرار|موافقه)[^]{0,1500}(ثبات|stability)|(ثبات|stability)[^]{0,200}(decision letter|approval|committee|لجنه)/i,
     also: /egyptian drug authority|هييه الدواء|central administration|الاداره المركزيه|committee|لجنه|edaegypt/, doctype: 'EG-EDA/doc/stability_approval', places: ['EG-EDA/M1-34', 'EG-EDA/P-16'] },
   { type: 'specification', ar: 'مواصفة المنتج النهائي', rx: /(finished product|release|stability|shelf.life|product|document)( and (release|stability|shelf.life))? specifications?\b|specifications? and test methods?|^\s*specifications?\s*:?\s*$|^\s*specifications? (of|for)\b|مواصفات المنتج/im,
     doctype: 'EG-EDA/doc/specification', places: ['EG-EDA/P-09'] },

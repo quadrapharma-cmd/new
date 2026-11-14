@@ -3,8 +3,9 @@
 // allows, fonts from Google Fonts, fetch and workers only from the page's own files (never a data: address), images from data:
 // and blob: — with window.claude standing in for the viewer (tests/helpers/fake-claude.js: its `sample` refuses what claude.ai's
 // contract refuses). It reports blocked loads, console errors and the page's own checks; it cannot reach Claude itself.
-//   node tools/check-published.mjs <library|workbench|measure> <folder: index.html and the published files> [--old-measure]
+//   node tools/check-published.mjs <library|workbench|measure|prep> <folder: index.html and the published files> [--old-measure]
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
 import { createRequire } from 'node:module';
@@ -17,17 +18,21 @@ export const CSP = ["default-src 'self'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com", "font-src 'self' https://fonts.gstatic.com data:",
   "img-src 'self' data: blob:", "media-src 'self' data: blob:", "connect-src 'self'", "worker-src 'self' blob:",
   "frame-src 'none'", "object-src 'none'"].join('; ');
+// The frame runs WebAssembly: the old program's browser edition (Pyodide, all WebAssembly) ran inside it (apps/dossier-builder
+// README, «Browser edition»). The preparation page's scan reader needs it; its check runs under this policy (and its test also
+// under CSP, where the page must say the scan reader cannot run).
+export const WASM_CSP = CSP.replace("script-src 'self'", "script-src 'self' 'wasm-unsafe-eval'");
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json',
                 '.pdf': 'application/pdf', '.csv': 'text/csv', '.txt': 'text/plain; charset=utf-8', '.png': 'image/png' };
 
-function serve(folder, patch) {
+function serve(folder, patch, csp = CSP) {
   const server = http.createServer((req, res) => {
     const url = decodeURIComponent(req.url.split('?')[0].split('#')[0]);
     const file = path.join(folder, url === '/' ? 'index.html' : url.slice(1));
     if (!file.startsWith(folder) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); return res.end(); }
     let body = fs.readFileSync(file);
     if (patch && file.endsWith('index.html')) body = Buffer.from(patch(body.toString('utf8')));
-    res.writeHead(200, { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream', 'content-security-policy': CSP });
+    res.writeHead(200, { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream', 'content-security-policy': csp });
     res.end(body);
   });
   return new Promise(ok => server.listen(0, '127.0.0.1', () => ok(server)));
@@ -63,6 +68,22 @@ const SCENARIOS = {
     return { 'example file read (pdf, 2 pages)': /pdf/.test(row) && pages === '2', status: (await page.textContent('#claude-status')).trim(),
              steps: await page.$$eval('#steps li .t', l => l.map(x => x.textContent)), facts: (await page.textContent('#facts')).trim() };
   },
+  // the preparation page: the made-up dossier chosen with its own button — three scans (read by its scan reader), Word inside a
+  // RAR, a PDF inside a ZIP — read and checked; the five problems found, each quote on its page
+  async prep(page) {
+    const { madeUpDossier } = await import('../tests/fixtures/scans.mjs');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'db-check-prep-'));
+    const chosen = await madeUpDossier(page.context().browser(), dir);
+    const t0 = Date.now();
+    await page.setInputFiles('#pick-files', chosen);
+    await page.waitForFunction(() => window.__prep, null, { timeout: 600000 });
+    const r = await page.evaluate(() => window.__prep);
+    const squash = s => s.replace(/\s+/g, ' ').trim();
+    const off = r.findings.flatMap(f => f.evidence.filter(e => !squash(r.docs.find(d => d.id === e.doc).pages.find(p => p.n === e.page).text).includes(squash(e.quote))).map(e => `${f.id}: ${e.quote}`));
+    return { seconds: Math.round((Date.now() - t0) / 1000), 'scan reader': r.ocrFailed || 'ran', documents: r.documents.map(d => `${d.name}: ${d.type}`),
+             'scanned pages read': r.docs.reduce((n, d) => n + d.pages.filter(p => p.by === 'ocr').length, 0),
+             findings: r.findings.map(f => `${f.level} ${f.id}`), 'quotes not on their page': off };
+  },
   // the measuring page: each page goes to Claude whole and in two halves
   async measure(page) {
     await page.waitForFunction(() => !document.querySelector('#go')?.disabled, null, { timeout: 30000 });
@@ -78,7 +99,7 @@ const SCENARIOS = {
 
 export async function checkPublished(kind, folder, { patch, claude = {} } = {}) {
   const { chromium } = require('playwright');
-  const server = await serve(path.resolve(folder), patch);
+  const server = await serve(path.resolve(folder), patch, kind === 'prep' ? WASM_CSP : CSP);
   const browser = await chromium.launch();
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });

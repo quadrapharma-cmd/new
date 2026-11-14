@@ -12,6 +12,7 @@ import { createRequire } from 'node:module';
 import { readFiles } from '../prep/read.js';
 import { prepare } from '../prep/index.js';
 import { LICENCE, SPEC, STABILITY, RECEIPTS, COA } from './fixtures/dossier.mjs';
+import { wordOf } from './fixtures/word.mjs';
 
 const require = createRequire(import.meta.url);
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'db-prep-files-'));
@@ -28,33 +29,13 @@ async function pdfOf(browser, doc) {
   await page.close();
   return bytes;
 }
-// the specification as a .docx (a paragraph a line; the header carries the company), then as an old .doc by LibreOffice
-function wordOf(doc) {
-  const dir = path.join(TMP, 'docx-' + doc.id);
-  const [head, ...lines] = doc.pages[0].text.split('\n');
-  const W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
-  const para = l => `<w:p><w:r><w:t xml:space="preserve">${esc(l)}</w:t></w:r></w:p>`;
-  const files = {
-    '[Content_Types].xml': '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/></Types>',
-    '_rels/.rels': '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>',
-    'word/_rels/document.xml.rels': '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdH1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/></Relationships>',
-    'word/document.xml': `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${W}><w:body>${lines.map(para).join('')}<w:sectPr><w:headerReference w:type="default" r:id="rIdH1"/></w:sectPr></w:body></w:document>`,
-    'word/header1.xml': `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr ${W}>${para(head)}</w:hdr>`,
-  };
-  for (const [name, text] of Object.entries(files)) { fs.mkdirSync(path.dirname(path.join(dir, name)), { recursive: true }); fs.writeFileSync(path.join(dir, name), text); }
-  const docx = path.join(TMP, `${doc.id}.docx`);
-  execFileSync('zip', ['-q', '-X', '-r', docx, '[Content_Types].xml', '_rels', 'word'], { cwd: dir });
-  execFileSync('soffice', ['--headless', `-env:UserInstallation=file://${TMP}/lo-profile`, '--convert-to', 'doc:MS Word 97', '--outdir', TMP, docx], { stdio: 'pipe', timeout: 120000 });
-  return { docx: fs.readFileSync(docx), doc: fs.readFileSync(path.join(TMP, `${doc.id}.doc`)) };
-}
-
 test('the made-up dossier as files — PDFs, Word old and new, a ZIP inside a RAR — read and checked: the same five problems', async () => {
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
   const { chromium } = require('playwright');
   const browser = await chromium.launch();
   let files;
   try {
-    const word = wordOf(SPEC);
+    const word = wordOf(SPEC, TMP);
     // the COA and the receipts go in a ZIP, and the ZIP with the old Word specification in a RAR (as companies send them)
     const pack = path.join(TMP, 'pack');
     fs.mkdirSync(pack, { recursive: true });
@@ -90,8 +71,12 @@ test('the made-up dossier as files — PDFs, Word old and new, a ZIP inside a RA
   const { documents, findings } = prepare(docs, { today: TODAY });
   assert.deepEqual(documents.map(d => d.type), ['registration_licence', 'stability_approval', 'specification', 'coa', 'fee_receipt', 'specification', 'unknown']);
   const ids = findings.map(f => f.id);
-  for (const id of ['manufacturer-changed', 'approved-limit-ascorbic-acid', 'form-citric-acid-d3', 'form-citric-acid-d6', 'review_date-d3', 'review_date-d6', 'conditions-d1'])
+  for (const id of ['manufacturer-changed', 'approved-limit-ascorbic-acid', 'form-citric-acid-d3', 'review_date-d3', 'review_date-d6', 'conditions-d1'])
     assert.ok(ids.includes(id), `${id} not found in ${ids.join(', ')}`);
+  // the specification given twice (Word old and new), the same form and amount: one finding naming both
+  const form = findings.filter(f => f.id.startsWith('form-'));
+  assert.equal(form.length, 1);
+  assert.deepEqual(form[0].evidence.map(e => e.doc), ['d1', 'd3', 'd6']);
   const maker = findings.find(f => f.id === 'manufacturer-changed');
   assert.equal(maker.level, 'red');
   assert.match(maker.detail, /إيصالات سداد رسوم «نقل تصنيع إلى Sinai Test Industries» بس/);
@@ -101,4 +86,26 @@ test('the made-up dossier as files — PDFs, Word old and new, a ZIP inside a RA
     const d = docs.find(x => x.id === e.doc);
     assert.ok(squash(d.pages.find(p => p.n === e.page).text).includes(squash(e.quote)), `${f.id}: «${e.quote}» not on ${d.name} p${e.page}`);
   }
+});
+
+test('a long scanned document has its first scanned pages read, and says how many were not; a short one is read whole', async () => {
+  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  const { chromium } = require('playwright');
+  const browser = await chromium.launch();
+  let long, short;
+  try {
+    const page = await browser.newPage();
+    const blank = n => page.setContent(`<html><body>${'<section style="page-break-after:always">&nbsp;</section>'.repeat(n)}</body></html>`).then(() => page.pdf({ format: 'A4' }));
+    long = new Uint8Array(await blank(22));
+    short = new Uint8Array(await blank(3));
+  } finally { await browser.close(); }
+  let calls = 0;
+  const env = { pdfjs, drawPdf: async () => ({}), ocr: { page: async () => { calls++; return `Scanned page text read by the scan reader ${calls}`; } } };
+  const [a, b] = await readFiles([{ name: 'validation report.pdf', bytes: long }, { name: 'letter.pdf', bytes: short }], env);
+  assert.equal(a.pages.length, 22);
+  assert.equal(a.pages.filter(p => p.by === 'ocr').length, 4);
+  assert.equal(a.note, 'long:18');
+  assert.equal(b.pages.filter(p => p.by === 'ocr').length, 3);
+  assert.equal(b.note, undefined);
+  assert.equal(calls, 7);
 });

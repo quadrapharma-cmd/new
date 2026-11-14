@@ -66,13 +66,15 @@ const DATES = [
 ];
 const UNIT = '(mg|g|gm|grams?|mcg|[µμ]g|ug|iu)';   // what one unit of the product holds is weighed (a volume is the product's own)
 const STEPS = /^(take|transfer|add|dissolve|weigh|dilute|inject|prepare|mix|heat|cool|fill|pipette|use|accurately|about|approximately|equivalent|containing|of)\b/;   // a method's steps, not an ingredient
-const AMOUNT = new RegExp(`^[\\s|]*(?:\\d{1,2}\\s*[.)|\\-]\\s*)?([a-z][a-z \\-(),]{2,60}?)[\\s|.:…]+(\\d+(?:\\.\\d+)?)\\s*${UNIT}\\b`, 'd');
+// an ingredient's line: a number or a table's rule before it, or the label «Strength(s):», then the name and the amount
+const AMOUNT = new RegExp(`^[\\s|_—–\\-:;.]*(?:strengths?\\s*(?:\\(s\\))?\\s*[:：]\\s*)?(?:\\d{1,2}\\s*[.)|\\-]\\s*)?([a-z][a-z \\-(),]{2,60}?)[\\s|.:…]+(\\d+(?:\\.\\d+)?)\\s*${UNIT}\\b`, 'd');
 const CONTAINS = new RegExp(`contains?\\s*:?\\s+([a-z][a-z \\-]{2,60}?)\\s+(\\d+(?:\\.\\d+)?)\\s*${UNIT}\\b`, 'gd');
 const COMPOSITION = /each\s+\w+(?:\s+\w+)?\s+contains?|active ingredients?|active substances?|^composition\b|التركيب|المواد الفعاله|المكونات الفعاله/;
 const CONDITIONS = /^(?:special |registration )?conditions?\b|^(?:ال)?شروط(?:\s|:|$)|بالشروط (?:الاتيه|التاليه)|with the following conditions|subject to the following|مع الالتزام بالاتي/;
 const CONDITION = /^(\d{1,2})\s*[.\-)]\s*(.{15,})$/d;
 const REGISTRATION = /(?:registration no\.?|registration number|reg\.? no\.?|رقم التسجيل|رقم الاخطار)\s*[:：|]?\s*(\d{3,7}\s*\/\s*\d{4})/;
-const LIMIT = /limit of\s+(.+?)\s+to be\s+(\d+(?:\.\d+)?)\s*%?\s*[–\-−]\s*(\d+(?:\.\d+)?)\s*%/d;   // «Limit of ascorbic acid to be 40 – 110 %»
+// «Limit of ascorbic acid to be 40 – 110 %» (a scan may lose the %: the words «to be» and the range say it)
+const LIMIT = /limit of\s+(.+?)\s+to be\s+(\d+(?:\.\d+)?)\s*%?\s*[–\-−]\s*(\d+(?:\.\d+)?)(?!\d)/d;
 const DECISION = /الموافقه علي طلب الشركه|الموافقه علي الطلب|وافقت اللجنه|request (?:is |was |has been )?approved|approval of the (?:company'?s )?request|the committee approved/;
 const APPROVES = /الموافقه|وافقت|approv/;
 const FEE = [/manufacturing\s+transfer\s+to\s+([a-z\u0600-\u06ff][a-z\u0600-\u06ff .&\-]{2,60})/d, /نقل (?:ال)?تصنيع (?:الي|ل)\s*(.{3,60})/d];
@@ -81,7 +83,7 @@ const TRANSFER = /(?:approv\w*|الموافقه علي|وافقت)\s.{0,40}(?:ma
 export const RULES = [...LABELS.map(x => x[1]), ...DATES.map(x => x[1]), AMOUNT, CONTAINS, STEPS, COMPOSITION, CONDITIONS, CONDITION, REGISTRATION, LIMIT,
                       DECISION, APPROVES, ...FEE, TRANSFER];
 
-const clean = s => String(s).replace(/\s+/g, ' ').replace(/^[\s:：|\[{(.\-–]+|[\s|\]}),.:\-–]+$/g, '').trim();
+const clean = s => String(s).replace(/\s+/g, ' ').replace(/^[\s:：|\[{(.\-–—―_~]+|[\s|\]}),.:\-–—―_~]+$/g, '').trim();
 const value = s => clean(String(s).split(/\s{3,}|\t|\s\|\s/)[0]);
 const firm = s => value(String(s).split(/\s[—–-]\s|[,،؛;]/)[0]);   // a company's name, without what follows it on the line
 const grams = (n, u) => { const v = Number(digits(n)); const k = u.toLowerCase(); return k === 'mg' ? v / 1000 : /^(mcg|[µμ]g|ug)$/.test(k) ? v / 1e6 : v; };

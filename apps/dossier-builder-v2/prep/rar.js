@@ -1,4 +1,6 @@
-// Ported unchanged from the old program (apps/dossier-builder/ui/assets/rar.js, 13/11/2026), the owner's own reader, as a module:
+// Ported from the old program (apps/dossier-builder/ui/assets/rar.js, 13/11/2026), the owner's own reader, as a module, with one
+// change: its worker runs the function's own source as it stands (a minified page renames DBRAR_MAIN, so calling it by that name
+// in the worker failed and every archive read as damaged).
 // `extract(files)` reads in a worker made from this same source where one can run (the page keeps answering), `core.extract(vols,
 // opts, onFile)` on the calling thread (Node, the tests). Its notes follow.
 /* RAR archives opened inside the page — the program's own reader, no library and nothing fetched.
@@ -839,7 +841,7 @@ function DBRAR_MAIN(root) {
     const bufs = [];
     try { for (const f of files) bufs.push(await f.arrayBuffer()); } catch (e) { const x = new Error('memory'); x.rar = 'memory'; throw x; }      // the archive itself does not fit in memory
     const out = []; let worker = null;
-    if (await canWork()) { try { worker = new Worker(URL.createObjectURL(new Blob([DBRAR_MAIN.toString(), '\nDBRAR_MAIN(self);'], { type: 'text/javascript' }))); } catch (e) { worker = null; } }
+    if (await canWork()) { try { worker = new Worker(URL.createObjectURL(new Blob(['(', DBRAR_MAIN.toString(), ')(self);'], { type: 'text/javascript' }))); } catch (e) { worker = null; } }
     if (!worker) {                                                   // no worker here: the same work on this thread
       const o = Object.assign({}, opts, { skip: skipOf(opts) });
       const r = api.extract(bufs.map(b => new Uint8Array(b)), o, (name, parts, of) => out.push({ name, parts: of ? (out.find(x => x.name === of) || { parts: [] }).parts : parts }), onStatus);
