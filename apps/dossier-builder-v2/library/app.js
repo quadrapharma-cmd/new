@@ -2,6 +2,7 @@
 // Runs the same in the claude.ai artifact and opened from disk on the desktop; the knowledge is embedded in the page.
 import { createKnowledge } from '../core/knowledge.js';
 import { preparePages, findInPages } from '../core/search.js';
+import { mountOperator } from '../operator/panel.js';
 import { T, STATUS, STATUS_HINT, SEVERITY, AREA, KIND, SCOPE, ISSUER, HOW, FORMAT, FORMAT_VALUE, EVIDENCE, RESULT, RESULT_HINT, VERDICT } from './i18n.js';
 
 const data = JSON.parse(document.getElementById('kdata').textContent);
@@ -617,3 +618,5 @@ window.addEventListener('hashchange', route);
 
 frame();
 route();
+// The Operator: a fixed part of every page — the conversation with the program's operator.
+window.DBK_OP = mountOperator();

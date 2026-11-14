@@ -36,10 +36,11 @@ export async function build({ quiet = false } = {}) {
   // The library: one script, one style sheet and the knowledge, all inside the page.
   const bundle = await esbuild.build({
     entryPoints: [path.join(ROOT, 'library', 'app.js')], bundle: true, format: 'iife', minify: true,
-    target: ['es2022'], write: false, legalComments: 'none',
+    target: ['es2022'], write: false, legalComments: 'none', loader: { '.md': 'text' },
   });
   const js = bundle.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
-  const css = fs.readFileSync(path.join(ROOT, 'library', 'style.css'), 'utf8');
+  // The library's style, then the Operator's (operator/: a fixed part of every page of the program).
+  const css = fs.readFileSync(path.join(ROOT, 'library', 'style.css'), 'utf8') + '\n' + fs.readFileSync(path.join(ROOT, 'operator', 'panel.css'), 'utf8');
   const safeJson = json.replace(/</g, '\\u003c');
   const head = [
     '<title>Dossier Builder Library</title>',
