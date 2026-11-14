@@ -7,15 +7,26 @@ import { fold, foldChar } from '../core/fold.js';
 
 const digits = s => String(s).replace(/[٠-٩]/g, c => String(c.charCodeAt(0) - 0x660)).replace(/[۰-۹]/g, c => String(c.charCodeAt(0) - 0x6f0));
 
-// A date as the EDA writes it (dd/mm/yyyy, dd-mm-yyyy, yyyy/mm/dd, in either digits) → 'yyyy-mm-dd', or null.
+// A date as documents write it (dd/mm/yyyy, dd-mm-yyyy, yyyy/mm/dd, 14/Mar/2025, 14 March 2025, March 14, 2025, ١٤ مارس ٢٠٢٥; either
+// digits) → 'yyyy-mm-dd', or null.
+const MONTHS = [['jan', 'january', 'يناير'], ['feb', 'february', 'فبراير'], ['mar', 'march', 'مارس'], ['apr', 'april', 'ابريل', 'أبريل'],
+                ['may', 'مايو'], ['jun', 'june', 'يونيو'], ['jul', 'july', 'يوليو'], ['aug', 'august', 'اغسطس', 'أغسطس'],
+                ['sep', 'sept', 'september', 'سبتمبر'], ['oct', 'october', 'اكتوبر', 'أكتوبر'], ['nov', 'november', 'نوفمبر'], ['dec', 'december', 'ديسمبر']];
+const monthOf = w => { const f = fold(w); return MONTHS.findIndex(names => names.some(n => f === fold(n))) + 1; };
+const ymd = (y, mo, d) => (mo < 1 || mo > 12 || d < 1 || d > 31 || y < 1950 || y > 2100 ? null : `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
 export function parseDate(s) {
-  const m = digits(s).match(/(\d{1,4})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{1,4})/);
-  if (!m) return null;
-  const [, a, b, c] = m;
-  let y, mo, d;
-  if (a.length === 4) { y = +a; mo = +b; d = +c; } else { d = +a; mo = +b; y = +c; if (c.length === 2) y += 2000; }
-  if (mo < 1 || mo > 12 || d < 1 || d > 31 || y < 1950 || y > 2100) return null;
-  return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  const t = digits(s);
+  const m = t.match(/(\d{1,4})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{1,4})/);
+  if (m) {
+    const [, a, b, c] = m;
+    if (a.length === 4) return ymd(+a, +b, +c);
+    return ymd(c.length === 2 ? 2000 + +c : +c, +b, +a);
+  }
+  const w = t.match(/(\d{1,2})[\s\/\-.]*([A-Za-z\u0600-\u06ff]{3,9})\.?[\s\/\-.,]*(\d{4})/);   // 14/Mar/2025, 14 March 2025, ١٤ مارس ٢٠٢٥
+  if (w && monthOf(w[2])) return ymd(+w[3], monthOf(w[2]), +w[1]);
+  const v = t.match(/([A-Za-z]{3,9})\.?\s+(\d{1,2}),?\s+(\d{4})/);                                      // March 14, 2025
+  if (v && monthOf(v[1])) return ymd(+v[3], monthOf(v[1]), +v[2]);
+  return null;
 }
 
 // The words of a company that tell it apart (legal and trade words dropped): «Sinai Test Pharma for Pharmaceutical Industries» → sinai test.
@@ -50,10 +61,11 @@ const LABELS = [   // folded line → the value after the label (group 1)
 ];
 const DATES = [
   ['issue_date', /(?:issue date|date of issue|issued on|effective date|تاريخ الاصدار|تاريخ اصدار)\s*[:：|]?\s*/],
-  ['review_date', /(?:review date|next review(?: date)?|revision due(?: date)?|تاريخ المراجعه)\s*[:：|]?\s*/],
+  ['review_date', /(?:review date|next review(?: date)?|revision due(?: date)?|revision date|due for revision|تاريخ المراجعه)\s*[:：|]?\s*/],
   ['invalidation_date', /(?:invalidation date|valid until|valid till|licen[cs]e expiry(?: date)?|expiry of (?:the )?licen[cs]e|صالح حتي|ساري حتي|تاريخ انتهاء (?:الترخيص|الاخطار))\s*[:：|]?\s*/],
 ];
-const UNIT = '(mg|g|gm|grams?|mcg|[µμ]g|ug|ml|iu)';
+const UNIT = '(mg|g|gm|grams?|mcg|[µμ]g|ug|iu)';   // what one unit of the product holds is weighed (a volume is the product's own)
+const STEPS = /^(take|transfer|add|dissolve|weigh|dilute|inject|prepare|mix|heat|cool|fill|pipette|use|accurately|about|approximately|equivalent|containing|of)\b/;   // a method's steps, not an ingredient
 const AMOUNT = new RegExp(`^[\\s|]*(?:\\d{1,2}\\s*[.)|\\-]\\s*)?([a-z][a-z \\-(),]{2,60}?)[\\s|.:…]+(\\d+(?:\\.\\d+)?)\\s*${UNIT}\\b`, 'd');
 const CONTAINS = new RegExp(`contains?\\s*:?\\s+([a-z][a-z \\-]{2,60}?)\\s+(\\d+(?:\\.\\d+)?)\\s*${UNIT}\\b`, 'gd');
 const COMPOSITION = /each\s+\w+(?:\s+\w+)?\s+contains?|active ingredients?|active substances?|^composition\b|التركيب|المواد الفعاله|المكونات الفعاله/;
@@ -66,7 +78,7 @@ const APPROVES = /الموافقه|وافقت|approv/;
 const FEE = [/manufacturing\s+transfer\s+to\s+([a-z\u0600-\u06ff][a-z\u0600-\u06ff .&\-]{2,60})/d, /نقل (?:ال)?تصنيع (?:الي|ل)\s*(.{3,60})/d];
 const TRANSFER = /(?:approv\w*|الموافقه علي|وافقت)\s.{0,40}(?:manufacturing\s+transfer|transfer of manufactur\w*|نقل (?:ال)?تصنيع)\s.{0,15}?(?:to|الي)\s+([a-z\u0600-\u06ff][a-z0-9\u0600-\u06ff .&\-]{2,60})/d;
 // Every rule, for the test that each is written in folded form (a rule written «هيئة» would never meet a folded «هييه»).
-export const RULES = [...LABELS.map(x => x[1]), ...DATES.map(x => x[1]), AMOUNT, CONTAINS, COMPOSITION, CONDITIONS, CONDITION, REGISTRATION, LIMIT,
+export const RULES = [...LABELS.map(x => x[1]), ...DATES.map(x => x[1]), AMOUNT, CONTAINS, STEPS, COMPOSITION, CONDITIONS, CONDITION, REGISTRATION, LIMIT,
                       DECISION, APPROVES, ...FEE, TRANSFER];
 
 const clean = s => String(s).replace(/\s+/g, ' ').replace(/^[\s:：|\[{(.\-–]+|[\s|\]}),.:\-–]+$/g, '').trim();
@@ -113,12 +125,13 @@ export function factsOf(pages) {
       else if (composition > 0) {
         composition--;
         const m = f.match(AMOUNT);
-        if (m) {
+        if (m && !STEPS.test(m[1])) {
           const name = clean(group(L, m, 1));
           add('composition', `${name} ${m[2]} ${m[3]}`, n, line, { substance: name.toLowerCase(), grams: grams(m[2], m[3]) });
         }
       }
       for (const m of f.matchAll(CONTAINS)) {
+        if (STEPS.test(m[1])) continue;
         const name = clean(group(L, m, 1));
         add('composition', `${name} ${m[2]} ${m[3]}`, n, line, { substance: name.toLowerCase(), grams: grams(m[2], m[3]) });
       }

@@ -67,26 +67,46 @@ function manufacturer(docs) {
   return out;
 }
 
-// 2. A limit a decision approved for the specification, and the specification in the file.
+// 2. A limit a decision approved, and every document in the file that states the product's limits (its specification, monograph and
+// method): each that names the substance must state the approved limit.
 const num = n => (Number.isInteger(n) ? `${n}(?:\\.0+)?` : `${String(n).replace('.', '\\.')}0*`);
+const STATES = ['specification', 'monograph', 'method'];
 function approvedLimits(docs) {
   const out = [];
-  const specs = docs.filter(d => d.type === 'specification');
+  const holders = docs.filter(d => STATES.includes(d.type));
   for (const { doc, f } of factsOf(docs, 'approved_limit')) {
     const approved = doc.facts.some(x => x.field === 'decision' && x.value === 'approved');
     const names = namesOf(f.substance).map(fold);
     const limit = new RegExp(`(?<![\\d.])${num(f.low)}\\s*%?\\s*(?:[–\\-−]|to|الي)\\s*${num(f.high)}\\s*%`);
-    const inSpec = specs.filter(s => names.some(n => fold(s.text).includes(n)));
-    if (inSpec.some(s => limit.test(fold(s.text)))) continue;
+    // where a document states the substance's assay (else where it first names it): the words shown beside the finding
+    const where = d => {
+      let first = null;
+      for (const p of d.pageTexts) for (const line of p.text.split('\n')) {
+        const l = fold(line);
+        if (!names.some(n => l.includes(n))) continue;
+        if (/assay|limit|quantitative|determination|content|تعيين|نسبه|حد/.test(l)) return { page: p.n, quote: line.trim() };
+        first = first || { page: p.n, quote: line.trim() };
+      }
+      return first;
+    };
+    const without = [], stated = [];
+    for (const d of holders) {
+      const text = fold(d.text);
+      if (names.some(n => text.includes(n))) (limit.test(text) ? stated : without).push({ d, at: where(d) });
+    }
+    if (!without.length && stated.length) continue;
+    const list = xs => xs.map(x => `«${x.d.name}»`).join(' و');
+    const lead = `«${doc.name}» ${approved ? 'فيه موافقة على' : 'بيذكر'} «${f.value}». `;
+    const detail = !holders.length ? lead + 'ومفيش في الملف مواصفة أو مونوجراف أو طريقة تحليل تتقارن بيه.'
+      : !without.length ? lead + `ومفيش مواصفة أو مونوجراف أو طريقة تحليل في الملف بتذكر ${f.substance} خالص.`
+        : lead + `${list(without)} ${without.length > 1 ? 'بيذكروا' : 'بيذكر'} ${f.substance} من غير الحد ده`
+          + (stated.length ? `، والحد مكتوب في ${list(stated)}` : '') + '. لازم كل مستند بيذكره يتحدّث بالحد اللي اتوافق عليه.';
     out.push({
       id: `approved-limit-${f.substance.replace(/\W+/g, '-')}`, level: 'red',
-      title: `حد ${f.substance} اللي ${approved ? 'اتوافق عليه' : 'في القرار'} مش في مواصفة الملف`,
-      detail: `«${doc.name}» ${approved ? 'فيه موافقة على' : 'بيذكر'} «${f.value}». `
-        + (!specs.length ? 'ومفيش مواصفة منتج نهائي في الملف أصلاً.'
-          : (inSpec.length ? `المواصفة («${inSpec[0].name}») بتذكر ${f.substance} من غير الحد ده.`
-            : `المواصفة اللي في الملف («${specs.map(s => s.name).join('»، «')}») مفيهاش ${f.substance} خالص.`)
-            + ' لازم المواصفة المحدّثة بالحد ده هي اللي تتقدم.'),
-      evidence: [ev(doc, f), ...doc.facts.filter(x => x.field === 'decision').map(x => ev(doc, x))],
+      title: `حد ${f.substance} اللي ${approved ? 'اتوافق عليه' : 'في القرار'} مش مكتوب في ${stated.length ? 'كل مستندات المواصفة' : 'مواصفة الملف'}`,
+      detail,
+      evidence: [ev(doc, f), ...doc.facts.filter(x => x.field === 'decision').map(x => ev(doc, x)),
+                 ...without.filter(x => x.at).map(x => ({ doc: x.d.id, name: x.d.name, page: x.at.page, quote: x.at.quote }))],
     });
   }
   return out;

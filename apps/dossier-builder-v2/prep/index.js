@@ -10,7 +10,7 @@ export function prepare(docs, { today, knowledge } = {}) {
     const places = (t.places || []).map(id => { const r = knowledge?.record(id); return r ? { id, ctd: r.ctd, title: r.title } : { id }; });
     return { id: d.id, name: d.name, pages: d.pages.length, read: d.pages.filter(p => (p.text || '').trim()).length,
              type: t.type, type_ar: t.ar, doctype: t.doctype, places, facts: factsOf(d.pages),
-             text: d.pages.map(p => p.text || '').join('\n') };
+             text: d.pages.map(p => p.text || '').join('\n'), pageTexts: d.pages.map(p => ({ n: p.n, text: p.text || '' })) };
   });
-  return { documents: read.map(({ text, ...d }) => d), findings: check(read, { today }) };
+  return { documents: read.map(({ text, pageTexts, ...d }) => d), findings: check(read, { today }) };
 }

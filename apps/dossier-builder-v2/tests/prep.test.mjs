@@ -15,77 +15,7 @@ import { createKnowledge } from '../core/knowledge.js';
 
 const knowledge = createKnowledge(loadKnowledge());
 const TODAY = '2026-11-14';
-const page = (n, text, by = 'text') => ({ n, text, by });
-
-export const LICENCE = { id: 'd1', name: 'licence.pdf', pages: [
-  page(1, `Arab Republic of Egypt
-Egyptian Drug Authority
-Final Registration Licence for Pharmaceutical Products
-Registration No.: 98765/2024
-Trade Name: Testamin powder for oral solution
-Dosage Form: Powder for oral solution
-License Holder: Nile Test Pharma
-Manufacturer: Delta Test Manufacturing
-Each sachet contains:
-Citric Acid Monohydrate 11.000 g
-Ascorbic Acid 2.500 g
-Light Magnesium Oxide 3.500 g
-Issue Date: 12/03/2024`, 'ocr'),
-  page(2, `Conditions:
-1. The company shall submit the stability study of three production batches.
-2. The company shall submit the bioequivalence commitment before marketing.
-3. The approved leaflet shall be printed in Arabic and English.`, 'ocr'),
-] };
-export const SPEC = { id: 'd2', name: 'specification.doc', pages: [page(1, `SINAI TEST INDUSTRIES
-Finished Product Specification
-Product Name: Testamin powder for oral solution
-Document Code: QC-FPS-042
-Issue Date: 01/02/2023
-Review Date: 01/02/2025
-Composition: each sachet contains
-Citric Acid Anhydrous 10.06 g
-Ascorbic Acid 2.500 g
-Light Magnesium Oxide 3.500 g
-Test | Acceptance criteria
-Description | White to off-white powder
-Assay of citric acid | 95.0 – 105.0 %
-Assay of ascorbic acid | 90.0 – 110.0 %
-Assay of magnesium oxide | 95.0 – 105.0 %`)] };
-// a scanned letter, read by the program: «الموافقة على» comes out without its hamza and with ه for ة
-export const STABILITY = { id: 'd3', name: 'stability approval.pdf', pages: [page(1, `Egyptian Drug Authority
-Central Administration of Pharmaceutical Products
-Stability Committee — Decision Letter
-Outgoing No.: 3021
-Date: 10/09/2025
-Product: Testamin powder for oral solution
-Applicant: Nile Test Pharma
-Manufacturer: Sinai Test Industries
-The committee reviewed the stability study of three batches.
-القرار: الموافقه علي طلب الشركه
-Limit of ascorbic acid to be 40 – 110 % until the end of shelf life.
-Shelf life: 24 months, store below 30°C.`, 'ocr')] };
-export const RECEIPTS = { id: 'd4', name: 'receipts.pdf', pages: [
-  page(1, `هيئة الدواء المصرية
-إيصال سداد رسوم
-رقم الإيصال: ٥٥٦٦٧٧
-اسم الشركة: شركة النيل التجريبية
-البيان: رسوم نقل تصنيع إلى Sinai Test Industries
-المبلغ: ١٥٠٠٠ جنيه
-التاريخ: ٠٥/٠٦/٢٠٢٣`, 'ocr'),
-  page(2, `هيئة الدواء المصرية
-إيصال سداد رسوم
-البيان: رسوم نقل تصنيع إلى Sinai Test Industries — دمغة`, 'ocr'),
-] };
-export const COA = { id: 'd5', name: 'coa.doc', pages: [page(1, `SINAI TEST INDUSTRIES
-Certificate of Analysis
-Product: Testamin powder for oral solution
-Batch No.: TT-25001
-Finished Product Specification No.: QC-FPS-042
-Manufacturing Date: 03/2025
-Expiry Date: 02/2027
-Assay of citric acid: 99.8 %`)] };
-export const BLANK = { id: 'd6', name: 'unreadable scan.pdf', pages: [page(1, '', 'ocr'), page(2, '', 'ocr')] };
-export const DOSSIER = [LICENCE, SPEC, STABILITY, RECEIPTS, COA, BLANK];
+import { page, LICENCE, SPEC, STABILITY, RECEIPTS, COA, BLANK, DOSSIER } from './fixtures/dossier.mjs';
 
 const squash = s => String(s).replace(/\s+/g, ' ').trim();
 const onItsPage = (docs, e) => squash(docs.find(d => d.id === e.doc).pages.find(p => p.n === e.page).text).includes(squash(e.quote));
@@ -119,6 +49,8 @@ test('a document\'s kind comes from its words: the title first, the kind named f
   assert.equal(typeOf([page(1, 'NILE TEST PHARMA\nRelease and Stability Specification\nApproval: QA Manager')]).type, 'specification');
   assert.equal(typeOf([page(1, 'Egyptian Drug Authority\nRef: 123\nDear Sir, please find attached ...')]).type, 'eda_letter');
   assert.equal(typeOf([page(1, 'هيئة الدواء المصرية\nإخطار تسجيل نهائي لمستحضر صيدلي')]).type, 'registration_licence');
+  assert.equal(typeOf([page(1, 'Specifications of Testamin powder for oral solution\nTEST | SPECIFICATION | Method of analysis')]).type, 'specification');
+  assert.equal(typeOf([page(1, 'Doc. # MON-PRD-0001\nIssue# 01\nMONOGRAPH\nTitle: | Testamin')]).type, 'monograph');
   assert.equal(typeOf([page(1, 'هيئة الدواء المصرية\nتمت الموافقة على نقل تصنيع المستحضر إلى شركة سيناء')]).type, 'transfer_approval');
 });
 
@@ -127,6 +59,11 @@ test('dates as EDA writes them, in either digits', () => {
   assert.equal(parseDate('٢٠/١١/٢٠٢٥'), '2025-11-20');
   assert.equal(parseDate('2025/11/20'), '2025-11-20');
   assert.equal(parseDate('5-6-23'), '2023-06-05');
+  assert.equal(parseDate('14/Mar/2025'), '2025-03-14');
+  assert.equal(parseDate('14 March 2025'), '2025-03-14');
+  assert.equal(parseDate('March 14, 2025'), '2025-03-14');
+  assert.equal(parseDate('١٤ مارس ٢٠٢٥'), '2025-03-14');
+  assert.equal(parseDate('14 Marching 2025'), null);
   assert.equal(parseDate('02/2027'), null);
   assert.equal(parseDate('31/13/2024'), null);
 });
@@ -175,6 +112,10 @@ test('what a document says, each fact with its page and its words — Arabic rea
   assert.deepEqual(get(ar, 'manufacturer'), ['شركة دلتا للصناعات الدوائية']);
   assert.deepEqual(get(ar, 'registration_number'), ['98765/2024']);
   assert.deepEqual(get(ar, 'review_date'), ['2025-02-01']);
+  // a table's review date with the month in words; a method's steps after «Each … contain» are not ingredients
+  const method = factsOf([page(1, 'Revision date: | 14/Mar/2025\nProcedure\nEach 1 sachet contain Citric acid anhydrous 10.06 g.\nTake 7.15 ml of previous solution\nTransfer 363.7 mg of Citric acid anhydrous')]);
+  assert.deepEqual(get(method, 'review_date'), ['2025-03-14']);
+  assert.deepEqual(get(method, 'composition'), ['Citric acid anhydrous 10.06 g']);
   // every fact's words are on its page
   for (const d of DOSSIER) for (const f of factsOf(d.pages)) assert.ok(onItsPage(DOSSIER, { doc: d.id, page: f.page, quote: f.quote }), `${d.name}: ${f.quote}`);
 });
@@ -196,7 +137,8 @@ test('the made-up dossier: the five problems found, each with the words on its p
   assert.deepEqual([...new Set(maker.evidence.map(e => e.doc))].sort(), ['d1', 'd2', 'd3', 'd4', 'd5']);
   assert.equal(limit.level, 'red');
   assert.match(limit.detail, /ascorbic acid 40–110%/);
-  assert.match(limit.detail, /بتذكر ascorbic acid من غير الحد ده/);
+  assert.match(limit.detail, /«specification\.doc» بيذكر ascorbic acid من غير الحد ده/);
+  assert.ok(limit.evidence.some(e => e.doc === 'd2' && /Assay of ascorbic acid/.test(e.quote)));
   assert.equal(form.level, 'amber');
   assert.match(form.detail, /11 × 192\.12 ÷ 210\.14 = 10\.057/);
   assert.equal(review.level, 'amber');
@@ -220,6 +162,13 @@ test('what must not be found: the same maker, an approved transfer, the limit in
   const after = prepare([LICENCE, updated, STABILITY], { today: TODAY }).findings.map(f => f.id);
   assert.ok(!after.some(id => id.startsWith('approved-limit')), after.join());
   assert.ok(!after.some(id => id.startsWith('review_date')), after.join());
+
+  // a monograph that names the substance with an empty limit, beside a specification that states the approved one
+  const monograph = { id: 'd9', name: 'monograph.doc', pages: [page(1, 'MONOGRAPH\nTitle: Testamin powder for oral solution'),
+    page(2, '8. Quantitative Determination of Ascorbic Acid in Testamin\nMethod: HPLC\nLimit:\n9. Impurities')] };
+  const mixed = prepare([LICENCE, updated, STABILITY, monograph], { today: TODAY }).findings.find(f => f.id.startsWith('approved-limit'));
+  assert.match(mixed.detail, /«monograph\.doc» بيذكر ascorbic acid من غير الحد ده، والحد مكتوب في «specification\.doc»/);
+  assert.deepEqual(mixed.evidence.at(-1), { doc: 'd9', name: 'monograph.doc', page: 2, quote: '8. Quantitative Determination of Ascorbic Acid in Testamin' });
 
   const arabicMaker = { ...LICENCE, pages: [page(1, LICENCE.pages[0].text.replace('Manufacturer: Delta Test Manufacturing', 'الشركة المصنعة: شركة دلتا للصناعات الدوائية'))] };
   const unsure = prepare([arabicMaker, SPEC], { today: TODAY }).findings.filter(f => f.id.startsWith('manufacturer'));
