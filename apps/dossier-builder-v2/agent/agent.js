@@ -58,13 +58,58 @@ export function mcpTools({ only } = {}) {
   }));
 }
 
+// The options of one call to claude.ai's sample, as its contract (runtime 0.2.96) takes them: only members that have a value
+// (an unknown or empty `modelTier` is refused as `invalid_request`), never `cache` beside `tools`, at most as many tools as
+// this view runs.
+export function sampleOptions({ tools, modelTier, signal, onText, maxTools } = {}) {
+  const opts = {};
+  if (tools?.length) opts.tools = maxTools ? tools.slice(0, maxTools) : tools;
+  if (modelTier) opts.modelTier = modelTier;
+  if (signal) opts.signal = signal;
+  if (onText) opts.onText = onText;
+  return opts;
+}
+
 // One request to Claude inside the page, on the viewer's own account, with the program's tools. The limit of the viewer's plan
 // pauses the work (nothing is lost; it goes on from a click), and a viewer who said no to Claude gets the program without it.
-export async function ask(sample, { task, ctx, only, modelTier, signal, onText }) {
+export async function ask(sample, { task, ctx, only, modelTier, signal, onText, maxTools }) {
   try {
-    // with tools, a request is never replayed from claude.ai's cache
-    const res = await sample(`${BRIEF}\n\n${task}`, { tools: sampleTools(ctx, { only }), modelTier, signal, onText });
+    const res = await sample(`${BRIEF}\n\n${task}`, sampleOptions({ tools: sampleTools(ctx, { only }), modelTier, signal, onText, maxTools }));
     return { text: res.text, truncated: !!res.truncated };
+  } catch (e) {
+    if (e?.code === 'rate_limited') return { paused: true, reason: 'rate_limited', partial: e.text || '' };
+    if (e?.code === 'not_granted' || e?.code === 'sampling_disabled') return { unavailable: true, reason: e.code };
+    throw e;
+  }
+}
+
+// The same request where this view cannot run page tools: the program reads the files itself and hands Claude their text (as
+// much as fits), Claude answers and lists the facts it read as JSON, and the program records each one only if its words are on
+// the page Claude names — the same check record_fact makes.
+export async function askWithoutTools(sample, { task, ctx, signal, onText, budget = 120000 }) {
+  const parts = [];
+  let used = 0;
+  for (const f of ctx.ws.files) {
+    if (f.kind !== 'pdf' && f.kind !== 'text') { parts.push(`[${f.id}] ${f.path} (${f.kind}: not read here)`); continue; }
+    const info = await callTool('list_files', {}, { ...ctx, by: 'program' });
+    const pages = info.ok ? (info.result.files.find(x => x.file === f.id)?.pages || 1) : 1;
+    for (let p = 1; p <= pages && used < budget; p++) {
+      const r = await callTool('read_page_text', { file: f.id, page: p }, { ...ctx, by: 'program' });
+      if (!r.ok) continue;
+      const text = r.result.no_text_layer ? '(scanned page: no text layer)' : r.result.text;
+      used += text.length;
+      parts.push(`[${f.id}] ${f.path} — page ${p}\n${text}`);
+    }
+  }
+  const prompt = `${BRIEF}\n\nThe dossier's files, as the program read them:\n\n${parts.join('\n\n')}\n\nTask: ${task}\n\n`
+    + 'Reply with only a JSON object: {"answer": "your answer to the user, in their language", "facts": [{"field": "...", "value": "...", "file": "f1", "page": 1, "quote": "the words on that page that hold it, copied exactly"}]}. Use [] when there is no fact to record.';
+  try {
+    const out = await sample.json(prompt, sampleOptions({ signal, onText }));
+    const facts = Array.isArray(out?.facts) ? out.facts : [];
+    for (const f of facts.slice(0, 50)) {
+      await callTool('record_fact', { field: String(f.field ?? ''), value: String(f.value ?? ''), file: String(f.file ?? ''), page: Number(f.page), quote: String(f.quote ?? '') }, ctx);
+    }
+    return { text: String(out?.answer ?? ''), truncated: false };
   } catch (e) {
     if (e?.code === 'rate_limited') return { paused: true, reason: 'rate_limited', partial: e.text || '' };
     if (e?.code === 'not_granted' || e?.code === 'sampling_disabled') return { unavailable: true, reason: e.code };

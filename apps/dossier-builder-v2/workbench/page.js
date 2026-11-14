@@ -1,10 +1,13 @@
 // The workbench (step 2.0, docs/PART-2-PLAN.md §3.8): Claude works with the program's own tools (agent/tools.js) inside the
-// page, on the viewer's claude.ai account (the `sample` capability). The files are read in the browser; a page's text goes to
-// Claude only when Claude asks for it with a tool. Every tool call is shown, and every fact is kept with the words on its page.
-import * as pdfjs from 'pdfjs-dist/build/pdf.mjs';
+// page, on the viewer's claude.ai account (the `sample` capability, runtime contract 0.2.96). The files are read in the browser;
+// a page's text goes to Claude only when Claude asks for it with a tool. Every tool call is shown, and every fact is kept with
+// the words on its page. Where a view cannot run page tools, the program reads the files itself, hands Claude their text, and
+// checks each fact Claude names against its page before keeping it.
+// pdf.js's legacy build: the modern one needs the newest browsers, and the Claude apps show pages in the phone's own web view.
+import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { createWorkspace } from '../agent/workspace.js';
 import { tool } from '../agent/tools.js';
-import { callTool, ask } from '../agent/agent.js';
+import { callTool, ask, askWithoutTools } from '../agent/agent.js';
 import { createKnowledge } from '../core/knowledge.js';
 
 pdfjs.GlobalWorkerOptions.workerSrc = 'workbench/pdf.worker.min.js';
@@ -15,14 +18,35 @@ const EXAMPLE = { name: 'شهادة-تحليل-خيالية.pdf', example: true,
 const KB = n => (n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} ك.ب` : `${(n / 1048576).toFixed(1)} م.ب`);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+// What the viewer reads for each way a call to Claude can end (the codes of claude.ai's sample).
+const WHY = {
+  not_granted: 'الصفحة مش مسموح لها تكلّم Claude. تقدر تسمح من قايمة الأذونات بتاعة الصفحة.',
+  sampling_disabled: 'Claude مش متاح على الحساب ده.',
+  rate_limited: 'حد الاستخدام في اشتراكك خلص مؤقتاً. لما يرجع، دوس «كمّل».',
+  session_expired: 'جلستك على claude.ai خلصت. ادخل تاني وارجع للصفحة.',
+  tools_unavailable: 'العرض ده مش بيشغّل أدوات الصفحة.',
+  prompt_too_large: 'الكلام اللي اتبعت لـ Claude كبير زيادة. جرّب ملفات أقل أو سؤال أضيق.',
+  refused: 'Claude رفض الطلب ده. غيّر صياغة السؤال.',
+  empty_completion: 'Claude مارجّعش رد. جرّب سؤال أبسط.',
+  invalid_json: 'رد Claude ماكانش بالشكل المطلوب. جرّب تاني.',
+  upstream_error: 'مشكلة مؤقتة في الوصول لـ Claude. جرّب تاني بعد شوية.',
+  invalid_request: 'الصفحة بعتت طلب فيه غلط. ابعت الرسالة دي للمشغّل.',
+};
+
 let files = [EXAMPLE];
 let ctx = null;
 let sample = null;
-let from = 0;              // where the current question's steps start in the workspace's log
+let tools = null;           // what this view lets the page offer Claude: {maxCount} or null
+let from = 0;               // where the current question's steps start in the workspace's log
 let controller = null;
 let lastTask = '';
+let clock = null;
 
-function status(text, kind = '') { const el = $('#claude-status'); el.textContent = text; el.className = `status ${kind}`; }
+function status(text, kind = '', detail = '') {
+  const el = $('#claude-status');
+  el.className = `status ${kind}`;
+  el.innerHTML = esc(text) + (detail ? `<div class="detail"><bdi>${esc(detail)}</bdi></div>` : '');
+}
 
 // ------------------------------------------------------------------ the files
 async function load(list) {
@@ -31,15 +55,13 @@ async function load(list) {
   const record = ws.record.bind(ws);
   ws.record = entry => { record(entry); renderSteps(); };
   ctx = { ws, pdfjs, knowledge, by: 'claude' };
-  from = ws.log.length;
   const r = await callTool('list_files', {}, { ...ctx, by: 'you' });
   from = ws.log.length;
   const rows = r.ok ? r.result.files : [];
-  $('#files tbody').innerHTML = rows.map((f, i) => `<tr><td class="num">${esc(f.file)}</td><td><bdi>${esc(f.name)}</bdi>${files[i]?.example ? ' <span class="badge">مثال خيالي</span>' : ''}${f.problem ? `<div class="quote">${esc(f.problem)}</div>` : ''}</td>
+  $('#files tbody').innerHTML = rows.map((f, i) => `<tr><td class="num">${esc(f.file)}</td><td><bdi>${esc(f.name)}</bdi>${files[i]?.example ? ' <span class="badge">مثال خيالي</span>' : ''}${f.problem ? `<div class="quote">ماتقراش: <bdi>${esc(f.problem)}</bdi></div>` : ''}</td>
     <td><span class="kind">${esc(f.kind)}</span></td><td class="num">${f.pages ?? '—'}</td><td class="num">${KB(f.bytes)}</td></tr>`).join('');
   $('#use-example').hidden = files.some(f => f.example);
   renderSteps();
-  renderFacts();
 }
 
 async function add(fileList) {
@@ -63,8 +85,8 @@ function describe(e) {
 
 function renderSteps() {
   if (!ctx) return;
-  const steps = ctx.ws.log.slice(from).filter(e => e.by === 'claude');
-  $('#steps').innerHTML = steps.map(e => `<li class="${e.ok ? '' : 'no'}"><span class="t">${esc(tool(e.tool)?.title.ar || e.tool)}</span>
+  const steps = ctx.ws.log.slice(from).filter(e => e.by === 'claude' || e.by === 'program');
+  $('#steps').innerHTML = steps.map(e => `<li class="${e.ok ? '' : 'no'}"><span class="t">${e.by === 'program' ? 'البرنامج: ' : ''}${esc(tool(e.tool)?.title.ar || e.tool)}</span>
     <span class="d">${describe(e)}${e.ok ? '' : ` — <bdi>${esc(e.error)}</bdi>`}</span></li>`).join('');
   $('#steps-empty').hidden = steps.length > 0;
   $('#steps-count').textContent = steps.length ? `${steps.length} خطوة` : '';
@@ -86,36 +108,56 @@ function busy(on) {
   $('#stop').hidden = !on;
   $('#task').readOnly = on;
   for (const c of document.querySelectorAll('.chip')) c.disabled = on;
+  clearInterval(clock);
+  if (on) {
+    const t0 = Date.now();
+    const tick = () => { if (!$('#answer').dataset.live) $('#answer').textContent = `Claude بيفكّر… ${Math.round((Date.now() - t0) / 1000)} ث (أول رد بياخد عادةً من 10 لـ 90 ثانية)`; };
+    tick();
+    clock = setInterval(tick, 1000);
+  }
 }
 
 async function run(task) {
   task = task.trim();
   if (!task) return;
-  if (!sample) { status('Claude مش متاح هنا. افتح الصفحة على claude.ai وانت داخل بحسابك.', 'warn'); return; }
+  if (!sample) { status('Claude مش متاح في العرض ده. افتح الصفحة على claude.ai وانت داخل بحسابك.', 'warn'); return; }
   lastTask = task;
   $('#resume').hidden = true;
-  $('#answer').textContent = '';
+  delete $('#answer').dataset.live;
   from = ctx.ws.log.length;
   renderSteps();
   controller = new AbortController();
   busy(true);
-  status('Claude شغال…');
+  status(tools ? 'Claude شغال بأدوات البرنامج…' : 'Claude شغال (البرنامج بيقراله الملفات)…');
+  const onText = ({ text }) => { $('#answer').dataset.live = '1'; $('#answer').textContent = text; };
   try {
-    const res = await ask(sample, { task, ctx, signal: controller.signal, onText: ({ text }) => { $('#answer').textContent = text; } });
+    let res;
+    try {
+      res = tools ? await ask(sample, { task, ctx, signal: controller.signal, onText, maxTools: tools.maxCount })
+                  : await askWithoutTools(sample, { task, ctx, signal: controller.signal, onText });
+    } catch (e) {
+      if (e?.code !== 'tools_unavailable') throw e;
+      tools = null;                                   // this view refused page tools: the same question without them
+      res = await askWithoutTools(sample, { task, ctx, signal: controller.signal, onText });
+    }
+    busy(false);
     if (res.paused) {
-      if (res.partial) $('#answer').textContent = res.partial;
-      status('حد الاستخدام في اشتراكك خلص مؤقتاً. الشغل اتحفظ؛ لما الحد يرجع دوس «كمّل».', 'warn');
+      $('#answer').textContent = res.partial || '';
+      status(WHY.rate_limited, 'warn');
       $('#resume').hidden = false;
     } else if (res.unavailable) {
-      status(res.reason === 'not_granted' ? 'الصفحة مش مسموح لها تكلّم Claude. تقدر تسمح من قايمة الأذونات بتاعة الصفحة.' : 'Claude مش متاح على الحساب ده.', 'warn');
+      $('#answer').textContent = '';
+      status(WHY[res.reason] || WHY.sampling_disabled, 'warn');
     } else {
       $('#answer').textContent = res.text + (res.truncated ? '\n…(الرد اتقطع)' : '');
       status('Claude خلّص.', 'ok');
     }
   } catch (e) {
-    status(e?.code === 'cancelled' || e?.name === 'AbortError' ? 'وقّفت Claude.' : `Claude ماردّش: ${e?.code || e?.message || e}`, e?.code === 'cancelled' ? '' : 'bad');
-  } finally {
     busy(false);
+    $('#answer').textContent = e?.text || '';
+    if (e?.code === 'cancelled') status('وقّفت Claude.');
+    else status(WHY[e?.code] || 'Claude ماردّش.', 'bad', `${e?.code || 'error'}: ${e?.message || e}`);
+  } finally {
     renderFacts();
   }
 }
@@ -133,9 +175,13 @@ drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('
 $('#use-example').addEventListener('click', () => load([...files, EXAMPLE]));
 $('#undo').addEventListener('click', () => { ctx?.ws.undoLast(); renderFacts(); });
 
-load(files);
+load(files).catch(e => status('الملفات ماتقرتش في المتصفح ده.', 'bad', String(e?.message || e)));
 (async () => {
   try { sample = window.claude?.use ? await window.claude.use('sample') : null; } catch { sample = null; }
-  if (sample) status('Claude جاهز على حسابك. أول مرة تسأله، claude.ai هيطلب موافقتك.', 'ok');
-  else status('Claude مش متاح في العرض ده. افتح الصفحة على claude.ai وانت داخل بحسابك.', 'warn');
+  if (!sample) { status('Claude مش متاح في العرض ده. افتح الصفحة على claude.ai وانت داخل بحسابك.', 'warn'); return; }
+  const limits = typeof sample.limits === 'function' ? await sample.limits().catch(() => null) : null;
+  tools = limits ? (limits.tools ? { maxCount: limits.tools.maxCount } : null) : { maxCount: 0 };
+  if (tools && !tools.maxCount) tools = { maxCount: undefined };
+  status(tools ? 'Claude جاهز على حسابك، بأدوات البرنامج. أول مرة تسأله، claude.ai هيطلب موافقتك.'
+               : 'Claude جاهز على حسابك. العرض ده مش بيشغّل أدوات الصفحة، فالبرنامج هيقراله الملفات بنفسه. أول مرة تسأله، claude.ai هيطلب موافقتك.', 'ok');
 })();

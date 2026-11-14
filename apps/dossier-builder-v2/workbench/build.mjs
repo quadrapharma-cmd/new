@@ -78,7 +78,7 @@ export async function buildWorkbench() {
   const knowledge = path.join(DIST, 'knowledge.json');
   if (!fs.existsSync(knowledge)) throw new Error('dist/knowledge.json is missing: run npm run build first');
   const bundle = await esbuild.build({
-    entryPoints: [path.join(HERE, 'page.js')], bundle: true, format: 'iife', minify: true, target: ['es2022'],
+    entryPoints: [path.join(HERE, 'page.js')], bundle: true, format: 'iife', minify: true, target: ['es2020'],
     write: false, legalComments: 'none', logLevel: 'error', define: { 'import.meta.url': '""' },
   });
   const js = escapeControls(bundle.outputFiles[0].text).replace(/<\/script/gi, '<\\/script');
@@ -98,7 +98,7 @@ export async function buildWorkbench() {
   ].join('\n');
   fs.writeFileSync(path.join(DIST, 'workbench-artifact.html'), page);
   fs.mkdirSync(path.join(DIST, 'workbench'), { recursive: true });
-  const worker = fs.readFileSync(path.join(ROOT, 'node_modules', 'pdfjs-dist', 'build', 'pdf.worker.min.mjs'), 'utf8');
+  const worker = fs.readFileSync(path.join(ROOT, 'node_modules', 'pdfjs-dist', 'legacy', 'build', 'pdf.worker.min.mjs'), 'utf8');
   fs.writeFileSync(path.join(DIST, 'workbench', 'pdf.worker.min.js'), escapeControls(worker));
   return { page: path.join(DIST, 'workbench-artifact.html'), bytes: Buffer.byteLength(page) };
 }

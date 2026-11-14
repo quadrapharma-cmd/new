@@ -42,6 +42,7 @@ header p { margin: 4px 0 0; color: var(--muted); max-width: 70ch; }
 .status.ok { background: var(--ok-soft); color: var(--ok); }
 .status.warn { background: var(--warn-soft); color: var(--warn); }
 .status.bad { background: var(--bad-soft); color: var(--bad); }
+.status .detail { font: 12px var(--font-code); opacity: .85; margin-top: 4px; overflow-wrap: anywhere; }
 textarea { width: 100%; min-height: 84px; resize: vertical; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r);
            background: var(--bg); }
 textarea:focus-visible, button:focus-visible, .drop:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }

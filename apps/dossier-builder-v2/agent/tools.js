@@ -11,7 +11,8 @@ import { pageTextOf } from '../core/pdftext.js';
 export class ToolError extends Error {}
 const fail = msg => { throw new ToolError(msg); };
 const squeeze = s => fold(s).replace(/\s+/g, '');
-const TEXT_LIMIT = 12000;
+const TEXT_LIMIT = 6000;      // characters of a page per result: claude.ai takes at most 32 KB from a page tool (Arabic: 2 bytes a letter)
+const MAX_LIST = 300;
 
 // ------------------------------------------------------------------------------------------------ PDF, through pdf.js
 async function pdfOf(ctx, file) {
@@ -72,7 +73,7 @@ export const TOOLS = [
         if (f.kind === 'pdf') { try { row.pages = (await pdfOf(ctx, f)).numPages; } catch (e) { row.problem = e.message; } }
         out.push(row);
       }
-      return { files: out };
+      return out.length > MAX_LIST ? { files: out.slice(0, MAX_LIST), more: out.length - MAX_LIST } : { files: out };
     },
   },
   {
@@ -102,7 +103,7 @@ export const TOOLS = [
       const f = ctx.ws.file(file);
       const text = await pageText(ctx, f, page);
       if (scanned(text)) return { file: f.id, page, text: '', no_text_layer: true, note: 'this page is scanned: it has no text to read here' };
-      return { file: f.id, page, text: text.slice(0, TEXT_LIMIT), ...(text.length > TEXT_LIMIT ? { truncated: true, chars: text.length } : {}) };
+      return { file: f.id, page, text: text.slice(0, TEXT_LIMIT), ...(text.length > TEXT_LIMIT ? { truncated: true, chars: text.length, note: 'the rest of the page: find_in_files finds words in it' } : {}) };
     },
   },
   {
