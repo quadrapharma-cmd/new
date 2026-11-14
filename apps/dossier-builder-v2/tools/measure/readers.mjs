@@ -27,9 +27,10 @@ function bestWithOsd() {
 // The same instruction Claude gets on the measuring page (tools/measure/claude-page.mjs).
 const ASK = 'The image is a scanned page of a pharmaceutical regulatory document. It may be rotated, skewed or faint. Read it in its correct orientation and transcribe every word on it exactly as written, in reading order: Arabic as Arabic, English as English, and every digit as it is drawn (keep Arabic-Indic digits as they are). Include headings, table cells and the text of stamps. Output only the transcription.';
 // A vision-language model on this machine through llama.cpp's multimodal command line (LLAMA_MTMD_CLI), the model and its
-// image part named by QWEN3VL_MODEL and QWEN3VL_MMPROJ.
+// image part named by QWEN3VL_MODEL and QWEN3VL_MMPROJ. The context is held at 8,192 tokens: by default llama.cpp reserves the
+// model's whole context (about 262,000 tokens for Qwen3-VL) and the machine runs out of memory.
 const qwen = f => ['-m', process.env.QWEN3VL_MODEL, '--mmproj', process.env.QWEN3VL_MMPROJ, '--image', f, '-p', ASK,
-                   '--temp', '0', '-n', '1200', '-t', String(Math.max(1, os.cpus().length)), '--no-warmup'];
+                   '--temp', '0', '-n', '1200', '-c', '8192', '-t', String(Math.max(1, os.cpus().length)), '--no-warmup'];
 
 export const READERS = {
   'tesseract-fast': { what: 'Tesseract 5 with the fast models a Tesseract installer brings', args: f => [f, 'stdout', '-l', 'ara+eng'] },
