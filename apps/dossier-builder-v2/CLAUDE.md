@@ -142,6 +142,11 @@ characters: the build writes them as escapes (`escapeControls`). The bridge for 
 10. No `rm` with wildcards; `pkill -f` only with an anchored pattern that cannot match your own command.
 11. Leave `apps/dossier-builder/` (v1) and Drugbox alone unless he asks.
 12. Do the work yourself, in lean turns: no sub-agents unless he asks for them.
+13. **Nothing reaches him untested** (14/11/2026: «مينفعش تبعت حاجة متجربتش او لم يتم اختبارها انت كدا بتضيع وقت و جهد و فلوس»).
+    Before anything is sent or published to him, see it work yourself, end to end, the way he will use it — not a stand-in that is
+    easier than the real thing. What cannot be tested from here (Claude answering inside claude.ai on his account; installing on
+    his Windows or Mac) is not sent until a way to test it exists; say so before you start, never after he finds it broken.
+    On 14/11 the Claude-app extension and the workbench reached him untested and failed for him: that is what this rule stops.
 
 ## His decisions so far
 This file is your memory beyond this conversation. When he decides something new — a rule, a preference, a decision about the
@@ -178,6 +183,9 @@ When a part is done or an open item is closed, update «What exists» and «Open
 - EDA's mock-up, naming and good-review-practice guidelines are registered but not yet tied to review questions.
 - The open-document button was tested in a browser, not inside the claude.ai viewer itself: if he reports a problem there, check it.
 - The Operator's desktop edition, after he has tried the claude.ai panel; align it with PART-2-PLAN §3.8.
+- Two things still untested where he uses them (rule 13): the workbench's real Claude call inside claude.ai, and the `.mcpb`
+  extension's install in the Claude app (he reported «غير متعرف عليه»). Neither is to be sent again before a way to test it exists
+  (an API key for test calls with the same tools; a Windows or Mac machine for the extension).
 
 ## The environment
 Personal cloud environment «quadrapharma new»: package registries, Google Drive's APIs, Hugging Face, edaegypt.gov.eg (with www),
