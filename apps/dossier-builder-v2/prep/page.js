@@ -1,10 +1,13 @@
-// The page of «الفحص الأول للملف» (Part 2): the viewer's files read in the browser (prep/read.js, scans by prep/ocr.js), each
-// document typed and placed, the documents checked side by side (prep/index.js), every finding shown with the words on its pages.
+// The page of «الفحص الأول للملف» (Part 2): the viewer's files read in the browser (prep/read.js), each document typed and placed, the
+// documents checked side by side (prep/index.js), every finding shown with the words on its pages. Scanned pages are read by Claude
+// on the viewer's claude.ai account where the page may ask it (prep/claude-read.js, the `sample` capability with images), else — or
+// when the viewer chooses, or Claude refuses or cannot answer — by the scan reader on the computer (prep/ocr.js).
 // pdf.js's legacy build: the Claude apps show pages in the phone's own web view.
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { readFiles, whyOf, FIRST } from './read.js';
 import { prepare } from './index.js';
 import { createOcr } from './ocr.js';
+import { createClaudeReader } from './claude-read.js';
 import { extract as unrarInWorker } from './rar.js';
 
 pdfjs.GlobalWorkerOptions.workerSrc = 'pdf.worker.min.js';
@@ -64,6 +67,51 @@ async function unrar(bytes) {
   return { files: r.files.map(f => ({ name: f.name, bytes: join(f.parts) })), skipped: r.skipped };
 }
 
+// ---- who reads the scanned pages: Claude where this view lets the page ask it with pictures, else the scan reader
+let claude = { state: 'checking' };
+const WHY_CLAUDE = {
+  not_granted: 'الصفحة مش مسموح لها تكلّم Claude (تقدر تسمح من قايمة الأذونات بتاعة الصفحة)', sampling_disabled: 'Claude مش متاح على الحساب ده',
+  images_unavailable: 'العرض ده مش بيبعت صور لـ Claude', rate_limited: 'حد الاستخدام في اشتراكك خلص مؤقتاً', session_expired: 'جلستك على claude.ai خلصت',
+  upstream_error: 'Claude مارجّعش رد', empty_completion: 'Claude مارجّعش رد',
+};
+const STOP = new Set(['not_granted', 'sampling_disabled', 'images_unavailable', 'session_expired', 'rate_limited']);   // no use asking again this time
+function showReader() {
+  const ready = claude.state === 'ready';
+  $('#reader').hidden = !ready;
+  $('#reader-note').textContent = ready ? '' : claude.state === 'checking' ? ''
+    : 'Claude مش متاح في العرض ده، فالصفحات الممسوحة هيقراها قارئ المسح على الجهاز.';
+}
+(async () => {
+  try {
+    const sample = window.claude ? await window.claude.use('sample') : null;          // null: this view cannot ask Claude
+    const caps = sample ? await sample.limits().catch(() => null) : null;
+    claude = sample && (caps?.images?.maxCount || 0) >= 2 ? { state: 'ready', reader: createClaudeReader(sample) } : { state: sample ? 'no-images' : 'none' };
+  } catch { claude = { state: 'none' }; }
+  showReader();
+})();
+const chosenReader = () => (claude.state === 'ready' && document.querySelector('input[name="reader"]:checked')?.value === 'claude' ? 'claude' : 'ocr');
+// Claude first, page by page; a page Claude cannot read goes to the scan reader, and after a refusal or a spent limit every page does
+function readerFor(choice) {
+  if (choice !== 'claude') return ocr;
+  const state = { off: null, failed: 0 };
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  return {
+    lanes: 2, state,
+    async page(canvas, info) {
+      for (let attempt = 0; !state.off && attempt < 2; attempt++) {
+        try { return await claude.reader.page(canvas, info); } catch (e) {
+          const code = e?.code || 'error';
+          if (code === 'rate_limited' && attempt === 0) { await sleep(window.__prepRateWait ?? 20000); continue; }   // a limit may come back soon
+          if (STOP.has(code)) state.off = code;
+        }
+      }
+      state.failed++;
+      const got = await ocr.page(canvas, info);
+      return { text: typeof got === 'string' ? got : got.text, by: 'ocr' };
+    },
+  };
+}
+
 // ---- the files chosen, dropped (folders too), read and checked
 async function entriesOf(items) {                                  // dropped files and folders → [{name, file}]
   const out = [];
@@ -93,10 +141,11 @@ async function run(chosen) {
     for (const c of chosen) files.push({ name: c.name, bytes: new Uint8Array(await c.file.arrayBuffer()) });
     let opened = 0;
     window.__prepLog = [];
-    const env = { pdfjs, ocr, drawPdf, drawImage, unrar, onProgress: e => {
+    const choice = chosenReader(), reader = readerFor(choice);
+    const env = { pdfjs, ocr: reader, drawPdf, drawImage, unrar, onProgress: e => {
       window.__prepLog.push({ t: Date.now() - started, ...e });
       if (e.stage === 'open') { opened++; last = `بيفتح <bdi>${esc(e.name)}</bdi>…`; bar(Math.min(0.95, opened / (files.length + 4))); }
-      if (e.stage === 'ocr') last = `بيقرا الصفحة الممسوحة ${e.page} من ${e.pages} في <bdi>${esc(e.name)}</bdi>…`;
+      if (e.stage === 'ocr') last = `${choice === 'claude' && !reader.state?.off ? 'Claude بيقرا' : 'قارئ المسح بيقرا'} الصفحة الممسوحة ${e.page} من ${e.pages} في <bdi>${esc(e.name)}</bdi>…`;
       status(`${last} <span class="fine">· ${Math.round((Date.now() - started) / 1000)} ث</span>`);
     } };
     status('بيفتح الملفات…'); bar(0.02);
@@ -104,7 +153,7 @@ async function run(chosen) {
     const result = prepare(docs, { today: today(), knowledge });
     clearInterval(ticker);
     bar(null);
-    show(docs, result, env.ocrFailed);
+    show(docs, result, env.ocrFailed, { choice, off: reader.state?.off || null, failed: reader.state?.failed || 0 });
   } catch (e) {
     clearInterval(ticker);
     bar(null);
@@ -115,9 +164,11 @@ async function run(chosen) {
 // ---- the result
 function pagesLine(d) {
   if (d.unread) return `<span class="badge bad">ماتقراش: ${esc(whyOf(d.unread))}</span>`;
-  const n = d.pages.length, read = d.pages.filter(p => (p.text || '').trim()).length, scanned = d.pages.filter(p => p.by === 'ocr').length;
+  const n = d.pages.length, read = d.pages.filter(p => (p.text || '').trim()).length;
+  const byClaude = d.pages.filter(p => p.by === 'claude').length, byOcr = d.pages.filter(p => p.by === 'ocr').length;
   let s = `${read} من ${n} ${n === 1 ? 'صفحة' : 'صفحات'} اتقرت`;
-  if (scanned) s += ` <span class="fine">(${scanned} ممسوحة اتقرت بقارئ المسح)</span>`;
+  const how = [byClaude ? `${byClaude} ممسوحة قراها Claude` : '', byOcr ? `${byOcr} ممسوحة قراها قارئ المسح` : ''].filter(Boolean).join('، ');
+  if (how) s += ` <span class="fine">(${how})</span>`;
   if (d.note) s += ` <span class="badge warn">${d.note === 'no-ocr' ? 'ممسوح ومااتقراش'
     : d.note.startsWith('long:') ? `مستند طويل: اتقرا أول ${FIRST} صفحات ممسوحة بس، و${d.note.split(':')[1]} مااتقرتش`
       : `فيه ${d.note.split(':')[1]} صفحات ممسوحة مااتقرتش`}</span>`;
@@ -126,13 +177,16 @@ function pagesLine(d) {
 function evidence(e) {
   return `<li><div class="where"><bdi>${esc(e.name)}</bdi> — ص ${e.page}</div><blockquote dir="auto">${esc(e.quote)}</blockquote></li>`;
 }
-function show(docs, { documents, findings }, ocrFailed) {
+function show(docs, { documents, findings }, ocrFailed, how = {}) {
   const reds = findings.filter(f => f.level === 'red').length, ambers = findings.length - reds;
-  const scanned = docs.reduce((n, d) => n + d.pages.filter(p => p.by === 'ocr').length, 0);
+  const scanned = docs.reduce((n, d) => n + d.pages.filter(p => p.by === 'ocr' || p.by === 'claude').length, 0);
   const unread = docs.filter(d => d.unread || d.note).length;
   const secs = Math.round((Date.now() - started) / 1000);
-  status(ocrFailed ? `خلص في ${secs} ث، بس قارئ المسح ماقدرش يشتغل هنا (${esc(ocrFailed.why === 'wasm' ? 'العرض ده مانع WebAssembly اللي القارئ محتاجه' : ocrFailed.message)}): الصفحات الممسوحة مااتقرتش.`
-    : `خلص في ${secs} ث.`, ocrFailed ? 'warn' : 'ok');
+  const notes = [];
+  if (how.choice === 'claude' && how.off) notes.push(`Claude وقف (${esc(WHY_CLAUDE[how.off] || how.off)})، والصفحات الممسوحة الباقية قراها قارئ المسح على الجهاز`);
+  else if (how.choice === 'claude' && how.failed) notes.push(`${how.failed} ${how.failed === 1 ? 'صفحة' : 'صفحات'} ممسوحة Claude ماقدرش يقراها، فقراها قارئ المسح على الجهاز`);
+  if (ocrFailed) notes.push(`قارئ المسح ماقدرش يشتغل هنا (${esc(ocrFailed.why === 'wasm' ? 'العرض ده مانع WebAssembly اللي القارئ محتاجه' : ocrFailed.message)}): الصفحات الممسوحة اللي وصلت له مااتقرتش`);
+  status(`خلص في ${secs} ث.${notes.length ? ' ' + notes.join('. ') + '.' : ''}`, ocrFailed || how.off || how.failed ? 'warn' : 'ok');
   $('#summary-when').textContent = `النهارده ${today()}`;
   $('#summary').innerHTML = [
     [documents.length, 'مستندات'], [reds, 'ملاحظات لازم تتحل', 'bad'], [ambers, 'ملاحظات لازم تتوضح', 'warn'],
@@ -161,7 +215,8 @@ function show(docs, { documents, findings }, ocrFailed) {
   }).join('');
   $('#summary-box').hidden = $('#findings-box').hidden = $('#docs-box').hidden = false;
   window.__prep = { documents, findings, docs: docs.map(d => ({ id: d.id, name: d.name, kind: d.kind, unread: d.unread || null, note: d.note || null,
-                                                               pages: d.pages.map(p => ({ n: p.n, by: p.by, text: p.text })) })), ocrFailed: ocrFailed ? ocrFailed.why || ocrFailed.message : null };
+                                                               pages: d.pages.map(p => ({ n: p.n, by: p.by, text: p.text })) })), ocrFailed: ocrFailed ? ocrFailed.why || ocrFailed.message : null,
+                  reader: how };
 }
 
 // ---- wiring

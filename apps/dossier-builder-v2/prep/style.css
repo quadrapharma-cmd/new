@@ -25,6 +25,7 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }        /* the artifact's own reset says so too; a box styled as a grid must still hide */
 body { background: var(--bg); color: var(--ink); font: 15px/1.65 var(--font-body); }
 button, input { font: inherit; color: inherit; }
 .page { max-width: 1040px; margin-inline: auto; padding-block: 20px 40px;
@@ -45,6 +46,11 @@ header p { margin: 4px 0 0; color: var(--muted); max-width: 72ch; }
 .drop { border: 1.5px dashed var(--line); border-radius: var(--r); padding: 18px 14px; text-align: center; display: grid; gap: 10px; }
 .drop.over { border-color: var(--accent); background: var(--accent-soft); }
 .drop-text { margin: 0; font-weight: 500; }
+.reader { border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; margin: 0; display: grid; gap: 8px; min-width: 0; }
+.reader legend { font-weight: 600; font-size: 13px; padding: 0 6px; }
+.reader label { display: flex; gap: 8px; align-items: baseline; cursor: pointer; min-width: 0; }
+.reader input { accent-color: var(--accent); flex: none; }
+.reader label > span { min-width: 0; }
 .status { font-size: 13px; padding: 8px 12px; border-radius: var(--r); background: var(--sunk); color: var(--ink); overflow-wrap: anywhere; }
 .status.ok { background: var(--ok-soft); color: var(--ok); }
 .status.warn { background: var(--warn-soft); color: var(--warn); }

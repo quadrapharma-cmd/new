@@ -1,8 +1,9 @@
 // Every file of a dossier opened by its content (never its name) and read page by page: a PDF's own text where it has one, a scanned
 // page (or a picture) read by the page's scan reader when one is given (prep/ocr.js, in the browser), Word files old and new, and
 // the files inside ZIP and RAR archives, as deep as archives go in archives. What cannot be read says why; nothing is guessed.
-//   readFiles(files: [{name, bytes}], env) → [{id, name, kind, pages: [{n, text, by: 'text'|'ocr'|'word'|'plain'}], unread?, note?}]
-//   env: {pdfjs, ocr?: {page(canvas) → text}, drawPdf?(page) → canvas, drawImage?(bytes, kind) → canvases, onProgress?, unrar?}
+//   readFiles(files: [{name, bytes}], env) → [{id, name, kind, pages: [{n, text, by: 'text'|'ocr'|'claude'|'word'|'plain'}], unread?, note?}]
+//   env: {pdfjs, ocr?: {page(canvas, {dpi, name, page, pages}) → text or {text, by}, lanes?}, drawPdf?(page) → canvas,
+//         drawImage?(bytes, kind) → canvases, onProgress?, unrar?}
 import { kindOf } from '../agent/workspace.js';
 import { pageTextOf } from '../core/pdftext.js';
 import { unzip } from './zip.js';
@@ -36,7 +37,10 @@ const rarHere = async bytes => {
   return { files, skipped: r.skipped };
 };
 
-async function pdfPages(bytes, env, tell) {
+// A reader's answer: its text, and who read it (the scan reader on the computer, or Claude)
+const answer = got => (typeof got === 'string' ? { text: got, by: 'ocr' } : { text: String(got?.text || ''), by: got?.by || 'ocr' });
+
+async function pdfPages(bytes, env, tell, name) {
   const task = env.pdfjs.getDocument({ data: bytes.slice(), isEvalSupported: false, useSystemFonts: false });
   const doc = await task.promise;
   try {
@@ -49,9 +53,9 @@ async function pdfPages(bytes, env, tell) {
         if (env.ocrFailed) throw env.ocrFailed;
         const canvas = await env.drawPdf(page);
         page.cleanup();
-        const got = await env.ocr.page(canvas, { dpi: canvas.dpi ?? 300 });
-        slot.text = letters(got) > letters(text) ? got : text;
-        slot.by = 'ocr';
+        const got = answer(await env.ocr.page(canvas, { dpi: canvas.dpi ?? 300, name, page: n, pages: doc.numPages }));
+        slot.text = letters(got.text) > letters(text) ? got.text : text;
+        slot.by = got.by;
       } catch (e) {                                       // the scan reader cannot run here: the page stays unread, and says why
         env.ocrFailed = e;
         slot.unreadScan = true;
@@ -102,7 +106,7 @@ export async function readFiles(files, env = {}) {
         return;
       }
       if (kind === 'pdf') {
-        const { pages, scans, skipped } = await pdfPages(bytes, env, e => tell({ ...e, name }));
+        const { pages, scans, skipped } = await pdfPages(bytes, env, e => tell({ ...e, name }), name);
         const d = add(name, kind, { pages });
         if (scans) d.note = scans === pages.length ? 'no-ocr' : `no-ocr:${scans}`;
         else if (skipped) d.note = `long:${skipped}`;
@@ -115,7 +119,11 @@ export async function readFiles(files, env = {}) {
         if (!env.ocr || !env.drawImage) { add(name, kind, { unread: 'no-ocr' }); return; }
         const pics = await env.drawImage(bytes, kind);
         const pages = [];
-        for (let i = 0; i < pics.length; i++) { tell({ stage: 'ocr', name, page: i + 1, pages: pics.length }); pages.push({ n: i + 1, text: await env.ocr.page(pics[i]), by: 'ocr' }); }   // a failure: the file is unread (below)
+        for (let i = 0; i < pics.length; i++) {                     // a failure: the file is unread (below)
+          tell({ stage: 'ocr', name, page: i + 1, pages: pics.length });
+          const got = answer(await env.ocr.page(pics[i], { name, page: i + 1, pages: pics.length }));
+          pages.push({ n: i + 1, text: got.text, by: got.by });
+        }
         add(name, kind, { pages });
         return;
       }

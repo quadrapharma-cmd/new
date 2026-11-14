@@ -3,7 +3,7 @@
 // allows, fonts from Google Fonts, fetch and workers only from the page's own files (never a data: address), images from data:
 // and blob: — with window.claude standing in for the viewer (tests/helpers/fake-claude.js: its `sample` refuses what claude.ai's
 // contract refuses). It reports blocked loads, console errors and the page's own checks; it cannot reach Claude itself.
-//   node tools/check-published.mjs <library|workbench|measure|prep> <folder: index.html and the published files> [--old-measure]
+//   node tools/check-published.mjs <library|workbench|measure|prep|prep-claude> <folder: index.html and the published files> [--old-measure]
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -80,8 +80,9 @@ const SCENARIOS = {
     const r = await page.evaluate(() => window.__prep);
     const squash = s => s.replace(/\s+/g, ' ').trim();
     const off = r.findings.flatMap(f => f.evidence.filter(e => !squash(r.docs.find(d => d.id === e.doc).pages.find(p => p.n === e.page).text).includes(squash(e.quote))).map(e => `${f.id}: ${e.quote}`));
+    const by = who => r.docs.reduce((n, d) => n + d.pages.filter(p => p.by === who).length, 0);
     return { seconds: Math.round((Date.now() - t0) / 1000), 'scan reader': r.ocrFailed || 'ran', documents: r.documents.map(d => `${d.name}: ${d.type}`),
-             'scanned pages read': r.docs.reduce((n, d) => n + d.pages.filter(p => p.by === 'ocr').length, 0),
+             'scanned pages read by Claude': by('claude'), 'scanned pages read by the scan reader': by('ocr'), reader: r.reader,
              findings: r.findings.map(f => `${f.level} ${f.id}`), 'quotes not on their page': off };
   },
   // the measuring page: each page goes to Claude whole and in two halves
@@ -97,9 +98,16 @@ const SCENARIOS = {
   },
 };
 
+// `prep-claude`: the same run where the page may ask Claude with pictures — the stand-in answers each scanned page with its text
+SCENARIOS['prep-claude'] = SCENARIOS.prep;
+export async function claudeReadings() {
+  const { LICENCE, STABILITY, RECEIPTS } = await import('../tests/fixtures/scans.mjs');
+  return Object.fromEntries([['licence (scan).pdf', LICENCE], ['stability (scan).pdf', STABILITY], ['receipts (scan).pdf', RECEIPTS]]
+    .flatMap(([name, doc]) => doc.pages.map(p => [`${name}|${p.n}`, p.text])));
+}
 export async function checkPublished(kind, folder, { patch, claude = {} } = {}) {
   const { chromium } = require('playwright');
-  const server = await serve(path.resolve(folder), patch, kind === 'prep' ? WASM_CSP : CSP);
+  const server = await serve(path.resolve(folder), patch, kind.startsWith('prep') ? WASM_CSP : CSP);
   const browser = await chromium.launch();
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
@@ -121,7 +129,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const patch = process.argv.includes('--old-measure')
     ? html => html.replace(/function blobOf\(src\)\{return new Promise\(\(ok,no\)=>\{const im=new Image\(\);[\s\S]*?im\.src=src\}\)\}/, 'function blobOf(src){return fetch(src).then(r=>r.blob())}')
     : undefined;
-  const claude = kind === 'measure' ? { images: true } : { mode: 'tools' };
+  const claude = kind === 'measure' ? { images: true } : kind === 'prep-claude' ? { images: true, pages: await claudeReadings() } : { mode: 'tools' };
   const out = await checkPublished(kind, folder, { patch, claude });
   console.log(JSON.stringify(out, null, 1));
   process.exitCode = out.problems.length ? 1 : 0;

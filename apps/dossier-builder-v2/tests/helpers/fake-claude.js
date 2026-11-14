@@ -6,8 +6,12 @@
 //   options.mode: 'tools' (this view runs page tools), 'no-tools' (limits() reports none), 'refuse-tools' (limits() says yes, the
 //                 call says tools_unavailable), 'error' (every call fails upstream_error)
 //   options.images: the page declares images (limits().images, at most 2 a call)
+//   options.pages: {"<file name>|<page>": text} — a call with pictures that names «Page N of M of the file «name»» is answered with
+//                  that page's text (a stand-in for Claude's reading; the test knows what each made-up page says)
+//   options.pictures: what a call with pictures does — 'read' (answers from `pages`), 'not_granted', 'rate_limited' (every time),
+//                  'flaky' (the first call for each page fails upstream_error, the second answers)
 // What the page asked is kept on window.__calls ({prompt, tools, images}) for the test to read.
-export function fakeClaude({ mode = 'tools', images = false } = {}) {
+export function fakeClaude({ mode = 'tools', images = false, pages = {}, pictures = 'read' } = {}) {
   window.__calls = [];
   window.__prompts = [];
   const reject = (code, message) => Promise.reject({ code, message });
@@ -58,6 +62,15 @@ export function fakeClaude({ mode = 'tools', images = false } = {}) {
     window.__prompts.push(prompt);
     window.__calls.push({ prompt: prompt.slice(0, 200), tools: (opts?.tools || []).length, images: img.list.length });
     if (mode === 'error') return reject('upstream_error', 'connection dropped');
+    if (img.list.length) {
+      const m = prompt.match(/^Page (\d+) of \d+ of the file «(.+?)»\./);
+      const key = m ? `${m[2]}|${m[1]}` : '';
+      if (pictures === 'not_granted') return reject('not_granted', 'the viewer said no');
+      if (pictures === 'rate_limited') return reject('rate_limited', 'the limit is spent');
+      if (pictures === 'flaky') { window.__seen = window.__seen || {}; if (!window.__seen[key]) { window.__seen[key] = 1; return reject('upstream_error', 'connection dropped'); } }
+      if (!(key in pages)) return { text: '', truncated: false, modelTierApplied: 'default' };
+      return { text: pages[key], truncated: false, modelTierApplied: 'default' };
+    }
     if (!opts?.tools) return { text: 'Testaphen 500 mg film-coated tablets (stand-in reading)', truncated: false, modelTierApplied: 'default' };
     if (mode !== 'tools') return reject('tools_unavailable', 'this view cannot run page tools');
     await call(opts, 'list_files', {});

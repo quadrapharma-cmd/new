@@ -124,8 +124,14 @@ characters: the build writes them as escapes (`escapeControls`). The bridge for 
 `dist/Dossier-Builder.mcpb` (installed from the Claude app: Settings → Extensions → Advanced settings → Install Extension).
 
 ### 4c. «الفحص الأول للملف» (Part 2's first slice, asked for with «أبدا» on 14/11/2026; published 14/11 after his «أبدا»)
-Private artifact `https://claude.ai/artifact/Gm4x2sU1BYLu1y6aTewmZr` (no capabilities). Read back after publishing: every file
-byte for byte the built one, and `check-published.mjs prep` on the read-back page passed (the made-up dossier, five findings, 22 s).
+Private artifact `https://claude.ai/artifact/Gm4x2sU1BYLu1y6aTewmZr`, capability `{sample: {images: true}}`. Read back after
+publishing: every file byte for byte the built one; `check-published.mjs prep` (the scan reader) and `prep-claude` (Claude's reading
+through the claude.ai stand-in) pass on the read-back page.
+- Scanned pages (owner, 14/11: «أنا عايز. اجرب بنفسي»): Claude reads them on the viewer's account where the view lets the page ask it
+  with pictures (`prep/claude-read.js`: each page in two halves of ~1.2 MP, the instruction of the owner's own measure, 97–98 %);
+  the viewer can choose the scan reader instead; a page Claude cannot read goes to the scan reader, and after a refusal or a spent
+  limit every page does — the page says why. Claude's real answers are tried by the owner himself (no API key here); everything
+  else is tested with the stand-in (`tests/helpers/fake-claude.js`: pages answered, not_granted, rate_limited, a failure retried).
 The viewer chooses a product's files or folder; the page opens every file by its content (PDF with text, scanned PDF and pictures
 through the scan reader, Word .doc and .docx, ZIP and RAR, archives inside archives), types each document and places it in the CTD
 (the library's records), reads its facts by rule (each with its page and words), and checks the documents side by side: the
@@ -146,7 +152,7 @@ the licence's numbered conditions. No Claude: rules only.
 - OCR slips the rules already take (keep adding, each with a made-up test): «Fach» for «Each», «contalns», a % read as a digit,
   «هينة» for «هيئة», «الركزية» for «المركزية», direction marks and stray signs around values.
 - Republish: `file_path` `apps/dossier-builder-v2/dist/prep-artifact.html` with `url` (above) and `files` = `dist/prep-files.json`
-  (its paths are from the repository's root; only changed files need sending).
+  (its paths are from the repository's root; only changed files need sending); omit `capabilities` to keep `sample` with images.
 - Real products are tried locally only (`scratchpad/trial/`), never committed or published.
 
 ### 5. The open-source eCTD projects and the eCTD timelines (monthly, or when he asks)

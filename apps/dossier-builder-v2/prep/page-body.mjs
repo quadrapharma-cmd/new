@@ -4,7 +4,7 @@ export const TITLE = 'الفحص الأول للملف';
 export const BODY = `<div class="page" dir="rtl" lang="ar">
 <header>
   <h1>الفحص الأول للملف</h1>
-  <p>اختار ملفات المستحضر، أو الفولدر كله. البرنامج بيفتح كل ملف ويعرف نوعه من محتواه مش من اسمه، ويحدد مكانه في الـ CTD، وبعدين بيقارن المستندات ببعض. كل ملاحظة معاها الكلام اللي في صفحتها. الملفات بتتقري على جهازك، ومابتتبعتش لأي حد.</p>
+  <p>اختار ملفات المستحضر، أو الفولدر كله. البرنامج بيفتح كل ملف ويعرف نوعه من محتواه مش من اسمه، ويحدد مكانه في الـ CTD، وبعدين بيقارن المستندات ببعض. كل ملاحظة معاها الكلام اللي في صفحتها. الملفات بتتفتح على جهازك؛ ولو اخترت إن Claude يقرا الصفحات الممسوحة، صور الصفحات دي بس هي اللي بتتبعت له على حسابك.</p>
 </header>
 <section class="box" aria-labelledby="files-h">
   <h2 id="files-h">ملفات المستحضر</h2>
@@ -16,6 +16,12 @@ export const BODY = `<div class="page" dir="rtl" lang="ar">
     </div>
     <p class="fine">بيقرا: PDF فيه نص أو ممسوح، Word القديم (.doc) والجديد (.docx)، الصور الممسوحة، والملفات اللي جوه ZIP و RAR.</p>
   </div>
+  <fieldset class="reader" id="reader" hidden>
+    <legend>مين يقرا الصفحات الممسوحة</legend>
+    <label><input type="radio" name="reader" value="claude" checked><span><b>Claude</b> <span class="fine">أدق، وبيقرا العربي كويس. على حسابك في claude.ai، وصور الصفحات الممسوحة بس هي اللي بتتبعت له.</span></span></label>
+    <label><input type="radio" name="reader" value="ocr"><span><b>قارئ المسح على الجهاز</b> <span class="fine">من غير Claude، ومفيش حاجة بتخرج من جهازك. أبطأ، وأضعف في العربي.</span></span></label>
+  </fieldset>
+  <p class="fine" id="reader-note"></p>
   <div class="status" id="status" role="status" aria-live="polite" hidden></div>
   <div class="bar" id="bar" hidden><span id="bar-fill"></span></div>
 </section>
@@ -32,5 +38,5 @@ export const BODY = `<div class="page" dir="rtl" lang="ar">
   <h2 id="docs-h">المستندات <small>نوع كل واحد ومكانه، واللي اتقرا منه</small></h2>
   <ul class="docs" id="docs"></ul>
 </section>
-<p class="fine foot">الفحص ده بيقارن المستندات ببعض بقواعد ثابتة، ومابيستخدمش Claude. الصفحة الممسوحة بيقراها قارئ المسح جوه المتصفح، وأول مرة بيحمّل حوالي 35 م.ب. لو حاجة اتقرت غلط هتلاقيها قدامك بكلامها، فتقدر تتأكد منها بنفسك.</p>
+<p class="fine foot">المقارنة نفسها بقواعد ثابتة. Claude، لو اخترته، بيقرا الصفحات الممسوحة بس؛ ولو ماقدرش يقرا صفحة، بيقراها قارئ المسح جوه المتصفح (أول مرة بيحمّل حوالي 40 م.ب). لو حاجة اتقرت غلط هتلاقيها قدامك بكلامها، فتقدر تتأكد منها بنفسك.</p>
 </div>`;
