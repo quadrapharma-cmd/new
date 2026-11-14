@@ -109,6 +109,16 @@ its content, never from its file name. Then verify → build → test → commit
 4. Check it as he will see it: Playwright (preinstalled: `require('playwright')`) on `dist/library/index.html` at 1440 and 390 wide,
    Arabic and English, light and dark; open a source document, search in Arabic and in English. Screenshots go to the scratchpad.
 
+### 5. The open-source eCTD projects and the eCTD timelines (monthly, or when he asks)
+1. Last update of each project the plan uses (`docs/PART-2-PLAN.md` §3.9–3.10):
+   `gh api -X GET search/repositories -f q="repo:<owner>/<name>" --jq '.items[] | "\(.full_name) \(.pushed_at) \(.license.spdx_id)"'`
+   for PharmaRA/RATools-for-eCTD, randomthingsonlineatsk-cloud/{ectd-dossier-builder,labelling-workbench,variations-classifier},
+   zubair0153715/ectd-lite, dayzero/ectd_indexer, cperapa-rgb/phaxton-validator, sebsca/ectd-tool, fabricanda/clinical-drafting-kit.
+2. New projects: `gh api -X GET search/repositories -f q='ectd pushed:>YYYY-MM-DD'` (and «common technical document»).
+3. For each change: what is new (README, release notes), its licence (MIT/Apache/BSD: code; GPL/AGPL/none: ideas only), and where it
+   lands in the plan. Add it to `docs/ctd/UPDATES.md` and the plan's §3.10, then tell him in a few lines.
+4. eCTD timelines (EDA, EU, FDA, GCC, eCTD 4.0) from the authorities' own pages: a change goes to the library as a finding.
+
 ## Rules that never bend
 1. Every record rests on a registered source; nothing is stated that its source does not say.
 2. **Company data** from his Drive (Dramrin, Wouncure, any product's files) stays in the scratchpad: never committed, published or
