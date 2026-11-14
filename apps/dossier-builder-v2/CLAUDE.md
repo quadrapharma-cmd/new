@@ -111,6 +111,9 @@ its content, never from its file name. Then verify → build → test → commit
 12. Do the work yourself, in lean turns: no sub-agents unless he asks for them.
 
 ## His decisions so far
+This file is your memory beyond this conversation. When he decides something new — a rule, a preference, a decision about the
+program or its knowledge — add it here (or to «Rules that never bend»), with his words where they matter, then commit and push.
+When a part is done or an open item is closed, update «What exists» and «Open items» the same way.
 - «الجزء المعرفي كله هتحطه في الكود و هتعمل مكتبه اليوزر لو حب يرجع ليها» → Part 1.
 - «ناخد القديم ونراجعه» — the v1 knowledge was ported once (`tools/port-v1.mjs`, which refuses to run again without `--force`, so it
   never overwrites edits) and then reviewed.
