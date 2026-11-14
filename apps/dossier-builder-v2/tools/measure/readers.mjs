@@ -35,7 +35,9 @@ export const READERS = {
   'tesseract-fast': { what: 'Tesseract 5 with the fast models a Tesseract installer brings', args: f => [f, 'stdout', '-l', 'ara+eng'] },
   'tesseract-best': { what: 'Tesseract 5 with the «best» models the program carries', args: f => [f, 'stdout', '--tessdata-dir', BEST, '-l', 'ara+eng'] },
   'tesseract-best-osd': { what: 'the same, turning the page first (orientation detection)', args: (f, osd) => [f, 'stdout', '--tessdata-dir', osd, '-l', 'ara+eng', '--psm', '1'] },
-  'qwen3vl': { what: 'Qwen3-VL (Apache-2.0) on this machine through llama.cpp, no internet', cmd: () => process.env.LLAMA_MTMD_CLI, args: qwen },
+  // fed the page at about 1.2 megapixels (pages-1mp), as claude.ai feeds Claude: the full scan does not fit the memory beside a build
+  'qwen3vl': { what: 'Qwen3-VL (Apache-2.0) on this machine through llama.cpp, no internet', cmd: () => process.env.LLAMA_MTMD_CLI,
+               args: f => qwen(f.replace(`${path.sep}pages${path.sep}`, `${path.sep}pages-1mp${path.sep}`)) },
 };
 
 export function measure(names = Object.keys(READERS)) {
