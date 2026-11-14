@@ -1,5 +1,8 @@
 # Drugbox — instructions for Claude Code
 
+> This repository also holds **Dossier Builder** (`apps/dossier-builder/`, the old program, and `apps/dossier-builder-v2/`).
+> For any work on it, read `apps/dossier-builder-v2/CLAUDE.md` first: the Drugbox rules below do not apply there.
+
 Drugbox is a B2B network for the Egyptian/Arab pharmaceutical industry: people, companies, deals, marketplace,
 jobs (with a trust layer), groups, training, messages, uploads, moderation and payments.
 Owner: Dr. Haytham Dweedar. **He writes in Egyptian Arabic — answer in Egyptian Arabic**, direct and action-first.

@@ -20,12 +20,16 @@ npm install        # once
 npm run build      # checks every record; writes dist/knowledge.json and the library (dist/library/ and its zip)
 npm run verify     # checks every citation against the text of its source (knowledge/checks/citations.json)
 npm test           # the knowledge tests and the library in a real browser
+npm run check:eda  # EDA's website: is each EDA source still the copy EDA publishes, and what is new since the last check
 ```
 
 البحث في المكتبة: خانة واحدة بتدوّر في المعرفة كلها وجوه نص المستندات، بالعربي والإنجليزي («ذوبان» بتلاقي dissolution)، وكل نتيجة
 في مستند بتفتحه على صفحتها. نصوص المستندات بيطلّعها `npm run verify` (في `dist/texts/`) قبل `npm run build`.
 Search: one box looks through all the knowledge and inside the documents' text, in Arabic and English, and each page found opens
 at that page. The texts come from `npm run verify` (in `dist/texts/`), so run it before `npm run build`.
+
+المشغّل: جلسة Claude Code على المشروع ده بتدير البرنامج وعملياته وكوده، ودليلها في `CLAUDE.md`.
+The operator: a Claude Code session on this repository runs the program, its operations and its code; its handbook is `CLAUDE.md`.
 
 المكتبة على الكمبيوتر: فك `dist/Dossier-Builder-Library.zip` وافتح `index.html` (شغالة من غير إنترنت، والمستندات جنبها في `sources/`).
 The library on the desktop: unzip `dist/Dossier-Builder-Library.zip` and open `index.html` (works offline; the source documents

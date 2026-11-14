@@ -20,6 +20,7 @@ Everything the program knows about the authorities lives here as data. **Every r
 | `recognition/`, `templates/`, `vocab/` | The program's own aids (recognition keywords, the template in front of each item, dose forms and countries; `vocab/glossary.yaml`: the words of the trade in Arabic and English, so a search in one language finds the other). |
 | `checks/citations.json` | **Generated** by `tools/verify-sources.mjs`: what the check found for every citation (never edit by hand). |
 | `checks/findings.yaml` | What each review found and what was done, written by hand; the library's «Review» page shows it. |
+| `checks/eda-site.json` | **Generated** by `tools/check-eda-site.mjs --save`: every document EDA's website published at the last check (the baseline the next check compares with). |
 
 ## شكل السجل — A record
 
