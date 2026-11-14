@@ -106,7 +106,7 @@ export async function checkDossier(d, board, env) {
                  rule: { ar: 'كل مستند لازم يتفتح ويتقري', cite: [] }, fix: { human: ['upload', 'accept'] } });
       continue;
     }
-    out.push(...formatFindings(doc, await infoOf(d, doc, env.getBlob)));
+    if (doc.madeBy !== 'program') out.push(...formatFindings(doc, await infoOf(d, doc, env.getBlob)));   // a draft is printed, signed and scanned
     out.push(...validityFindings(doc, env.knowledge, today));
   }
   const read = docs.filter(x => x.pages?.length).map(x => ({ id: x.id, name: x.name, type: x.type, facts: x.facts || [], pages: x.pages.length,

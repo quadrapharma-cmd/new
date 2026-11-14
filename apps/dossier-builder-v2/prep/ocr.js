@@ -108,18 +108,30 @@ export async function wasmAllowed() {
 const failed = (why, text) => Object.assign(new Error(text), { why });
 const within = (ms, p, why) => Promise.race([p, new Promise((_, no) => setTimeout(() => no(failed(why, `no answer in ${ms / 1000} s`)), ms))]);
 
-export function createOcr({ base = 'ocr/', onLoad = () => {} } = {}) {
+// Where the reader's files come from: by default fetched beside the page (`base`, the published artifact); a page opened from a
+// computer's disk, where nothing can be fetched, passes its own `assets` (workshop/desktop-assets.js) with the same five calls.
+function httpAssets(base) {
   const url = rel => new URL(base + rel, document.baseURI).href;
-  const canvasOf = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; };
   const fromB64 = t => { const bin = atob(t.replace(/\s+/g, '')), out = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i); return out; };
-  async function packed(rel) {                                       // <rel>.gz.b64.txt → the file's bytes
-    const r = await fetch(url(rel + '.gz.b64.txt'));
-    if (!r.ok) throw new Error(`${rel}: HTTP ${r.status}`);
-    const gz = fromB64(await r.text());
-    return new Uint8Array(await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer());
-  }
-  const script = src => new Promise((ok, no) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => no(new Error(`could not load ${src}`)); document.head.appendChild(s); });
   const simd = () => { try { return WebAssembly.validate(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1, 8, 0, 65, 0, 253, 15, 253, 98, 11])); } catch { return false; } };
+  return {
+    async packed(rel) {                                             // <rel>.gz.b64.txt → the file's bytes
+      const r = await fetch(url(rel + '.gz.b64.txt'));
+      if (!r.ok) throw new Error(`${rel}: HTTP ${r.status}`);
+      const gz = fromB64(await r.text());
+      return new Uint8Array(await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer());
+    },
+    script: rel => new Promise((ok, no) => { const s = document.createElement('script'); s.src = url(rel); s.onload = ok; s.onerror = () => no(new Error(`could not load ${rel}`)); document.head.appendChild(s); }),
+    module: rel => import(/* @vite-ignore */ url(rel)),
+    json: async rel => (await fetch(url(rel))).json(),
+    tesseract: async () => ({ workerPath: url('tess/worker.boot.js'), corePath: url(simd() ? 'tess/tesseract-core-simd-lstm.wasm.js' : 'tess/tesseract-core-lstm.wasm.js'),
+                              langPath: url('tess').replace(/\/$/, ''), gzip: true, workerBlobURL: false, cacheMethod: 'none' }),
+  };
+}
+
+export function createOcr({ base = 'ocr/', onLoad = () => {}, assets = null } = {}) {
+  const files = assets || httpAssets(base);
+  const canvasOf = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; };
 
   const stats = { pages: 0, tesseract: 0, paddle: 0, paddleRuns: 0, upright: 0 };   // where the time goes (ms), for the measure
   // Two pages read at once on a computer with cores to spare: one in Tesseract (its own worker) while the Arabic model reads the
@@ -140,22 +152,21 @@ export function createOcr({ base = 'ocr/', onLoad = () => {} } = {}) {
     return loading || (loading = (async () => {
       if (!(await wasmAllowed())) throw failed('wasm', 'this view does not let a page run WebAssembly, which the scan reader needs');
       onLoad({ part: 'tesseract' });
-      await script(url('tess/tesseract.min.js'));
+      await files.script('tess/tesseract.min.js');
+      const options = await files.tesseract();
       const one = async () => {
-        const w = await within(180000, window.Tesseract.createWorker(['ara', 'eng'], 1, {
-          workerPath: url('tess/worker.boot.js'), corePath: url(simd() ? 'tess/tesseract-core-simd-lstm.wasm.js' : 'tess/tesseract-core-lstm.wasm.js'),
-          langPath: url('tess').replace(/\/$/, ''), gzip: true, workerBlobURL: false, cacheMethod: 'none' }), 'timeout');
+        const w = await within(180000, window.Tesseract.createWorker(['ara', 'eng'], 1, options), 'timeout');
         await w.setParameters({ tessedit_pageseg_mode: '3' });                  // automatic page layout, as the tesseract command
         return w;
       };
       const tess = [await one()];
       for (let i = 1; i < lanes; i++) tess.push(await one());
       onLoad({ part: 'paddle' });
-      const ort = await import(/* @vite-ignore */ url('ort/ort.wasm.bundle.min.js'));
+      const ort = await files.module('ort/ort.wasm.bundle.min.js');
       ort.env.wasm.numThreads = 1; ort.env.wasm.proxy = false;
-      ort.env.wasm.wasmBinary = await packed('ort/ort-wasm-simd-threaded.wasm');
-      const sess = await ort.InferenceSession.create(await packed('paddle/arabic_PP-OCRv5_rec_mobile.onnx'), { executionProviders: ['wasm'] });
-      const chars = await (await fetch(url('paddle/characters.json'))).json();
+      ort.env.wasm.wasmBinary = await files.packed('ort/ort-wasm-simd-threaded.wasm');
+      const sess = await ort.InferenceSession.create(await files.packed('paddle/arabic_PP-OCRv5_rec_mobile.onnx'), { executionProviders: ['wasm'] });
+      const chars = await files.json('paddle/characters.json');
       onLoad({ part: 'ready' });
       for (const w of tess) give(w);
       return { tess, ort, sess, chars: ['\u0000', ...chars, ' '] };   // index 0: the blank; the last: the space

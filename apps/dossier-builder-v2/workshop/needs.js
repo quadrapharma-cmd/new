@@ -6,6 +6,8 @@ const ACTIONS = {
   place: 'اختار مكانه', cut: 'اتأكد من التقطيع', create: 'اعمل المسودة', fill: 'كمّل بيانات الشركة',
 };
 export const actionName = a => ACTIONS[a] || a;
+// A count in Arabic as it is said: one, two, three to ten (plural), eleven and more (singular).
+export const count = (n, one, two, few, many = one) => (n === 1 ? one : n === 2 ? two : n <= 10 ? `${n} ${few}` : `${n} ${many}`);
 
 export function needsOf(d, board, findings, { drafts = {} } = {}) {
   const out = [];
@@ -42,7 +44,7 @@ export function needsOf(d, board, findings, { drafts = {} } = {}) {
     out.push({ ...need(f), actions: f.fix?.human || ['upload', 'accept'] });
   }
   if (missing.length) {
-    out.push({ id: 'missing', kind: 'missing', level: 'red', title: `${missing.length} ${missing.length === 1 ? 'مكان مطلوب فاضي' : 'أماكن مطلوبة فاضية'}`,
+    out.push({ id: 'missing', kind: 'missing', level: 'red', title: count(missing.length, 'مكان مطلوب فاضي', 'مكانين مطلوبين فاضيين', 'أماكن مطلوبة فاضية', 'مكان مطلوب فاضي'),
                detail: 'المستندات دي مطلوبة للمنتج ده ومش في الملف. ارفع كل واحد في مكانه، أو اكتب سبب إنه مش مطلوب.',
                places: missing.map(f => ({ id: f.place, ctd: placeOf(f.place)?.ctd, ar: placeOf(f.place)?.title.ar, finding: f.id })),
                actions: ['upload', 'accept'], rule: missing[0].rule });
@@ -52,7 +54,7 @@ export function needsOf(d, board, findings, { drafts = {} } = {}) {
     const doc = d.docs.find(x => x.id === draft.doc);
     if (!doc || d.decisions?.[`draft-${doc.id}`]) continue;
     out.push({ id: `draft-${doc.id}`, kind: 'draft', level: draft.gaps.length ? 'amber' : 'amber', doc: doc.id, place,
-               title: `${placeOf(place)?.ctd} ${draft.ar}: مسودة ${draft.gaps.length ? `فيها ${draft.gaps.length} ${draft.gaps.length === 1 ? 'خانة ناقصة' : 'خانات ناقصة'}` : 'جاهزة للتوقيع'}`,
+               title: `${placeOf(place)?.ctd} ${draft.ar}: مسودة ${draft.gaps.length ? `فيها ${count(draft.gaps.length, 'خانة ناقصة', 'خانتين ناقصين', 'خانات ناقصة', 'خانة ناقصة')}` : 'جاهزة للتوقيع'}`,
                detail: (draft.gaps.length ? `الناقص: ${draft.gaps.slice(0, 8).join('، ')}${draft.gaps.length > 8 ? '…' : ''}. ` : '') + 'بعد ما تكمّلها: اطبعها على ورق الشركة، وامضيها واختمها، وارفع النسخة الممسوحة مكانها.',
                actions: ['fill', 'program', 'claude', 'upload', 'accept'], rule: null });
   }

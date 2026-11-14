@@ -38,10 +38,11 @@ export function layoutOf(d, board) {
 export function readiness(d, board, findings, needs) {
   const open = board.places.filter(p => p.level === 'R' || p.level === 'O');
   const filled = new Set(d.docs.filter(x => x.place && !x.dup && !x.split && !x.unread).map(x => x.place));
-  const red = findings.filter(f => !f.accepted && f.level === 'red'), amber = findings.filter(f => !f.accepted && f.level === 'amber');
+  const red = findings.filter(f => !f.accepted && f.level === 'red' && f.kind !== 'missing'), amber = findings.filter(f => !f.accepted && f.level === 'amber' && f.kind !== 'missing');
   const required = open.filter(p => p.level === 'R');
   return { required: required.length, filled: required.filter(p => filled.has(p.id)).length, red: red.length, amber: amber.length,
-           accepted: findings.filter(f => f.accepted).length, needs: needs.length, ready: red.length === 0 && required.every(p => filled.has(p.id)) };
+           accepted: findings.filter(f => f.accepted).length, needs: needs.length,
+           ready: red.length === 0 && required.every(p => filled.has(p.id) || findings.some(f => f.place === p.id && f.kind === 'missing' && f.accepted)) };
 }
 
 const DONE = { received: 'استلم الملفات', cut: 'قطّع ملف مجمّع', understood: 'قرا المستندات وحطها في أماكنها', 'placed-by-claude': 'Claude حط مستند في مكانه',
