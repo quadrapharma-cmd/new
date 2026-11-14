@@ -62,7 +62,8 @@ export function mcpTools({ only } = {}) {
 // pauses the work (nothing is lost; it goes on from a click), and a viewer who said no to Claude gets the program without it.
 export async function ask(sample, { task, ctx, only, modelTier, signal, onText }) {
   try {
-    const res = await sample(`${BRIEF}\n\n${task}`, { tools: sampleTools(ctx, { only }), modelTier, signal, onText, cache: false });
+    // with tools, a request is never replayed from claude.ai's cache
+    const res = await sample(`${BRIEF}\n\n${task}`, { tools: sampleTools(ctx, { only }), modelTier, signal, onText });
     return { text: res.text, truncated: !!res.truncated };
   } catch (e) {
     if (e?.code === 'rate_limited') return { paused: true, reason: 'rate_limited', partial: e.text || '' };

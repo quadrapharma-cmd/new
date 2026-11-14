@@ -109,6 +109,13 @@ its content, never from its file name. Then verify → build → test → commit
 4. Check it as he will see it: Playwright (preinstalled: `require('playwright')`) on `dist/library/index.html` at 1440 and 390 wide,
    Arabic and English, light and dark; open a source document, search in Arabic and in English. Screenshots go to the scratchpad.
 
+### 4b. The workbench (Claude with the program's tools inside the page; step 2.0)
+Private artifact `https://claude.ai/artifact/SHrw9qKsfnqTYSiXbydbwf`, capability `sample`. Rebuild with `npm run build && node
+workbench/build.mjs`, test with `node --test tests/workbench.test.mjs`, then publish `dist/workbench-artifact.html` with `url` and
+`files` = {`workbench/pdf.worker.min.js`: `dist/workbench/pdf.worker.min.js`}. claude.ai refuses text files holding control
+characters: the build writes them as escapes (`escapeControls`). The bridge for the Claude app: `node bridge/pack.mjs` →
+`dist/Dossier-Builder.mcpb` (installed from the Claude app: Settings → Extensions → Advanced settings → Install Extension).
+
 ### 5. The open-source eCTD projects and the eCTD timelines (monthly, or when he asks)
 1. Last update of each project the plan uses (`docs/PART-2-PLAN.md` §3.9–3.10):
    `gh api -X GET search/repositories -f q="repo:<owner>/<name>" --jq '.items[] | "\(.full_name) \(.pushed_at) \(.license.spdx_id)"'`
