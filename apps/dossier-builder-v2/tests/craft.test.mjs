@@ -22,7 +22,7 @@ const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/ja
 // One local site: /<app>/… is the built program, /host.html the host page, /doc/<name> the document handed to it.
 function serve(app, docPath) {
   const host = `<!doctype html><meta charset="utf-8"><style>html,body{margin:0;height:100%}iframe{width:1200px;height:850px;border:0}</style>
-<iframe id="app" src="${app}/index.html?host=parent&webgl"></iframe><script>
+<iframe id="app" src="${app}/index.html?host=parent&webgl&control"></iframe><script>
 window.__log=[];window.__saved=[];window.__ready=false;const frame=document.getElementById('app');
 addEventListener('message',async e=>{const m=e.data||{};if(typeof m.type!=='string'||!m.type.startsWith('${app}:'))return;window.__log.push(m.type);
  if(m.type==='${app}:ready'){window.__ready=true;${docPath ? `const bytes=new Uint8Array(await(await fetch('doc/${path.basename(docPath)}')).arrayBuffer());
@@ -94,8 +94,8 @@ async function pdfText(bytes) {
 test('WordCraft opens a Word letter in Arabic and English and exports it as a PDF whose text can be read', { skip: !built('wordcraft') && 'WordCraft is not built here (node tools/craft/build.mjs wordcraft web)', timeout: 600000 }, async () => {
   const doc = madeUpLetter();
   await hosted('wordcraft', doc, async ({ page, frame, errors }) => {
-    const api = await frame.evaluate(() => (window.wordcraft ? Object.keys(window.wordcraft) : null));
-    assert.ok(api && api.includes('execute'), `window.wordcraft has no command API: ${api}`);
+    const api = await frame.evaluate(() => ['request', 'execute', 'commands', 'docInspect'].filter(f => typeof window.wordcraft?.[f] === 'function'));
+    assert.ok(api.includes('execute'), `window.wordcraft has no command API: ${api}`);
     await page.waitForTimeout(3000);
     await frame.evaluate(() => window.wordcraft.execute('file.exportPdf', {}));
     await page.waitForFunction(() => window.__saved.some(s => /\.pdf$/i.test(s.name)), null, { timeout: 120000 });
@@ -112,8 +112,10 @@ test('WordCraft opens a Word letter in Arabic and English and exports it as a PD
 for (const app of ['pdfcraft', 'photocraft', 'designcraft']) {
   test(`${app} starts in the browser, says it is ready and answers its command API`, { skip: !built(app) && `${app} is not built here`, timeout: 600000 }, async () => {
     await hosted(app, null, async ({ frame, errors }) => {
-      const api = await frame.evaluate(a => (window[a] ? Object.keys(window[a]) : null), app);
-      assert.ok(api && api.includes('request'), `window.${app} has no command API: ${api}`);
+      const api = await frame.evaluate(a => ['request', 'execute', 'commands', 'docInspect', 'uiInspect', 'screenshot'].filter(f => typeof window[a]?.[f] === 'function'), app);
+      assert.ok(api.includes('request'), `window.${app} has no command API: ${api}`);
+      const list = await frame.evaluate(async a => { try { const c = await window[a].commands?.(); const l = Array.isArray(c) ? c : (c?.commands || []); return l.length; } catch (e) { return String(e.message || e); } }, app);
+      console.log(`${app}: functions ${api.join(', ')}; commands: ${list}`);
       assert.deepEqual(errors, []);
     });
   });
