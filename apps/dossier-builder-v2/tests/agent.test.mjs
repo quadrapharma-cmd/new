@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawn } from 'node:child_process';
+import { spawn, execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { TOOLS } from '../agent/tools.js';
@@ -233,4 +233,40 @@ test('the bridge: the Claude app lists the same tools over MCP and runs them on 
     assert.deepEqual(b.stray, [], 'nothing on standard output but answers');
   } finally { await b.close(); }
   assert.ok(fs.existsSync(path.join(root, 'module3', 'coa.pdf')), 'the dossier folder is left as it was');
+});
+
+test('the extension for the Claude app: a .mcpb whose manifest follows version 0.3 and whose server runs as the app runs it', { timeout: 120000 }, async () => {
+  const { pack, manifest } = await import('../bridge/pack.mjs');
+  const m = manifest();
+  for (const k of ['name', 'version', 'description', 'author', 'server']) assert.ok(m[k], k);
+  assert.equal(m.manifest_version, '0.3');
+  assert.deepEqual(Object.keys(m.server).sort(), ['entry_point', 'mcp_config', 'type']);
+  assert.deepEqual(m.tools.map(t => t.name), TOOLS.map(t => t.name));
+  assert.deepEqual(Object.keys(m.user_config.dossier_folder).sort(), ['description', 'required', 'title', 'type']);
+
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mcpb-'));
+  const file = pack(path.join(tmp, 'Dossier-Builder.mcpb'));
+  const dir = path.join(tmp, 'installed');
+  fs.mkdirSync(dir);
+  execFileSync('unzip', ['-q', file, '-d', dir]);
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8')), m);
+
+  // as the Claude app starts it: ${__dirname} is where the extension lives, the folder is the one the user picked
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'dossier-'));
+  fs.writeFileSync(path.join(root, 'coa.pdf'), await madeUpPdf());
+  const args = m.server.mcp_config.args.map(a => a.replace('${__dirname}', dir).replace('${user_config.dossier_folder}', root));
+  const child = spawn(process.execPath, args, { cwd: os.tmpdir(), stdio: ['pipe', 'pipe', 'pipe'] });
+  const answers = [];
+  let buf = '';
+  child.stdout.on('data', d => { buf += d; let i; while ((i = buf.indexOf('\n')) >= 0) { answers.push(JSON.parse(buf.slice(0, i))); buf = buf.slice(i + 1); } });
+  const send = msg => child.stdin.write(JSON.stringify({ jsonrpc: '2.0', ...msg }) + '\n');
+  send({ id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'test', version: '1' } } });
+  send({ method: 'notifications/initialized' });
+  send({ id: 2, method: 'tools/call', params: { name: 'find_in_files', arguments: { query: 'TP-24A117' } } });
+  send({ id: 3, method: 'tools/call', params: { name: 'get_record', arguments: { id: 'EG-EDA/M1-01' } } });
+  child.stdin.end();
+  await new Promise(ok => child.on('exit', ok));
+  assert.deepEqual(answers.map(a => a.id), [1, 2, 3]);
+  assert.deepEqual(answers[1].result.structuredContent.hits.map(h => [h.name, h.page]), [['coa.pdf', 1]]);
+  assert.ok(answers[2].result.structuredContent.sources.some(s => s.code === 'NP.CAPP.065'), 'the library travels inside the extension');
 });
