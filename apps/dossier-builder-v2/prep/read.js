@@ -91,7 +91,13 @@ async function pdfPages(bytes, env, tell, name) {
 export async function readFiles(files, env = {}) {
   const out = [];
   const tell = e => { try { env.onProgress?.(e); } catch { /* the page's progress line only */ } };
-  const add = (name, kind, extra) => { const d = { id: `d${out.length + 1}`, name, kind, pages: [], ...extra }; out.push(d); return d; };
+  // env.keepBytes: each document also carries the bytes it was read from (not enumerable: never in what is saved or compared)
+  const add = (name, kind, extra, bytes) => {
+    const d = { id: `d${out.length + 1}`, name, kind, pages: [], ...extra };
+    if (env.keepBytes && bytes) Object.defineProperty(d, 'bytes', { value: bytes, enumerable: false });
+    out.push(d);
+    return d;
+  };
   async function one(name, bytes, depth) {
     tell({ stage: 'open', name });
     let kind = kindOf(bytes);
@@ -107,16 +113,16 @@ export async function readFiles(files, env = {}) {
       }
       if (kind === 'pdf') {
         const { pages, scans, skipped } = await pdfPages(bytes, env, e => tell({ ...e, name }), name);
-        const d = add(name, kind, { pages });
+        const d = add(name, kind, { pages }, bytes);
         if (scans) d.note = scans === pages.length ? 'no-ocr' : `no-ocr:${scans}`;
         else if (skipped) d.note = `long:${skipped}`;
         return;
       }
-      if (kind === 'doc') { add(name, kind, { pages: docText(bytes) }); return; }
-      if (kind === 'docx') { add(name, kind, { pages: await docxText(bytes) }); return; }
-      if (kind === 'text') { add(name, kind, { pages: [{ n: 1, text: new TextDecoder().decode(bytes), by: 'plain' }] }); return; }
+      if (kind === 'doc') { add(name, kind, { pages: docText(bytes) }, bytes); return; }
+      if (kind === 'docx') { add(name, kind, { pages: await docxText(bytes) }, bytes); return; }
+      if (kind === 'text') { add(name, kind, { pages: [{ n: 1, text: new TextDecoder().decode(bytes), by: 'plain' }] }, bytes); return; }
       if (['png', 'jpeg', 'tiff', 'gif', 'webp'].includes(kind)) {
-        if (!env.ocr || !env.drawImage) { add(name, kind, { unread: 'no-ocr' }); return; }
+        if (!env.ocr || !env.drawImage) { add(name, kind, { unread: 'no-ocr' }, bytes); return; }
         const pics = await env.drawImage(bytes, kind);
         const pages = [];
         for (let i = 0; i < pics.length; i++) {                     // a failure: the file is unread (below)
@@ -124,12 +130,12 @@ export async function readFiles(files, env = {}) {
           const got = answer(await env.ocr.page(pics[i], { name, page: i + 1, pages: pics.length }));
           pages.push({ n: i + 1, text: got.text, by: got.by });
         }
-        add(name, kind, { pages });
+        add(name, kind, { pages }, bytes);
         return;
       }
-      add(name, kind, { unread: 'kind' });
+      add(name, kind, { unread: 'kind' }, bytes);
     } catch (e) {
-      add(name, kind, { unread: e.why || e.rar || 'damaged', error: String(e.message || e).slice(0, 200) });
+      add(name, kind, { unread: e.why || e.rar || 'damaged', error: String(e.message || e).slice(0, 200) }, bytes);
     }
   }
   for (const f of files) await one(f.name, f.bytes instanceof Uint8Array ? f.bytes : new Uint8Array(f.bytes), 0);
