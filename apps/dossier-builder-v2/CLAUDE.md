@@ -152,6 +152,15 @@ When a part is done or an open item is closed, update «What exists» and «Open
   (Windows and Mac), «اجينت جوا البرنامج بيتوصل بيك عن طريق الاكونت الشخصي لليوزر» — told him the subscription sign-in needs
   Anthropic's approval; he agreed to: claude.ai edition on the viewer's account, desktop on an API key, the same panel («أبدأ»).
 - «محتاج اللي يدير البرنامج نسخة منك … يكون ليها تحكم كامل علي البرنامج و علي العمليات و علي الكود» → you.
+- **Part 2 «تحضير الملف» (14/11/2026)** — the logic and plan are `docs/PART-2-PLAN.md`; his answers to its decisions:
+  - desktop edition: a standalone program for Windows and Mac on an API key; the claude.ai edition on the viewer's own account;
+  - «اوك» to building PdfCraft, WordCraft, PhotoCraft and DesignCraft from source (with pdf.js and our RAR reader), and
+    llama.cpp to try Qwen3-VL;
+  - Egypt's rule cards in full first; other countries take their Module 1 from the library, then GCC and Europe;
+  - Part 2 ends at «الملف الجاهز» (the prepared dossier); eCTD is Part 3.
+  The 50 eCTD updates (`docs/ctd/UPDATES.md`) each have their place in the plan's §3.10. Step 2.0 (the toolbox and the agent)
+  is being built by the planning session: before you build in Part 2 yourself, pull and read the plan's progress so the two
+  sessions never build the same thing at once.
 
 ## Open items (propose when relevant; do when he asks)
 - Online version check of the ICH, EMA, FDA, WHO and GCC sources. Unreachable from this environment: admin.ich.org (ICH's content
