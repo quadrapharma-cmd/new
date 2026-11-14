@@ -34,7 +34,7 @@ change (the stop hook checks that nothing is left uncommitted or unpushed).
 | 1b | **The library**: browse and search everything in Arabic and English, in the browser (claude.ai artifact) and on the desktop (offline zip); every citation opens its source document at its page; one search box looks through the knowledge and inside the documents' text (Arabic finds English: `knowledge/vocab/glossary.yaml`). | `library/`, `core/search.js` |
 | 1c | **Every record checked against its source**: quotes word for word, places (sections, pages, annexes) exist, CTD numbers exist, each variation's class read from the guideline. Last run: verified 412 · located 736 · read 1 · nothing-to-check 103 · no-copy 276; nothing `partly` or `not-found` (the tests fail on those). EDA's sources checked on EDA's website on 14/11/2026. | `tools/verify-sources.mjs`, `knowledge/checks/` |
 
-## Part 2 — the Operator (in progress)
+## The Operator panel (in progress; asked for on 14/11/2026 — see docs/PART-2-PLAN.md §3.8, the same request)
 A fixed part of the program, on every page: the «المشغّل» button opens a conversation with the operator (a Claude Code session
 with this handbook). `operator/panel.js` (the panel), `operator/session.js` (connector, tools, transcript reader),
 `operator/brief.md` (the standing instruction each operator session is opened with), `operator/panel.css`; tests in
@@ -45,10 +45,10 @@ with this handbook). `operator/panel.js` (the panel), `operator/session.js` (con
   `send_message`, replies are read with `list_events`. Runs on the viewer's own claude.ai account. When publishing the
   artifact, pass `capabilities: {mcp: {servers: [{server: "Claude Code Remote", tools: [those five]}]}}` on a full redeclare,
   or omit `capabilities` to keep it.
-- **desktop edition** (step 2, not built): an installed program for Windows and Mac with its own operator built on the Claude
-  Agent SDK, working on an API key the user enters (kept on his machine only). The panel calls `window.DBK_OPERATOR` there.
-  Anthropic does not allow a third-party program to sign in with a claude.ai subscription without its approval
-  (Agent SDK docs) — he may apply; until then the key.
+- **desktop edition** (step 2, not built, to settle with him): either inside the Claude desktop app (the same page, plus a
+  Desktop Extension bridge — on his subscription, as PART-2-PLAN §3.8 proposes) or a standalone program on an API key. The panel
+  calls `window.DBK_OPERATOR` when a host program provides one. Anthropic does not allow a third-party program to sign in with a
+  claude.ai subscription without its approval (Agent SDK docs).
 
 `knowledge/README.md` holds the record shape, the review results and the rules the build enforces — read it before editing knowledge.
 
@@ -138,7 +138,7 @@ When a part is done or an open item is closed, update «What exists» and «Open
 - The 14/11/2026 review: GL.CADC.002 version 3 is in force (its citations moved); 15 variation classes in EDA's online tool differ
   from the guideline GL.CAPP.026 v6 — the program uses the guideline's class and keeps the tool's (`pac_tool`); **confirm the 15
   with EDA before filing** (finding `variation-classes`).
-- Part 2, 14/11/2026: «عايز ليك جزء منفصل و ظاهر» in the whole program, «في كل النسخ متوصل بيك», desktop for «الاتنين»
+- The Operator, 14/11/2026: «عايز ليك جزء منفصل و ظاهر» in the whole program, «في كل النسخ متوصل بيك», desktop for «الاتنين»
   (Windows and Mac), «اجينت جوا البرنامج بيتوصل بيك عن طريق الاكونت الشخصي لليوزر» — told him the subscription sign-in needs
   Anthropic's approval; he agreed to: claude.ai edition on the viewer's account, desktop on an API key, the same panel («أبدأ»).
 - «محتاج اللي يدير البرنامج نسخة منك … يكون ليها تحكم كامل علي البرنامج و علي العمليات و علي الكود» → you.
@@ -151,7 +151,7 @@ When a part is done or an open item is closed, update «What exists» and «Open
   items the tool does not list; the variations have no Arabic titles.
 - EDA's mock-up, naming and good-review-practice guidelines are registered but not yet tied to review questions.
 - The open-document button was tested in a browser, not inside the claude.ai viewer itself: if he reports a problem there, check it.
-- Part 2 step 2 (the desktop program with its operator) after he has tried step 1 on claude.ai.
+- The Operator's desktop edition, after he has tried the claude.ai panel; align it with PART-2-PLAN §3.8.
 
 ## The environment
 Personal cloud environment «quadrapharma new»: package registries, Google Drive's APIs, Hugging Face, edaegypt.gov.eg (with www),
