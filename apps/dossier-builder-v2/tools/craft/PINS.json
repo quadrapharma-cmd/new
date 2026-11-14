@@ -1,0 +1,10 @@
+{
+ "about": "The four programs of the Crafting Apps the dossier tools are built on, pinned to a release (tag and its commit). MIT OR Apache-2.0, used under MIT; the ArtCraft name, wordmark and logos are not covered by the licence and are not used. Built from source by tools/craft/build.mjs.",
+ "tools": {"trunk": "0.21.14", "wasm-bindgen": "0.2.129", "wasm-opt": "binaryen (system)"},
+ "apps": {
+  "pdfcraft":    {"repo": "https://github.com/storytold/pdfcraft",    "tag": "v0.21.1", "commit": "b503b2e62dfeec5598f344e4e287d9c9cbdb34fa", "web": "apps/pdfcraft-web",    "cli": "pdfcraft-cli"},
+  "wordcraft":   {"repo": "https://github.com/storytold/wordcraft",   "tag": "v0.18.1", "commit": "079f478bd85df7bcc567e3bafa7d7219096f9c3c", "web": "apps/wordcraft-web",   "cli": "wordcraft-cli"},
+  "photocraft":  {"repo": "https://github.com/storytold/photocraft",  "tag": "v0.23.1", "commit": "45066c48292e92229ada3459a83453439514c83d", "web": "apps/photocraft-web",  "cli": "photocraft-cli"},
+  "designcraft": {"repo": "https://github.com/storytold/designcraft", "tag": "v0.20.1", "commit": "33a467872268c98536231491865b4011b0275b17", "web": "apps/designcraft-web", "cli": "designcraft-cli"}
+ }
+}
