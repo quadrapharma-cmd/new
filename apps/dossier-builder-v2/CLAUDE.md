@@ -32,7 +32,7 @@ change (the stop hook checks that nothing is left uncommitted or unpushed).
 |---|---|---|
 | 1a | **The knowledge in code**: 9 authorities, 120 sources (60 with a copy kept), 349 requirements (EDA M1–M5, ICH M2–M5, EU, GCC, US and a general M1), 226 EDA review questions, 90 EDA variations, 21 document types with their validity, 11 countries, 8 eCTD tables. Every record rests on a registered source. | `knowledge/`, `core/` |
 | 1b | **The library**: browse and search everything in Arabic and English, in the browser (claude.ai artifact) and on the desktop (offline zip); every citation opens its source document at its page; one search box looks through the knowledge and inside the documents' text (Arabic finds English: `knowledge/vocab/glossary.yaml`). | `library/`, `core/search.js` |
-| 1c | **Every record checked against its source**: quotes word for word, places (sections, pages, annexes) exist, CTD numbers exist, each variation's class read from the guideline. Last run: verified 412 · located 736 · read 1 · nothing-to-check 103 · no-copy 276; nothing `partly` or `not-found` (the tests fail on those). EDA's sources checked on EDA's website on 14/11/2026. | `tools/verify-sources.mjs`, `knowledge/checks/` |
+| 1c | **Every record checked against its source**: quotes word for word, places (sections, pages, annexes) exist, CTD numbers exist, each variation's class read from the guideline. Last run (14/11, after Persian ی ک ہ fold as Arabic): verified 413 · located 736 · nothing-to-check 103 · no-copy 276; nothing `partly` or `not-found` (the tests fail on those). EDA's sources checked on EDA's website on 14/11/2026. | `tools/verify-sources.mjs`, `knowledge/checks/` |
 
 ## The Operator panel (in progress; asked for on 14/11/2026 — see docs/PART-2-PLAN.md §3.8, the same request)
 A fixed part of the program, on every page: the «المشغّل» button opens a conversation with the operator (a Claude Code session
@@ -108,6 +108,13 @@ its content, never from its file name. Then verify → build → test → commit
 3. **Desktop**: send `dist/Dossier-Builder-Library.zip` with SendUserFile (display: attach) and one line: unzip, open `index.html`.
 4. Check it as he will see it: Playwright (preinstalled: `require('playwright')`) on `dist/library/index.html` at 1440 and 390 wide,
    Arabic and English, light and dark; open a source document, search in Arabic and in English. Screenshots go to the scratchpad.
+
+### 4a. Check a published page as claude.ai serves it (rule 13; before telling him it works)
+Read the page back (`Artifact` action `read`, `path` `index.html` and its other files, `out_dir` a scratchpad folder; the library's
+sources and texts can come from `dist/artifact-files.json`), then `node tools/check-published.mjs <library|workbench|measure> <folder>`:
+Chromium under a content security policy like the artifact frame's, with `window.claude` standing in for the viewer
+(`tests/helpers/fake-claude.js`, which refuses what claude.ai's `sample` contract refuses). It found the measuring page's whole-page
+failure the owner met (`--old-measure` replays it). It cannot reach Claude itself, nor the Claude Code Remote connector.
 
 ### 4b. The workbench (Claude with the program's tools inside the page; step 2.0)
 Private artifact `https://claude.ai/artifact/SHrw9qKsfnqTYSiXbydbwf`, capability `sample`. Rebuild with `npm run build && node

@@ -8,6 +8,7 @@ import path from 'node:path';
 import http from 'node:http';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { fakeClaude } from './helpers/fake-claude.js';
 
 const require = createRequire(import.meta.url);
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -27,68 +28,6 @@ async function serve() {
   return server;
 }
 
-// claude.ai's sample (runtime contract 0.2.96), played by a script that refuses whatever the real one refuses: options that are
-// not a plain object or carry an empty or unknown modelTier, cache beside tools, malformed tools (name, description over 1 KB,
-// inputSchema over 4 KB or not an object), a tool result over 32 KB. mode: 'tools' (this view runs page tools), 'no-tools'
-// (limits() reports none), 'refuse-tools' (limits() says yes, the call says tools_unavailable), 'error' (upstream_error).
-const FAKE_CLAUDE = mode => {
-  window.__prompts = [];
-  const reject = (code, message) => Promise.reject({ code, message });
-  const KNOWN = ['onText', 'signal', 'tools', 'images', 'modelTier', 'model', 'effort', 'fast', 'cache'];
-  function check(opts) {
-    if (opts === undefined) return null;
-    if (!opts || Object.getPrototypeOf(opts) !== Object.prototype) return 'options must be a plain object';
-    if ('modelTier' in opts && !['default', 'complex', 'quick', 'inherit'].includes(opts.modelTier)) return `unknown modelTier ${opts.modelTier}`;
-    if ('signal' in opts && !(opts.signal instanceof AbortSignal)) return 'signal must be an AbortSignal';
-    if ('onText' in opts && typeof opts.onText !== 'function') return 'onText must be a function';
-    if (opts.tools && 'cache' in opts && opts.cache !== false) return 'cache with tools';
-    for (const k of Object.keys(opts)) if (!KNOWN.includes(k)) console.warn('unknown option', k);
-    const names = new Set();
-    for (const t of opts.tools || []) {
-      if (!/^[A-Za-z0-9_-]{1,128}$/.test(t.name) || names.has(t.name)) return `tool name ${t.name}`;
-      names.add(t.name);
-      if (typeof t.description !== 'string' || !t.description || new TextEncoder().encode(t.description).length > 1024) return `tool ${t.name}: description`;
-      if (t.inputSchema && (t.inputSchema.type !== 'object' || new TextEncoder().encode(JSON.stringify(t.inputSchema)).length > 4096)) return `tool ${t.name}: inputSchema`;
-      if (typeof t.execute !== 'function') return `tool ${t.name}: execute`;
-    }
-    if ((opts.tools || []).length > 16) return 'too many tools';
-    return null;
-  }
-  // a tool as Claude calls it: its result (or "Error: …"), and a result over 32 KB is refused
-  async function call(opts, name, input) {
-    const t = opts.tools.find(x => x.name === name);
-    try {
-      const out = await t.execute(input, { signal: new AbortController().signal });
-      if (new TextEncoder().encode(typeof out === 'string' ? out : JSON.stringify(out)).length > 32 * 1024) throw { code: 'invalid_request', message: `${name}: result over 32 KB` };
-      return out;
-    } catch (e) { if (e?.code) throw e; return `Error: ${e.message}`; }
-  }
-  const fake = async (prompt, opts) => {
-    const bad = check(opts);
-    if (bad) return reject('invalid_request', bad);
-    window.__prompts.push(prompt);
-    if (mode === 'error') return reject('upstream_error', 'connection dropped');
-    if (opts?.tools && mode !== 'tools') return reject('tools_unavailable', 'this view cannot run page tools');
-    await call(opts, 'list_files', {});
-    const page = await call(opts, 'read_page_text', { file: 'f1', page: 1 });
-    await call(opts, 'record_fact', { field: 'batch', value: 'TP-24A118', file: 'f1', page: 1, quote: 'Batch TP-24A118' });
-    await call(opts, 'record_fact', { field: 'batch', value: 'TP-24A117', file: 'f1', page: 1, quote: 'Batch TP-24A117' });
-    opts.onText?.({ text: 'سجّلت رقم التشغيلة', delta: 'سجّلت رقم التشغيلة' });
-    return { text: `سجّلت رقم التشغيلة TP-24A117 من صفحة 1. (${String(page.text || '').includes('TP-24A117') ? 'الصفحة اتقرت' : 'الصفحة ماتقراتش'})`, truncated: false, modelTierApplied: 'default' };
-  };
-  fake.json = async (prompt, opts) => {
-    const bad = check(opts);
-    if (bad) return reject('invalid_request', bad);
-    window.__prompts.push(prompt);
-    if (new TextEncoder().encode(prompt).length > 262144) return reject('prompt_too_large', 'over 256 KiB');
-    return { answer: prompt.includes('Batch TP-24A117') ? 'سجّلت رقم التشغيلة من نص الصفحة.' : 'مالقيتش الصفحة.',
-             facts: [{ field: 'batch', value: 'TP-24A117', file: 'f1', page: 1, quote: 'Batch TP-24A117' },
-                     { field: 'expiry', value: '2029', file: 'f1', page: 1, quote: 'Expiry date: 02/2029' }] };
-  };
-  fake.limits = async () => (mode === 'no-tools' ? { maxPromptBytes: 262144 } : { maxPromptBytes: 262144, tools: { maxCount: 16 } });
-  window.claude = { use: async name => (name === 'sample' ? fake : null) };
-};
-
 async function open({ claude = true, mode = 'tools', width = 1280, theme = 'light' } = {}) {
   const { chromium } = require('playwright');
   const server = await serve();
@@ -97,7 +36,7 @@ async function open({ claude = true, mode = 'tools', width = 1280, theme = 'ligh
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
-  if (claude) await page.addInitScript(FAKE_CLAUDE, mode);
+  if (claude) await page.addInitScript(fakeClaude, { mode });
   await page.goto(`http://127.0.0.1:${server.address().port}/`);
   await page.waitForFunction(() => document.querySelectorAll('#files tbody tr').length > 0);
   return { page, errors, close: async () => { await browser.close(); server.close(); } };

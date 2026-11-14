@@ -5,8 +5,7 @@
   "located": 736,
   "nothing-to-check": 103,
   "no-copy": 276,
-  "verified": 412,
-  "read": 1
+  "verified": 413
  },
  "sources": {
   "eda-np-capp-065-v5": {
@@ -124,7 +123,7 @@
    "pages": 44,
    "readable": true,
    "citations": 1,
-   "read": 1
+   "verified": 1
   },
   "eda-pricing-decision-480-2026": {
    "held": false,
@@ -12113,16 +12112,11 @@
    "field": "cite",
    "src": "eda-gl-ppma-004-v5",
    "at": "p.5",
-   "quote": "missing",
-   "result": "read",
-   "read": {
-    "how": "page image",
-    "on": "2026-11-14"
-   },
-   "notes": [
-    "quote not found: «تكون صلاحية الموافقة الاستيرادية السنوية للشحن الكلي والجزئي عام منذ ت»",
-    "quote not found: «تلتزم الشركات بالتقدم للحصول على الموافقة الاستيرادية السنوية لعام آخر»"
-   ]
+   "quote": "close",
+   "pages": [
+    5
+   ],
+   "result": "verified"
   },
   {
    "rec": "EG-EDA/doc/gmp_certificate",
