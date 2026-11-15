@@ -20,7 +20,7 @@ library, and tell him plainly what you did and what you found. Read this file at
 | Path | What |
 |---|---|
 | `apps/dossier-builder-v2/` | This program. Your workspace. |
-| `apps/dossier-builder/` | The old program (v1). **Leave it untouched** («سيب القديم موجود»); read it only as a source when the plan asks. |
+| `apps/dossier-builder/` | The old program (v1, «منشئ ملفات التسجيل», private artifact https://claude.ai/artifact/RaqU6QLkLmcANCSVsPXjNR). **The program again since 15/11** (rule 11): new pieces go into it one at a time, each tried on his real files first. Its own README and tests (`python3 -m pytest -q apps/dossier-builder/tests`); build `python3 apps/dossier-builder/web/build.py`. |
 | `docs/ctd/sources/` | The copies of the official documents the knowledge cites, and `MANIFEST.json` (file, sha256, size, taken) — the build refuses a copy that differs from its entry. |
 | root `CLAUDE.md` | About **Drugbox**, a different program in the same repository. Do not work on Drugbox unless he asks. |
 

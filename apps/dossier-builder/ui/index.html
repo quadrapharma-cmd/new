@@ -190,6 +190,7 @@ body[data-role="editor"] .admin-only,body[data-role="viewer"] .admin-only{displa
     <div class="top">
       <select class="mobnav btn" id="mobnav" aria-label="Navigate"></select>
       <div class="crumb" id="crumb"></div>
+      <a class="btn ghost sm" id="libBtn" href="https://claude.ai/artifact/6sSh9Tgi3jXji54PJbYcxf" target="_blank" rel="noopener" data-t="libT"></a>
       <div class="seg" role="group" aria-label="Language"><button id="lang-ar" lang="ar">عربي</button><button id="lang-en" lang="en">EN</button></div>
       <button class="btn ghost" id="theme" aria-label="Theme"></button>
       <span class="small muted" id="who" hidden></span>
@@ -593,7 +594,7 @@ const T = {
   uploading:{en:'Uploading…',ar:'جاري الرفع…'}, uploaded:{en:'Uploaded and checked.',ar:'تم الرفع والفحص.'}, withdrawn:{en:'Deleted from the item — it can be brought back from the log.',ar:'اتحذف من البند — وتقدر ترجّعه من السجل.'},
   piType:{en:'Document type',ar:'نوع المستند'}, piLang:{en:'Language',ar:'اللغة'}, study:{en:'Study ID — title',ar:'رقم الدراسة — العنوان'}, docType:{en:'ICH document type',ar:'نوع المستند (ICH)'},
   choose:{en:'Choose PDF',ar:'اختر ملف PDF'}, extra:{en:'This heading needs a few details for eCTD.',ar:'القسم ده محتاج بيانات إضافية لـ eCTD.'},
-  acceptT:{en:'Acceptance criteria — check each before upload',ar:'معايير القبول — راجع كل نقطة قبل الرفع'}, sourcesT:{en:'Sources',ar:'المصادر'}, howT:{en:'How to get it',ar:'تجيبه إزاي'}, byT:{en:'Issued by',ar:'بيصدر من'},
+  acceptT:{en:'Acceptance criteria — check each before upload',ar:'معايير القبول — راجع كل نقطة قبل الرفع'}, sourcesT:{en:'Sources',ar:'المصادر'}, libT:{en:'Library',ar:'المكتبة'}, libOpen:{en:'Open this item in the library',ar:'افتح البند ده في المكتبة'}, libWhy:{en:'Its rules and their sources, checked word for word (opens in a new tab)',ar:'قواعده ومصادرها، متراجعة كلمة بكلمة (بتفتح في صفحة جديدة)'}, howT:{en:'How to get it',ar:'تجيبه إزاي'}, byT:{en:'Issued by',ar:'بيصدر من'},
   validUntil:{en:'Valid until',ar:'صالح لحد'}, saveDate:{en:'Save date',ar:'احفظ التاريخ'}, dateSaved:{en:'Date saved',ar:'التاريخ اتحفظ'},
   prov_EG_IN_FORCE:{en:'EDA rule in force',ar:'قاعدة سارية من الهيئة'}, prov_EG_DRAFT:{en:'EDA draft',ar:'مسودة الهيئة'}, prov_EU_DERIVED:{en:'Filled from EU rules',ar:'مكمّل من قواعد أوروبية'}, prov_ICH:{en:'ICH',ar:'ICH'}, prov_ASSUMPTION:{en:'Assumption — confirm',ar:'افتراض — محتاج تأكيد'}, prov_GCC_IN_FORCE:{en:'GCC / SFDA text in force',ar:'نص خليجي / SFDA ساري'},
   prov_EU_IN_FORCE:{en:'EU specification in force',ar:'مواصفة أوروبية سارية'}, prov_US_IN_FORCE:{en:'FDA headings in force',ar:'عناوين FDA السارية'}, prov_GENERAL:{en:'General practice — confirm',ar:'ممارسة عامة — محتاج تأكيد'},
@@ -681,6 +682,9 @@ const DNAV = [['guide','compass','navGuide'],['prepare','scan','navPrepare'],['b
 function paintNav(){ $('#nav').innerHTML = navItems().map(([r,h,i,k])=>`<a href="${h}" data-r="${r}">${icon(i)}<span data-t="${k}"></span></a>`).join('')
   + `<div class="grp" data-t="navCurrent"></div>` + DNAV.map(([r,i,k])=>`<a href="#" data-r="${r}" id="nav${r[0].toUpperCase()+r.slice(1)}" aria-disabled="true">${icon(i)}<span data-t="${k}"></span></a>`).join(''); paintT(); }
 function paintT(){ $$('[data-t]').forEach(e=>e.textContent=t(e.dataset.t)); }
+/* the library («المكتبة»): every rule with its source, checked word for word — an item opens at its own record (#r-<authority>-<id>) */
+const LIB_URL='https://claude.ai/artifact/6sSh9Tgi3jXji54PJbYcxf';
+const libHref=id=>LIB_URL+(id?'#r-'+String(id).replace(/[^A-Za-z0-9]+/g,'-').replace(/^-+|-+$/g,''):'');
 paintNav();
 function setLang(l){ S.lang=l; store.set('db.lang',l); document.documentElement.lang=l; document.documentElement.dir = l==='ar'?'rtl':'ltr';
   $('#lang-ar').classList.toggle('on',l==='ar'); $('#lang-en').classList.toggle('on',l==='en'); paintT(); if(S.me) paintMe(); route(); }
@@ -2290,6 +2294,7 @@ function openWhy(slotId, focusTemplate){
     <h3>${esc(t('reasons'))}</h3>${reasons}
     ${s.acceptance?`<h3>${esc(t('acceptT'))}</h3><div class="finding">${s.acceptance.split(/;\s+|\.\s+(?=[A-Z])/).filter(x=>x.trim()).map(x=>`<label class="small row gap-s" style="align-items:flex-start;flex-wrap:nowrap"><input type="checkbox"><span dir="auto" style="flex:1;min-width:0">${esc(x.trim().replace(/\.$/,''))}</span></label>`).join('')}</div>`:''}
     ${s.how||s.produced_by?`<div class="small">${s.produced_by?`<b>${esc(t('byT'))}:</b> ${bdi(s.produced_by)}`:''}${s.how?`<br><b>${esc(t('howT'))}:</b> <span dir="auto">${esc(s.how)}</span>`:''}</div>`:''}
+    ${s.library?`<div><a class="btn sm ghost" id="libItem" href="${esc(libHref(s.library))}" target="_blank" rel="noopener" title="${esc(t('libWhy'))}">${icon('book',14)} ${esc(t('libOpen'))}</a></div>`:''}
     ${s.sources&&s.sources.length?`<div class="small muted"><b>${esc(t('sourcesT'))}:</b> <span class="code">${esc(s.sources.join(' · '))}</span>${s.provenance?` · ${prov(s.provenance)}`:''}</div>`:''}${s.flags.filter(f=>f!=='CONFIRM_LEVEL').length?`<div class="small muted code">${esc(s.flags.filter(f=>f!=='CONFIRM_LEVEL').join(' · '))}</div>`:''}
     ${s.cross&&s.cross.length?`<h3>${esc(t('crossT'))}</h3>${s.cross.map(f=>`<div class="finding ${f.severity==='block'?'block':''}"><div>${esc(f[S.lang])} <span class="code muted">${esc(f.id)}</span></div><div class="small muted">${esc(f.source)}</div></div>`).join('')}`:''}
     ${s.documents.length?`<h3>${esc(t('docs'))}</h3>${docs}`:''}

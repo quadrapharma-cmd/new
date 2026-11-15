@@ -1656,9 +1656,11 @@ class Store:
             out.append({**s.to_dict(), 'status': status,
                         'documents': [{k: d[k] for k in ('id', 'version', 'filename', 'title', 'check_status',
                                                          'findings', 'sha256', 'meta')} for d in docs]})
-        reqs_by_id = self.pack(self.dossier(did)['pack']).by_id
+        pk = self.pack(self.dossier(did)['pack'])
+        reqs_by_id = pk.by_id
         for x in out:
             rq = reqs_by_id.get(x['req_id'], {})
+            x['library'] = pk.library_id(x['req_id'])          # its record in the library («المكتبة»)
             x['acceptance'] = rq.get('acceptance_text')
             x['sources'] = rq.get('sources', [])
             x['provenance'] = rq.get('provenance')

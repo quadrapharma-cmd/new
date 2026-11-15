@@ -29,10 +29,24 @@ def number(r):
     return c.get('number') or c.get('nta065_v5') or next(iter(c.values()), '')
 
 
+# Where each item stands in the library («المكتبة», Dossier Builder v2's Part 1: every rule with its source, checked word for word),
+# which took these packs over with their ids: the record of an item is «<authority>/<id>» — the authority's own item, or the item of
+# the common CTD the pack stands on (`extends`).
+LIBRARY = {'eda.ctd.nta065.v5': 'EG-EDA', 'ich.ctd.m4.v1': 'ICH', 'eu.ctd.m1.v1': 'EU', 'gcc.ctd.m1.v1': 'GCC',
+           'us.ctd.m1.v1': 'US-FDA', 'intl.ctd.m1.v1': 'OTHER'}
+
+
 class Pack:
     def __init__(self, meta, requirements, path, base=None):
         self.meta, self.requirements, self.path, self.base = meta, requirements, path, base
         self.by_id = {r['id']: r for r in requirements}
+        self.own = None                                   # the ids of the pack's own items, when it stands on a base (load)
+
+    def library_id(self, req_id):
+        """The item's record in the library, or None: the pack's own item, or the common CTD's it took over."""
+        pack = self if self.own is None or req_id in self.own or not self.base else self.base
+        prefix = LIBRARY.get(pack.id)
+        return f'{prefix}/{req_id}' if prefix and req_id in pack.by_id else None
 
     @property
     def id(self):
@@ -117,7 +131,7 @@ def load(pack_id, packs_dir=PACKS_DIR):
     d = pathlib.Path(packs_dir) / pack_id
     meta = yload((d / 'pack.yaml').read_text(encoding='utf-8'))
     reqs = yload((d / 'requirements.yaml').read_text(encoding='utf-8')) or []
-    base = None
+    base, own = None, {r['id'] for r in reqs}
     if meta.get('extends'):                                # the common CTD under this authority's Module 1
         base = load(meta['extends'], packs_dir)
         own, over, drop = {r['id'] for r in reqs}, meta.get('overrides') or {}, set(meta.get('drop') or [])
@@ -125,7 +139,10 @@ def load(pack_id, packs_dir=PACKS_DIR):
                   for r in base.requirements if r['id'] not in own and r['id'] not in drop]
         order = {id(r): i for i, r in enumerate(reqs + common)}
         reqs = sorted(reqs + common, key=lambda r: (r['module'], order[id(r)]))          # Module 1 first; each module in its own order
-    return Pack(meta, reqs, d, base)
+    pack = Pack(meta, reqs, d, base)
+    if base:
+        pack.own = own
+    return pack
 
 
 def available(packs_dir=PACKS_DIR):

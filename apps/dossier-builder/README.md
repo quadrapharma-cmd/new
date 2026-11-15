@@ -110,6 +110,24 @@ An EU dossier exports an **eCTD 3.2.2 sequence** beside its CTD folders, on the 
 - Tests: `tests/test_ectd32_eu.py` (9: DTD validity for the three procedures, what the writer refuses, the validator's pass,
   its catches, a follow-on replace, the API export, the leaflet item), `tests/test_ui_eu_ectd.py`.
 
+## The library inside the program, and 7z in every edition (15/11/2026) — «نحطها في البرنامج القديم»
+
+The owner, 15/11/2026, after the new workshop read his real files badly: this program («منشئ ملفات التسجيل») is the program again,
+and what was built since goes into it one piece at a time, each tried on his real files first. The first two pieces:
+
+- **The library («المكتبة»).** A button beside the language, and in each item's drawer «افتح البند ده في المكتبة»: the library —
+  Dossier Builder v2's Part 1: every authority's requirements, the EDA review questions, variations and document validity, each
+  with its source checked word for word, searchable in Arabic and English, a private claude.ai page — opens in a new tab at the
+  item's own record. The library took these packs over with their ids, so an item's record is «<authority>/<id>»
+  (`packs.LIBRARY`, `Pack.library_id`: the authority's own item — even in Module 3, as the Gulf's 3.2.R — or the item of the common
+  CTD it stands on); the board gives it as `library`. Checked: every item of every pack has its record there (349 records, no two
+  sharing a link name), and each of the 349 links opens its own record in the library as published (read back from claude.ai).
+  Tests: `tests/test_library_links.py`.
+- **7z** is opened in the page in every edition (it was refused in the browser edition): see «7z inside the page» below.
+
+The update made from the 14/11 run on his real files (`864cd3c`) is held back (`7b9c763`): it changes what is sent to Claude, so it
+goes out only after it is compared with real Claude readings of his files.
+
 ## Claude reads the scans again; each document held to its item's conditions (13/11/2026) — «البرنامج رجع ذكي»
 
 The owner, 13/11/2026: the program had become a page that took scans, acted as if it was reading, and showed nothing — the
