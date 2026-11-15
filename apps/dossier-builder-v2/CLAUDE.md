@@ -339,6 +339,11 @@ When a part is done or an open item is closed, update «What exists» and «Open
   Claude (`DBOCR.busy()`). Checked that it changes no reading: his nine Dramrin files through version 48 and the new build,
   twice each, the same mock for Claude — the same prompts, page pictures byte for byte, items, names, conditions, OCR quality,
   fields; only the contact sheets for cutting combined files vary run to run, in version 48 as much (pdf.js), with the same cuts.
+  Published as **version 49** (index.html and suite.html only — the suite page carries the same reader and boot scripts; every
+  other file is version 48's: the page's own record of each file's hash, the programs' and the reader's, is the same). Whole
+  suite 802 passed; opening time unchanged (first 5.56 → 5.51 s, next 4.58 → 4.70 s, median of 8 interleaved rounds); both
+  files read back byte for byte equal to the build, and the office test passed on the page as served. The Drive tools' names
+  checked against their schemas and one real listing call: the fields the page reads are there.
 
 ## Open items (propose when relevant; do when he asks)
 - Old program, claude.ai edition: its fonts never load — `web/build.py` writes the font link's `onload="this.media=\'all\'"` with
