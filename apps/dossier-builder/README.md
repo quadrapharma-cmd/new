@@ -110,6 +110,33 @@ An EU dossier exports an **eCTD 3.2.2 sequence** beside its CTD folders, on the 
 - Tests: `tests/test_ectd32_eu.py` (9: DTD validity for the three procedures, what the writer refuses, the validator's pass,
   its catches, a follow-on replace, the API export, the leaflet item), `tests/test_ui_eu_ectd.py`.
 
+## «المكتب», and what happens to a file while it is uploaded and read (15/11/2026) — «تظهر بريڤيو ايه اللي بيحصل»
+
+The owner, 15/11/2026: «محتاج جزء يكون ملحق مع رفع المستندات يكون فيه كل المستندات ممكن تتعدل و يكون جزء مكتبي و كمان المستندات
+و هي بتترفع و تتمسح تظهر بريڤيو ايه اللي بيحصل».
+
+- **«المكتب» (the Office)**, on the preparation page («تجهيز المستندات», where files are uploaded) and in the menu beside it
+  (`#/d/<id>/office`: the same page, the office first): every current document of the file, grouped by module, with its first
+  page, its item, its version and status; a Word file (.docx) opens in the Word program and a PDF in the PDF program, and what is
+  saved there becomes a new version (as from the item's drawer); «الصفحات» opens the page viewer, «البند بتاعه» the item. A
+  certificate or an authority's letter says it is not edited; a file the programs do not open (.doc, Excel…) says to edit it on
+  the computer and upload it again. A search box finds a document by its name or item.
+- **The live preview** (`ui/assets/preview.js`): each file added — on the preparation page and in the new-dossier wizard — shows
+  its first pages, small, beside its line (a Word or Excel file shows its kind). While a file is worked on, a panel on it says what
+  is happening: the step («Claude بيقرا صفحاته…», «بيقرا الممسوح · صفحة 3 من 12», «بيجهّزه…»), a bar for the pages, the page
+  being read lit among the small ones, and **the very picture Claude is given** — the top or the bottom half of a page, or the
+  sheet of small pages it looks at to find where the documents of a combined file start — with its page and half
+  («دي الصورة اللي Claude بيقراها دلوقتي: صفحة 1 من 2 — النص الأعلى»). When the step is over, the panel goes and what was read
+  stays on the line. Pages are drawn in the page with pdf.js (`ocr.js drawPages`), one at a time and only when in view; the
+  pictures come from boot.js as they are made (`db-pictures`: an event; nothing waits for it).
+- **The preview only looks.** It draws nothing while the scan reader reads or draws pictures for Claude (`DBOCR.busy()`): the
+  reader hands over a small copy of the page it reads (`picture` in its progress), and boot.js the pictures it gives Claude, so
+  nothing extra is drawn beside them. His nine Dramrin files (fourteen documents once the combined ones are cut), read by
+  version 48 and by this one, twice each, with the same stand-in for Claude: the same prompts, the same page pictures byte for
+  byte, the same items, names, conditions, readings and fields at the end. Only the sheets of small pages Claude looks at to cut
+  a combined file differ from one run to the next — in version 48 itself as much as here (pdf.js draws some of those pages a
+  little differently each time), and the cuts they led to were the same.
+
 ## The Word and PDF programs inside the page (15/11/2026) — «فين الادوات بتاعة كرافت»
 
 The owner, 15/11/2026, asked where the editing programs built for the new workshop went, and to finish them in the old program

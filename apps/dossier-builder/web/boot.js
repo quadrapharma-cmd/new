@@ -285,6 +285,9 @@
   // prompt; a scan or a photo from its page pictures (ocr.js pageImages: the first pages, each in two halves so small Arabic print
   // stays legible), with the page's own OCR, where there is one, given only as a help the model checks against the pictures.
   const FINAL = ['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed', 'rate_limited', 'session_expired', 'cancelled', 'images_unavailable'];
+  // each picture given to the model, as an event the page may show («db-pictures»: {name, page, pages, part, blob} or a sheet of
+  // pages {name, from, to, pages, blob}); nothing waits for it
+  const shown = (name, d) => { try { window.dispatchEvent(new CustomEvent('db-pictures', { detail: Object.assign({ name }, d) })); } catch (e) { /* a page without the preview */ } };
   const DRAWN = /\.(pdf|png|jpe?g|tiff?|gif|bmp|webp)$/i;
   async function pictures(files, meta, budget, say, all) {
     const images = [], notes = [];
@@ -297,6 +300,7 @@
       // a scan: its first pages, where its information is; a document whose signature and stamp are looked for: its first pages and its last
       try { got = await window.DBOCR.pageImages(f, { max: 3, pick: all ? [1, 2, -1] : [1, 2, 3], budget: budget - images.length }); } catch (e) { console.warn('page pictures', f.name, e); continue; }
       for (const g of got) {
+        shown(f.name, { page: g.page, pages: g.pages, part: g.part, blob: g.blob });   // the page shows the very picture Claude is given
         images.push(g.blob);
         notes.push(`Image ${images.length}: the ${g.part} half of page ${g.page} of ${g.pages} of document "${f.name}".`);
       }
@@ -339,6 +343,7 @@
       if (!max || !window.DBOCR || !window.DBOCR.contactSheets) throw { code: 'images_unavailable', message: 'no pictures here' };
       say('pictures');
       const sheets = await window.DBOCR.contactSheets(file, { budget: max });
+      sheets.forEach(sh => shown(file.name, { from: sh.from, to: sh.to, pages: sh.pages, blob: sh.blob }));
       const notes = sheets.map((sh, i) => `Image ${i + 1}: pages ${sh.from}–${sh.to} of ${sh.pages}.`).join('\n');
       say('model');
       return await sample.json(prompt + '\n\nPICTURES (attached, in this order):\n' + notes, { images: sheets.map(sh => sh.blob), modelTier: 'default', cache: false });

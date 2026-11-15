@@ -366,8 +366,13 @@
   }
   const pageText = ws => lines(ws).map(l => l.map(w => w.text).join(' ')).join('\n');
   let queue = Promise.resolve();
+  // how many readings and drawings for the readers are under way: the page's preview (preview.js) draws nothing meanwhile, so
+  // what the reader and Claude are given is drawn exactly as when there was no preview
+  let working = 0;
+  const busy = () => working;
+  const counted = fn => async function () { working++; try { return await fn.apply(this, arguments); } finally { working--; } };
   function read(file, opts) {                                     // one file at a time: two readings at once only share the processor
-    const run = queue.then(() => readNow(file, opts || {}));
+    const run = queue.then(counted(() => readNow(file, opts || {})));
     queue = run.catch(() => {});
     return run;
   }
@@ -385,7 +390,12 @@
     } catch (e) { pg.q.second = { error: String(e && e.message || e).slice(0, 200) }; }
   }
   async function readNow(file, opts) {
-    const tell = (stage, page, pages, part) => { try { if (opts.onProgress) opts.onProgress({ stage, page, pages, part }); } catch (e) {} };
+    const tell = (stage, page, pages, part, extra) => { try { if (opts.onProgress) opts.onProgress(Object.assign({ stage, page, pages, part }, extra || {})); } catch (e) {} };
+    // the page being read, small, for the page's preview: a copy drawn from the reader's own picture (which it does not change)
+    const shown = async (pic, page) => { try { if (!opts.onProgress || !pic || !pic.width) return null; const k = Math.min(1, 420 / pic.width);
+      const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(pic.width * k)); c.height = Math.max(1, Math.round(pic.height * k));
+      c.getContext('2d').drawImage(pic, 0, 0, c.width, c.height);
+      const blob = await new Promise(res => c.toBlob(res, 'image/jpeg', 0.8)); return blob ? { picture: blob, picture_page: page } : null; } catch (e) { return null; } };
     const quick = !!opts.quick;
     tell('load', 0, 0, 0);
     tessTell = p => tell('load', 0, 0, p);
@@ -398,13 +408,13 @@
       const pages = new Array(doc.count);
       let next = 1, done = 0;
       const one = async i => {                                    // 1) read as scanned
-        const pic = await doc.draw(i, DPI, 0), { ws } = await tess(pic, false);
+        const pic = await doc.draw(i, DPI, 0), seen = await shown(pic, i), { ws } = await tess(pic, false);
         const pg = { page: i, pic, rot: 0, angle: 0, words: inPoints(ws, pic.dpi || DPI), fixes: [] };
         pg.q = Object.assign(quality(pg.words), { read: 'as scanned' });
         if (pg.q.low <= HARD) await check(pg, doc, pd, tell);       // a page this hard is most likely turned: straightened first
         if (!weak(pg.q) || (quick && pg.q.low <= HARD)) pg.pic = null;
         pages[i - 1] = pg;
-        tell('read', ++done, doc.count, done / doc.count);
+        tell('read', ++done, doc.count, done / doc.count, seen);
         await yieldNow();
       };
       const lanes = quick ? Math.max(1, sched.size || 1) : 1;     // quick: as many pages at once as Tesseract has workers
@@ -514,5 +524,37 @@
     } finally { try { doc.destroy(); } catch (e) {} }
   }
 
-  window.DBOCR = { available, read, pageImages, contactSheets, sha256, _toLogical: toLogical, _vote: vote, _spans: spans, _resize: resize, _pyRound: pyRound };
+  /* some pages of a PDF or an image, small, for the page's own preview of a document (the preparation page: «المكتب» and what is
+     happening to a file while it is read). pdf.js and the image decoders only; nothing read. pages: page numbers (-1: the last).
+     → {pages: how many it has, drawn: [{page, canvas}]} */
+  async function drawPages(file, pages, width) {
+    const W = Math.max(40, Math.min(1200, width || 140));
+    const fit = (src, page) => {
+      const k = W / src.width, c = document.createElement('canvas'); c.width = W; c.height = Math.max(1, Math.round(src.height * k));
+      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.imageSmoothingQuality = 'high';
+      g.drawImage(src, 0, 0, c.width, c.height);
+      return { page, canvas: c };
+    };
+    const want = n => [...new Set((pages && pages.length ? pages : [1]).map(k => k < 0 ? n + 1 + k : k).filter(k => k >= 1 && k <= n))];
+    if (!isPdf(file)) {
+      const pics = await images(file);
+      return { pages: pics.length, drawn: want(pics.length).map(k => fit(pics[k - 1], k)) };
+    }
+    const lib = await pdfjs();
+    const doc = await lib.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false }).promise;
+    try {
+      const drawn = [];
+      for (const i of want(doc.numPages)) {
+        const p = await doc.getPage(i), v1 = p.getViewport({ scale: 1 }), vp = p.getViewport({ scale: W / v1.width });
+        const c = document.createElement('canvas'); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+        const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+        await p.render({ canvasContext: g, viewport: vp }).promise;
+        p.cleanup();
+        drawn.push({ page: i, canvas: c });
+      }
+      return { pages: doc.numPages, drawn };
+    } finally { try { doc.destroy(); } catch (e) {} }
+  }
+
+  window.DBOCR = { available, read, pageImages: counted(pageImages), contactSheets: counted(contactSheets), drawPages, busy, sha256, _toLogical: toLogical, _vote: vote, _spans: spans, _resize: resize, _pyRound: pyRound };
 })();

@@ -210,6 +210,7 @@ body[data-role="editor"] .admin-only,body[data-role="viewer"] .admin-only{displa
 <script src="/assets/sevenz.js"></script>
 <script src="/assets/archive.js"></script>
 <script src="/assets/programs.js"></script>
+<script src="/assets/preview.js"></script>
 <script>
 'use strict';
 const {$, $$, esc, bdi, icon, store, toast, openDrawer, closeDrawer, ring, meter, fmtDate, fmtTs, pct} = DS;
@@ -218,7 +219,17 @@ const T = {
   appName:{en:'Dossier Builder',ar:'منشئ ملفات التسجيل'},
   navHome:{en:'Home',ar:'الرئيسية'}, navDossiers:{en:'Dossiers',ar:'الملفات'}, navVars:{en:'Variations',ar:'التغييرات'}, navSuite:{en:'Product file',ar:'ملف المنتجات'},
   navCurrent:{en:'Current dossier',ar:'الملف الحالي'}, navGuide:{en:'Guide',ar:'الدليل'}, navBoard:{en:'Requirements',ar:'المتطلبات'}, navData:{en:'Product data',ar:'بيانات المنتج'},
-  navPrepare:{en:'Prepare the documents',ar:'تجهيز المستندات'},
+  navPrepare:{en:'Prepare the documents',ar:'تجهيز المستندات'}, navOffice:{en:'Office',ar:'المكتب'},
+  offT:{en:'Office — every document of the file',ar:'المكتب — كل مستندات الملف'},
+  offSub:{en:'Each document opens here in its program and is edited there: a Word file (.docx) in the Word program, a PDF in the PDF program. What you save becomes a new version; the old one is kept.',ar:'كل مستند هنا يتفتح في برنامجه ويتعدّل فيه: ملف Word (.docx) في برنامج الـ Word، والـ PDF في برنامج الـ PDF. اللي بتحفظه بيبقى نسخة جديدة، والقديمة بتفضل محفوظة.'},
+  offEmpty:{en:'No document in this file yet: add them above.',ar:'لسه مفيش مستندات في الملف ده: ارفعها من فوق.'},
+  offFind:{en:'Find by file name or item',ar:'دوّر باسم الملف أو البند'}, offPages:{en:'Pages',ar:'الصفحات'}, offItem:{en:'Its item',ar:'البند بتاعه'},
+  offLocked:{en:'An authority\'s or a third party\'s document: not edited',ar:'مستند جهة أو هيئة: مابيتعدّلش'},
+  offNoProg:{en:'Edit it on your computer (Word, Excel…) and upload it again',ar:'عدّله على جهازك (Word وExcel…) وارفعه تاني'},
+  offVer:{en:'version',ar:'نسخة'},
+  pvHalf:{en:'What Claude is reading now: page {p} of {n}, the {part} half',ar:'دي الصورة اللي Claude بيقراها دلوقتي: صفحة {p} من {n} — النص {part}'},
+  pvTop:{en:'top',ar:'الأعلى'}, pvBottom:{en:'bottom',ar:'الأسفل'}, pvOcr:{en:'The scan reader is reading page {p} of {n}',ar:'قارئ الممسوح بيقرا صفحة {p} من {n}'},
+  pvSheet:{en:'Claude is looking at pages {a}–{b} of {n} to see where each document starts',ar:'Claude بيبص على الصفحات {a}–{b} من {n} علشان يعرف فين بيبدأ كل مستند'},
   prepSub:{en:'Every file, one by one: read (a scan by Claude from its page pictures), put in its item, held to that item\'s conditions — its form (a searchable PDF and the PDF rules) and its content (dated, valid, signed and stamped, legalised…) — and fixed where the program can. Each condition shows ✓ or what is needed.',
            ar:'كل ملف لوحده: بيتقري (والممسوح Claude بيقراه من صور صفحاته)، وبيتحط في بنده، وبيتقاس على شروط البند ده — شكله (PDF قابل للبحث وقواعد الـ PDF) ومحتواه (عليه تاريخ، ساري، موقّع ومختوم، موثّق…) — وبيتصلّح لو البرنامج يقدر. قدام كل شرط ✓ أو المطلوب.'},
   prepByPage:{en:'Scans are read by Claude from their page pictures (claude.ai).',ar:'الممسوح بيقراه Claude من صور صفحاته (claude.ai).'},
@@ -681,7 +692,7 @@ const NAV_BASE = [['home','#/','home','navHome'],['dossiers','#/dossiers','layer
 const NAV_USERS = ['users','#/users','users','navUsers'];
 /* the Users entry: when sign-in can be turned on here, or for a signed-in administrator */
 const navItems = () => (S.auth && (S.auth.can_enable || (S.me && S.me.auth && S.me.role==='admin'))) ? NAV_BASE.concat([NAV_USERS]) : NAV_BASE;
-const DNAV = [['guide','compass','navGuide'],['prepare','scan','navPrepare'],['board','checklist','navBoard'],['data','database','navData'],['publisher','tree','navPublisher'],['checks','shield','navChecks'],['search','search','navSearch'],['review','stamp','navReview'],['export','package','navExport'],['audit','history','navAudit']];
+const DNAV = [['guide','compass','navGuide'],['prepare','scan','navPrepare'],['office','folder','navOffice'],['board','checklist','navBoard'],['data','database','navData'],['publisher','tree','navPublisher'],['checks','shield','navChecks'],['search','search','navSearch'],['review','stamp','navReview'],['export','package','navExport'],['audit','history','navAudit']];
 function paintNav(){ $('#nav').innerHTML = navItems().map(([r,h,i,k])=>`<a href="${h}" data-r="${r}">${icon(i)}<span data-t="${k}"></span></a>`).join('')
   + `<div class="grp" data-t="navCurrent"></div>` + DNAV.map(([r,i,k])=>`<a href="#" data-r="${r}" id="nav${r[0].toUpperCase()+r.slice(1)}" aria-disabled="true">${icon(i)}<span data-t="${k}"></span></a>`).join(''); paintT(); }
 function paintT(){ $$('[data-t]').forEach(e=>e.textContent=t(e.dataset.t)); }
@@ -718,7 +729,7 @@ function nav(r){
 async function route(){
   const tok = ++S.rt;
   const h = location.hash.replace(/^#/,'') || '/';
-  const m = h.match(/^\/d\/([^/]+)\/(guide|prepare|board|data|publisher|checks|search|export|audit|review)(?:\/([a-z]+))?$/);
+  const m = h.match(/^\/d\/([^/]+)\/(guide|prepare|office|board|data|publisher|checks|search|export|audit|review)(?:\/([a-z]+))?$/);
   asstFab(m?m[1]:null);
   try{
     if(h==='/new'){ S.dossier=null; nav('dossiers'); return wizard(); }
@@ -738,6 +749,7 @@ async function route(){
     if(m[2]==='checks') return checksView(tok);
     if(m[2]==='search') return searchView(tok);
     if(m[2]==='prepare') return prepareView(tok);
+    if(m[2]==='office') return prepareView(tok, true);
     if(m[2]==='review') return reviewView(tok, m[3]||'desk');
     return auditView(tok);
   }catch(e){ if(tok===S.rt) $('#view').innerHTML = `<div class="alert bad">${icon('alert')}<p><b>${esc(t('err'))}:</b> ${esc(e.message)}</p></div>`; }
@@ -1210,7 +1222,9 @@ function docLine(w, name){
   const fix = st.status==='mismatch' ? `<div class="row gap-s" style="margin-top:4px"><button class="btn sm pri" data-mvdoc="${esc(name)}">${esc(t('moveToIts'))} «${esc(L({ar:det.ar,en:det.en}))}»</button><button class="btn sm ghost" data-rmdoc="${esc(name)}">${esc(t('removeFile'))}</button></div>`
     : st.status==='notext' ? `<div class="row gap-s" style="margin-top:4px"><button class="btn sm ghost" data-rmdoc="${esc(name)}">${esc(t('removeFile'))}</button></div>` : '';
   const unkept = (w.unkept||{})[name] ? `<div class="small" data-unkept style="color:var(--warn)">${esc(L({ar:'مش محفوظ في المسودة',en:'Not kept in the draft'}))}: ${esc(w.unkept[name])} ${esc(L({ar:'هيفضل معاك لحد ما تقفل الصفحة.',en:'It stays with you until you close this page.'}))}</div>` : '';
-  return `<div class="docline" data-docline="${esc(name)}"><div class="small row gap-s" style="flex-wrap:wrap"><b dir="auto">${esc(name)}</b>${stage}</div>${got}${unkept}${fix}</div>`;
+  const file=window.DBPV&&(w.allFiles||[]).find(f=>f.name===name); if(file) DBPV.file('f:'+name, file);       // its pages beside it (the browser's own copy)
+  const pv=file?`<div class="pv" data-pv="${esc('f:'+name)}" data-pvname="${esc(name)}"><div class="pv-strip"></div></div>`:'';
+  return `<div class="docline" data-docline="${esc(name)}"><div class="small row gap-s" style="flex-wrap:wrap"><b dir="auto">${esc(name)}</b>${stage}</div>${pv}${got}${unkept}${fix}</div>`;
 }
 /* the wizard is redrawn by work that ends later (a reading, an archive being opened) only while it is the page on screen and still the
    same wizard: a reading that ends after the person left does not paint the wizard over another page */
@@ -1218,12 +1232,17 @@ function wizShow(w){ if(S.wiz&&(!w||S.wiz===w)&&location.hash==='#/new') wizard(
 function wizProg(name, stage, info, ww){ const w=ww||S.wiz; if(!w) return; w.prog=w.prog||{}; w.prog[name]=Object.assign({}, w.prog[name]||{}, {stage}, info||{});
   if(info&&info.found){ w.found=w.found||{}; w.found[name]=info.found; }
   if(S.wiz!==w||location.hash!=='#/new') return;
-  const el=document.querySelector(`[data-docline="${CSS.escape(name)}"]`); if(el){ el.outerHTML=docLine(w, name); wireDocLines($('#view')); } }
+  const el=document.querySelector(`[data-docline="${CSS.escape(name)}"]`); if(el){ el.outerHTML=docLine(w, name); wireDocLines($('#view')); }
+  if(window.DBPV){ const key='f:'+name, pr=w.prog[name]||{};                                         // what is happening to it, on its preview
+    if(['text','pictures','model','ocr'].includes(stage)) DBPV.now(key, Object.assign({text:t({text:'stText',pictures:'stPictures',model:'stModel',ocr:'stOcr'}[stage])}, stage==='ocr'&&pr.at?{page:pr.at, pages:pr.of}:{}));
+    else DBPV.end(key); } }
 /* the page's own reading of a scan (boot.js, where there is no model): its pages counted on the file's line, not in a toast */
 window.addEventListener('db-ocr', e=>{ const d=e.detail||{}, w=S.wiz;
-  if(w&&location.hash==='#/new'&&(w.docs||{})[d.name]&&['load','read','check','straighten'].includes(d.stage)){ wizProg(d.name,'ocr',{at:d.page||0, of:d.pages||0},w); e.preventDefault(); return; }
+  if(w&&location.hash==='#/new'&&(w.docs||{})[d.name]&&['load','read','check','straighten'].includes(d.stage)){ wizProg(d.name,'ocr',{at:d.page||0, of:d.pages||0},w);
+    if(window.DBPV&&d.picture) DBPV.now('f:'+d.name, {picture:d.picture, caption:t('pvOcr').replace('{p}', d.picture_page).replace('{n}', d.pages)}); e.preventDefault(); return; }
   if(location.hash.endsWith('/prepare')&&prepOcr(d)) e.preventDefault(); });
 function wireDocLines(root){ if(!root) return;
+  if(window.DBPV){ DBPV.mount(root); DBPV.restore(root); }
   root.querySelectorAll('[data-mvdoc]').forEach(b=>b.onclick=async()=>{ const w=S.wiz, n=b.dataset.mvdoc; w.docs[n]={kind:w.docs[n].detected, status:'ok'}; toast(t('reading')); await refill(w); wizShow(w); await wizWrite(w); });
   root.querySelectorAll('[data-rmdoc]').forEach(b=>b.onclick=async()=>{ const w=S.wiz, n=b.dataset.rmdoc; w.allFiles=(w.allFiles||[]).filter(f=>f.name!==n); delete w.texts[n]; delete w.found[n]; delete w.kinds[n]; delete w.prog[n]; w.docs[n]={status:'removed'};
     w.aiReads=(w.aiReads||[]).filter(b=>!b.files.includes(n));                                      // its model reading goes with it
@@ -2381,7 +2400,8 @@ function openWhy(slotId, focusTemplate){
 }
 /* A document opened in its editing program (ui/assets/programs.js): what the person saves there after changing it — Ctrl+S or
    «Save as a new version» — becomes a new version of it, as an upload with «replaces» does (the old version is kept). */
-async function openInProgram(docId, slotId){
+async function openInProgram(docId, slotId, opt){
+  opt=opt||{};
   const sl=slotById(slotId), d=sl&&sl.documents.find(x=>x.id===docId), app=d&&window.DBPROG&&DBPROG.forFile(d.filename);
   if(!app) return;
   let bytes;
@@ -2392,8 +2412,8 @@ async function openInProgram(docId, slotId){
   DBPROG.open(app, {name:d.filename, bytes, lang:S.lang,
     onSave: async f=>{ const fd=new FormData(); fd.append('file', new File([f.bytes], f.name)); fd.append('meta','{}'); fd.append('replaces', cur);
       const doc=await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(slotId)}/documents`,{method:'POST',body:fd}); cur=doc.id;
-      await refreshCurrent(slotId); },
-    onClose: ()=>openWhy(slotId)});
+      if(location.hash.endsWith('/prepare')||location.hash.endsWith('/office')){ S.board=null; await paintPrepare(); } else await refreshCurrent(slotId); },
+    onClose: opt.onClose||(()=>openWhy(slotId))});
 }
 async function refreshCurrent(selSlot){
   const h=location.hash;
@@ -2777,12 +2797,15 @@ async function dropFiles(slotId, list){
    stamped, legalised, a CoA's data, a translation), fixed where the program can (PdfCraft; the text layer written under a scan), and
    shown condition by condition: met, fixed, the program fixes it, needs you (why and what to do), or check it (one look answers it).
    Where the work is — Claude reading, the pages read for the text layer — shows on the document itself. */
-function prepareView(tok){
+function prepareView(tok, office){
   if(!fresh(tok)) return;
+  S.prepOffice=!!office;
   $('#view').innerHTML=`<div class="head"><div class="title"><h1>${esc(t('navPrepare'))}</h1><p class="sub">${esc(t('prepSub'))}</p></div></div>
     <section class="card pad stack gap-s" id="prepDrop"><div class="row gap-s" style="flex-wrap:wrap"><label class="btn pri">${icon('upload',16)} ${esc(t('prepDrop'))}<input type="file" id="prepFiles" multiple hidden></label>
       <button class="btn" id="prepAll">${icon('zap',16)} ${esc(t('prepAll'))}</button><span class="small muted grow" id="prepMsg" aria-live="polite"></span></div><div class="small muted" id="prepOcr"></div></section>
-    <div id="prepOut" class="stack" style="margin-top:12px"></div>`;
+    <div class="stack" style="margin-top:12px"><div id="prepOut" class="stack" style="${office?'order:2':''}"></div>
+    <section class="card pad stack gap-s" id="office" style="${office?'order:1':''}"><div class="hd row gap-s" style="flex-wrap:wrap"><h3 class="grow">${icon('folder',16)} ${esc(t('offT'))} <span class="tag" id="offN"></span></h3>
+      <input type="search" id="offQ" dir="auto" placeholder="${esc(t('offFind'))}" style="max-width:20em"></div><p class="small muted">${esc(t('offSub'))}</p><div id="offList" class="stack gap-s"></div></section></div>`;
   const send=async files=>{ if(!files.length) return; const fd=new FormData(); for(const f of files) fd.append('files', f); fd.append('meta','{}');
     $('#prepMsg').textContent=t('srchRead'); try{ await api(`/dossiers/${S.dossier.id}/unplaced`,{method:'POST',body:fd}); }catch(e){ toast(e.message); } S.board=null; await paintPrepare(); S.prepWaitP=prepModelWaiting(); };
   $('#prepFiles').onchange=e=>send([...e.target.files]);
@@ -2847,6 +2870,7 @@ function prepCard(d){
   const md=d.model; const saw=md?`<div class="small" style="color:var(--ok)">${esc(t('prepModelSaw'))}: ${esc([md.kind, md.title, md.number, md.issuer, md.valid_until?('→ '+md.valid_until):''].filter(Boolean).join(' · '))}</div>`:'';
   const qual=q=>!q?'':[(q.changed||[]).length?`<div class="small" style="color:var(--ok)">${esc(t('prepSecond'))}: ${q.changed.slice(0,4).map(c=>`<bdi>${esc(c.was)}</bdi> ← <bdi><b>${esc(c.now)}</b></bdi>`).join('، ')}</div>`:''].join('');
   return `<div class="finding ${(d.state||{}).needs_you?'block':''}" data-pdoc="${esc(d.id)}"><div class="row gap-s" style="flex-wrap:wrap"><span class="code">${esc(d.ctd||'')}</span><b>${esc(L(d.item||{en:'',ar:''}))}</b>${prepState(d)}</div>
+    <div class="pv" data-pv="${esc(d.id)}" data-pvname="${esc(d.filename||d.original_name||'')}" data-pvpages="${d.pages||0}"><div class="pv-strip"></div></div>
     <div class="small"><bdi>${esc(d.original_name)}</bdi> → <b>${esc(t('prepNewName'))}:</b> <bdi>${esc((d.names.ectd32||d.names.ctd||'').split('/').pop()||'—')}</bdi></div>
     <div class="small" data-pnow="${esc(d.id)}" style="color:var(--accent)" aria-live="polite"></div>
     ${saw}${d.extracted&&d.extracted.length?`<div class="small" style="color:var(--ok)">${esc(t('prepFound'))}: ${esc(foundNames(d.extracted).join('، '))}</div>`:''}${qual(d.ocr_quality)}
@@ -2864,6 +2888,7 @@ async function paintPrepare(){
   if(capsP) await capsP;
   const rdChip=x=>x.reader==='ocr'?`<span class="chip c-rec"><i></i>${esc(t('prepReadOcr'))}</span>`:x.reader==='text'?`<span class="chip c-ok"><i></i>${esc(t('prepRead'))}</span>`:`<span class="chip c-bad"><i></i>${esc(t('prepReadNone'))}</span>`;
   const waiting=r.waiting.map(w=>`<div class="finding" data-pw="${esc(w.id)}" data-pdoc="${esc(w.id)}"><div class="row gap-s" style="flex-wrap:wrap"><b>${bdi(w.filename)}</b>${w.model?`<span class="chip c-ok"><i></i>${esc(t('readByModel'))}</span>`:rdChip(w.reading)}<span class="small muted">${w.reading.pages||0} ${esc(t('pagesN'))}</span></div>
+      <div class="pv" data-pv="${esc(w.id)}" data-pvname="${esc(w.filename)}" data-pvpages="${w.reading.pages||0}"><div class="pv-strip"></div></div>
       ${w.split_from&&w.pages_of?`<div class="small muted">${esc(t('prepPartOf').replace('{f}', (w.split_title||'')).replace('{a}', w.pages_of[0]).replace('{b}', w.pages_of[1]))}</div>`:''}
       <div class="small" data-pnow="${esc(w.id)}" style="color:var(--accent)" aria-live="polite"></div>
       ${w.model?`<div class="small" style="color:var(--ok)">${esc(t('prepModelSaw'))}: ${esc([w.model.kind, w.model.title, w.model.issuer].filter(Boolean).join(' · '))}</div>`:''}
@@ -2878,6 +2903,32 @@ async function paintPrepare(){
     <section class="card pad"><div class="hd"><h3>${esc(t('prepPlaced'))} <span class="tag">${r.placed.length}</span></h3></div>${r.placed.map(prepCard).join('')}</section>
     <section class="card pad"><div class="hd"><h3>${esc(t('prepAsked'))} <span class="tag">${r.requested.length}</span></h3></div><div class="row gap-s" style="flex-wrap:wrap">${asked}</div></section>`;
   prepWire(out);
+  if(window.DBPV){ DBPV.mount(out, S.dossier.id); DBPV.restore(out); }
+  paintOffice();
+}
+/* «المكتب»: every current document of the file, its first page, opened in its program where there is one (ui/assets/programs.js) */
+async function paintOffice(){
+  const box=$('#offList'); if(!box||!S.dossier) return; const did=S.dossier.id;
+  let b; try{ b=(S.board&&S.board.__did===did)?S.board:await api(`/dossiers/${did}/board`); b.__did=did; S.board=b; }catch(e){ box.innerHTML=`<div class="alert bad"><p class="small">${esc(e.message)}</p></div>`; return; }
+  if(!$('#offList')||!S.dossier||S.dossier.id!==did) return;
+  const rows=[]; for(const s of b.slots) for(const d of (s.documents||[])) rows.push({s,d});
+  $('#offN').textContent=rows.length;
+  const q=(($('#offQ')||{}).value||'').trim().toLowerCase();
+  const shown=rows.filter(({s,d})=>!q||[d.filename, s.ctd, L(s.title)].join(' ').toLowerCase().includes(q));
+  const mods=[...new Set(shown.map(x=>x.s.module))];
+  const row=({s,d})=>{ const locked=LOCKED.includes(s.doc_class), ext=d.meta&&d.meta.external, app=!locked&&!ext&&window.DBPROG&&DBPROG.forFile(d.filename), pdf=/\.pdf$/i.test(d.filename);
+    return `<div class="row gap-s" style="align-items:flex-start;flex-wrap:nowrap" data-offdoc="${esc(d.id)}">${ext?'':`<img class="pv-th" alt="" data-pvthumb="${esc(d.id)}" data-pvname="${esc(d.filename)}">`}
+      <div class="grow" style="min-width:0"><div class="small"><span class="code">${esc(s.ctd||'')}</span> ${esc(L(s.title)).slice(0,90)}${itemLabel(s)}</div><div><bdi>${esc(d.filename)}</bdi> <span class="small muted">· ${esc(t('offVer'))} ${d.version}</span> ${chip(d.check_status)}</div>
+      <div class="row gap-s" style="margin-top:4px;flex-wrap:wrap">${app?`<button class="btn sm pri" data-offedit="${esc(d.id)}" data-slot="${esc(s.slot_id)}">${icon('pen',14)} ${esc(t('progOpen').replace('{p}',DBPROG.title(app,S.lang)))}</button>`
+        :`<span class="small muted">${esc(t(locked?'offLocked':ext?'extRef':'offNoProg'))}</span>`}${pdf&&!ext?`<button class="btn sm ghost" data-offpages="${esc(d.id)}" data-slot="${esc(s.slot_id)}">${icon('eye',14)} ${esc(t('offPages'))}</button>`:''}
+        <button class="btn sm ghost" data-offitem="${esc(s.slot_id)}">${icon('arrow',14)} ${esc(t('offItem'))}</button></div></div></div>`; };
+  box.innerHTML=rows.length?mods.map(m=>`<div class="small muted" style="margin-top:6px"><b>Module ${m}</b></div>`+shown.filter(x=>x.s.module===m).map(row).join('')).join(''):`<p class="small muted">${esc(t('offEmpty'))}</p>`;
+  $$('[data-offedit]',box).forEach(x=>x.onclick=()=>openInProgram(x.dataset.offedit, x.dataset.slot, {onClose:()=>paintPrepare()}));
+  $$('[data-offpages]',box).forEach(x=>x.onclick=()=>{ const s=slotById(x.dataset.slot); pageViewer(x.dataset.offpages, ()=>closeDrawer(), !(s&&LOCKED.includes(s.doc_class))); });
+  $$('[data-offitem]',box).forEach(x=>x.onclick=()=>openWhy(x.dataset.offitem));
+  const f=$('#offQ'); if(f&&!f.dataset.w){ f.dataset.w='1'; f.oninput=()=>paintOffice(); }
+  if(window.DBPV) DBPV.mount(box, did);
+  if(S.prepOffice){ S.prepOffice=false; const o=$('#office'); if(o) o.scrollIntoView({block:'start'}); }
 }
 function prepWire(out){
   prepToolsWire(out);
@@ -2891,11 +2942,19 @@ function prepWire(out){
 }
 function mbs(n){ return n>=1048576?(n/1048576).toFixed(n>=10485760?0:1)+' MB':Math.max(1,Math.round(n/1024))+' KB'; }
 /* where one document's work is, on the document itself (and in the line at the top while «Prepare them all» runs) */
-function prepNow(id, text){ const el=$(`[data-pnow="${CSS.escape(id)}"]`); if(el) el.textContent=text||''; if(S.prepBusy&&text) $('#prepMsg').textContent=`${S.prepBusy} — ${text}`; }
+function prepNow(id, text){ const el=$(`[data-pnow="${CSS.escape(id)}"]`); if(el) el.textContent=text||''; if(S.prepBusy&&text) $('#prepMsg').textContent=`${S.prepBusy} — ${text}`;
+  if(window.DBPV){ if(text) DBPV.now(id, {text}); else DBPV.end(id); } }
+/* the pictures Claude is given (boot.js «db-pictures»), shown on the document being read */
+window.addEventListener('db-pictures', e=>{ const d=e.detail||{}; if(!window.DBPV) return;
+  const now=S.prepDoing&&S.prepDoing.name===d.name?S.prepDoing.id:(([...document.querySelectorAll('[data-pv]')].find(x=>x.dataset.pvname===d.name)||{}).dataset||{}).pv;
+  if(!now) return;
+  DBPV.now(now, d.part?{picture:d.blob, page:d.page, pages:d.pages, caption:t('pvHalf').replace('{p}',d.page).replace('{n}',d.pages).replace('{part}',t(d.part==='top'?'pvTop':'pvBottom'))}
+    :{picture:d.blob, page:d.from, pages:d.pages, caption:t('pvSheet').replace('{a}',d.from).replace('{b}',d.to).replace('{n}',d.pages)}); });
 /* the page's own reading of a scan for its text layer (boot.js): pages counted on the document being prepared */
 function prepOcr(d){ const now=S.prepDoing; if(!now||(d.name!==now.name&&d.sha256!==now.sha256)) return false;
   if(d.stage==='load') prepNow(now.id, t('prepStepLoad'));
-  else if(d.stage==='read'||d.stage==='straighten'||d.stage==='check') prepNow(now.id, t('prepStepOcr').replace('{a}', d.page||0).replace('{b}', d.pages||'?'));
+  else if(d.stage==='read'||d.stage==='straighten'||d.stage==='check'){ prepNow(now.id, t('prepStepOcr').replace('{a}', d.page||0).replace('{b}', d.pages||'?'));
+    if(window.DBPV&&d.page) DBPV.now(now.id, Object.assign({page:d.page, pages:d.pages}, d.picture?{picture:d.picture, caption:t('pvOcr').replace('{p}', d.picture_page).replace('{n}', d.pages)}:{})); }
   else if(d.stage==='error') prepNow(now.id, (d.message||''));
   return true; }
 /* Claude reads one document's pages in the page (browser edition): its kind, its dates, what is on it (signed, stamped, letterhead,
@@ -2922,7 +2981,8 @@ async function prepModelWaiting(){
   }
   if(cut) await paintPrepare();
   if(S.prepModel!=='page') return;
-  for(const w of S.prep.waiting.filter(x=>x.model_wanted)){ try{ await prepModelRead(w.id, w.filename, true); }catch(e){ console.warn('model', w.filename, e); prepNow(w.id, t('prepModelFailed')+': '+((e&&(e.code||e.message))||'')); } }
+  for(const w of S.prep.waiting.filter(x=>x.model_wanted)){ try{ await prepModelRead(w.id, w.filename, true); prepNow(w.id, ''); }      // read: its line and its preview end
+    catch(e){ console.warn('model', w.filename, e); prepNow(w.id, t('prepModelFailed')+': '+((e&&(e.code||e.message))||'')); if(window.DBPV) DBPV.end(w.id); } }
   await paintPrepare();
 }
 /* a file of several pages waiting to be placed: does it hold several documents? Its words first (each page's kind, «page 1 of …»);

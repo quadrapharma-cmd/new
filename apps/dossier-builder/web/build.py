@@ -39,6 +39,7 @@ def page(src, *, builder, programs=None):
     html = html.replace('<script src="/assets/rar.js"></script>', '<script>\n' + (UI / 'assets' / 'rar.js').read_text(encoding='utf-8') + '\n</script>')      # the page's own RAR reader
     html = html.replace('<script src="/assets/sevenz.js"></script>', '<script>\n' + (UI / 'assets' / 'sevenz.js').read_text(encoding='utf-8') + '\n</script>')   # the page's own 7z reader
     html = html.replace('<script src="/assets/archive.js"></script>', '<script>\n' + (UI / 'assets' / 'archive.js').read_text(encoding='utf-8') + '\n</script>')
+    html = html.replace('<script src="/assets/preview.js"></script>', '<script>\n' + (UI / 'assets' / 'preview.js').read_text(encoding='utf-8') + '\n</script>')   # the documents' preview
     html = html.replace('<script src="/assets/programs.js"></script>',                 # the editing programs: their list, and the loader that opens one
                         '<script>\n' + (f'window.DB_PROGRAMS={json.dumps(programs, separators=(",", ":"))};\n' if programs and programs.get('apps') else '')
                         + (UI / 'assets' / 'programs.js').read_text(encoding='utf-8') + '\n</script>')
