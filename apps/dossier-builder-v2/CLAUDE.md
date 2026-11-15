@@ -314,5 +314,10 @@ When a part is done or an open item is closed, update «What exists» and «Open
 ## The environment
 Personal cloud environment «quadrapharma new»: package registries, Google Drive's APIs, Hugging Face, edaegypt.gov.eg (with www),
 www.ich.org, database.ich.org, www.ema.europa.eu, www.fda.gov and www.who.int are reachable; nothing else. WebFetch may fail to
-resolve names here: use curl, which goes through the proxy. Chromium and Playwright are preinstalled; never install another
+resolve names here: use curl, which goes through the proxy.
+**The Anthropic API key for tests (15/11):** a network secret is refused for Anthropic's own hosts (api.anthropic.com is outside
+the proxy and answers directly: 401 without a key). He adds `ANTHROPIC_API_KEY` himself as an environment variable of «quadrapharma
+new» (environment menu → Edit); a session sees it from its next start or resume. Never print it or write it to a file in the
+repository; a key he pastes in the chat is not used (ask him to delete it and make a new one). Say the cost before every billed run;
+check the key first with the free model list. Chromium and Playwright are preinstalled; never install another
 Playwright. `zip` and Python 3 are there.
