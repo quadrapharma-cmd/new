@@ -28,7 +28,7 @@ SKELETON = ('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8
             '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>')
 
 
-def page(src, *, builder):
+def page(src, *, builder, programs=None):
     html = src.read_text(encoding='utf-8')
     css = (UI / 'assets' / 'ds.css').read_text(encoding='utf-8')
     js = (UI / 'assets' / 'ds.js').read_text(encoding='utf-8')
@@ -39,12 +39,15 @@ def page(src, *, builder):
     html = html.replace('<script src="/assets/rar.js"></script>', '<script>\n' + (UI / 'assets' / 'rar.js').read_text(encoding='utf-8') + '\n</script>')      # the page's own RAR reader
     html = html.replace('<script src="/assets/sevenz.js"></script>', '<script>\n' + (UI / 'assets' / 'sevenz.js').read_text(encoding='utf-8') + '\n</script>')   # the page's own 7z reader
     html = html.replace('<script src="/assets/archive.js"></script>', '<script>\n' + (UI / 'assets' / 'archive.js').read_text(encoding='utf-8') + '\n</script>')
+    html = html.replace('<script src="/assets/programs.js"></script>',                 # the editing programs: their list, and the loader that opens one
+                        '<script>\n' + (f'window.DB_PROGRAMS={json.dumps(programs, separators=(",", ":"))};\n' if programs and programs.get('apps') else '')
+                        + (UI / 'assets' / 'programs.js').read_text(encoding='utf-8') + '\n</script>')
     if builder:
         html = html.replace("'/suite/'", "'suite.html'").replace('<title>Dossier Builder — منشئ ملفات التسجيل</title>', '<title>منشئ ملفات التسجيل</title>')
     else:
         html = html.replace('href="/"', 'href="index.html"')
     head = re.search(r'<head>(.*?)</head>', html, re.S).group(1)
-    body = re.search(r'<body>(.*?)</body>', html, re.S).group(1)
+    body = re.search(r'<body>(.*)</body>', html, re.S).group(1)      # the last </body>: a script may write one in a string (programs.js)
     head = re.sub(r'<meta charset="utf-8">\s*|<meta name="viewport"[^>]*>\s*', '', head)
     head = re.sub(r'<link href="(https://fonts\.googleapis\.com/[^"]+)" rel="stylesheet">',
                   r'<link href="\1" rel="stylesheet" media="print" onload="this.media=\'all\'">', head)      # the fonts load beside the page, never before it
@@ -68,6 +71,45 @@ def pdfcraft_parts(gz, out, part=12 * 1000 * 1000):
         (out / f'pdfcraft-cli.wasm.gz.b64.{k}.txt').write_text(chunk)
     raw = gzip.decompress(gz.read_bytes())
     (out / 'pdfcraft-cli.json').write_text(json.dumps({'parts': len(parts), 'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}))
+
+
+CRAFT = REPO / 'apps' / 'dossier-builder-v2' / 'vendor' / 'craft'   # the editing programs as built from their source (dossier-builder-v2/tools/craft/build.mjs)
+PROGRAM_APPS = ('wordcraft',)                                        # the ones the page opens (ui/assets/programs.js PROGRAMS)
+SEARCH = 'const ret = arg1.search;'
+
+
+def programs_dist(out, part=12 * 1000 * 1000):
+    """Each editing program the page opens, as the browser edition serves it: its glue (the module that starts its WebAssembly) with
+    its snippets beside it, reading the page's address from window.__dbQuery (the program's frame is written by the page, so it has
+    no address of its own: the frame says «?webgl&control» there); its WebAssembly as gzip in base64 text in parts of at most 12 MB
+    (a file of the page holds 16 MB); its licences (as .txt where they have no extension: the artifact host serves known types).
+    → {'base': 'assets/programs/', 'apps': {app: {parts, size, bytes, sha256}}} for the page (window.DB_PROGRAMS)."""
+    import gzip, hashlib
+    apps = {}
+    for app in PROGRAM_APPS:
+        src = CRAFT / f'{app}-web'
+        glue = sorted(src.glob(f'{app}-web-*.js')) if src.is_dir() else []
+        wasm = sorted(src.glob(f'{app}-web-*_bg.wasm')) if src.is_dir() else []
+        if len(glue) != 1 or len(wasm) != 1:
+            print(f'(no {app} at {src}: build it with dossier-builder-v2/tools/craft/build.mjs; this build cannot open it)')
+            continue
+        dst = out / app
+        code = glue[0].read_text(encoding='utf-8')
+        assert code.count(SEARCH) == 1, (app, code.count(SEARCH))
+        code = code.replace(SEARCH, "const ret = typeof globalThis.__dbQuery === 'string' ? globalThis.__dbQuery : arg1.search;")
+        put(dst / 'glue.js', code.encode('utf-8'))
+        for f in sorted(x for x in (src / 'snippets').rglob('*') if x.is_file()):
+            put(dst / f.relative_to(src), f.read_bytes())
+        for f in sorted(x for x in (src / 'licenses').rglob('*') if x.is_file()):
+            rel = f.relative_to(src)
+            put(dst / (rel if f.suffix in ('.txt', '.md') else rel.with_name(rel.name + '.txt')), f.read_bytes())
+        raw = wasm[0].read_bytes()
+        text = base64.b64encode(gzip.compress(raw, 9, mtime=0)).decode('ascii')
+        chunks = [text[i:i + part] for i in range(0, len(text), part)]
+        for k, chunk in enumerate(chunks, 1):
+            put(dst / f'wasm.gz.b64.{k}.txt', chunk.encode('ascii'))
+        apps[app] = {'parts': len(chunks), 'size': len(text), 'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}
+    return {'base': 'assets/programs/', 'apps': apps}
 
 
 def ocr_tag():
@@ -171,7 +213,8 @@ def main():
     if DIST.exists():
         shutil.rmtree(DIST)
     (DIST / 'assets').mkdir(parents=True)
-    content, full = page(UI / 'index.html', builder=True)
+    programs = programs_dist(DIST / 'assets' / 'programs')
+    content, full = page(UI / 'index.html', builder=True, programs=programs)
     (DIST / 'index.html').write_text(content, encoding='utf-8')
     (DIST / 'index.local.html').write_text(full, encoding='utf-8')
     (DIST / 'suite.html').write_text(page(UI / 'suite' / 'index.html', builder=False)[1], encoding='utf-8')
