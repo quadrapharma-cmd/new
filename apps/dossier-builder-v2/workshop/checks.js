@@ -5,17 +5,16 @@
 // and what can be done about it: fixed by the program, or a person's step.
 import { check as crossCheck } from '../prep/checks.js';
 import { fold } from '../core/fold.js';
-import { FORMAT, DOCTYPE_OF, DESIGN_PLACES } from './board.js';
+import { formatOf, DOCTYPE_OF, DESIGN_PLACES } from './board.js';
 import { pdfInfo } from './pdfops.js';
 
-const fmt = id => FORMAT.find(f => f.id === id);
 const ltr = s => `⁦${s}⁩`;
 const letters = s => (String(s || '').match(/[\p{L}\p{N}]/gu) || []).length;
 const TOC = /table of contents|^\s*contents\s*$|^\s*(ال)?فهرس(\s|$)|^\s*(ال)?محتويات(\s|$)/m;
-const WORD_OK = new Set(['EG-EDA/M1-09']);
+const WORD_OK = new Set(['EG-EDA/M1-09']);                    // the proposed leaflet is handed in as Word
 export const TEXT_AUTO = 40;                                   // a scanned document of up to this many pages gets its text layer by itself
 export const DESIGN_KINDS = ['idml', 'indd', 'designcraft'];   // a pack's artwork as the design program keeps it; its PDF goes in
-export const PICTURES = ['png', 'jpeg', 'tiff', 'gif', 'webp', 'psd'];           // the proposed leaflet is handed in as Word
+export const PICTURES = ['png', 'jpeg', 'tiff', 'gif', 'webp', 'psd'];
 const MB = 1024 * 1024;
 // The 14 fonts every PDF reader has (PDF 1.7 §9.6.2.2): a PDF may name them without carrying them.
 const BASE14 = /^(helvetica|times|courier|symbol|zapfdingbats|arial|timesnewroman|couriernew)([-,].*)?$/i;
@@ -33,8 +32,8 @@ export async function infoOf(d, doc, getBlob) {
   return doc.info;
 }
 
-function formatFindings(doc, info) {
-  const out = [];
+function formatFindings(doc, info, countryId = 'EG') {
+  const out = [], rules = formatOf(countryId), fmt = id => rules.find(f => f.id === id);
   const add = (id, level, title, detail, rule, fix) => out.push({ id: `${id}-${doc.id}`, kind: 'format', level, doc: doc.id, place: doc.place, title, detail,
                                                                 rule: { ar: rule.ar, cite: rule.cite }, fix });
   if (doc.kind !== 'pdf') {
@@ -50,9 +49,10 @@ function formatFindings(doc, info) {
   if (!info) return out;
   if (info.damaged) { add('damaged', 'red', `«${doc.name}» ماقدرش يتفتح كـ PDF سليم`, `السبب: ${info.damaged}`, fmt('pdf'), { human: ['upload', 'program'] }); return out; }
   if (info.encrypted) add('encrypted', 'red', `«${doc.name}» عليه حماية`, 'الهيئة مابتقبلش ملف عليه كلمة سر أو حماية. محتاج نسخة من غير حماية من اللي أصدره، أو تشيلها في برنامج الـ PDF لو معاك الإذن.', fmt('open'), { human: ['program', 'upload'] });
+  const target = fmt('version')?.target || '1.7', limit = fmt('size')?.limitMB || 100;
   const v = Number(info.version || 0);
-  if (v && v < 1.4) add('version', 'amber', `«${doc.name}» نسخة PDF قديمة (${ltr(info.version)})`, 'البرنامج يحفظه من جديد بنسخة 1.7 من غير ما يغيّر أي صفحة.', fmt('version'), { auto: 'version', human: ['accept'] });
-  if (doc.size > 100 * MB) add('size', 'red', `«${doc.name}» حجمه ${ltr((doc.size / MB).toFixed(0) + ' MB')}`, 'أكبر من 100 ميجا: لازم يتقسم لأكتر من ملف.', fmt('size'), { human: ['program', 'upload'] });
+  if (v && v < 1.4) add('version', 'amber', `«${doc.name}» نسخة PDF قديمة (${ltr(info.version)})`, `البرنامج يحفظه من جديد بنسخة ${target} من غير ما يغيّر أي صفحة.`, fmt('version'), { auto: 'version', human: ['accept'] });
+  if (doc.size > limit * MB) add('size', 'red', `«${doc.name}» حجمه ${ltr((doc.size / MB).toFixed(0) + ' MB')}`, `أكبر من ${limit} ميجا: لازم يتقسم لأكتر من ملف.`, fmt('size'), { human: ['program', 'upload'] });
   const blank = doc.pages.filter(p => p.by === 'text' && letters(p.text) < 40).length;
   const scanned = doc.pages.filter(p => p.by === 'ocr' || p.by === 'claude').length;
   if ((scanned || blank === doc.pages.length) && !doc.textLayer) {
@@ -101,7 +101,8 @@ function boardFindings(d, board, generators) {
                detail: gen ? 'البرنامج يقدر يعمله مسودة Word من معلومات الملف، وانت تراجعها وتطبعها على ورق الشركة وتمضيها.'
                  : design ? 'المكان ده مطلوب للمنتج ده. ارفع تصميم العبوة، أو اعمله في برنامج التصميم اللي جوه الورشة وصدّره PDF.'
                  : 'المكان ده مطلوب للمنتج ده. ارفع المستند، أو اكتب سبب إنه مش مطلوب.',
-               rule: { ar: `مطلوب (${board.column}) في جدول NP.CAPP.065`, cite: [{ src: 'eda-np-capp-065-v5' }] },
+               rule: board.country.id === 'EG' ? { ar: `مطلوب (${board.column}) في جدول NP.CAPP.065`, cite: [{ src: 'eda-np-capp-065-v5' }] }
+                 : { ar: `مطلوب للمنتج ده في ${p.module === 1 ? `موديول 1 بتاع ${board.country.ar}` : 'موديولات ICH M4'}${p.why ? ` (الشرط: ${p.why})` : ''}`, cite: p.cite || [] },
                fix: gen ? { auto: 'create', human: ['upload', 'accept'] } : { human: design ? ['upload', 'design', 'accept'] : ['upload', 'accept'] } });
   }
   return out;
@@ -118,7 +119,7 @@ export async function checkDossier(d, board, env) {
                  rule: { ar: 'كل مستند لازم يتفتح ويتقري', cite: [] }, fix: { human: ['upload', 'accept'] } });
       continue;
     }
-    if (doc.madeBy !== 'program') out.push(...formatFindings(doc, await infoOf(d, doc, env.getBlob)));   // a draft is printed, signed and scanned
+    if (doc.madeBy !== 'program') out.push(...formatFindings(doc, await infoOf(d, doc, env.getBlob), d.country));   // a draft is printed, signed and scanned
     out.push(...validityFindings(doc, env.knowledge, today));
   }
   const read = docs.filter(x => x.pages?.length).map(x => ({ id: x.id, name: x.name, type: x.type, facts: x.facts || [], pages: x.pages.length,

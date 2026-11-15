@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { evaluate } from '../workshop/expr.js';
-import { boardOf, ruleCard, FORMAT } from '../workshop/board.js';
+import { boardOf, ruleCard, FORMAT, FORMATS, COUNTRIES, QUESTIONS, answerOf } from '../workshop/board.js';
 import { newDossier, addFiles, understand, moveDoc } from '../workshop/pipeline.js';
 import { checkDossier, placeStatus } from '../workshop/checks.js';
 import { zipOf } from '../workshop/zipw.js';
@@ -75,7 +75,7 @@ test('the board of an Egyptian dossier follows the product\'s case, and every pl
   for (const id of ['GCC', 'EU', 'US', 'OTHER']) assert.ok(boardOf(knowledge, { countryId: id }).places.length > 50, id);
 });
 
-async function madeUpDossier() {
+async function madeUpDossier(country = 'EG', profile = {}) {
   const blobs = new Map();
   const env = { knowledge, read: { pdfjs }, putBlob: async (id, k, b) => { blobs.set(`${id}/${k}`, b); }, getBlob: async (id, k) => blobs.get(`${id}/${k}`) };
   const files = [
@@ -85,7 +85,7 @@ async function madeUpDossier() {
     { name: 'coa.pdf', bytes: await pdfOf(COA) },
     { name: 'coa copy.pdf', bytes: await pdfOf(COA) },                                    // the same file twice
   ];
-  const d = newDossier({ country: 'EG', profile: {} });
+  const d = newDossier({ country, profile });
   await addFiles(d, files, env);
   const board = await understand(d, env);
   return { d, board, env };
@@ -218,6 +218,57 @@ test('a scan\'s words are laid back where they stand: through the straightening,
   const out = await withTextLayer(await cutPdf(page, 1, 1), [{ index: 0, pdf: await cutPdf(layer, 1, 1), rot: 0, angle: 0, w0: 595, h0: 842, w2: 595, h2: 842 }]);
   const doc = await pdfjs.getDocument({ data: new Uint8Array(out) }).promise;
   assert.match((await (await doc.getPage(1)).getTextContent()).items.map(x => x.str).join(' '), /Stability/i);
+});
+
+test('every country has its questions, its rule cards and its file rules, each rule said where its source says it', async () => {
+  const ids = new Set(knowledge.sources.map(x => x.id));
+  // every rule's lines, read in the text of its source: the words the rule rests on are there
+  const WORDS = { pdf: /pdf|scann|electronic source/i, version: /1\.4|version/i, open: /security|password/i, fonts: /font|embed/i,
+                  size: /MB|megabyte|size/i, upright: /orient|portrait|landscape/i, bookmarks: /bookmark/i };
+  for (const [cid, rules] of Object.entries(FORMATS)) {
+    assert.deepEqual(rules.map(r => r.id), ['pdf', 'version', 'open', 'fonts', 'size', 'upright', 'bookmarks'], cid);
+    assert.ok(rules.find(r => r.id === 'size').limitMB > 0 && /^1\.[47]$/.test(rules.find(r => r.id === 'version').target), cid);
+    for (const r of rules) {
+      assert.ok(r.cite.length, `${cid} ${r.id}: no source`);
+      for (const c of r.cite) {
+        assert.ok(ids.has(c.src), `${cid} ${r.id}: ${c.src} is not in the library`);
+        const m = /p\.(\d+), (?:§[\d.]+, )?l\. (\d+)(?:–(\d+))?/.exec(c.at || '');
+        if (!m) continue;                                                     // a criterion's number, a table
+        const file = path.join(ROOT, 'dist', 'texts', `${c.src}.json`);
+        if (!fs.existsSync(file)) continue;
+        const page = JSON.parse(fs.readFileSync(file, 'utf8')).pages[+m[1] - 1].split('\n'), [a, b] = [+m[2], +(m[3] || m[2])];
+        // a text whose lines carry their number in the margin (Egypt's drafts): the lines with those numbers; else the page's lines
+        const numbered = page.filter(l => { const n = +(/\s(\d{1,4})\s*$/.exec(l)?.[1]); return n >= a && n <= b; });
+        const lines = a > page.length || numbered.length ? numbered : page.slice(a - 1, b);
+        assert.match(lines.join(' '), WORDS[r.id], `${cid} ${r.id}: ${c.src} ${c.at} says «${lines.join(' ').slice(0, 120)}»`);
+      }
+    }
+  }
+  // each country's questions are the library's conditions of its sets, and the board follows them
+  for (const c of COUNTRIES) for (const q of c.questions) assert.ok(QUESTIONS[q], `${c.id}: ${q}`);
+  const level = (cid, profile, id) => boardOf(knowledge, { countryId: cid, profile }).places.find(p => p.id === id)?.level;
+  assert.equal(level('EU', { eu_legal_basis: 'generic' }, 'EU/EU-1.5.2'), 'R');
+  assert.equal(level('EU', { eu_legal_basis: 'full' }, 'EU/EU-1.5.2'), 'NA');
+  assert.equal(level('EU', { eu_procedure: 'cp' }, 'EU/EU-1.3.5'), 'NA');
+  assert.equal(level('GCC', { gcc_agency: 'SA', origin: 'imported' }, 'GCC/GCC-1.7.2'), 'O');
+  assert.equal(level('GCC', { gcc_agency: 'KW', origin: 'imported' }, 'GCC/GCC-1.7.2'), 'R');
+  assert.equal(level('US', { us_application: 'anda' }, 'US-FDA/US-1.12.11'), 'R');
+  assert.equal(level('GCC', { biological_origin_materials: answerOf('biological_origin_materials', 'no') }, 'GCC/GCC-1.7.7'), 'NA');
+  assert.equal(level('GCC', { biological_origin_materials: answerOf('biological_origin_materials', 'yes') }, 'GCC/GCC-1.7.7'), 'R');
+  // a rule card in each country carries its country's file rules
+  assert.equal(ruleCard(knowledge, 'GCC/GCC-1.7.1').format.find(f => f.id === 'size').limitMB, 100);
+  assert.equal(ruleCard(knowledge, 'EU/EU-1.2').format.find(f => f.id === 'size').limitMB, 500);
+  assert.equal(ruleCard(knowledge, 'ICH/P-09', 'US').format.find(f => f.id === 'size').limitMB, 400);
+  // the made-up dossier for the Gulf: placed by the types and the words of the Gulf's places and ICH's
+  const { d, board, env } = await madeUpDossier('GCC', { gcc_agency: 'SA' });
+  const byName = n => d.docs.find(x => x.name === n);
+  assert.equal(byName('specification.pdf').place, 'ICH/P-09');
+  assert.equal(byName('coa.pdf').place, 'ICH/P-11');
+  assert.ok(d.docs.filter(x => x.from).some(x => x.place === 'ICH/P-16'), 'the stability paper in 3.2.P.8');
+  const findings = await checkDossier(d, board, { ...env, today: '2026-11-14', generators: {} });
+  const missing = findings.find(f => f.id === 'missing-GCC/GCC-1.7.1');
+  assert.match(missing.rule.ar, /موديول 1 بتاع الخليج/);
+  assert.ok(missing.rule.cite.length && missing.rule.cite.every(c => ids.has(c.src)), 'the GCC rule cites its own source');
 });
 
 test('the company papers are written as Word drafts from the dossier, gaps marked, the salt sum shown; needs and the ready folder follow', { timeout: 120000 }, async () => {

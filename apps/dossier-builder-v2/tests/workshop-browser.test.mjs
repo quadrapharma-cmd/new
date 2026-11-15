@@ -328,3 +328,51 @@ test('the photo and design programs from the page: a page cleaned takes its plac
     await ctx.close();
   } finally { await browser.close(); }
 });
+
+test('a dossier for the Gulf: its own questions, its documents placed in its Module 1 and ICH\'s modules, its rule cards with its sources', { timeout: 900000 }, async () => {
+  await ensureBuilt();
+  const { chromium } = require('playwright');
+  const browser = await chromium.launch();
+  try {
+    const chosen = (await dossierFiles(browser)).filter(f => /coa\.zip$|specification\.rar$|stability \(scan\)\.pdf$/.test(f));
+    const { ctx, page, errors } = await open(browser);
+    await page.click('[data-act="new"]');
+    await page.click('[data-act="wiz-country"][data-id="GCC"]');
+    assert.ok(await page.locator('[data-wiz="gcc_agency"]').count(), 'the Gulf asks which authority');
+    assert.equal(await page.locator('[data-wiz="licence"]').count(), 0, 'and not Egypt\'s licence question');
+    await page.selectOption('[data-wiz="gcc_agency"]', 'KW');
+    await page.selectOption('[data-wiz="origin"]', 'imported');
+    await page.setInputFiles('#wiz-files', chosen);
+    await page.click('[data-act="wiz-start"][data-auto="1"]');
+    await page.waitForFunction(() => window.__workshopDone || window.__workshopError, null, { timeout: 600000 });
+    assert.equal(await page.evaluate(() => window.__workshopError || null), null);
+    const d = await page.evaluate(() => JSON.parse(JSON.stringify(window.__workshop.state.d)));
+    const place = n => d.docs.find(x => x.name === n)?.place;
+    assert.equal(d.country, 'GCC');
+    assert.equal(place('coa.zip/coa.pdf'), 'ICH/P-11');
+    assert.equal(place('specification.rar/specification.docx'), 'ICH/P-09');
+    assert.equal(place('stability (scan).pdf'), 'ICH/P-16');
+    assert.match(await page.textContent('h2 small'), /الخليج · الكويت/);
+    const level = id => page.evaluate(x => window.__workshop.state.board.places.find(p => p.id === x)?.level, id);
+    assert.equal(await level('GCC/GCC-1.7.2'), 'R', 'a CPP for an imported product outside Saudi Arabia');
+    // the rule card of the GMP certificate's place: the Gulf's file rules, each with its source
+    await page.click('[data-act="tab"][data-id="board"]');
+    await page.click('[data-act="place"][data-id="GCC/GCC-1.7.1"]');
+    const card = await page.textContent('#drawer');
+    assert.match(card, /GCC Module 1 Specifications/);
+    assert.match(card, /§2\.4\.4/);
+    assert.match(card, /100 ميجا/);
+    await page.click('[data-act="drawer-close"]');
+    // a missing place's rule says the Gulf's Module 1, not Egypt's table
+    const missing = await page.evaluate(() => window.__workshop.state.findings.find(f => f.id === 'missing-GCC/GCC-1.7.1'));
+    assert.match(missing.rule.ar, /موديول 1 بتاع الخليج/);
+    assert.ok(!/NP\.CAPP/.test(JSON.stringify(missing.rule)));
+    // the ready folder: ICH's places by their CTD numbers
+    await page.click('[data-act="tab"][data-id="ready"]');
+    const [dl] = await Promise.all([page.waitForEvent('download'), page.click('[data-act="ready-zip"]')]);
+    const names = (await unzip(new Uint8Array(fs.readFileSync(await dl.path())))).files.map(f => f.name);
+    assert.ok(names.some(n => /\/Module 3\/3\.2\.P\.5\.1 [^/]+\/[^/]+\.(docx|pdf)$/.test(n)), names.join('\n'));
+    assert.deepEqual(errors, []);
+    await ctx.close();
+  } finally { await browser.close(); }
+});

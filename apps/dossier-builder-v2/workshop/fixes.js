@@ -4,6 +4,7 @@
 // program can write (workshop/generators.js), written again whenever the dossier's data change.
 import { fold } from '../core/fold.js';
 import { withOutline, withTitle, picturesToPdf, pdfInfo } from './pdfops.js';
+import { formatOf } from './board.js';
 import { draftFor, GENERATORS } from './generators.js';
 import { docxOf, gapsOf } from './docx.js';
 import { sha256 } from './store.js';
@@ -34,7 +35,7 @@ export async function fixAll(d, findings, env) {
     try {
       const bytes = await env.getBlob(d.id, doc.fixed || doc.sha);
       let out = null, ar = '';
-      if (f.fix.auto === 'version') { out = await withTitle(bytes, `${doc.name}`); ar = 'اتحفظ PDF نسخة 1.7 من غير تغيير في الصفحات'; }
+      if (f.fix.auto === 'version') { const v = formatOf(d.country).find(x => x.id === 'version')?.target || '1.7'; out = await withTitle(bytes, `${doc.name}`, { version: v }); ar = `اتحفظ PDF نسخة ${v} من غير تغيير في الصفحات`; }
       else if (f.fix.auto === 'outline') {
         const items = outlineFromToc(doc.pages);
         if (!items.length) { f.fixFailed = 'مالقاش سطور في الفهرس فيها أرقام صفحات'; continue; }

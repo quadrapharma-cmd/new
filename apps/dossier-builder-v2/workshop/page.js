@@ -13,7 +13,7 @@ import { createClaudeReader } from '../prep/claude-read.js';
 import { extract as unrarInWorker } from '../prep/rar.js';
 import { readFiles, whyOf } from '../prep/read.js';
 import { desktopAssets } from './desktop-assets.js';
-import { boardOf, ruleCard, COUNTRIES, QUESTIONS, PARTY, DESIGN_PLACES } from './board.js';
+import { boardOf, ruleCard, COUNTRIES, QUESTIONS, PARTY, DESIGN_PLACES, answerOf, shownOf } from './board.js';
 import { newDossier, addFiles, understand, moveDoc, log, partyFor } from './pipeline.js';
 import { checkDossier, placeStatus } from './checks.js';
 import { fixAll, writeDrafts } from './fixes.js';
@@ -447,24 +447,31 @@ function viewHome() {
   <section class="box"><h2>ملفاتي <small>محفوظة في المتصفح ده على جهازك</small></h2>${list ? `<div class="cards">${list}</div>` : '<p class="empty">لسه مفيش ملفات. ابدأ بـ «ملف جديد».</p>'}</section>`;
 }
 
+const PROFILE_DEFAULT = boardOf(KNOW, { countryId: 'EG' }).env;
+// The dossier's case in a line: Egypt's column of NP.CAPP.065 and the request; another country's own answers that shape its board.
+function caseLine(d) {
+  const c = state.board.country, said = k => QUESTIONS[k]?.options[shownOf(k, d.profile[k] ?? PROFILE_DEFAULT[k])] || '';
+  if (c.id === 'EG') return `العمود <span class="ltr">${esc(state.board.column)}</span> · ${esc(said('activity'))}`;
+  return c.questions.filter(k => !QUESTIONS[k].bool && k !== 'activity').map(k => esc(said(k))).join(' · ');
+}
 function viewWizard() {
   const w = state.wizard;
   const c = COUNTRIES.find(x => x.id === w.country);
-  const q = (key, val) => `<label class="field"><span>${esc(QUESTIONS[key].ar)}</span><select data-wiz="${key}">${Object.entries(QUESTIONS[key].options).map(([k, ar]) => `<option value="${k}"${val === k ? ' selected' : ''}>${esc(ar)}</option>`).join('')}</select></label>`;
+  const q = (key, val) => `<label class="field"><span>${esc(QUESTIONS[key].ar)}</span><select data-wiz="${key}">${Object.entries(QUESTIONS[key].options).map(([k, ar]) => `<option value="${k}"${shownOf(key, val ?? PROFILE_DEFAULT[key]) === k ? ' selected' : ''}>${esc(ar)}</option>`).join('')}</select></label>`;
   return `<section class="box"><h2>ملف جديد <small>١. الدولة</small></h2>
     <div class="choices">${COUNTRIES.map(x => `<button type="button" class="choice" data-act="wiz-country" data-id="${x.id}" aria-pressed="${x.id === w.country}"><b>${esc(x.ar)}</b><span class="fine">${x.full ? 'كامل' : 'عام'}</span></button>`).join('')}</div>
     <p class="fine">${esc(c.note)}</p></section>
   <section class="box"><h2>٢. الطلب والمنتج</h2>
     <div class="fields">
       <label class="field"><span>اسم الملف (اختياري؛ البرنامج بيطلّع اسم المستحضر من المستندات)</span><input data-wiz="name" value="${esc(w.name)}" placeholder="مثلاً: مستحضر X 500 مجم"></label>
-      ${q('activity', w.profile.activity)}${q('dossier_kind', w.profile.dossier_kind)}${q('origin', w.profile.origin)}${q('licence', w.profile.licence)}${q('leaflet', w.profile.leaflet)}
+      ${c.questions.map(k => q(k, w.profile[k])).join('')}
     </div>
     <p class="fine">${w.country === 'EG' ? `الإجابات دي بتحدد إيه المطلوب في ملفك من جدول NP.CAPP.065 (العمود: <span class="ltr">${esc(boardOf(KNOW, { countryId: w.country, profile: w.profile }).column)}</span>).`
-      : 'الإجابات دي بتحدد إيه المطلوب في ملفك من موديول 1 بتاع الدولة في المكتبة.'} تقدر تغيّرها بعدين من «المعلومات».</p></section>
+      : `الإجابات دي بتحدد إيه المطلوب في ملفك من موديول 1 بتاع ${esc(c.ar)} ومن موديولات ICH (${boardOf(KNOW, { countryId: w.country, profile: w.profile }).places.filter(p => p.level === 'R').length} مكان مطلوب).`} تقدر تغيّرها بعدين من «المعلومات».</p></section>
   <section class="box"><h2>٣. ارمي كل اللي عندك هنا</h2>
     <div class="drop" id="drop"><p>اسحب الملفات أو الفولدر هنا</p>
       <div class="row" style="justify-content:center"><label class="btn"><input type="file" id="wiz-files" multiple>اختار ملفات</label><label class="btn quiet"><input type="file" id="wiz-folder" webkitdirectory multiple>اختار فولدر</label></div>
-      <p class="fine">أي صيغة: PDF فيه نص أو ممسوح، Word قديم وجديد، صور، ZIP و RAR (ولو جوه بعض).</p>
+      <p class="fine">أي صيغة: PDF فيه نص أو ممسوح، Word وExcel وPowerPoint قديم وجديد، صور وPhotoshop، تصميمات InDesign، ZIP وRAR و7z (ولو جوه بعض).</p>
       <p class="picked">${w.files.length ? `اخترت ${w.files.length} ${w.files.length === 1 ? 'ملف' : 'ملفات'}: ${esc(w.files.slice(0, 6).map(f => f.name).join('، '))}${w.files.length > 6 ? '…' : ''}` : 'لسه مااخترتش ملفات (تقدر تبدأ من غيرها وتضيفها بعدين).'}</p></div>
     <p class="fine">${claudeOn() ? (state.claude.reader === 'claude' ? 'Claude هيقرا الصفحات الممسوحة ويحط اللي القواعد ماعرفتهوش (على مفتاحك).' : 'قارئ المسح على الجهاز هيقرا الصفحات الممسوحة؛ Claude هيحط اللي القواعد ماعرفتهوش.') : 'من غير مفتاح Claude: قارئ المسح على الجهاز بيقرا الممسوح، والقواعد بس بتعرف الأماكن. تقدر تحط المفتاح من «الإعدادات».'}</p>
     <div class="row"><button class="btn" data-act="wiz-start" data-auto="1">شغّل لوحدك</button><button class="btn quiet" data-act="wiz-start" data-auto="0">خطوة بخطوة</button><button class="btn quiet" data-act="home">رجوع</button></div>
@@ -479,7 +486,7 @@ function viewDossier() {
   const tabs = [['board', 'اللوحة'], ['docs', `المستندات (${docsOf(d).length})`], ['data', 'المعلومات'], ['needs', 'محتاج منك'], ['ready', 'الملف الجاهز'], ['ask', 'اسأل Claude'], ['log', 'السجل']];
   const run = state.running;
   return `<section class="box">
-    <div class="row" style="justify-content:space-between"><h2>${esc(d.name)} <small>${esc(state.board.country.ar)} · العمود <span class="ltr">${esc(state.board.column)}</span> · ${esc(QUESTIONS.activity.options[d.profile.activity] || '')}</small></h2>
+    <div class="row" style="justify-content:space-between"><h2>${esc(d.name)} <small>${esc(state.board.country.ar)} · ${caseLine(d)}</small></h2>
       <div class="row"><label class="btn small quiet"><input type="file" id="add-files" multiple>ضيف ملفات</label><label class="btn small quiet"><input type="file" id="add-folder" webkitdirectory multiple>ضيف فولدر</label>
       <button class="btn small" data-act="run-all"${run ? ' disabled' : ''}>شغّل لوحدك</button></div></div>
     <ol class="stages">${STAGES.map(([id, ar]) => `<li data-stage="${id}" class="${id === 'new' ? 'done' : d.stages?.[id] || ''}"><b>${ar}</b></li>`).join('')}</ol>
@@ -568,14 +575,14 @@ function tabData() {
   }).join('');
   const comp = (data.composition?.value || []).map(c => `<li dir="auto">${esc(c.value)}</li>`).join('');
   const company = COMPANY_FIELDS.map(([k, ar]) => `<label class="field"><span>${esc(ar)}</span><input class="cv" data-key="${k}" value="${esc(d.company?.[k] || '')}" dir="auto"></label>`).join('');
-  const q = key => `<label class="field"><span>${esc(QUESTIONS[key].ar)}</span><select class="qv" data-key="${key}">${Object.entries(QUESTIONS[key].options).map(([k, ar]) => `<option value="${k}"${d.profile[key] === k ? ' selected' : ''}>${esc(ar)}</option>`).join('')}</select></label>`;
+  const q = key => `<label class="field"><span>${esc(QUESTIONS[key].ar)}</span><select class="qv" data-key="${key}">${Object.entries(QUESTIONS[key].options).map(([k, ar]) => `<option value="${k}"${shownOf(key, d.profile[key] ?? PROFILE_DEFAULT[key]) === k ? ' selected' : ''}>${esc(ar)}</option>`).join('')}</select></label>`;
   return `<div class="box"><h3>بيانات المنتج <small class="fine">من المستندات، وكل قيمة بمصدرها. تقدر تصحّحها.</small></h3>
       <div class="scroll"><table class="facts"><tr><th>المعلومة</th><th>القيمة</th><th>من فين</th></tr>${rows}</table></div>
       ${comp ? `<div><b>التركيب</b> <span class="fine">(من «${esc(data.composition.from?.name || '')}»)</span><ul>${comp}</ul></div>` : ''}
       <div class="row"><button class="btn small" data-act="save-product">احفظ بيانات المنتج</button></div></div>
     <div class="box"><h3>بيانات الشركة <small class="fine">البرنامج مابيقدرش يقراها من المستندات؛ بتتحط في المسودات.</small></h3><div class="fields">${company}</div>
       <div class="row"><button class="btn small" data-act="save-company">احفظ وحدّث المسودات</button></div></div>
-    <div class="box"><h3>الطلب</h3><div class="fields">${q('activity')}${q('dossier_kind')}${q('origin')}${q('licence')}${q('leaflet')}</div>
+    <div class="box"><h3>الطلب</h3><div class="fields">${state.board.country.questions.map(q).join('')}</div>
       <div class="row"><button class="btn small" data-act="save-profile">احفظ (اللوحة هتتحدّث)</button></div></div>`;
 }
 
@@ -644,7 +651,7 @@ function viewDrawer() {
       ${gapsOf(draft.model).length ? `<div class="status warn">ناقص ${gapsOf(draft.model).length}: ${esc(gapsOf(draft.model).join('، '))}</div>` : ''}
       ${htmlOf(draft.model)}${draft.model.note ? `<p class="cite">${esc(draft.model.note)}</p>` : ''}`;
   }
-  const card = ruleCard(KNOW, dr.id), p = state.board.places.find(x => x.id === dr.id);
+  const card = ruleCard(KNOW, dr.id, state.d.country), p = state.board.places.find(x => x.id === dr.id);
   if (!card) return '<button class="btn small quiet close" data-act="drawer-close">اقفل ✕</button>';
   const docs = docsOf(state.d).filter(x => x.place === dr.id);
   const fs = state.findings.filter(f => f.place === dr.id || docs.some(x => x.id === f.doc));
@@ -659,6 +666,7 @@ function viewDrawer() {
       ${fs.length ? `<div><span class="lab">الملاحظات</span>${fs.map(f => `<span class="${f.level === 'red' ? 'badge bad' : 'badge warn'}">${esc(f.title)}</span>`).join(' ')}</div>` : ''}
       <div><span class="lab">إزاي بيتعرف</span><span>${card.recognise.types.length ? esc(card.recognise.types.join('، ')) + ' · ' : ''}${card.recognise.words.length ? `كلمات: <span dir="ltr">${esc(card.recognise.words.join(' · '))}</span>` : 'من غير كلمات تعرّفه في المكتبة لسه: Claude أو انت بتحطوه'}</span></div>
       <div><span class="lab">لازم يكون فيه</span><span dir="ltr" style="text-align:left">${esc(card.must.en || '—')}</span>${card.must.note ? `<span class="fine" dir="ltr">${esc(card.must.note)}</span>` : ''}</div>
+      ${!card.validity && card.party.party === 'third' ? '<div><span class="lab">صلاحيته</span><span>من التاريخ المكتوب عليه (تاريخ الانتهاء): المكتبة مافيهاش مدة صلاحية عامة للنوع ده في قواعد الدولة دي.</span></div>' : ''}
       ${card.validity ? `<div><span class="lab">صلاحيته</span><span>${card.validity.months ? `${card.validity.months} شهر` : 'التاريخ المكتوب عليه'}${card.validity.warn_days ? ` · تنبيه قبلها بـ ${card.validity.warn_days} يوم` : ''}</span><span class="cite" dir="ltr">${esc(card.validity.note)}</span><span class="cite">${cite(card.validity.cite)}</span></div>` : ''}
       ${card.format.length ? `<div><span class="lab">شكله كملف</span>${card.format.map(f => `<span>● ${esc(f.ar)} <span class="cite">(${cite(f.cite)})</span></span>`).join('')}</div>` : ''}
       <div><span class="lab">مين يعدّل فيه</span><span>${esc(card.party.ar)}</span></div>
@@ -837,7 +845,7 @@ document.addEventListener('click', async e => {
       const { typeAndPlace, factsByRules } = await import('./understand.js'); Object.assign(doc, typeAndPlace(doc.pages, {}), { facts: factsByRules(doc.pages), placeBy: 'rules', state: 'placed' }); log(d, 'cut-undone', { doc: id }); await changed(); }
     else if (act === 'save-product') { const d = state.d; d.product = d.product || {}; for (const i of document.querySelectorAll('.pv')) { if (i.value.trim()) d.product[i.dataset.key] = { value: i.value.trim(), from: 'you' }; else delete d.product[i.dataset.key]; } await changed(); toast('اتحفظ.'); }
     else if (act === 'save-company') { const d = state.d; d.company = {}; for (const i of document.querySelectorAll('.cv')) if (i.value.trim()) d.company[i.dataset.key] = i.value.trim(); log(d, 'company'); await writeDrafts(d, state.board, env(), { only: Object.keys(state.drafts) }); await changed(); toast('اتحفظت، والمسودات اتحدّثت.'); }
-    else if (act === 'save-profile') { const d = state.d; for (const s of document.querySelectorAll('.qv')) d.profile[s.dataset.key] = s.value; log(d, 'profile'); await changed(); toast('الطلب اتغيّر، واللوحة اتحدّثت.'); }
+    else if (act === 'save-profile') { const d = state.d; for (const s of document.querySelectorAll('.qv')) d.profile[s.dataset.key] = answerOf(s.dataset.key, s.value); log(d, 'profile'); await changed(); toast('الطلب اتغيّر، واللوحة اتحدّثت.'); }
     else if (act === 'ready-zip') { const r = await readyZip(state.d, state.board, state.findings, state.needs, { getBlob: store.getBlob, draftBytes: async doc => docxOf(draftFor(doc.place, state.d).model) }); download(`${r.layout.root}.zip`, r.zip, 'application/zip'); }
     else if (act === 'ready-report') { const html = reportHtml(state.d, state.board, state.findings, state.needs, layoutOf(state.d, state.board)); const url = URL.createObjectURL(new Blob([html], { type: 'text/html' })); window.open(url, '_blank'); }
     else if (act === 'ask-stop') state.ask.controller?.abort();
@@ -853,7 +861,7 @@ document.addEventListener('click', async e => {
 document.addEventListener('change', async e => {
   const el = e.target;
   try {
-    if (el.matches('[data-wiz]')) { const w = state.wizard; if (el.dataset.wiz === 'name') w.name = el.value; else w.profile[el.dataset.wiz] = el.value; if (el.dataset.wiz !== 'name') render(); return; }
+    if (el.matches('[data-wiz]')) { const w = state.wizard; if (el.dataset.wiz === 'name') w.name = el.value; else w.profile[el.dataset.wiz] = answerOf(el.dataset.wiz, el.value); if (el.dataset.wiz !== 'name') render(); return; }
     if (el.id === 'wiz-files' || el.id === 'wiz-folder') { state.wizard.files.push(...await pickedFiles(el.files)); el.value = ''; render(); return; }
     if (el.id === 'add-files' || el.id === 'add-folder') { const files = await pickedFiles(el.files); el.value = ''; if (files.length) await runLine(files, { auto: true }); return; }
     if (el.id === 'import-file') { const f = el.files[0]; el.value = ''; if (f) { const d = await store.importDossier(new Uint8Array(await f.arrayBuffer())); await openDossier(d.id); toast('الملف اتفتح.'); } return; }

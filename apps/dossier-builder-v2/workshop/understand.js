@@ -31,7 +31,7 @@ export function placesByWords(pages, recognition = {}, setPrefix = 'EG-EDA/') {
       if (hits(title, w)) { score += 3 * n + (n > 1 ? 1 : 0); found.push(w); }
       else if (len > SHORT && n > 1 && hits(head, w)) { score += n; found.push(w); }
     }
-    if (score) out.push({ place: setPrefix + short, score, words: found });
+    if (score) out.push({ place: short.includes('/') ? short : setPrefix + short, score, words: found });   // a key is a place's id, or Egypt's short id
   }
   return out.sort((a, b) => b.score - a.score);
 }
@@ -39,32 +39,38 @@ export function placesByWords(pages, recognition = {}, setPrefix = 'EG-EDA/') {
 // Places the library's words cannot tell apart, told apart by what the paper is about: a GMP certificate of an active substance's
 // maker goes to 1.2.4.2, of the product's maker to 1.2.4.1; a stability paper about the active substance to 3.2.S.7.
 const API = /\b(api|apis|active (pharmaceutical )?(ingredient|substance)s?|drug substance)\b|ماده فعاله|المواد الفعاله/;
+// (by the places' short ids, so the same two places of the common modules are told apart in every country's dossier)
 const TIES = [
-  { places: ['EG-EDA/M1-37', 'EG-EDA/M1-38'], pick: head => (API.test(head) ? 'EG-EDA/M1-38' : 'EG-EDA/M1-37') },
-  { places: ['EG-EDA/P-16', 'EG-EDA/S-14'], pick: head => (API.test(head) ? 'EG-EDA/S-14' : 'EG-EDA/P-16') },
+  { places: ['M1-37', 'M1-38'], pick: head => (API.test(head) ? 'M1-38' : 'M1-37') },
+  { places: ['P-16', 'S-14'], pick: head => (API.test(head) ? 'S-14' : 'P-16') },
 ];
+const shortOf = id => String(id || '').split('/').pop();
 
 // What a document is and where it goes, by the rules: {type, type_ar, doctype, place, sure, by: 'rules', words?}
 export function typeAndPlace(pages, { recognition = {}, places = null } = {}) {
   const t = typeOf(pages);
   const allowed = id => !places || places.has(id);
-  if (t !== UNKNOWN) {
-    const place = (t.places || []).find(allowed) || null;
-    return { type: t.type, type_ar: t.ar, doctype: t.doctype, place, sure: !!place, by: 'rules' };
+  // the same place in the country's own sets: Module 2–5 places carry the same short id in every country (EG-EDA/P-09, ICH/P-09)
+  const twin = id => (places ? [...places].find(x => shortOf(x) === shortOf(id)) || null : null);
+  const typed = t !== UNKNOWN ? { type: t.type, type_ar: t.ar, doctype: t.doctype } : null;
+  if (typed) {
+    const place = (t.places || []).find(allowed) || (t.places || []).map(twin).find(Boolean) || null;
+    if (place || !places) return { ...typed, place, sure: !!place, by: 'rules' };
   }
+  // not a type the rules know, or its places are not in this dossier: the words that recognise the places of this country's dossier
   const ranked = placesByWords(pages, recognition).filter(r => allowed(r.place));
   const [first, second] = ranked;
-  const tie = first && second && first.score === second.score && TIES.find(t => t.places.includes(first.place) && t.places.includes(second.place));
+  const tie = first && second && first.score === second.score && TIES.find(t => t.places.includes(shortOf(first.place)) && t.places.includes(shortOf(second.place)));
   if (tie) {
     const head = fold(pages.slice(0, 2).map(p => p.text || '').join('\n'));
-    const pick = tie.pick(head);
-    if (allowed(pick)) return { type: 'place', type_ar: null, doctype: null, place: pick, sure: first.score >= 4, by: 'rules', words: first.words };
+    const pick = [first.place, second.place].find(x => shortOf(x) === tie.pick(head));
+    if (pick && allowed(pick)) return { type: 'place', type_ar: null, doctype: null, ...typed, place: pick, sure: first.score >= 4, by: 'rules', words: first.words };
   }
   const [best, next] = ranked;
   if (best && best.score >= 3 && (!next || best.score >= next.score + 2)) {
-    return { type: 'place', type_ar: null, doctype: null, place: best.place, sure: best.score >= 4, by: 'rules', words: best.words };
+    return { type: 'place', type_ar: null, doctype: null, ...typed, place: best.place, sure: best.score >= 4, by: 'rules', words: best.words };
   }
-  return { type: UNKNOWN.type, type_ar: UNKNOWN.ar, doctype: null, place: best?.place && allowed(best.place) ? best.place : null, sure: false, by: 'rules',
+  return { type: UNKNOWN.type, type_ar: UNKNOWN.ar, doctype: null, ...typed, place: best?.place && allowed(best.place) ? best.place : null, sure: false, by: 'rules',
            ...(best ? { words: best.words, maybe: ranked.slice(0, 3).map(r => r.place) } : {}) };
 }
 

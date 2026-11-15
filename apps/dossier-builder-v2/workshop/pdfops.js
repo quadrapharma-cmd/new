@@ -125,11 +125,15 @@ export async function withOutline(bytes, items, { title } = {}) {
   return doc.save({ useObjectStreams: false });
 }
 
-export async function withTitle(bytes, title) {
+// Saved again (with its title): pdf-lib writes PDF 1.7 without object streams; a country that asks for 1.4 gets its header line
+// saying 1.4 (a file that was 1.3 or older holds nothing newer, and pdf-lib adds no object or cross-reference streams).
+export async function withTitle(bytes, title, { version = '1.7' } = {}) {
   const doc = await load(bytes);
   if (doc.isEncrypted) throw Object.assign(new Error('the file is protected'), { code: 'encrypted' });
   doc.setTitle(title, { showInWindowTitleBar: true });
-  return doc.save({ useObjectStreams: false });
+  const out = await doc.save({ useObjectStreams: false });
+  if (version !== '1.7' && /^%PDF-1\.7/.test(String.fromCharCode(...out.subarray(0, 8)))) out.set([...version].map(c => c.charCodeAt(0)), 5);
+  return out;
 }
 
 // Pictures (JPEG or PNG bytes) as the pages of one PDF, each page the picture's own shape at A4 width.

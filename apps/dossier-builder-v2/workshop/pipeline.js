@@ -55,13 +55,33 @@ export async function addFiles(d, files, env) {
 const visible = d => d.docs.filter(x => !x.dup && !x.split);
 const pagesText = (pages, from = 1, to = pages.length) => pages.filter(p => p.n >= from && p.n <= to);
 
+// The words that recognise each place of the dossier's board, by the place's id: the country's own sets, and — for a country whose
+// Modules 2–5 are ICH's — Egypt's words for the same places (the common modules' places share their short ids: P-09, S-14…).
+export function recognitionOf(knowledge, board) {
+  const out = {};
+  const put = (id, words) => { out[id] = [...new Set([...(out[id] || []), ...words])]; };
+  for (const set of board.country.sets) {
+    for (const [short, words] of Object.entries(knowledge.recognition?.[set] || {})) {
+      const p = board.places.find(x => x.set === set && x.id.split('/').pop() === short);
+      if (p) put(p.id, words);
+    }
+  }
+  if (board.country.id !== 'EG') {
+    for (const [short, words] of Object.entries(knowledge.recognition?.['eg-eda-ctd'] || {})) {
+      if (short.startsWith('M1-')) continue;
+      const p = board.places.find(x => x.set === 'ich-m4-ctd' && x.id.split('/').pop() === short);
+      if (p) put(p.id, words);
+    }
+  }
+  return out;
+}
+
 // The documents not yet understood: cut where a file holds several, typed and placed, their facts read.
 // env: {knowledge, getBlob, putBlob, claude?: {sample}, onProgress?}
 export async function understand(d, env) {
   const board = boardOf(env.knowledge, { countryId: d.country, profile: d.profile });
   const open = new Set(board.places.filter(p => p.level !== 'NA').map(p => p.id));
-  const recognition = Object.assign({}, ...board.country.sets.map(s => env.knowledge.recognition?.[s] || {}));
-  const opts = { recognition: d.country === 'EG' ? recognition : {}, places: open };
+  const opts = { recognition: recognitionOf(env.knowledge, board), places: open };
   for (const doc of [...visible(d)]) {
     if (doc.state !== 'read') continue;
     env.onProgress?.({ stage: 'understand', name: doc.name });
