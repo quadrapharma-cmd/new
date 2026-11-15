@@ -201,7 +201,7 @@
   auto: {kind: data, check: cep_route}
   deficiency: {en: "For a CEP-covered API the declared quality standard should be the European Pharmacopoeia, the applicant's API specification and at least two batch analyses should be provided, and the sections not covered by the CEP (container closure, stability where no retest period is granted) should be submitted.", ar: "للمادة المغطاة بشهادة CEP يجب أن يكون المرجع المعلَن دستور الأدوية الأوروبي، مع تقديم مواصفة المادة لدى مقدم الطلب وتحليل تشغيلتين على الأقل، وتقديم الأقسام غير المغطاة بالشهادة (العبوة، والثبات عند عدم منح فترة إعادة الاختبار)."}
   action: {type: edit_data, target: apis}
-  source: {code: NP.CAPP.040 v1/2022, section: "Option 2 — CEP", quote: "Specifying a different reference quality standard for the API other than the European Pharmacopeia (ex: USP, In-House) · Absence of Batch Analysis for 2 API batches"}
+  source: {code: "NP.CAPP.040 v1/2022", section: "Option 2", quote: "Specifying a different reference quality standard for the API other than the European Pharmacopeia (ex: USP, In-House) · Absence of Batch Analysis for 2 API batches"}
 - id: QM-P1-01
   dept: quality
   layer: eda
@@ -425,7 +425,7 @@
   auto: {kind: data, check: stability_batches}
   deficiency: {en: "Stability data at submission should cover at least two primary batches of at least pilot scale per strength and container, with at least six months of accelerated and six months of long-term data.", ar: "يجب أن تغطي بيانات الثبات عند التقديم تشغيلتين أساسيتين على الأقل بحجم تجريبي لكل تركيز وعبوة، مع ستة أشهر على الأقل من البيانات المعجَّلة وستة أشهر طويلة الأمد."}
   action: {type: edit_data, target: stability}
-  source: {code: WHO TRS 986 Annex 6, section: "stability — primary batches", quote: "at least 2 batches of at least pilot scale"}
+  source: {code: "WHO TRS 986 Annex 6", section: "stability", quote: "at least 2 batches of at least pilot scale"}
   anchor: {code: WHO PQ screening checklist 05/2021, section: "≥ 6 months accelerated + ≥ 6 months long-term on ≥ 2 pilot-scale FPP batches"}
 - id: QM-R11-01
   dept: quality
@@ -438,7 +438,7 @@
   auto: {kind: slot}
   deficiency: {en: "The executed production documents of the manufactured batches (including the BE batch) should be provided in 3.2.R.1.1 with legible operator notations.", ar: "يجب تقديم سجلات الإنتاج المنفذة للتشغيلات المصنَّعة (بما فيها تشغيلة التكافؤ الحيوي) في 3.2.R.1.1 بتدوينات مقروءة."}
   action: {type: upload, target: R-01}
-  source: {code: NP.CAPP.040 v1/2022, section: "3.2.R.1.1", quote: "executed records of the three manufactured batches"}
+  source: {code: "NP.CAPP.040 v1/2022", section: "3.2.R.1.1"}
   anchor: {code: WHO TRS 986 Annex 6, section: "3.2.R.1.1 — executed records of the biobatch"}
 - id: QM-QOS-01
   dept: quality
@@ -451,5 +451,5 @@
   auto: {kind: text, min_hits: 2}
   deficiency: {en: "The QOS should follow the ICH M4Q structure (2.3.S, 2.3.P, 2.3.A, 2.3.R) and be consistent with the data in Module 3.", ar: "يجب أن يتبع الملخص الشامل للجودة بنية ICH M4Q (2.3.S، 2.3.P، 2.3.A، 2.3.R) ويتسق مع بيانات الوحدة 3."}
   action: {type: upload, target: M2-02}
-  source: {code: EDA Quality Module guideline v2/2023, section: "4.1 Module 3 — structured CTD format", quote: "Information on Quality should be presented in the structured CTD format"}
+  source: {code: "EDA Quality Module guideline v2/2023", section: "4.1 Module 3", quote: "Information on Quality should be presented in the structured CTD format"}
   anchor: {code: ICH M4Q(R1), section: "2.3 QOS"}

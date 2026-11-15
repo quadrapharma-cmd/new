@@ -25,7 +25,7 @@
   auto: {kind: text, min_hits: 2}
   deficiency: {en: "A nitrosamine risk assessment covering the API and the finished product should be provided, with confirmatory testing where a risk is identified and a control strategy; acceptable intakes for API-related nitrosamines should follow the CPCA approach.", ar: "يجب تقديم تقييم مخاطر النيتروزامين للمادة الفعالة والمنتج النهائي، مع اختبار تأكيدي عند وجود خطر واستراتيجية ضبط؛ وتُشتق المداخل المقبولة للنيتروزامينات المرتبطة بالمادة الفعالة بنهج CPCA."}
   action: {type: upload, target: P-12}
-  source: {code: WHO PQ screening checklist 05/2021, section: "nitrosamine", quote: "Nitrosamine RA declared"}
+  source: {code: "GL.BIOINN/CADC/CAPCARE/CAPP/CIP/PPMA.001 v1/2025", section: "§5.3.1.1; §5.3 (limits); also WHO PQ dossier screening checklist item 11(a)", quote: "Manufacturers should conduct a comprehensive risk assessment for all chemically synthesized APIs and drug products to evaluate the potential for nitrosamine formation or contamination."}
   anchor: {code: EMA/409815/2020 Q&A (rev. 2024) · FDA guidance «Control of nitrosamine impurities» (2024) · ICH M7(R2)}
 - id: IN-Q8-01
   dept: quality
@@ -52,7 +52,7 @@
   auto: {kind: text, min_hits: 2}
   deficiency: {en: "The dissolution method development should demonstrate discriminatory power and justify the conditions, and the acceptance criterion should be derived from the profiles of the bioequivalence batch.", ar: "يجب أن يثبت تطوير طريقة الذوبان قدرتها على التمييز ويبرر ظروفها، وأن يُشتق معيار القبول من منحنيات تشغيلة التكافؤ الحيوي."}
   action: {type: upload, target: P-02}
-  source: {code: GL.CADC.002 v02/2024, section: "6.5.4", quote: "For new pharmaceutical drug products, a complete dissolution study with scientific justification should be submitted"}
+  source: {code: "GL.CADC.002 v3/2026", section: "§5.6.5", quote: "Complete comparative dissolution study in different media may be required."}
   anchor: {code: FDA guidance «Dissolution testing of IR solid oral dosage forms» (1997) · EMA reflection paper on dissolution specification (2017)}
 - id: IN-PV-01
   dept: quality
@@ -104,7 +104,7 @@
   auto: {kind: text, min_hits: 2}
   deficiency: {en: "The validation of each in-house method should address all ICH Q2(R2) characteristics including robustness, intermediate precision and solution stability, and define the system suitability criteria.", ar: "يجب أن يتناول التحقق من كل طريقة داخلية جميع خصائص ICH Q2(R2) بما فيها المتانة والدقة الوسيطة وثبات المحاليل، وأن يحدد معايير ملاءمة النظام."}
   action: {type: upload, target: P-10}
-  source: {code: GL.CADC.002 v02/2024, section: "Annex V", quote: "Revision of method validation and verification requirements (Annex V) to be aligned with ICH Q2(R2)"}
+  source: {code: "GL.CADC.002 v3/2026", section: "Annex V", quote: "Revision of method validation and verification requirements (Annex V) to be aligned with ICH Q2(R2)"}
   anchor: {code: ICH Q2(R2) · ICH Q14}
 - id: IN-EL-01
   dept: quality
@@ -132,7 +132,7 @@
   auto: {kind: text, min_hits: 1}
   deficiency: {en: "Container closure integrity of the sterile product should be demonstrated with a validated method and confirmed over the shelf life.", ar: "يجب إثبات سلامة إغلاق العبوة للمنتج المعقَّم بطريقة متحقَّق منها وتأكيدها على مدى مدة الصلاحية."}
   action: {type: upload, target: P-02}
-  source: {code: WHO PQ screening checklist 05/2021, section: "sterile products (Part C)", quote: "container integrity (microbial or dye ingress)"}
+  source: {code: "WHO PQ screening checklist 05/2021", section: "sterile products (Part C), ii", quote: "Suitability of container closure — compatibility with API, demonstration of seal integrity (e.g. by microbial ingress test, dye ingress test)"}
   anchor: {code: USP <1207> · EU GMP Annex 1 (2022)}
 - id: IN-STER-01
   dept: quality
@@ -146,7 +146,7 @@
   auto: {kind: text, min_hits: 2}
   deficiency: {en: "The sterile-product validation package should include sterilisation and depyrogenation validation, media-fill results, filter validation and a summary of environmental control.", ar: "يجب أن تتضمن حزمة التحقق للمنتج المعقَّم التحقق من التعقيم وإزالة البيروجينات، ونتائج تعبئة الأوساط، والتحقق من المرشحات، وملخص الرقابة البيئية."}
   action: {type: upload, target: P-07}
-  source: {code: WHO PQ screening checklist 05/2021, section: "sterile products (Part C)", quote: "media-fill results … filter validation … sterilisation and depyrogenation validation"}
+  source: {code: "WHO PQ screening checklist 05/2021", section: "sterile products (Part C), viii", quote: "Evidence of validation of the conditions/parameters used for the sterilization/depyrogenation of the processing equipment and accessories, filters and packaging components."}
   anchor: {code: EMA guideline on sterilisation of the medicinal product (2019) · EU GMP Annex 1}
 - id: IN-Q1E-01
   dept: stability
@@ -200,7 +200,7 @@
   auto: {kind: text, min_hits: 2}
   deficiency: {en: "The BE study design should be justified against ICH M13A: fasting or fed condition consistent with the reference labelling, selection of the strength, sampling schedule covering ≥ 80% of AUC, and pre-specified handling of pre-dose concentrations and outliers.", ar: "يجب تبرير تصميم دراسة التكافؤ وفق ICH M13A: حالة الصيام أو الطعام المتسقة مع نشرة المرجع، واختيار التركيز، وجدول أخذ العينات المغطي 80% على الأقل من AUC، ومعالجة محددة مسبقاً للتركيزات قبل الجرعة والقيم الشاذة."}
   action: {type: upload, target: M5-04}
-  source: {code: GL.CAPP.024 v4/2026, section: "references — ICH M13A", quote: "ICH M 13A"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "p.181 (revision history), p.113", quote: "Implementation of ICH -M10 & ICH - M13A Guidelines"}
   anchor: {code: ICH M13A (2024)}
 - id: IN-M10-01
   dept: be
@@ -242,7 +242,7 @@
   auto: {kind: slot}
   deficiency: {en: "The reliance submission should include the complete unredacted assessment report of the reference authority, a sameness letter confirming that the product is identical to the one it approved, and the list of countries with the approval.", ar: "يجب أن يتضمن تقديم الاعتماد تقرير التقييم الكامل غير المحجوب للجهة المرجعية، وخطاب تطابق يؤكد أن المنتج مطابق للمنتج المعتمد لديها، وقائمة الدول مع الموافقة."}
   action: {type: upload, target: M1-17}
-  source: {code: EG Module 1 submission guidance (DRAFT 2026), section: "1.2.7.2 unredacted assessment report", quote: "complete version of assessment report of the SRA in which no information has been blacked out"}
+  source: {code: "GL.CAPP.025 v4/2024", section: "VII; also EG Human Pharmaceutical Module 1 Submission Guidance (draft) 1.2.7.2 unredacted assessment report", quote: "EDA relies on Stringent Regulatory Authorities (SRAs) included in the list of reference countries approved by the Technical Committee of Drug Control"}
   anchor: {code: WHO TRS 1033 Annex 10 (good reliance practices)}
 - id: IN-REL-02
   dept: reliance
@@ -256,7 +256,7 @@
   auto: {kind: none}
   deficiency: {en: "The applicant should demonstrate that the reference approval is in force and that the submitted dossier is the same as the one assessed by the reference authority, with any differences listed and justified.", ar: "يجب أن يثبت مقدم الطلب أن موافقة المرجع سارية وأن الملف المقدم هو نفسه الذي قيّمته الجهة المرجعية، مع سرد أي اختلافات وتبريرها."}
   action: {type: upload, target: M1-17}
-  source: {code: GL.CADC.002 v02/2024, section: "6.5.6", quote: "The products are assessed and analyzed according to their specifications that have been previously approved by the reference country‘s NRA"}
+  source: {code: "GL.CAPP.025 v4/2024", section: "VII; also NP.CAPP.089 v2/2026; GL.CADC.002 v3/2026 §5.6.6", quote: "EDA relies on Stringent Regulatory Authorities (SRAs) included in the list of reference countries approved by the Technical Committee of Drug Control"}
   anchor: {code: WHO TRS 1033 Annex 10 (good reliance practices)}
 - id: IN-GREVP-01
   dept: screening

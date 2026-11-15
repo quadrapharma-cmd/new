@@ -432,7 +432,7 @@
   auto: {kind: text}
   deficiency: {en: "The applicant should provide incurred sample reanalysis results (10% of samples below 1000 and 5% above, around Cmax and in the elimination phase) with at least 67% of repeats within 20% of their mean, or a scientific justification for its absence addressing back-conversion, other ISR data, repeat analyses, PK plausibility and the 90% CI width.", ar: "يجب على مقدم الطلب تقديم نتائج إعادة تحليل العينات الفعلية (10% من العينات دون 1000 و5% فوقها، حول Cmax وفي طور الإطراح) مع 67% على الأقل من التكرارات ضمن 20% من متوسطها، أو تبريراً علمياً لغيابها يتناول التحول العكسي وبيانات ISR الأخرى وإعادة التحاليل ومعقولية الحركية الدوائية وعرض فترة الثقة 90%."}
   action: {type: upload, target: "M5-06"}
-  source: {code: "GL.CAPP.024 v4/2026", section: "2.21 Requirement to perform incurred sample reanalysis (ISR)", quote: "10% of the samples should be reanalysed in case the number of samples is less than 1000 samples"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.21 Requirement to perform incurred sample reanalysis", quote: "10% of the samples should be reanalysed in case the number of samples is less than 1000 samples"}
 - id: BE-28
   dept: be
   layer: eda
@@ -480,7 +480,7 @@
   auto: {kind: none}
   deficiency: {en: "Bioequivalence is not demonstrated: the 90% confidence interval for AUC and/or Cmax falls outside 80-125%; the applicant should provide the statistical summary (Table 3) with least-squares geometric means, ratios and 90% CIs for AUC0-t, AUC0-inf and Cmax.", ar: "لم يُثبت التكافؤ الحيوي: فترة الثقة 90% لـ AUC و/أو Cmax تقع خارج 80-125%؛ ويجب على مقدم الطلب تقديم الملخص الإحصائي (الجدول 3) بالمتوسطات الهندسية بطريقة المربعات الصغرى والنسب وفترات الثقة 90% لـ AUC0-t وAUC0-inf وCmax."}
   action: {type: none, target: "be"}
-  source: {code: "GL.CAPP.024 v4/2026", section: "2.23 Acceptance ranges (2.23.1 AUC-ratio, 2.23.2 Cmax-ratio, 2.23.3 Tmax-difference)", quote: "The 90% confidence interval for this measure of relative bioavailability should lie within a bioequivalence range of 0.80–1.25 (80 – 125%)."}
+  source: {code: "GL.CAPP.024 v4/2026", section: "2.23 Acceptance ranges", quote: "The 90% confidence interval for this measure of relative bioavailability should lie within a bioequivalence range of 0.80–1.25 (80 – 125%)."}
 - id: BE-31
   dept: be
   layer: eda
@@ -641,7 +641,7 @@
   auto: {kind: text}
   deficiency: {en: "The applicant should document the BCS biowaiver conditions: pH-solubility profile in at least three buffers (pH 1.2, 4.5, 6.8 and the pKa) at 37 plus or minus 1 degrees C for the highest single dose in 250 ml, human absorption data, very rapid or similarly rapid comparative dissolution, and an excipient comparison, and confirm that none of the exclusions (NTI, non-linear PK, modified release, oral-cavity absorption, different ester/ether/isomer) applies.", ar: "يجب على مقدم الطلب توثيق شروط الإعفاء الحيوي القائم على BCS: منحنى الذوبانية مع pH في ثلاثة محاليل منظمة على الأقل (pH 1.2 و4.5 و6.8 وعند pKa) عند 37 ± 1 درجة مئوية لأعلى جرعة وحيدة في 250 مل، وبيانات الامتصاص في الإنسان، وانحلالاً مقارناً سريعاً جداً أو سريعاً بالمثل، ومقارنة السواغات، وتأكيد عدم انطباق أي من الاستثناءات (المؤشر العلاجي الضيق، الحركية اللاخطية، الإطلاق المعدل، الامتصاص في تجويف الفم، اختلاف الإستر أو الإيثر أو الأيزومر)."}
   action: {type: upload, target: "M5-05"}
-  source: {code: "GL.CAPP.024 v4/2026", section: "4.5.1 Biowaivers based on the BCS (4.5.1.1-4.5.1.3 and exclusions)", quote: "Either very rapid (> 85 % within 15 minutes) or similarly rapid (85 % within 30 minutes) in vitro dissolution characteristics"}
+  source: {code: "GL.CAPP.024 v4/2026", section: "4.5.1 Biowaivers based on the BCS", quote: "Either very rapid (> 85 % within 15 minutes) or similarly rapid (85 % within 30 minutes) in vitro dissolution characteristics"}
   anchor: {code: "ICH M9", section: ""}
 - id: BE-41
   dept: be
@@ -690,7 +690,7 @@
   auto: {kind: text}
   deficiency: {en: "The applicant should complete the bioequivalence summary tables of Section 7 (Tables 1-17), providing a separate table for each bioequivalence study and each analyte where required, and submit all method validation SOPs.", ar: "يجب على مقدم الطلب استيفاء جداول ملخص التكافؤ الحيوي في القسم 7 (الجداول 1-17)، مع جدول منفصل لكل دراسة تكافؤ حيوي ولكل مادة محللة عند الاقتضاء، وتقديم جميع إجراءات العمل القياسية للتحقق من الطريقة."}
   action: {type: generate, target: "M5-02"}
-  source: {code: "GL.CAPP.024 v4/2026", section: "Section 7 Bioequivalence Summary Tables (Tables 1-17)", quote: "Please provide a separate table for each Bioequivalence Study."}
+  source: {code: "GL.CAPP.024 v4/2026", section: "Section 7 Bioequivalence Summary Tables", quote: "Please provide a separate table for each Bioequivalence Study."}
 - id: BE-44
   dept: be
   layer: eda

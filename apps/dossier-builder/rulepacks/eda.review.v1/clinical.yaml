@@ -13,7 +13,7 @@
   auto: {kind: text, min_hits: 2}
   deficiency: {en: "The non-clinical overview and summaries (2.4, 2.6) should be provided in the ICH M4S structure.", ar: "يجب تقديم النظرة العامة والملخصات غير الإكلينيكية (2.4، 2.6) ببنية ICH M4S."}
   action: {type: upload, target: M2-03}
-  source: {code: NP.CAPP.065 v5/2025, section: "Module 2 (2.4–2.7)", quote: "Non-clinical & clinical overviews and summaries"}
+  source: {code: "NP.CAPP.065 v5/2025", section: "Module 2 (2.4–2.7)"}
   anchor: {code: ICH M4S(R2)}
 - id: CL-M25-01
   dept: clinical
@@ -28,7 +28,7 @@
   auto: {kind: text, min_hits: 2}
   deficiency: {en: "The clinical overview with an explicit benefit–risk assessment and the four clinical summaries of 2.7 should be provided.", ar: "يجب تقديم النظرة العامة الإكلينيكية مع تقييم صريح للفائدة–الخطر والملخصات الإكلينيكية الأربعة في 2.7."}
   action: {type: upload, target: M2-03}
-  source: {code: NP.CAPP.065 v5/2025, section: "Module 2 (2.4–2.7)", quote: "Non-clinical & clinical overviews and summaries"}
+  source: {code: "NP.CAPP.065 v5/2025", section: "Module 2 (2.4–2.7)"}
   anchor: {code: ICH M4E(R2)}
 - id: CL-M4-01
   dept: clinical
@@ -43,7 +43,7 @@
   auto: {kind: text, min_hits: 2}
   deficiency: {en: "The non-clinical study reports should be provided in the 4.2 structure with GLP compliance statements.", ar: "يجب تقديم تقارير الدراسات غير الإكلينيكية ببنية 4.2 مع إقرارات الالتزام بـ GLP."}
   action: {type: upload, target: M4-01}
-  source: {code: NP.CAPP.065 v5/2025, section: "4.2.x", quote: "Non-clinical study reports (pharmacology, PK, toxicology)"}
+  source: {code: "NP.CAPP.065 v5/2025", section: "4.2.x"}
   anchor: {code: ICH M4S(R2) · OECD GLP}
 - id: CL-E3-01
   dept: clinical
@@ -58,7 +58,7 @@
   auto: {kind: text, min_hits: 2}
   deficiency: {en: "Each pivotal clinical study report should follow ICH E3 and include the protocol with amendments, the statistical analysis plan, the data listings and a sample CRF.", ar: "يجب أن يتبع كل تقرير دراسة إكلينيكية محورية ICH E3 ويتضمن البروتوكول وتعديلاته وخطة التحليل الإحصائي وجداول البيانات ونموذج CRF."}
   action: {type: upload, target: M5-12}
-  source: {code: NP.CAPP.065 v5/2025, section: "5.3.5", quote: "Other clinical sections"}
+  source: {code: "NP.CAPP.065 v5/2025", section: "5.3.5"}
   anchor: {code: ICH E3 · ICH E9(R1)}
 - id: CL-E6-01
   dept: clinical
@@ -103,5 +103,5 @@
   auto: {kind: text, min_hits: 2}
   deficiency: {en: "The clinical overview should discuss special populations (paediatric, elderly, renal and hepatic impairment, pregnancy) and justify any absence of data.", ar: "يجب أن تناقش النظرة العامة الإكلينيكية الفئات الخاصة (الأطفال، كبار السن، القصور الكلوي والكبدي، الحمل) وتبرر أي غياب للبيانات."}
   action: {type: upload, target: M2-03}
-  source: {code: NP.CAPP.065 v5/2025, section: "Module 2", quote: "clinical overviews and summaries"}
+  source: {code: "NP.CAPP.065 v5/2025", section: "Module 2"}
   anchor: {code: ICH E11(R1) · ICH E7}

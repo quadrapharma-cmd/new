@@ -15,7 +15,7 @@
   auto: {kind: slot}
   deficiency: {en: "The applicant should submit the registration licence with its attachments (composition, finished product specifications) or the preliminary re-registration approval for an expired licence.", ar: "يجب على مقدم الطلب تقديم ترخيص التسجيل مع مرفقاته (التركيبة ومواصفات المنتج النهائي) أو الموافقة المبدئية على إعادة التسجيل في حالة انتهاء صلاحية الترخيص."}
   action: {type: upload, target: "M1-04"}
-  source: {code: "NP.CAPP.090 v2/2026", section: "Regulatory Documents Folder, item 1 (Administrative Documents)", quote: "Preliminary re-registration approval for expired registration license"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Regulatory Documents Folder, item 1", quote: "Preliminary re-registration approval for expired registration license"}
 - id: ST-02
   dept: stability
   layer: eda
@@ -31,7 +31,7 @@
   auto: {kind: slot}
   deficiency: {en: "The applicant should submit the (e)CPP or free sale certificate with the attached SmPC or insert.", ar: "يجب على مقدم الطلب تقديم شهادة المنتج الصيدلي (الإلكترونية) أو شهادة البيع الحر مرفقاً بها ملخص خصائص المنتج أو النشرة الداخلية."}
   action: {type: upload, target: "M1-14"}
-  source: {code: "NP.CAPP.090 v2/2026", section: "Regulatory Documents Folder, item 1 (Administrative Documents)", quote: "(Electronic) Certificate of Pharmaceutical Product ((e)CPP) / free sale attached with Summary of product characteristics (SmPC) / Insert"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Regulatory Documents Folder, item 1", quote: "(Electronic) Certificate of Pharmaceutical Product ((e)CPP) / free sale attached with Summary of product characteristics (SmPC) / Insert"}
 - id: ST-03
   dept: stability
   layer: eda
@@ -63,7 +63,7 @@
   auto: {kind: text}
   deficiency: {en: "The applicant should submit the EDA reports: previous stability approval(s), recent variation approval(s), the CAO report and the CADC detailed final report of the submitted batches, the CADC renewal certificate of the analysis file and the P-part quality approval, each with its attachments.", ar: "يجب على مقدم الطلب تقديم تقارير هيئة الدواء: موافقات الثبات السابقة، وموافقات التغييرات الحديثة، وتقرير الإدارة المركزية للعمليات والتقرير النهائي التفصيلي للإدارة المركزية للرقابة الدوائية عن التشغيلات المقدمة، وشهادة تجديد ملف التحليل، وموافقة الجزء P، مع مرفقات كل منها."}
   action: {type: upload, target: "M1-34"}
-  source: {code: "NP.CAPP.090 v2/2026", section: "Regulatory Documents Folder, item 2/3 (EDA Reports)", quote: "Central Administration of Drug Control (CADC) detailed final report of submitted batch(es) with its attachment(s)"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Regulatory Documents Folder, item 2/3", quote: "Central Administration of Drug Control (CADC) detailed final report of submitted batch(es) with its attachment(s)"}
 - id: ST-05
   dept: stability
   layer: eda
@@ -79,7 +79,7 @@
   auto: {kind: none}
   deficiency: {en: "The applicant should submit a review of all changes to the product, process and analytical method, a review of the stability monitoring programme results, and a list of validated analytical and manufacturing procedures with their revalidation dates.", ar: "يجب على مقدم الطلب تقديم مراجعة لجميع التغييرات في المنتج وعملية التصنيع وطريقة التحليل، ومراجعة لنتائج برنامج متابعة الثبات، وقائمة بالإجراءات التحليلية والتصنيعية المعتمدة مع تواريخ إعادة التحقق."}
   action: {type: upload, target: "P-16"}
-  source: {code: "NP.CAPP.090 v2/2026", section: "Regulatory Documents Folder, item 4 (Applicant documents)", quote: "A review of all changes carried out to the product, process & analytical method"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Regulatory Documents Folder, item 4", quote: "A review of all changes carried out to the product, process & analytical method"}
 - id: ST-06
   dept: stability
   layer: eda
@@ -127,7 +127,7 @@
   auto: {kind: none}
   deficiency: {en: "The applicant should submit the stability performer's EDA licence and the stability study contract with its annex, both legalized (bank signatures and EDA legal affairs), and a valid legalized microbiological testing contract that specifies the type of microbiological tests.", ar: "يجب على مقدم الطلب تقديم ترخيص هيئة الدواء لجهة إجراء الثبات وعقد دراسة الثبات مع ملحقه موثقين (توقيعات بنكية والشؤون القانونية بالهيئة)، وعقد ساري وموثق للاختبارات الميكروبيولوجية يوضح نوع الاختبارات."}
   action: {type: upload, target: "M1-24"}
-  source: {code: "NP.CAPP.090 v2/2026", section: "Regulatory Documents Folder, item 6 (Outsourcing Documents)", quote: "Both contract and annex must be legalized (bank signatures and EDA legal affairs)"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Regulatory Documents Folder, item 6", quote: "Both contract and annex must be legalized (bank signatures and EDA legal affairs)"}
 - id: ST-09
   dept: stability
   layer: eda
@@ -143,7 +143,7 @@
   auto: {kind: none}
   deficiency: {en: "The applicant should submit the payment code or receipt copy for the shelf-life extension, storage condition or in-use change.", ar: "يجب على مقدم الطلب تقديم كود السداد أو صورة الإيصال الخاص بتغيير مدة الصلاحية أو ظروف التخزين أو مدة الاستخدام بعد الفتح."}
   action: {type: upload, target: "M1-03"}
-  source: {code: "NP.CAPP.090 v2/2026", section: "Regulatory Documents Folder, item 7 (Fees)", quote: "Payment code / Receipt copy In case of change in the following from last stability approval / reg. license): 1- Shelf-life extension"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Regulatory Documents Folder, item 7", quote: "Payment code / Receipt copy In case of change in the following from last stability approval / reg. license): 1- Shelf-life extension"}
 - id: ST-10
   dept: stability
   layer: eda
@@ -223,7 +223,7 @@
   auto: {kind: text}
   deficiency: {en: "The applicant should submit the Annex IX post-approval stability protocol and commitment (long-term completion of 12 and/or 24 months on the submitted pilot batches, commercial-batch and ongoing studies under the same protocol) and the Annex X declaration to inform the Stability administration of any OOS.", ar: "يجب على مقدم الطلب تقديم بروتوكول وتعهد الثبات بعد الموافقة (الملحق التاسع) بإكمال الدراسة طويلة الأمد لمدة 12 و/أو 24 شهراً على التشغيلات التجريبية المقدمة ودراسات التشغيلات التجارية والدراسات المستمرة بنفس البروتوكول، وإقرار الملحق العاشر بإبلاغ الإدارة العامة للثبات بأي نتائج خارج المواصفات."}
   action: {type: generate, target: "P-16"}
-  source: {code: "NP.CAPP.090 v2/2026", section: "Technical Documents Folder, Post approval stability protocol and stability commitment (Annex IX, Annex X)", quote: "To complete shelf study (12 and/ or 24 months) on the submitted pilot batches"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Technical Documents Folder, Post approval stability protocol and stability commitment", quote: "To complete shelf study (12 and/ or 24 months) on the submitted pilot batches"}
 - id: ST-15
   dept: stability
   layer: eda
@@ -271,7 +271,7 @@
   auto: {kind: text}
   deficiency: {en: "The applicant should state the maximum holding time of the bulk FPP and, if it is longer than 30 days, support it with stability data; any holding time of an aseptically processed bulk should be justified.", ar: "يجب على مقدم الطلب بيان أقصى فترة انتظار للمنتج النهائي السائب ودعمها ببيانات ثبات إذا زادت عن 30 يوماً، مع تبرير أي فترة انتظار للمنتج المصنع بالتعبئة اللاعقيمية."}
   action: {type: upload, target: "P-16"}
-  source: {code: "NP.CAPP.090 v2/2026", section: "Technical Documents Folder, P-Part Note (bulk holding time)", quote: "The holding time should be supported by the submission of stability data, if longer than 30 days."}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Technical Documents Folder, P-Part Note", quote: "The holding time should be supported by the submission of stability data, if longer than 30 days."}
   anchor: {code: "WHO TRS 986 Annex 6", section: ""}
 - id: ST-18
   dept: stability
@@ -354,7 +354,7 @@
   auto: {kind: text}
   deficiency: {en: "The applicant should submit stability-indicating analytical procedures signed and stamped by the stability testing site, follow the pharmacopoeial procedure where available, complete Annex IV for the ICH impurity thresholds and justify any deviation from the ICH limits.", ar: "يجب على مقدم الطلب تقديم إجراءات تحليلية دالة على الثبات موقعة ومختومة من موقع اختبار الثبات، واتباع الطريقة الدستورية عند توفرها، واستيفاء الملحق الرابع لحدود ICH للشوائب، وتبرير أي انحراف عن حدود ICH."}
   action: {type: upload, target: "P-10"}
-  source: {code: "NP.CAPP.090 v2/2026", section: "Technical Documents Folder, Method of analysis (3.2.P.5.2)", quote: "Should include stability-indicating analytical- procedures used for physical, chemical and microbiological analysis"}
+  source: {code: "NP.CAPP.090 v2/2026", section: "Technical Documents Folder, Method of analysis", quote: "Should include stability-indicating analytical- procedures used for physical, chemical and microbiological analysis"}
 - id: ST-23
   dept: stability
   layer: eda

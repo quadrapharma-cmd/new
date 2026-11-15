@@ -11,7 +11,7 @@
   auto: {kind: text}
   deficiency: {en: "The cover letter should include a statement that the submitted data are true, complete and correct.", ar: "يجب أن يتضمن خطاب التغطية إقراراً بأن البيانات المقدمة صحيحة وكاملة ودقيقة."}
   action: {type: generate, target: cover}
-  source: {code: NP.CAPP.065 v5/2025, section: "1.0 cover letter (eCTD) · general notes", quote: "The soft copy must be complete for the file to be accepted for assessment"}
+  source: {code: "NP.CAPP.065 v5/2025", section: "p.13, note 1", quote: "In order to accept the registration file for assessment soft copies must be fulfilled."}
   anchor: {code: WHO PQ screening checklist 05/2021, section: "§1 cover letter"}
 - id: SC-SOFT-01
   dept: screening
@@ -24,7 +24,7 @@
   auto: {kind: data, check: m1_complete}
   deficiency: {en: "The soft copy is incomplete: required Module 1 items are missing. The file is not accepted for assessment until the soft copy is complete.", ar: "النسخة الإلكترونية غير مكتملة: توجد بنود مطلوبة في الوحدة 1 ناقصة. لا يُقبل الملف للتقييم قبل اكتمال النسخة الإلكترونية."}
   action: {type: upload, target: board}
-  source: {code: NP.CAPP.065 v5/2025, section: "General notes, note 1", quote: "The soft copy must be complete for the file to be accepted for assessment"}
+  source: {code: "NP.CAPP.065 v5/2025", section: "p.13, note 1", quote: "In order to accept the registration file for assessment soft copies must be fulfilled."}
 - id: SC-PDF-01
   dept: screening
   layer: eda
@@ -48,7 +48,7 @@
   auto: {kind: data, check: certificates_valid}
   deficiency: {en: "The listed certificates are expired or expire within 90 days; a valid certificate (or evidence of the renewal request where the checklist allows it) should be provided.", ar: "الشهادات المذكورة منتهية الصلاحية أو تنتهي خلال 90 يوماً؛ يجب تقديم شهادة سارية (أو دليل طلب التجديد حيث تسمح القائمة بذلك)."}
   action: {type: request_issuer, target: documents}
-  source: {code: NP.CAPP.065 v5/2025, section: "1.1.5 pricing certificate · 1.1.17.2 register of trade · 1.2.4 GMP", quote: "Must be valid"}
+  source: {code: "NP.CAPP.065 v5/2025", section: "1.1.5 pricing certificate · 1.1.17.2 register of trade · 1.2.4 GMP"}
 - id: SC-CEP-01
   dept: screening
   layer: eda
@@ -61,7 +61,7 @@
   auto: {kind: data, check: cep_valid}
   deficiency: {en: "The CEP should be valid (not withdrawn or suspended), submitted with all its annexes, and the box of authorisation should be filled and signed by the CEP holder in favour of the applicant.", ar: "يجب أن تكون شهادة CEP سارية (غير مسحوبة أو موقوفة)، مقدَّمة بجميع ملاحقها، مع استكمال مربع التفويض وتوقيعه من حامل الشهادة لصالح مقدم الطلب."}
   action: {type: request_issuer, target: M1-39}
-  source: {code: NP.CAPP.040 v1/2022, section: "Option 2 — CEP", quote: "Box of authorization in the CEP is not filled or signed by the CEP holder"}
+  source: {code: "NP.CAPP.040 v1/2022", section: "Option 2", quote: "Box of authorization in the CEP is not filled or signed by the CEP holder"}
   anchor: {code: WHO PQ screening checklist 05/2021, section: "CEP — check the valid version on the EDQM site"}
 - id: SC-CEP-02
   dept: screening
@@ -75,7 +75,7 @@
   auto: {kind: slot}
   deficiency: {en: "A commitment letter acknowledging that EDA will be informed of any CEP withdrawal or update should be provided.", ar: "يجب تقديم خطاب التزام بإخطار الهيئة بأي سحب أو تحديث لشهادة CEP."}
   action: {type: generate, target: cep_commitment}
-  source: {code: NP.CAPP.040 v1/2022, section: "Option 2 — CEP", quote: "Absence of the acknowledgement commitment letter by the applicant to EDA in case of CEP withdrawal or updates"}
+  source: {code: "NP.CAPP.040 v1/2022", section: "Option 2", quote: "Absence of the acknowledgement commitment letter by the applicant to EDA in case of CEP withdrawal or updates"}
 - id: SC-SITE-01
   dept: screening
   layer: eda
@@ -113,7 +113,7 @@
   auto: {kind: text}
   deficiency: {en: "The CPP and the foreign agreements should be legalised (chamber of commerce and Egyptian embassy) or submitted as an electronically verifiable eCPP.", ar: "يجب تصديق شهادة CPP والعقود الأجنبية (الغرفة التجارية والسفارة المصرية) أو تقديم eCPP قابلة للتحقق إلكترونياً."}
   action: {type: request_issuer, target: M1-14}
-  source: {code: NP.CAPP.065 v5/2025, section: "1.1.13 CPP · 1.1.17.7 agreements", quote: "legalised"}
+  source: {code: "NP.CAPP.065 v5/2025", section: "1.1.13 CPP · 1.1.17.7 agreements"}
 - id: SC-WHO-QOS
   dept: screening
   layer: prep
@@ -125,7 +125,7 @@
   auto: {kind: slot}
   deficiency: {en: "The QOS should be submitted in the latest template as an unaltered Word document with cross-references to the dossier.", ar: "يجب تقديم الملخص الشامل للجودة بالقالب الأحدث كملف Word غير معدَّل مع إحالات إلى الملف."}
   action: {type: upload, target: M2-02}
-  source: {code: WHO PQ screening checklist 05/2021, section: "QOS / QIS", quote: "QOS and QIS as Word, in the latest template, unaltered"}
+  source: {code: "WHO PQ screening checklist 05/2021", section: "items 9(a), 9(b)", quote: "Has the applicant submitted Quality Overall Summary – Product Dossier (QOS-PD) and Quality Information Summary (QIS) as Word documents using the most recent version? · Has the QOS and/or QIS template been altered (missing sections, subsections, tables, etc)?"}
   anchor: {code: WHO PQ QOS-PD template 01/2025}
 - id: SC-WHO-NITRO
   dept: screening
@@ -138,7 +138,7 @@
   auto: {kind: text}
   deficiency: {en: "A nitrosamine risk assessment for the API and the FPP should be declared and, where a risk is identified, confirmatory testing and a control strategy provided.", ar: "يجب الإقرار بتقييم مخاطر النيتروزامين للمادة الفعالة والمنتج النهائي، وعند وجود خطر تقديم اختبار تأكيدي واستراتيجية ضبط."}
   action: {type: upload, target: P-12}
-  source: {code: WHO PQ screening checklist 05/2021, section: "nitrosamine", quote: "Nitrosamine RA declared"}
+  source: {code: "GL.BIOINN/CADC/CAPCARE/CAPP/CIP/PPMA.001 v1/2025", section: "§5.3.1.1; also WHO PQ dossier screening checklist item 11(a)", quote: "Manufacturers should conduct a comprehensive risk assessment for all chemically synthesized APIs and drug products to evaluate the potential for nitrosamine formation or contamination."}
   anchor: {code: "EMA/409815/2020 rev. · FDA guidance on nitrosamine impurities (2021, rev. 2024)"}
 - id: SC-WHO-BELIST
   dept: screening
