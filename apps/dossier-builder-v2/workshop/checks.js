@@ -13,6 +13,7 @@ const ltr = s => `⁦${s}⁩`;
 const letters = s => (String(s || '').match(/[\p{L}\p{N}]/gu) || []).length;
 const TOC = /table of contents|^\s*contents\s*$|^\s*(ال)?فهرس(\s|$)|^\s*(ال)?محتويات(\s|$)/m;
 const WORD_OK = new Set(['EG-EDA/M1-09']);
+export const TEXT_AUTO = 40;                                   // a scanned document of up to this many pages gets its text layer by itself
 export const DESIGN_KINDS = ['idml', 'indd', 'designcraft'];   // a pack's artwork as the design program keeps it; its PDF goes in
 export const PICTURES = ['png', 'jpeg', 'tiff', 'gif', 'webp', 'psd'];           // the proposed leaflet is handed in as Word
 const MB = 1024 * 1024;
@@ -52,9 +53,12 @@ function formatFindings(doc, info) {
   if (doc.size > 100 * MB) add('size', 'red', `«${doc.name}» حجمه ${ltr((doc.size / MB).toFixed(0) + ' MB')}`, 'أكبر من 100 ميجا: لازم يتقسم لأكتر من ملف.', fmt('size'), { human: ['program', 'upload'] });
   const blank = doc.pages.filter(p => p.by === 'text' && letters(p.text) < 40).length;
   const scanned = doc.pages.filter(p => p.by === 'ocr' || p.by === 'claude').length;
-  if (scanned || blank === doc.pages.length) {
-    add('no-text', 'amber', `«${doc.name}» ممسوح ومافيهوش نص يتبحث فيه`, `${scanned || blank} ${scanned || blank === 1 ? 'صفحة' : 'صفحات'} من غير طبقة نص. البرنامج قراها${scanned ? '' : ' (أو حاول)'}، لكن الملف نفسه لازم يتعمله OCR قبل التقديم: افتحه في برنامج الـ PDF واعمله طبقة نص.`,
-        fmt('pdf'), { human: ['program', 'upload', 'accept'] });
+  if ((scanned || blank === doc.pages.length) && !doc.textLayer) {
+    // the layer of words is made here (the scan reader on this computer, a few seconds a page): by itself for a document of up to
+    // TEXT_AUTO pages, on a click for a longer one (its time said)
+    const pages = info.pages || doc.pages.length, auto = pages <= TEXT_AUTO;
+    add('no-text', 'amber', `«${doc.name}» ممسوح ومافيهوش نص يتبحث فيه`, `${scanned || blank} ${scanned || blank === 1 ? 'صفحة' : 'صفحات'} من غير طبقة نص. البرنامج قراها${scanned ? '' : ' (أو حاول)'}، لكن الملف نفسه لازم يبقى فيه نص يتبحث فيه قبل التقديم: البرنامج بيعمله طبقة نص بقارئ المسح اللي على الجهاز${auto ? '' : ` (${pages} صفحة: حوالي ${Math.ceil(pages * 4 / 60)} دقيقة)`}، من غير ما يغيّر شكل أي صفحة.`,
+        fmt('pdf'), auto ? { auto: 'text', human: ['program', 'upload', 'accept'] } : { human: ['text', 'program', 'upload', 'accept'] });
   }
   const missingFonts = (info.fonts?.missing || []).filter(n => !BASE14.test(n.replace(/\s+/g, '')));
   if (missingFonts.length && !scanned) add('fonts', 'amber', `«${doc.name}» فيه خطوط مش جوه الملف`, `الخطوط: ${missingFonts.slice(0, 6).join('، ')}. الإرشاد بيقول «على قد ما يمكن»: لو المستند بتاع الشركة اعمله PDF تاني والخطوط جواه.`, fmt('fonts'), { human: ['program', 'accept'] });

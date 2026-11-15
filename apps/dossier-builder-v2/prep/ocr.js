@@ -340,5 +340,20 @@ export function createOcr({ base = 'ocr/', onLoad = () => {}, assets = null } = 
     // the direction marks tesseract.js leaves at the ends of right-to-left lines are not text
     return out.map(t => t.replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '').trim()).filter(Boolean).join('\n');
   }
-  return { load, page, stats, lanes };
+  // The words of a scanned page as an invisible layer: the page turned upright and straightened as for reading, then Tesseract's own
+  // text-only PDF of it (each word drawn in a font without shapes, where it stands on the picture) — with what was done to the picture
+  // to get there, for the layer to be laid back on the page the right way (workshop/textlayer.js).
+  async function layer(source, { dpi = 0 } = {}) {
+    const m = await load();
+    const up = await upright(m, source, dpi), st = straightened(up.canvas);
+    const w = await take();
+    try {
+      await w.setParameters({ user_defined_dpi: String(dpi || 0) });
+      const r = await w.recognize(st.canvas, { pdfTitle: '', pdfTextOnly: true }, { text: false, pdf: true });
+      const pdf = r.data.pdf instanceof Uint8Array ? r.data.pdf : new Uint8Array(r.data.pdf || []);
+      if (!pdf.length) throw failed('layer', 'the scan reader gave no text layer');
+      return { pdf, rot: up.rot, angle: st.angle, w0: source.width, h0: source.height, w2: st.canvas.width, h2: st.canvas.height };
+    } finally { give(w); }
+  }
+  return { load, page, layer, stats, lanes };
 }

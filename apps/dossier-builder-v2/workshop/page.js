@@ -30,6 +30,8 @@ import { fold } from '../core/fold.js';
 import { kindOf } from '../agent/workspace.js';
 import { psdComposite } from './psd.js';
 import { replacePage } from './pdfops.js';
+import { withTextLayer } from './textlayer.js';
+import { SCANNED } from '../prep/read.js';
 import { DESIGN_KINDS, PICTURES } from './checks.js';
 
 globalThis.pdfjsWorker = pdfjsWorker;
@@ -168,7 +170,7 @@ async function pageInPhoto(docId, n) {
   const d = state.d, doc = d.docs.find(x => x.id === docId);
   if (!doc || !available('photocraft')) return;
   const bytes = await store.getBlob(d.id, doc.fixed || doc.sha);
-  const pdf = await pdfjs.getDocument({ data: bytes.slice(), isEvalSupported: false, useSystemFonts: false }).promise;
+  const task = pdfjs.getDocument({ data: bytes.slice(), isEvalSupported: false, useSystemFonts: false }), pdf = await task.promise;
   try {
     n = Math.min(Math.max(1, Math.round(Number(n) || 1)), pdf.numPages);
     const page = await pdf.getPage(n), vp = page.getViewport({ scale: 200 / 72 });
@@ -180,7 +182,7 @@ async function pageInPhoto(docId, n) {
     showProgram('photocraft', `${PROGRAMS.photocraft.ar} — صفحة ${n} من ${doc.name}`, 'نضّف الصفحة واحفظ (Ctrl+S): الصفحة دي بتتبدّل في الملف هنا، والباقي زي ما هو.');
     await programs.open('photocraft', `${stem(doc.name)} - page ${n}.png`, png);
   } catch (e) { toast(`برنامج الصور ماقدرش يفتح الصفحة: ${e.message}`, 9000); hideProgram(); }
-  finally { pdf.destroy(); }
+  finally { task.destroy(); }
 }
 // A document put into a design: the design program opens with a button to place it in the page the person has open.
 async function docInDesign(docId) {
@@ -275,6 +277,15 @@ async function designSaved(pd, name, bytes) {
   if (kind === 'pdf' || PICTURES.includes(doc.kind)) { const design = doc.design; await newVersion(doc.id, bytes, kind === 'pdf' ? `${stem(doc.name)}.pdf` : name, 'program'); if (design) { doc.design = design; await changed(); } return; }
   throw new Error('صدّر PDF (File ← Export PDF…)، مش صورة');
 }
+// The text layer of a long scanned document, on a click (a short one gets it by itself in the line of work).
+async function textLayerNow(docId) {
+  const d = state.d, doc = d.docs.find(x => x.id === docId);
+  const f = state.findings.find(x => x.id === `no-text-${docId}`);
+  if (!doc || !f) return;
+  const done = await fixAll(d, [{ ...f, fix: { ...f.fix, auto: 'text' } }], env());
+  await changed();
+  toast(done.length ? `«${doc.name}» بقى فيه نص يتبحث فيه.` : `ماقدرتش أعمل طبقة النص: ${f.fixFailed || 'قارئ المسح مالقاش كلام'}`, 7000);
+}
 async function keepPdfOf(docId, bytes) {
   const d = state.d, doc = d.docs.find(x => x.id === docId);
   const sha = await store.sha256(bytes);
@@ -296,7 +307,27 @@ async function wordToPdf(docId) {
 }
 
 // ------------------------------------------------------------------------------------------------ the dossier: worked out again after every change
-const env = () => ({ knowledge: KNOW, getBlob: store.getBlob, putBlob: store.putBlob, today: today(), generators: GEN_NAMES });
+const env = () => ({ knowledge: KNOW, getBlob: store.getBlob, putBlob: store.putBlob, today: today(), generators: GEN_NAMES, textLayer });
+// A scanned PDF's words as an invisible layer (workshop/textlayer.js): every page without its own text read by the scan reader on this
+// computer, as it reads them (upright, straight), the words laid back where they stand. → {bytes, pages} (pages: how many got words)
+async function textLayer(bytes, doc) {
+  const task = pdfjs.getDocument({ data: bytes.slice(), isEvalSupported: false, useSystemFonts: false }), pdf = await task.promise;
+  const layers = [];
+  try {
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const own = (await page.getTextContent()).items.map(x => x.str).join(' ');
+      if ((own.match(/[\p{L}\p{N}]/gu) || []).length >= SCANNED) continue;               // a page with its own text keeps it
+      const msg = `بيعمل طبقة نص لـ <bdi>${esc(doc.name)}</bdi>: صفحة ${i} من ${pdf.numPages}…`;
+      if (state.running) say(msg); else toast(msg.replace(/<[^>]+>/g, ''), 4000);
+      const canvas = await drawPdf(page);
+      const l = await ocr.layer(canvas, { dpi: canvas.dpi });
+      layers.push({ index: i - 1, ...l });
+      page.cleanup();
+    }
+  } finally { task.destroy(); }
+  return layers.length ? { bytes: await withTextLayer(bytes, layers), pages: layers.length } : { bytes, pages: 0 };
+}
 async function recompute() {
   const d = state.d;
   state.board = boardOf(KNOW, { countryId: d.country, profile: d.profile });
@@ -558,6 +589,7 @@ function needActions(n) {
     if (a === 'create') return `<button class="btn small" data-act="create" data-id="${esc(n.place)}">${actionName(a)}</button>`;
     if (a === 'pdf') return n.doc && available('wordcraft') ? `<button class="btn small" data-act="word-pdf" data-id="${esc(n.doc)}">${actionName(a)}</button>` : '';
     if (a === 'design') return n.place && available('designcraft') ? `<button class="btn small" data-act="place-design" data-id="${esc(n.place)}">${actionName(a)}</button>` : '';
+    if (a === 'text') return n.doc ? `<button class="btn small" data-act="text-layer" data-id="${esc(n.doc)}">${actionName(a)}</button>` : '';
     if (a === 'fill') return `<button class="btn small" data-act="tab" data-id="data">${actionName(a)}</button>`;
     if (a === 'place') return `<select data-act="move" data-id="${esc(n.doc)}">${placeOptions(null)}</select>${(n.suggestion || []).map(s => `<button class="chip" data-act="move-to" data-id="${esc(n.doc)}" data-place="${esc(s.id)}">${esc(s.ctd)} ${esc(s.ar)}</button>`).join('')}`;
     if (a === 'cut') return `<button class="btn small" data-act="cut-ok" data-id="${esc(n.doc)}">التقطيع صح</button><button class="btn small quiet" data-act="cut-undo" data-id="${esc(n.doc)}">رجّعه ملف واحد</button>`;
@@ -669,7 +701,7 @@ async function newVersion(docId, bytes, name, how = 'upload') {
   doc.versions = [...(doc.versions || []), { sha: doc.fixed || doc.sha, at: new Date().toISOString(), name: doc.name }];
   const draft = doc.madeBy === 'program';
   Object.assign(doc, { sha, size: bytes.length, kind: read?.kind || doc.kind, pages: read?.pages || [], fixed: undefined, fixes: [], info: undefined, pdf: undefined,
-                       picture: undefined, psd: undefined, design: undefined });
+                       picture: undefined, psd: undefined, design: undefined, textLayer: undefined });
   if (draft && how === 'program') doc.editedBy = 'you';          // a draft edited in the Word program: never written over by the program again
   else { doc.madeBy = undefined; doc.name = name; }               // an upload (the signed scan) takes the draft's place
   delete doc.unread; delete doc.note;
@@ -794,6 +826,7 @@ document.addEventListener('click', async e => {
     else if (act === 'page-photo') await pageInPhoto(id, document.querySelector(`[data-page-of="${CSS.escape(id)}"]`)?.value);
     else if (act === 'doc-design') await docInDesign(id);
     else if (act === 'place-design') await designForPlace(id);
+    else if (act === 'text-layer') await textLayerNow(id);
     else if (act === 'word-pdf') await wordToPdf(id);
     else if (act === 'doc-remove') { if (el.dataset.sure) { const d = state.d; d.docs = d.docs.filter(x => x.id !== id); log(d, 'removed', { doc: id }); await changed(); } else { el.dataset.sure = '1'; el.textContent = 'متأكد؟'; } }
     else if (act === 'need-accept') { const box = document.querySelector(`[data-accept="${CSS.escape(id)}"]`) || el.closest('.item')?.querySelector('.accept'); if (box) { box.hidden = false; box.dataset.target = id; box.querySelector('textarea').focus(); } }
@@ -845,7 +878,7 @@ document.addEventListener('drop', async e => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && state.drawer) { state.drawer = null; render(); } });
 
 // for the tests: the same steps as the buttons
-window.__workshop = { state, runLine, openDossier, recompute, store, testKey, uploadVersion, askClaude, programs, openInProgram, wordToPdf };
+window.__workshop = { state, runLine, openDossier, recompute, store, testKey, uploadVersion, askClaude, programs, openInProgram, wordToPdf, textLayer };
 
 (async () => {
   state.list = await store.listDossiers();

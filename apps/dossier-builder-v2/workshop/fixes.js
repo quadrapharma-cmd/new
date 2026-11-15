@@ -39,6 +39,12 @@ export async function fixAll(d, findings, env) {
         const items = outlineFromToc(doc.pages);
         if (!items.length) { f.fixFailed = 'مالقاش سطور في الفهرس فيها أرقام صفحات'; continue; }
         out = await withOutline(bytes, items); ar = `اتعمله ${items.length} bookmark من الفهرس`;
+      } else if (f.fix.auto === 'text') {
+        if (!env.textLayer) continue;                                 // the scan reader is in the page only
+        const r = await env.textLayer(bytes, doc);
+        if (!r?.pages) { f.fixFailed = 'قارئ المسح مالقاش كلام في الصفحات'; continue; }
+        out = r.bytes; ar = `اتعمله طبقة نص يتبحث فيها (${r.pages} ${r.pages === 1 ? 'صفحة' : 'صفحات'})`;
+        doc.textLayer = { pages: r.pages, at: new Date().toISOString() };
       } else if (f.fix.auto === 'picture') {
         out = await picturesToPdf([{ bytes, kind: ['png', 'psd'].includes(doc.kind) ? doc.kind : 'jpeg' }]); ar = 'الصورة بقت صفحة PDF';
       }

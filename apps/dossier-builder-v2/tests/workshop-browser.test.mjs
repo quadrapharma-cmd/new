@@ -71,6 +71,21 @@ test('the workshop opened from the disk prepares the made-up dossier by itself w
     const drafts = d.docs.filter(x => x.madeBy === 'program').map(x => x.place).sort();
     assert.deepEqual(drafts, ['EG-EDA/M1-01', 'EG-EDA/M1-31', 'EG-EDA/M1-32', 'EG-EDA/M1-43', 'EG-EDA/M1-44']);
     assert.equal(d.name, 'Testamin powder for oral solution');                     // named from its licence
+    // the scans are searchable now: each scanned page got a layer of its words, laid where they stand on the (crooked) picture
+    const lic = d.docs.find(x => x.name === 'licence (scan).pdf');
+    assert.equal(lic.textLayer?.pages, 2, 'both pages of the licence got their words');
+    assert.ok(!(await page.evaluate(() => window.__workshop.state.findings.map(f => f.id))).some(x => x.startsWith('no-text-')), 'no scan is left without words');
+    const fixedB64 = await page.evaluate(async id => { const w = window.__workshop, dd = w.state.d, doc = dd.docs.find(x => x.id === id);
+      const u = await w.store.getBlob(dd.id, doc.fixed); let t = ''; for (let i = 0; i < u.length; i += 8192) t += String.fromCharCode(...u.subarray(i, i + 8192)); return btoa(t); }, lic.id);
+    const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+    const searchable = await pdfjs.getDocument({ data: new Uint8Array(Buffer.from(fixedB64, 'base64')) }).promise;
+    const first = await searchable.getPage(1), items = (await first.getTextContent()).items.filter(x => x.str.trim());
+    const at = re => items.find(x => re.test(x.str));
+    const top = at(/Republic|Arab/), reg = at(/98765/), date = at(/12\/03\/2024|Issue/);
+    assert.ok(top && reg && date, `the licence's words are in its file: ${items.map(x => x.str).join(' ').slice(0, 300)}`);
+    const [w, h] = [first.view[2], first.view[3]];
+    assert.ok(top.transform[5] > h * 0.8 && top.transform[4] < w * 0.3, `«Arab Republic of Egypt» at the top left: ${top.transform.slice(4)}`);
+    assert.ok(reg.transform[5] < top.transform[5] && date.transform[5] < reg.transform[5], 'the lines in their order down the page');
     // «needs you»: the receipts the rules could not place, put in their place from the list
     await page.click('[data-act="tab"][data-id="needs"]');
     const receipts = d.docs.find(x => x.name === 'receipts (scan).pdf');
@@ -307,6 +322,7 @@ test('the photo and design programs from the page: a page cleaned takes its plac
     const { files } = await unzip(new Uint8Array(fs.readFileSync(await dl.path())));
     const inZip = files.filter(f => /^[^/]+\/Module 1\//.test(f.name) && /1\.1\.10|Layout|M1-11/i.test(f.name)).map(f => f.name);
     assert.ok(inZip.some(nm => nm.endsWith('.pdf')), `the artwork goes into the ready folder as a PDF: ${inZip.join(', ')}`);
+    assert.equal(await page.evaluate(() => window.__workshopError || null), null);
     assert.deepEqual(errors, []);
     } catch (e) { await shot('failed'); throw e; }
     await ctx.close();

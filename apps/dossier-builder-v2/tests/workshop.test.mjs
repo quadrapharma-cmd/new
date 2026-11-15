@@ -18,6 +18,7 @@ import { pngOf } from '../workshop/png.js';
 import { kindOf } from '../agent/workspace.js';
 import { idmlText } from '../prep/office.js';
 import { readFiles } from '../prep/read.js';
+import { layerMatrix, apply, withTextLayer } from '../workshop/textlayer.js';
 import { unzip } from '../prep/zip.js';
 import { LICENCE, SPEC, STABILITY, RECEIPTS, COA } from './fixtures/dossier.mjs';
 import { pdfOf } from './fixtures/pdfs.mjs';
@@ -191,6 +192,32 @@ test('design and photo files are known by their content; a PSD gives its picture
   const turned = await replacePage(await turnPages(three, { 1: 1 }), 1, { bytes: png, kind: 'png' });
   const sizes = (await pdfInfo(turned)).sizes;
   assert.deepEqual([Math.round(sizes[1].w), Math.round(sizes[1].h), sizes[1].rotate], [Math.round(sizes[0].h), Math.round(sizes[0].w), 0]);
+});
+
+test('a scan\'s words are laid back where they stand: through the straightening, the turn upright and the page\'s own turn', async () => {
+  const rad = d => d * Math.PI / 180;
+  const turnAbout = (p, c, deg) => { const r = rad(deg), x = p[0] - c[0], y = p[1] - c[1]; return [c[0] + x * Math.cos(r) - y * Math.sin(r), c[1] + x * Math.sin(r) + y * Math.cos(r)]; };
+  for (const rotate of [0, 90, 180, 270]) for (const rot of [0, 90, 270]) for (const angle of [0, 2.5, -4]) {
+    const box = { x: 10, y: 20, width: 595, height: 842 };
+    const vW = rotate % 180 ? box.height : box.width, vH = rotate % 180 ? box.width : box.height;
+    const k = 3, w0 = vW * k, h0 = vH * k, side = rot % 180 !== 0, w2 = side ? h0 : w0, h2 = side ? w0 : h0, s = 300 / 72;
+    const M = layerMatrix({ lw: w2 / s, lh: h2 / s, rot, angle, w0, h0, w2, h2, box, rotate });
+    for (const p0 of [[100, 200], [w0 - 50, 30], [w0 / 2, h0 - 10]]) {
+      // the way the scan reader went: the drawn page → turned upright → straightened → its text page, in points
+      const p2 = turnAbout(turnAbout([p0[0] - w0 / 2 + w2 / 2, p0[1] - h0 / 2 + h2 / 2], [w2 / 2, h2 / 2], rot), [w2 / 2, h2 / 2], -angle);
+      // and where that point is on the page: the drawn page in points, the page's own turn undone
+      const xv = p0[0] / k, yv = vH - p0[1] / k;
+      const [u, v] = rotate === 90 ? [box.width - yv, xv] : rotate === 180 ? [box.width - xv, box.height - yv] : rotate === 270 ? [yv, box.height - xv] : [xv, yv];
+      const got = apply(M, [p2[0] / s, (h2 - p2[1]) / s]);
+      assert.ok(Math.abs(got[0] - u - box.x) < 1e-6 && Math.abs(got[1] - v - box.y) < 1e-6, `rotate ${rotate}, upright ${rot}, angle ${angle}: ${got} ≠ ${[u + box.x, v + box.y]}`);
+    }
+  }
+  // a layer laid on a page: the page's text is the layer's, the page keeps its size
+  const page = await pdfOf([LICENCE]);
+  const layer = await pdfOf([STABILITY]);
+  const out = await withTextLayer(await cutPdf(page, 1, 1), [{ index: 0, pdf: await cutPdf(layer, 1, 1), rot: 0, angle: 0, w0: 595, h0: 842, w2: 595, h2: 842 }]);
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(out) }).promise;
+  assert.match((await (await doc.getPage(1)).getTextContent()).items.map(x => x.str).join(' '), /Stability/i);
 });
 
 test('the company papers are written as Word drafts from the dossier, gaps marked, the salt sum shown; needs and the ready folder follow', { timeout: 120000 }, async () => {
