@@ -54,10 +54,13 @@ export function typeAndPlace(pages, { recognition = {}, places = null } = {}) {
   const twin = id => (places ? [...places].find(x => shortOf(x) === shortOf(id)) || null : null);
   const typed = t !== UNKNOWN ? { type: t.type, type_ar: t.ar, doctype: t.doctype } : null;
   if (typed) {
-    const place = (t.places || []).find(allowed) || (t.places || []).map(twin).find(Boolean) || null;
-    if (place || !places) return { ...typed, place, sure: !!place, by: 'rules' };
+    // a type's places are Egypt's: in a dossier for another country they are found by their twins, then by that country's words;
+    // in Egypt's own dossier a type keeps its rules (a type with no place, a receipt that may be of another request, is asked about)
+    const tp = t.places || [], abroad = !!places && tp.length > 0 && !tp.some(p => [...places].some(x => x.split('/')[0] === p.split('/')[0]));
+    const place = tp.find(allowed) || (abroad ? tp.map(twin).find(Boolean) : null) || null;
+    if (place || !abroad) return { ...typed, place, sure: !!place, by: 'rules' };
   }
-  // not a type the rules know, or its places are not in this dossier: the words that recognise the places of this country's dossier
+  // not a type the rules know, or a type of Egypt's places in another country's dossier: the words of this dossier's places
   const ranked = placesByWords(pages, recognition).filter(r => allowed(r.place));
   const [first, second] = ranked;
   const tie = first && second && first.score === second.score && TIES.find(t => t.places.includes(shortOf(first.place)) && t.places.includes(shortOf(second.place)));
