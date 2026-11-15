@@ -242,13 +242,18 @@ the readiness report and a checklist). «شغّل لوحدك» runs it all; «خ
 8. GPL/AGPL code: ideas only, never its code. The ArtCraft name and logos are not used.
 9. Desktop builds for Windows or Mac only after he approves.
 10. No `rm` with wildcards; `pkill -f` only with an anchored pattern that cannot match your own command.
-11. Leave `apps/dossier-builder/` (v1) and Drugbox alone unless he asks.
+11. Leave Drugbox alone unless he asks. **`apps/dossier-builder/` (v1, «منشئ ملفات التسجيل») is the program again since 15/11** (see «His
+    decisions»): change it only for what he asks, and never so that it reads his files worse than it does now.
 12. Do the work yourself, in lean turns: no sub-agents unless he asks for them.
 13. **Nothing reaches him untested** (14/11/2026: «مينفعش تبعت حاجة متجربتش او لم يتم اختبارها انت كدا بتضيع وقت و جهد و فلوس»).
     Before anything is sent or published to him, see it work yourself, end to end, the way he will use it — not a stand-in that is
     easier than the real thing. What cannot be tested from here (Claude answering inside claude.ai on his account; installing on
     his Windows or Mac) is not sent until a way to test it exists; say so before you start, never after he finds it broken.
     On 14/11 the Claude-app extension and the workbench reached him untested and failed for him: that is what this rule stops.
+    **Made-up files are not enough (15/11):** the workshop passed 100 tests on files written here and read his real files badly.
+    Any change to how documents are read, typed, placed or checked is first run on his real files kept in the scratchpad
+    (Dramrin: `trial/dramrin-folder`, with `dramrin/truth`; Wouncure: `wouncure/src`) and compared, field by field, with what the
+    old program reads from them; it is sent only if it reads them at least as well. Say the comparison when you send it.
 
 ## His decisions so far
 This file is your memory beyond this conversation. When he decides something new — a rule, a preference, a decision about the
@@ -275,6 +280,17 @@ When a part is done or an open item is closed, update «What exists» and «Open
   The 50 eCTD updates (`docs/ctd/UPDATES.md`) each have their place in the plan's §3.10. Step 2.0 (the toolbox and the agent)
   is being built by the planning session: before you build in Part 2 yourself, pull and read the plan's progress so the two
   sessions never build the same thing at once.
+
+- **15/11/2026, after trying the workshop on his files:** «الملفات لا تقرا لا بكلود و لا بالماسح المحلي كل اللي اتقرا اتقرا غلط»,
+  «الواجهة سيئة عايز نرجع للواجهة بتاع البرنامج القديم اللي … كان بيقرا المعلومات و بيحطها في مكانها و بيشتغل شغل كويس جدا».
+  Measured the same day on Dramrin's nine files: the workshop (scan reader) named the product «p DRAMRIN Casals», garbled the
+  manufacturer, cut the 152-page validation file into 11 parts, put the method of analysis in the specification's place and read
+  a limit for a substance Dramrin does not have; the old program read the name, form, manufacturer, the three substances with their
+  makers and the applicant, and placed all 13 documents. The cause: the old program has Claude read each document and give its
+  data (on his account in the claude.ai edition); the workshop used Claude and the scan reader only for text and then rules
+  written here, tuned on made-up files. Decision: back to the old program, its interface and its reading; the v2 workshop
+  (`workshop/`, delivered 15/11) is frozen and not built on. New parts go into the old program one at a time, each measured on his
+  real files first (rule 13). The library (Part 1) stays as it is.
 
 ## Open items (propose when relevant; do when he asks)
 - Online version check of the ICH, EMA, FDA, WHO and GCC sources. Unreachable from this environment: admin.ich.org (ICH's content
