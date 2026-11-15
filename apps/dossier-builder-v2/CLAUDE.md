@@ -252,8 +252,11 @@ the readiness report and a checklist). «شغّل لوحدك» runs it all; «خ
     On 14/11 the Claude-app extension and the workbench reached him untested and failed for him: that is what this rule stops.
     **Made-up files are not enough (15/11):** the workshop passed 100 tests on files written here and read his real files badly.
     Any change to how documents are read, typed, placed or checked is first run on his real files kept in the scratchpad
-    (Dramrin: `trial/dramrin-folder`, with `dramrin/truth`; Wouncure: `wouncure/src`) and compared, field by field, with what the
-    old program reads from them; it is sent only if it reads them at least as well. Say the comparison when you send it.
+    (Dramrin: `trial/dramrin-folder`, with `dramrin/truth`; Wouncure: `wouncure/src`) and compared, field by field, with the old
+    program on the same files; it is sent only if it reads them at least as well. Say the comparison when you send it. A reading
+    written here in Claude's place (the mock of `sample` in `real_flow.py`) tests the program around the reading, never the reading:
+    where Claude's reading is concerned, compare with real calls (an API key for tests, saved as an environment secret, when he
+    gives one) or say plainly that it was not compared.
 
 ## His decisions so far
 This file is your memory beyond this conversation. When he decides something new — a rule, a preference, a decision about the
@@ -285,8 +288,11 @@ When a part is done or an open item is closed, update «What exists» and «Open
   «الواجهة سيئة عايز نرجع للواجهة بتاع البرنامج القديم اللي … كان بيقرا المعلومات و بيحطها في مكانها و بيشتغل شغل كويس جدا».
   Measured the same day on Dramrin's nine files: the workshop (scan reader) named the product «p DRAMRIN Casals», garbled the
   manufacturer, cut the 152-page validation file into 11 parts, put the method of analysis in the specification's place and read
-  a limit for a substance Dramrin does not have; the old program read the name, form, manufacturer, the three substances with their
-  makers and the applicant, and placed all 13 documents. The cause: the old program has Claude read each document and give its
+  a limit for a substance Dramrin does not have; the old program, in the 14/11 run where Claude's reading was a stand-in written
+  here from the pages, filled the name, form, manufacturer, the three substances with their makers and the applicant, and placed all
+  13 documents (its real reading on his account cannot run here: his own use of it is the evidence — corrected to him on 15/11).
+  The live artifact (version 1794612920, 13/11 23:35 UTC) is commit 0cc4d69; `864cd3c` (14/11 00:26, the fixes that run on his real
+  files found: the wizard by authority, combined files never placed whole, only true data) was never published. The cause: the old program has Claude read each document and give its
   data (on his account in the claude.ai edition); the workshop used Claude and the scan reader only for text and then rules
   written here, tuned on made-up files. Decision: back to the old program, its interface and its reading; the v2 workshop
   (`workshop/`, delivered 15/11) is frozen and not built on. New parts go into the old program one at a time, each measured on his
