@@ -5,14 +5,16 @@
 // and what can be done about it: fixed by the program, or a person's step.
 import { check as crossCheck } from '../prep/checks.js';
 import { fold } from '../core/fold.js';
-import { FORMAT, DOCTYPE_OF } from './board.js';
+import { FORMAT, DOCTYPE_OF, DESIGN_PLACES } from './board.js';
 import { pdfInfo } from './pdfops.js';
 
 const fmt = id => FORMAT.find(f => f.id === id);
 const ltr = s => `⁦${s}⁩`;
 const letters = s => (String(s || '').match(/[\p{L}\p{N}]/gu) || []).length;
 const TOC = /table of contents|^\s*contents\s*$|^\s*(ال)?فهرس(\s|$)|^\s*(ال)?محتويات(\s|$)/m;
-const WORD_OK = new Set(['EG-EDA/M1-09']);           // the proposed leaflet is handed in as Word
+const WORD_OK = new Set(['EG-EDA/M1-09']);
+export const DESIGN_KINDS = ['idml', 'indd', 'designcraft'];   // a pack's artwork as the design program keeps it; its PDF goes in
+export const PICTURES = ['png', 'jpeg', 'tiff', 'gif', 'webp', 'psd'];           // the proposed leaflet is handed in as Word
 const MB = 1024 * 1024;
 // The 14 fonts every PDF reader has (PDF 1.7 §9.6.2.2): a PDF may name them without carrying them.
 const BASE14 = /^(helvetica|times|courier|symbol|zapfdingbats|arial|timesnewroman|couriernew)([-,].*)?$/i;
@@ -36,8 +38,10 @@ function formatFindings(doc, info) {
                                                                 rule: { ar: rule.ar, cite: rule.cite }, fix });
   if (doc.kind !== 'pdf') {
     if (['doc', 'docx'].includes(doc.kind) && (WORD_OK.has(doc.place) || doc.pdf)) return out;
+    if (DESIGN_KINDS.includes(doc.kind) && doc.pdf) return out;                      // the design's PDF is what goes in
     if (['doc', 'docx'].includes(doc.kind)) add('not-pdf', 'amber', `«${doc.name}» ملف Word، والملف لازم يبقى PDF`, 'المستند ده لازم يتقدّم PDF. «اعمله PDF» ببرنامج الـ Word اللي جوه الورشة، أو ارفع نسخته الـ PDF.', fmt('pdf'), { human: ['pdf', 'upload', 'accept'] });
-    else if (['png', 'jpeg', 'tiff', 'gif', 'webp'].includes(doc.kind)) add('not-pdf', 'amber', `«${doc.name}» صورة، والملف لازم يبقى PDF`, 'البرنامج يقدر يحوّل الصورة لصفحة PDF.', fmt('pdf'), { auto: 'picture', human: ['upload', 'accept'] });
+    else if (DESIGN_KINDS.includes(doc.kind)) add('not-pdf', 'amber', `«${doc.name}» ملف تصميم، والملف لازم يبقى PDF`, 'افتحه في برنامج التصميم اللي جوه الورشة وصدّره PDF (File ← Export PDF): الـ PDF بيتحط في الملف بداله. أو ارفع نسخته الـ PDF.', fmt('pdf'), { human: ['program', 'upload', 'accept'] });
+    else if (PICTURES.includes(doc.kind)) add('not-pdf', 'amber', `«${doc.name}» صورة، والملف لازم يبقى PDF`, 'البرنامج يقدر يحوّل الصورة لصفحة PDF.', fmt('pdf'), { auto: 'picture', human: ['upload', 'accept'] });
     return out;
   }
   if (!info) return out;
@@ -86,11 +90,13 @@ function boardFindings(d, board, generators) {
   const filled = new Set(d.docs.filter(x => !x.dup && !x.split && x.place).map(x => x.place));
   for (const p of board.places) {
     if (p.level !== 'R' || filled.has(p.id)) continue;
-    const gen = generators[p.id];
+    const gen = generators[p.id], design = DESIGN_PLACES.has(p.id);
     out.push({ id: `missing-${p.id}`, kind: 'missing', level: gen ? 'amber' : 'red', place: p.id, title: `${p.ctd} ${p.title.ar}: مفيش مستند`,
-               detail: gen ? 'البرنامج يقدر يعمله مسودة Word من معلومات الملف، وانت تراجعها وتطبعها على ورق الشركة وتمضيها.' : 'المكان ده مطلوب للمنتج ده. ارفع المستند، أو اكتب سبب إنه مش مطلوب.',
+               detail: gen ? 'البرنامج يقدر يعمله مسودة Word من معلومات الملف، وانت تراجعها وتطبعها على ورق الشركة وتمضيها.'
+                 : design ? 'المكان ده مطلوب للمنتج ده. ارفع تصميم العبوة، أو اعمله في برنامج التصميم اللي جوه الورشة وصدّره PDF.'
+                 : 'المكان ده مطلوب للمنتج ده. ارفع المستند، أو اكتب سبب إنه مش مطلوب.',
                rule: { ar: `مطلوب (${board.column}) في جدول NP.CAPP.065`, cite: [{ src: 'eda-np-capp-065-v5' }] },
-               fix: gen ? { auto: 'create', human: ['upload', 'accept'] } : { human: ['upload', 'accept'] } });
+               fix: gen ? { auto: 'create', human: ['upload', 'accept'] } : { human: design ? ['upload', 'design', 'accept'] : ['upload', 'accept'] } });
   }
   return out;
 }

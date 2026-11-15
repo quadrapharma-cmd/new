@@ -2,7 +2,7 @@
 // words on its page that hold it), and the log of every tool call. The same code in the browser and on the desktop: nothing here
 // touches a disk or the network — the page or the bridge hands the files in, either their bytes or, for a folder on a computer, a
 // way to read them when a tool needs them (a dossier folder can hold gigabytes) with a sample of their first and last bytes.
-export const KINDS = ['pdf', 'docx', 'xlsx', 'pptx', 'doc', 'xls', 'ppt', 'office-old', 'zip', 'rar', '7z', 'png', 'jpeg', 'tiff', 'gif', 'webp', 'heic', 'text', 'unknown'];
+export const KINDS = ['pdf', 'docx', 'xlsx', 'pptx', 'doc', 'xls', 'ppt', 'office-old', 'idml', 'designcraft', 'indd', 'zip', 'rar', '7z', 'png', 'jpeg', 'tiff', 'gif', 'webp', 'heic', 'psd', 'text', 'unknown'];
 const utf16 = s => [...s].flatMap(c => [c.charCodeAt(0), 0]);
 function hasBytes(b, seq) {
   outer: for (let i = 0, n = b.length - seq.length; i <= n; i++) {
@@ -23,10 +23,24 @@ function has(bytes, text, limit = bytes.length) {
   return false;
 }
 
+// A package that names its kind in a first entry called «mimetype», stored as it is (InDesign's IDML, the design program's files).
+function zipMime(b) {
+  if (!starts(b, 0x50, 0x4b, 0x03, 0x04) || b[8] !== 0 || b[9] !== 0 || b[26] !== 8 || b[27] !== 0) return null;
+  if (String.fromCharCode(...b.subarray(30, 38)) !== 'mimetype') return null;
+  const size = b[18] | b[19] << 8 | b[20] << 16, at = 38 + (b[28] | b[29] << 8);
+  return size > 0 && size < 100 ? String.fromCharCode(...b.subarray(at, at + size)) : null;
+}
+const INDD = [0x06, 0x06, 0xed, 0xf5, 0xd8, 0x1d, 0x46, 0xe5, 0xbd, 0x31, 0xef, 0xe7, 0xfe, 0x74, 0xb7, 0x1d];
+
 // What a file is, read from its first bytes (and, for an Office file, the names inside the zip) — never from its name.
 export function kindOf(bytes) {
   const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
   if (has(b, '%PDF-', 1024)) return 'pdf';
+  const mime = zipMime(b);
+  if (mime === 'application/vnd.adobe.indesign-idml-package') return 'idml';
+  if (mime === 'application/vnd.designcraft+zip') return 'designcraft';
+  if (starts(b, ...INDD)) return 'indd';
+  if (starts(b, ...ascii('8BPS')) && (b[5] === 1 || b[5] === 2)) return 'psd';
   if (starts(b, 0x50, 0x4b, 0x03, 0x04) || starts(b, 0x50, 0x4b, 0x05, 0x06)) {
     if (has(b, 'word/')) return 'docx';
     if (has(b, 'xl/')) return 'xlsx';

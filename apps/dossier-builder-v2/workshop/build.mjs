@@ -1,8 +1,8 @@
 // Builds the desktop workshop (Part 2): a folder the person opens from the computer (index.html in Chrome or Edge, file://), with
 // everything beside it — no server, nothing to install:
 //   node workshop/build.mjs [--zip]   → dist/workshop/                     index.html, app/ (the page, the library's data, the scan
-//                                                                           reader's files), programs/ (the Word and PDF programs, where
-//                                                                           they are built here), library/ (Part 1, the desktop library)
+//                                                                           reader's files), programs/ (the Word, PDF, photo and design
+//                                                                           programs, where they are built here), library/ (Part 1, the desktop library)
 //                                       dist/Dossier-Builder-Workshop.zip  (with --zip) the folder in one file, to hand over
 // A page opened from the disk cannot fetch the files beside it, start a worker from a file or import a module from one: the page is
 // one classic script, pdf.js runs on its thread, and every other file is a script that hands its content over when it loads
@@ -53,10 +53,10 @@ function ocrFiles() {
 
 // The real programs built on this machine (tools/craft/build.mjs → vendor/craft/<app>-web): each one's glue as one module (its
 // snippets bundled in) and its WebAssembly as gzip in base64, beside its own page with the relay (workshop/programs.js).
-async function programFiles(out) {
+export async function programFiles(out, craft = CRAFT) {
   const built = [];
   for (const [app, p] of Object.entries(PROGRAMS)) {
-    const dir = path.join(CRAFT, `${app}-web`);
+    const dir = path.join(craft, `${app}-web`);
     if (!fs.existsSync(path.join(dir, 'index.html'))) continue;
     const glueFile = fs.readdirSync(dir).find(f => new RegExp(`^${app}-web-[0-9a-f]+\\.js$`).test(f));
     const wasmFile = fs.readdirSync(dir).find(f => new RegExp(`^${app}-web-[0-9a-f]+_bg\\.wasm$`).test(f));
@@ -67,7 +67,7 @@ async function programFiles(out) {
     fs.writeFileSync(path.join(target, 'glue.js'), asset(`${app}/glue`, glue));
     fs.writeFileSync(path.join(target, 'wasm.js'), asset(`${app}/wasm`, packed(fs.readFileSync(path.join(dir, wasmFile)))));
     if (fs.existsSync(path.join(dir, 'licenses'))) copyDir(path.join(dir, 'licenses'), path.join(target, 'licenses'));
-    fs.writeFileSync(path.join(out, 'programs', `${app}.html`), programPage(app, { canvas: p.canvas, title: p.ar }));
+    fs.writeFileSync(path.join(out, 'programs', `${app}.html`), programPage(app, { canvas: p.canvas, title: p.ar, host: p.host, loading: p.loading }));
     built.push(app);
   }
   return built;

@@ -14,7 +14,7 @@ export const BODY = `<div dir="rtl" lang="ar">
 <main id="view" class="wrap"><p class="empty">بيفتح…</p></main>
 <aside id="drawer" class="drawer" hidden aria-label="التفاصيل"></aside>
 <div id="program" class="program" hidden role="dialog" aria-label="البرنامج">
-  <div class="program-bar"><b id="program-title"></b><span id="program-note" class="fine"></span><button class="btn small" data-act="program-close">اقفل البرنامج</button></div>
+  <div class="program-bar"><b id="program-title"></b><span id="program-note" class="fine"></span><button class="btn small quiet" id="program-place" data-act="program-place" hidden>حط الملف في التصميم</button><button class="btn small" data-act="program-close">اقفل البرنامج</button></div>
   <div id="program-frames"></div>
 </div>
 <dialog id="settings"><div class="dlg" id="settings-body"></div></dialog>

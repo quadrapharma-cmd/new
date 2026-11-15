@@ -19,7 +19,7 @@ export function clean(s, n = 48) {
   return t.replace(BAD, ' ').replace(/\s+/g, ' ').trim().replace(/[ \-.,:;+/&]+$/, '') || 'x';
 }
 const ext = doc => (doc.pdf && doc.madeBy !== 'program' ? 'pdf' : doc.madeBy === 'program' ? 'docx' : doc.kind === 'docx' ? 'docx' : doc.kind === 'doc' ? 'doc'
-  : ['png', 'jpeg', 'tiff', 'gif', 'webp'].includes(doc.kind) ? doc.kind.replace('jpeg', 'jpg') : 'pdf');
+  : ['png', 'jpeg', 'tiff', 'gif', 'webp', 'psd', 'idml', 'indd', 'designcraft'].includes(doc.kind) ? doc.kind.replace('jpeg', 'jpg') : 'pdf');
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // Where each document goes in the folder: [{doc, path}] (documents of one place numbered (2), (3)…).

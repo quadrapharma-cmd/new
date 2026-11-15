@@ -1,13 +1,18 @@
-// The real programs inside the workshop (Part 2, step 2.7): the Word program (WordCraft) and the PDF program (PdfCraft), built from
-// their source (tools/craft/build.mjs), each in a frame of its own page beside the workshop (programs/<app>.html, written by
-// workshop/build.mjs). A page opened from the disk is its own origin, so the program runs in its page's own document («page» host
-// mode: the program's messages are events on its canvas) and a small relay there passes them to the workshop and back with
-// postMessage. The workshop hands the program a document (open), keeps every file the program saves as a new version of it (save),
-// and can ask it to work by its commands (execute; inspect: what the program has open) — the Word program turning a Word file into a
-// PDF without a person.
+// The real programs inside the workshop (Part 2, step 2.7): the Word program (WordCraft), the PDF program (PdfCraft), the photo program
+// (PhotoCraft) and the design program (DesignCraft), built from their source (tools/craft/build.mjs), each in a frame of its own page
+// beside the workshop (programs/<app>.html, written by workshop/build.mjs). A page opened from the disk is its own origin, so the program
+// runs in its page's own document and a small relay there passes its messages to the workshop and back with postMessage.
+//  · «page» programs (Word, PDF) have a host mode for this: their messages are events on their canvas, and they take commands
+//    (execute; inspect: what the program has open) — the Word program turning a Word file into a PDF without a person.
+//  · «drop» programs (photo, design) have none: the relay hands them a file the way a person drops one on them, knows they are ready
+//    when they take away their own «loading» note, and keeps every file they save (they save by giving the browser a download: a link
+//    to the file's bytes, clicked) instead of letting it go to the Downloads folder.
+// The workshop hands the program a document (open), and keeps every file the program saves as a new version of it (save).
 export const PROGRAMS = {
-  wordcraft: { ar: 'برنامج الـ Word', canvas: 'wordcraft_canvas', kinds: ['docx', 'doc'] },
-  pdfcraft: { ar: 'برنامج الـ PDF', canvas: 'pdfcraft', kinds: ['pdf'] },
+  wordcraft: { ar: 'برنامج الـ Word', canvas: 'wordcraft_canvas', kinds: ['docx', 'doc'], host: 'page' },
+  pdfcraft: { ar: 'برنامج الـ PDF', canvas: 'pdfcraft', kinds: ['pdf'], host: 'page' },
+  photocraft: { ar: 'برنامج الصور', canvas: 'photocraft_canvas', loading: 'photocraft_loading', kinds: ['png', 'jpeg', 'tiff', 'gif', 'webp', 'psd'], host: 'drop' },
+  designcraft: { ar: 'برنامج التصميم', canvas: 'designcraft_canvas', loading: 'designcraft_loading', kinds: ['idml', 'indd', 'designcraft'], host: 'drop' },
 };
 export const programFor = kind => Object.keys(PROGRAMS).find(k => PROGRAMS[k].kinds.includes(kind)) || null;
 export const available = app => (globalThis.DB_PROGRAMS || []).includes(app);
@@ -29,7 +34,7 @@ export function createPrograms({ base = 'programs/', mount }) {
     if (frames[app]) return frames[app];
     const iframe = document.createElement('iframe');
     iframe.title = PROGRAMS[app].ar;
-    iframe.src = `${base}${app}.html?webgl&control`;
+    iframe.src = `${base}${app}.html?webgl${PROGRAMS[app].host === 'page' ? '&control' : ''}`;
     const f = { iframe, pending: new Map() };
     f.ready = new Promise((ok, no) => { f.markReady = ok; f.markFailed = e => no(Object.assign(new Error(e), { code: 'program-failed' })); });
     setTimeout(() => f.markFailed('the program did not start in 180 s'), 180000);
@@ -50,6 +55,12 @@ export function createPrograms({ base = 'programs/', mount }) {
       const f = frame(app);
       await f.ready;
       f.iframe.contentWindow.postMessage({ type: `${app}:open`, name, bytes }, '*');
+    },
+    // A file put INTO what the design program has open (a picture or a PDF placed on the page in view), not opened as a document.
+    async place(app, name, bytes) {
+      const f = frame(app);
+      await f.ready;
+      f.iframe.contentWindow.postMessage({ type: `${app}:place`, name, bytes }, '*');
     },
     execute: (app, command, params = {}) => frames[app].ready.then(() => call(app, 'execute', { command, params })),
     inspect: app => frames[app].ready.then(() => call(app, 'inspect', {}, 20000)),
@@ -76,11 +87,24 @@ export function createPrograms({ base = 'programs/', mount }) {
 
 // The relay in a program's own page (programs/<app>.html), and its loader: the program's glue as a module made from a blob, its
 // WebAssembly from the gzip in base64 its script hands over. Written into the page by workshop/build.mjs.
-export function programPage(app, { canvas, title }) {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+const LOADER = app => `
+  (async function () {
+    try {
+      var bin = atob(window.__dbAssets[${JSON.stringify(app + '/wasm')}]), gz = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) gz[i] = bin.charCodeAt(i);
+      delete window.__dbAssets[${JSON.stringify(app + '/wasm')}];
+      var wasm = new Uint8Array(await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer());
+      var mod = await import(URL.createObjectURL(new Blob([window.__dbAssets[${JSON.stringify(app + '/glue')}]], { type: 'text/javascript' })));
+      await mod.default({ module_or_path: wasm });
+    } catch (err) { up('failed', { error: String(err && err.message || err) }); }
+  })();`;
+const HEAD = title => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${title}</title><style>html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#e6e6e6}
-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;outline:none}#loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#555;font:15px Tahoma,system-ui,sans-serif}</style></head>
-<body><canvas id="${canvas}" data-host="page"></canvas><div id="loading">بيفتح ${title}…</div>
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block;outline:none}.loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#555;font:15px Tahoma,system-ui,sans-serif;pointer-events:none}</style></head>`;
+
+export function programPage(app, { canvas, title, host = 'page', loading }) {
+  return host === 'drop' ? dropPage(app, { canvas, title, loading }) : `${HEAD(title)}
+<body><canvas id="${canvas}" data-host="page"></canvas><div id="loading" class="loading">بيفتح ${title}…</div>
 <script>window.__dbAssets={};window.__dbAsset=function(n,v){window.__dbAssets[n]=v;};</script>
 <script src="${app}/glue.js"></script><script src="${app}/wasm.js"></script>
 <script>
@@ -97,16 +121,55 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block;outline:no
     if (m.type === app + ':execute') answer('executed', api ? api.execute(m.command, m.params || {}) : Promise.reject(new Error('no command API')));
     if (m.type === app + ':inspect') answer('inspected', api ? api.docInspect() : Promise.reject(new Error('no command API')));
   });
-  (async function () {
-    try {
-      var bin = atob(window.__dbAssets[app + '/wasm']), gz = new Uint8Array(bin.length);
-      for (var i = 0; i < bin.length; i++) gz[i] = bin.charCodeAt(i);
-      delete window.__dbAssets[app + '/wasm'];
-      var wasm = new Uint8Array(await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer());
-      var mod = await import(URL.createObjectURL(new Blob([window.__dbAssets[app + '/glue']], { type: 'text/javascript' })));
-      await mod.default({ module_or_path: wasm });
-    } catch (err) { up('failed', { error: String(err && err.message || err) }); }
-  })();
+${LOADER(app)}
+})();
+</script></body></html>`;
+}
+
+// A «drop» program's page: the program's own «loading» note (it takes it away once it has started), the file handed over as a drop on
+// its canvas (at the window's corner, so the photo program opens it as a document of its own rather than placing it in the one in view),
+// and its downloads kept and passed up.
+function dropPage(app, { canvas, title, loading }) {
+  return `${HEAD(title)}
+<body><canvas id="${canvas}"></canvas><div id="${loading}" class="loading">بيفتح ${title}…</div>
+<script>window.__dbAssets={};window.__dbAsset=function(n,v){window.__dbAssets[n]=v;};</script>
+<script src="${app}/glue.js"></script><script src="${app}/wasm.js"></script>
+<script>
+(function () {
+  var app = ${JSON.stringify(app)}, canvas = document.getElementById(${JSON.stringify(canvas)}), loadingId = ${JSON.stringify(loading)};
+  function up(type, detail, transfer) { var m = { type: app + ':' + type }; for (var k in (detail || {})) m[k] = detail[k]; parent.postMessage(m, '*', transfer || []); }
+  // What the program saves: a link to the file's bytes it clicks for the browser to download. The bytes go to the workshop instead.
+  var blobs = new Map(), makeURL = URL.createObjectURL, dropURL = URL.revokeObjectURL, click = HTMLAnchorElement.prototype.click;
+  URL.createObjectURL = function (o) { var u = makeURL.call(URL, o); if (o instanceof Blob) blobs.set(u, o); return u; };
+  URL.revokeObjectURL = function (u) { blobs.delete(u); return dropURL.call(URL, u); };
+  HTMLAnchorElement.prototype.click = function () {
+    var blob = this.download ? blobs.get(this.href) : null;
+    if (!blob) return click.call(this);
+    var name = this.download;
+    blob.arrayBuffer().then(function (buf) { up('save', { name: name, bytes: buf }, [buf]); });
+  };
+  // Ready when the program has taken its «loading» note away; a note it rewrote is the reason it could not start.
+  var note = document.getElementById(loadingId), first = note.textContent, done = false;
+  new MutationObserver(function () {
+    if (done) return;
+    var el = document.getElementById(loadingId);
+    if (!el) { done = true; up('ready'); }
+    else if (el.textContent !== first) { done = true; up('failed', { error: el.textContent.trim().slice(0, 300) }); }
+  }).observe(document.body, { childList: true, subtree: true, characterData: true });
+  function dropFile(name, bytes, at) {
+    canvas.dispatchEvent(new MouseEvent('mouseleave'));
+    var dt = new DataTransfer();
+    dt.items.add(new File([bytes], name));
+    canvas.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true, clientX: at[0], clientY: at[1] }));
+  }
+  addEventListener('message', function (e) {
+    if (e.source !== parent) return;
+    var m = e.data || {};
+    if (m.type === app + ':open') dropFile(m.name, m.bytes, [1, 1]);
+    if (m.type === app + ':place') dropFile(m.name, m.bytes, [Math.round(innerWidth / 2), Math.round(innerHeight / 2)]);
+    if (m.type === app + ':execute' || m.type === app + ':inspect') up(m.type === app + ':execute' ? 'executed' : 'inspected', { id: m.id, error: 'no command API' });
+  });
+${LOADER(app)}
 })();
 </script></body></html>`;
 }

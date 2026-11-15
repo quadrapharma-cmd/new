@@ -12,7 +12,12 @@ import { boardOf, ruleCard, FORMAT } from '../workshop/board.js';
 import { newDossier, addFiles, understand, moveDoc } from '../workshop/pipeline.js';
 import { checkDossier, placeStatus } from '../workshop/checks.js';
 import { zipOf } from '../workshop/zipw.js';
-import { pdfInfo, cutPdf, turnPages, withOutline, mergePdfs } from '../workshop/pdfops.js';
+import { pdfInfo, cutPdf, turnPages, withOutline, mergePdfs, replacePage, picturesToPdf } from '../workshop/pdfops.js';
+import { psdComposite } from '../workshop/psd.js';
+import { pngOf } from '../workshop/png.js';
+import { kindOf } from '../agent/workspace.js';
+import { idmlText } from '../prep/office.js';
+import { readFiles } from '../prep/read.js';
 import { unzip } from '../prep/zip.js';
 import { LICENCE, SPEC, STABILITY, RECEIPTS, COA } from './fixtures/dossier.mjs';
 import { pdfOf } from './fixtures/pdfs.mjs';
@@ -135,6 +140,57 @@ test('the ZIP the workshop writes opens with Arabic names, and the PDF work keep
   const doc = await pdfjs.getDocument({ data: new Uint8Array(marked) }).promise;
   assert.deepEqual((await doc.getOutline()).map(x => x.title), ['الإخطار', 'Stability']);
   assert.equal((await pdfInfo(await mergePdfs([cut, four]))).pages, 6);
+});
+
+test('design and photo files are known by their content; a PSD gives its picture, an IDML its words; a cleaned page takes its page', async () => {
+  // a 3×2 RGB Photoshop file (header, three empty sections, then the planes), raw and in PackBits
+  const R = [[10, 10, 10], [1, 2, 3]], G = [[20, 20, 20], [4, 5, 6]], B = [[30, 30, 30], [7, 8, 9]];
+  const psd = compression => {
+    const head = [...Buffer.from('8BPS'), 0, 1, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 2, 0, 0, 0, 3, 0, 8, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, compression];
+    if (compression === 0) return new Uint8Array([...head, ...[R, G, B].flatMap(p => p.flat())]);
+    const pack = row => (row.every(x => x === row[0]) ? [0xfe, row[0]] : [0x02, ...row]);     // a run of three, or three as they are
+    const rows = [R, G, B].flatMap(p => p.map(pack));
+    return new Uint8Array([...head, ...rows.flatMap(r => [0, r.length]), ...rows.flat()]);
+  };
+  for (const c of [0, 1]) {
+    const im = psdComposite(psd(c));
+    assert.deepEqual([im.width, im.height], [3, 2]);
+    assert.deepEqual([...im.rgba.subarray(0, 4)], [10, 20, 30, 255]);
+    assert.deepEqual([...im.rgba.subarray(20, 24)], [3, 6, 9, 255]);
+  }
+  assert.equal(kindOf(psd(1)), 'psd');
+  assert.throws(() => psdComposite(new Uint8Array(30)), e => e.why === 'psd-not-psd');
+  // its picture as a PNG that a PDF carries; a Photoshop file made a page of a PDF
+  const png = await pngOf(psdComposite(psd(1)));
+  assert.equal(kindOf(png), 'png');
+  assert.equal((await pdfInfo(await picturesToPdf([{ bytes: psd(0), kind: 'psd' }]))).pages, 1);
+  // InDesign and the design program name their packages in a first entry kept as it is
+  const idml = await zipOf([{ name: 'mimetype', bytes: new TextEncoder().encode('application/vnd.adobe.indesign-idml-package'), store: true },
+    { name: 'designmap.xml', bytes: new TextEncoder().encode('<Document/>') },
+    { name: 'Stories/Story_u1.xml', bytes: new TextEncoder().encode('<Story><ParagraphStyleRange><Content>Made-up Tablets 500 mg</Content><Br/><Content>Reg. No. 0000 &amp; Co.</Content></ParagraphStyleRange></Story>') }]);
+  assert.equal(kindOf(idml), 'idml');
+  assert.deepEqual((await idmlText(idml))[0].text.split('\n'), ['Made-up Tablets 500 mg', 'Reg. No. 0000 & Co.']);
+  const own = await zipOf([{ name: 'mimetype', bytes: new TextEncoder().encode('application/vnd.designcraft+zip'), store: true }, { name: 'document.json', bytes: new TextEncoder().encode('{}') }]);
+  assert.equal(kindOf(own), 'designcraft');
+  assert.equal(kindOf(new Uint8Array([0x06, 0x06, 0xed, 0xf5, 0xd8, 0x1d, 0x46, 0xe5, 0xbd, 0x31, 0xef, 0xe7, 0xfe, 0x74, 0xb7, 0x1d, 0, 0])), 'indd');
+  assert.equal(kindOf(await zipOf([{ name: 'a.txt', bytes: new TextEncoder().encode('x') }])), 'zip');   // a plain archive stays one
+  const read = await readFiles([{ name: 'art.idml', bytes: idml }, { name: 'art.designcraft', bytes: own }], {});
+  assert.deepEqual(read.map(r => [r.kind, !!r.unread]), [['idml', false], ['designcraft', false]]);
+  assert.match(read[0].pages[0].text, /Made-up Tablets 500 mg/);
+  // a cleaned page: the same page, now the picture; the pages around it untouched
+  const three = await pdfOf([LICENCE, STABILITY]);
+  const textOf = async bytes => { const doc = await pdfjs.getDocument({ data: new Uint8Array(bytes) }).promise; const out = [];
+    for (let i = 1; i <= doc.numPages; i++) out.push((await (await doc.getPage(i)).getTextContent()).items.map(x => x.str).join(' ')); return out; };
+  const before = await textOf(three);
+  const after = await replacePage(three, 1, { bytes: png, kind: 'png' });
+  const now = await textOf(after);
+  assert.equal(now.length, before.length);
+  assert.equal(now[0], before[0]);
+  assert.equal(now[1].trim(), '');
+  assert.deepEqual(now.slice(2), before.slice(2));
+  const turned = await replacePage(await turnPages(three, { 1: 1 }), 1, { bytes: png, kind: 'png' });
+  const sizes = (await pdfInfo(turned)).sizes;
+  assert.deepEqual([Math.round(sizes[1].w), Math.round(sizes[1].h), sizes[1].rotate], [Math.round(sizes[0].h), Math.round(sizes[0].w), 0]);
 });
 
 test('the company papers are written as Word drafts from the dossier, gaps marked, the salt sum shown; needs and the ready folder follow', { timeout: 120000 }, async () => {

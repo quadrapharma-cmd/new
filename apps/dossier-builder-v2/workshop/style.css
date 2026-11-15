@@ -184,3 +184,6 @@ dialog form, dialog .dlg { padding: 18px; display: grid; gap: 12px; }
 .toast { position: fixed; inset-inline-start: 16px; bottom: max(16px, env(safe-area-inset-bottom, 0px)); z-index: 60; background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: var(--r); font-size: 14px; max-width: calc(100vw - 32px); }
 @media (max-width: 640px) { .place { grid-template-columns: auto 1fr auto; } .place .ctd { grid-column: 2; } .place .t { grid-column: 1 / -1; } }
 @media (prefers-reduced-motion: reduce) { .bar span { transition: none; } }
+
+.pagepick { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.pagepick input { width: 4.5em; padding: 4px 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); font: inherit; }

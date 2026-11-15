@@ -157,3 +157,22 @@ function pagesOf(body, head, by) {
   const parts = body.split('\f');
   return parts.map((t, i) => ({ n: i + 1, text: (i === 0 ? [...top, ...tidy(t)] : tidy(t)).join('\n'), by })).filter((p, i) => i === 0 || p.text);
 }
+
+// ---- an InDesign package (IDML): the words of its stories (Stories/Story_*.xml, each <Content> a run of text, <Br/> a new line),
+// in the order the package lists them — what a pack's artwork says (its name, strength, registration number), to know where it goes.
+export async function idmlText(bytes) {
+  const list = entries(bytes);
+  const stories = list.filter(x => /^Stories\/Story_[^/]+\.xml$/.test(x.name));
+  if (!list.some(x => x.name === 'designmap.xml')) throw fail('damaged', 'not an InDesign package (no designmap.xml)');
+  const lines = [];
+  for (const e of stories) {
+    const xml = new TextDecoder().decode(await read(bytes, e));
+    let line = '';
+    for (const m of xml.matchAll(/<Content>([\s\S]*?)<\/Content>|<Br\s*\/>|<\/ParagraphStyleRange>/g)) {
+      if (m[1] !== undefined) line += unxml(m[1]);
+      else { if (line.trim()) lines.push(line.replace(/\s+/g, ' ').trim()); line = ''; }
+    }
+    if (line.trim()) lines.push(line.replace(/\s+/g, ' ').trim());
+  }
+  return [{ n: 1, text: lines.join('\n'), by: 'text' }];
+}

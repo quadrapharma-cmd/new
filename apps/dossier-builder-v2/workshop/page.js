@@ -13,7 +13,7 @@ import { createClaudeReader } from '../prep/claude-read.js';
 import { extract as unrarInWorker } from '../prep/rar.js';
 import { readFiles, whyOf } from '../prep/read.js';
 import { desktopAssets } from './desktop-assets.js';
-import { boardOf, ruleCard, COUNTRIES, QUESTIONS, PARTY } from './board.js';
+import { boardOf, ruleCard, COUNTRIES, QUESTIONS, PARTY, DESIGN_PLACES } from './board.js';
 import { newDossier, addFiles, understand, moveDoc, log, partyFor } from './pipeline.js';
 import { checkDossier, placeStatus } from './checks.js';
 import { fixAll, writeDrafts } from './fixes.js';
@@ -27,6 +27,10 @@ import * as store from './store.js';
 import { createPrograms, programFor, available, PROGRAMS } from './programs.js';
 import { docxText } from '../prep/office.js';
 import { fold } from '../core/fold.js';
+import { kindOf } from '../agent/workspace.js';
+import { psdComposite } from './psd.js';
+import { replacePage } from './pdfops.js';
+import { DESIGN_KINDS, PICTURES } from './checks.js';
 
 globalThis.pdfjsWorker = pdfjsWorker;
 const $ = s => document.querySelector(s);
@@ -35,7 +39,8 @@ const KNOW = globalThis.DB_KNOWLEDGE;
 const knowledge = createKnowledge(KNOW);
 const today = () => new Date().toISOString().slice(0, 10);
 const KIND = { pdf: 'PDF', doc: 'Word قديم', docx: 'Word', png: 'صورة', jpeg: 'صورة', tiff: 'TIFF', gif: 'صورة', webp: 'صورة', text: 'نص', xls: 'Excel قديم',
-               xlsx: 'Excel', ppt: 'PowerPoint قديم', pptx: 'PowerPoint', '7z': '7z', zip: 'ZIP', rar: 'RAR', heic: 'HEIC', unknown: 'مش معروف' };
+               xlsx: 'Excel', ppt: 'PowerPoint قديم', pptx: 'PowerPoint', '7z': '7z', zip: 'ZIP', rar: 'RAR', heic: 'HEIC', psd: 'Photoshop',
+               idml: 'تصميم InDesign (IDML)', indd: 'تصميم InDesign', designcraft: 'تصميم (برنامج التصميم)', unknown: 'مش معروف' };
 const BY = { text: 'نص الملف', ocr: 'قارئ المسح', claude: 'Claude', word: 'Word', plain: 'نص', program: 'البرنامج' };
 const FIELD = { product_name: 'المستحضر', trade_name: 'المستحضر', dosage_form: 'الشكل الصيدلي', manufacturer: 'المصنع', license_holder: 'صاحب الترخيص',
                 applicant: 'مقدم الطلب', document_code: 'كود المستند', issue_date: 'تاريخ الإصدار', review_date: 'تاريخ المراجعة',
@@ -83,9 +88,14 @@ async function drawPdf(page) {
   c.dpi = Math.abs(shape - 1.414) < 0.08 || Math.abs(shape - 1.294) < 0.06 ? LONG_DPI : 0;
   return c;
 }
+async function bitmapOf(bytes, kind) {
+  if (kind !== 'psd') return createImageBitmap(new Blob([bytes]));
+  const im = psdComposite(bytes);                                   // a Photoshop file: the picture it shows
+  return createImageBitmap(new ImageData(im.rgba, im.width, im.height));
+}
 async function drawImage(bytes, kind) {
   if (kind === 'tiff') throw Object.assign(new Error('TIFF'), { why: 'kind' });
-  const bmp = await createImageBitmap(new Blob([bytes]));
+  const bmp = await bitmapOf(bytes, kind);
   const L = Math.max(bmp.width, bmp.height), k = L < 2000 ? Math.min(3, 2000 / L) : L > 4200 ? 4200 / L : 1;
   const c = canvasOf(bmp.width * k, bmp.height * k), g = c.getContext('2d');
   g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.imageSmoothingQuality = 'high'; g.drawImage(bmp, 0, 0, c.width, c.height);
@@ -126,31 +136,145 @@ function showProgram(app, title, note) {
   programs.frame(app).hidden = false;
   $('#program-title').textContent = title;
   $('#program-note').textContent = note;
+  $('#program-place').hidden = !(app === 'designcraft' && state.programDoc?.placing);
   $('#program').hidden = false;
 }
 function hideProgram() { $('#program').hidden = true; state.programDoc = null; }
+const NOTE = {
+  wordcraft: 'عدّل واحفظ من جوه البرنامج (Ctrl+S): كل حفظة بترجع للملف هنا كنسخة جديدة.',
+  pdfcraft: 'عدّل واحفظ من جوه البرنامج (Ctrl+S): كل حفظة بترجع للملف هنا كنسخة جديدة.',
+  photocraft: 'نضّف الصورة واحفظ (Ctrl+S): الصورة بترجع للملف هنا كنسخة جديدة.',
+  designcraft: 'صدّر PDF (File ← Export PDF…) والـ PDF بيرجع للملف هنا. الحفظ (Ctrl+S) بيحفظ التصميم نفسه علشان تكمّله بعدين.',
+};
+const stem = name => String(name || 'file').split('/').pop().replace(/\.[a-z0-9]{2,11}$/i, '').replace(/[\\/:*?"<>|]/g, ' ').trim() || 'file';
+const EXT = { png: 'png', jpeg: 'jpg', pdf: 'pdf', psd: 'psd', idml: 'idml', designcraft: 'designcraft', indd: 'indd' };
+const appOf = doc => programFor(doc.madeBy === 'program' ? 'docx' : doc.design ? 'designcraft' : doc.picture || doc.kind);
 async function openInProgram(docId) {
   const d = state.d, doc = d.docs.find(x => x.id === docId);
   if (!doc) return;
-  const kind = doc.madeBy === 'program' ? 'docx' : doc.kind;
-  const app = programFor(kind);
+  const app = appOf(doc);
   if (!app || !available(app)) { await openDocFile(docId); toast('اتفتح (أو اتنزّل). عدّله في برنامجه على جهازك واحفظه، وبعدين «ارفع نسخة جديدة».', 7000); return; }
-  const bytes = doc.madeBy === 'program' && !doc.editedBy ? await docxOf(draftFor(doc.place, d).model) : await store.getBlob(d.id, doc.fixed || doc.sha);
-  const name = (doc.madeBy === 'program' ? doc.name : doc.name.split('/').pop()).replace(/[\\/:*?"<>|]/g, ' ');
+  let bytes = doc.madeBy === 'program' && !doc.editedBy ? await docxOf(draftFor(doc.place, d).model) : await store.getBlob(d.id, doc.fixed || doc.sha);
+  let name = (doc.madeBy === 'program' ? doc.name : doc.name.split('/').pop()).replace(/[\\/:*?"<>|]/g, ' ');
+  if (doc.design) { bytes = await store.getBlob(d.id, doc.design.sha); name = `${stem(doc.name)}.${EXT[doc.design.kind] || 'designcraft'}`; }   // a PDF made in the design program: its design
+  else if (app === 'photocraft' && doc.psd) { bytes = await store.getBlob(d.id, doc.psd); name = `${stem(doc.name)}.psd`; }                     // a picture cleaned before: its layers
+  else if (app === 'photocraft' && doc.picture) bytes = await store.getBlob(d.id, doc.sha);                                                   // a picture made a PDF: the picture
   state.programDoc = { app, docId };
-  showProgram(app, `${PROGRAMS[app].ar} — ${name}`, 'عدّل واحفظ من جوه البرنامج (Ctrl+S): كل حفظة بترجع للملف هنا كنسخة جديدة.');
+  showProgram(app, `${PROGRAMS[app].ar} — ${name}`, NOTE[app]);
   try { await programs.open(app, name, bytes); } catch (e) { toast(`${PROGRAMS[app].ar} ماقدرش يفتح: ${e.message}`, 9000); hideProgram(); }
 }
-// A file the program saved: a new version of the document it was given (a PDF the Word program exported is that Word file's PDF).
+// One page of a PDF in the photo program (a scan to straighten, crop or clean): drawn at 200 dpi; what comes back takes its place.
+async function pageInPhoto(docId, n) {
+  const d = state.d, doc = d.docs.find(x => x.id === docId);
+  if (!doc || !available('photocraft')) return;
+  const bytes = await store.getBlob(d.id, doc.fixed || doc.sha);
+  const pdf = await pdfjs.getDocument({ data: bytes.slice(), isEvalSupported: false, useSystemFonts: false }).promise;
+  try {
+    n = Math.min(Math.max(1, Math.round(Number(n) || 1)), pdf.numPages);
+    const page = await pdf.getPage(n), vp = page.getViewport({ scale: 200 / 72 });
+    const c = canvasOf(vp.width, vp.height), g = c.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+    await page.render({ canvasContext: g, viewport: vp, canvas: c }).promise;
+    const png = new Uint8Array(await (await new Promise(r => c.toBlob(r, 'image/png'))).arrayBuffer());
+    state.programDoc = { app: 'photocraft', docId, page: n };
+    showProgram('photocraft', `${PROGRAMS.photocraft.ar} — صفحة ${n} من ${doc.name}`, 'نضّف الصفحة واحفظ (Ctrl+S): الصفحة دي بتتبدّل في الملف هنا، والباقي زي ما هو.');
+    await programs.open('photocraft', `${stem(doc.name)} - page ${n}.png`, png);
+  } catch (e) { toast(`برنامج الصور ماقدرش يفتح الصفحة: ${e.message}`, 9000); hideProgram(); }
+  finally { pdf.destroy(); }
+}
+// A document put into a design: the design program opens with a button to place it in the page the person has open.
+async function docInDesign(docId) {
+  const doc = state.d.docs.find(x => x.id === docId);
+  if (!doc || !available('designcraft')) return;
+  if (doc.design || DESIGN_KINDS.includes(doc.kind)) { await openInProgram(docId); return; }
+  state.programDoc = { app: 'designcraft', docId, placing: true };
+  showProgram('designcraft', `${PROGRAMS.designcraft.ar} — ${doc.name}`, 'افتح مستند (Ctrl+N لمستند جديد بمقاس العبوة)، وبعدين «حط الملف في التصميم». لما تخلص: File ← Export PDF… والـ PDF بيرجع هنا.');
+}
+async function placeIntoDesign() {
+  const pd = state.programDoc, d = state.d, doc = d.docs.find(x => x.id === pd?.docId);
+  if (!doc) return;
+  const bytes = await store.getBlob(d.id, doc.fixed || doc.sha);
+  await programs.place('designcraft', `${stem(doc.name)}.${EXT[doc.kind] || 'pdf'}`, bytes);
+  toast('الملف اتحط في الصفحة المفتوحة في برنامج التصميم.');
+}
+// The design program for a place that has no artwork yet: what it gives back first becomes the document there.
+async function designForPlace(placeId) {
+  if (!available('designcraft')) return;
+  state.drawer = null; render();
+  state.programDoc = { app: 'designcraft', docId: null, place: placeId };
+  const p = state.board.places.find(x => x.id === placeId);
+  showProgram('designcraft', `${PROGRAMS.designcraft.ar} — ${p?.ctd || ''} ${p?.title.ar || ''}`, 'اعمل مستند جديد (Ctrl+N) بمقاس العبوة وصمّم. File ← Export PDF… والـ PDF بيتحط في مكانه هنا؛ Ctrl+S بيحفظ التصميم علشان تكمّله بعدين.');
+}
+// A picture the photo program gave back, as a PDF can carry it: a Photoshop file as the picture it shows; PNG or JPEG, the smaller.
+async function pictureOf(bytes) {
+  const kind = kindOf(bytes);
+  if (kind === 'png' || kind === 'jpeg') return { bytes, kind };
+  const bmp = await bitmapOf(bytes, kind);
+  const c = canvasOf(bmp.width, bmp.height), g = c.getContext('2d');
+  g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(bmp, 0, 0);
+  const as = async type => new Uint8Array(await (await new Promise(r => c.toBlob(r, type, 0.9))).arrayBuffer());
+  const png = await as('image/png'), jpg = await as('image/jpeg');
+  return jpg.length < png.length * 0.8 ? { bytes: jpg, kind: 'jpeg' } : { bytes: png, kind: 'png' };
+}
+// A file the program saved: a new version of the document it was given (a PDF the Word program exported is that Word file's PDF;
+// a page from the photo program takes its page's place; the design program's PDF is its design's PDF, its own file the design).
 programs.onMessage(async m => {
   if (m.type !== `${m.app}:save` || !state.programDoc || state.programDoc.app !== m.app || state.converting) return;
-  const bytes = new Uint8Array(m.bytes), docId = state.programDoc.docId;
+  const bytes = new Uint8Array(m.bytes), pd = state.programDoc;
   try {
-    if (m.app === 'wordcraft' && /\.pdf$/i.test(m.name || '')) await keepPdfOf(docId, bytes);
-    else await newVersion(docId, bytes, m.name, 'program');
+    if (m.app === 'photocraft') await photoSaved(pd, bytes);
+    else if (m.app === 'designcraft') await designSaved(pd, m.name, bytes);
+    else if (m.app === 'wordcraft' && /\.pdf$/i.test(m.name || '')) await keepPdfOf(pd.docId, bytes);
+    else await newVersion(pd.docId, bytes, m.name, 'program');
     toast(`اتحفظ في الملف: ${m.name}`);
-  } catch (e) { toast(`ماقدرتش أحفظ: ${e.message}`, 7000); }
+  } catch (e) { toast(`ماقدرتش أحفظ: ${e.message}`, 7000); window.__workshopError = String(e.stack || e); }
 });
+async function photoSaved(pd, bytes) {
+  const d = state.d, doc = d.docs.find(x => x.id === pd.docId);
+  const kind = kindOf(bytes);
+  if (![...PICTURES, 'png', 'jpeg'].includes(kind)) throw new Error('برنامج الصور حفظ ملف مش صورة');
+  const pic = await pictureOf(bytes);
+  if (pd.page) {                                                    // a page of a PDF: that page becomes the cleaned picture
+    const pdf = await store.getBlob(d.id, doc.fixed || doc.sha);
+    const out = await replacePage(pdf, pd.page - 1, pic);
+    log(d, 'page-cleaned', { doc: doc.id, page: pd.page });
+    await newVersion(doc.id, out, doc.name, 'program');
+    return;
+  }
+  const psd = kind === 'psd' ? bytes : null;
+  await newVersion(doc.id, pic.bytes, `${stem(doc.name)}.${EXT[pic.kind]}`, 'program');
+  if (psd) { const sha = await store.sha256(psd); await store.putBlob(d.id, sha, psd); doc.psd = sha; await changed(); }
+}
+async function designSaved(pd, name, bytes) {
+  const d = state.d, kind = kindOf(bytes);
+  if (!['pdf', ...DESIGN_KINDS, 'png', 'jpeg'].includes(kind)) throw new Error('برنامج التصميم حفظ نوع ملف مش متوقع');
+  let doc = d.docs.find(x => x.id === pd.docId);
+  if (!doc) {                                                       // a new design for an empty place: its first file is the document there
+    const before = new Set(d.docs.map(x => x.id));
+    await runLine([{ name, bytes }], { place: pd.place, auto: true });
+    doc = d.docs.find(x => !before.has(x.id) && !x.dup);
+    if (!doc) throw new Error('الملف ماتضافش');
+    pd.docId = doc.id;
+    return;
+  }
+  const isDesign = DESIGN_KINDS.includes(kind), docIsDesign = DESIGN_KINDS.includes(doc.kind);
+  if (docIsDesign) {
+    if (kind === 'pdf') await keepPdfOf(doc.id, bytes);             // the design's PDF goes into the folder instead of it
+    else if (isDesign) await newVersion(doc.id, bytes, name, 'program');
+    else throw new Error('صدّر PDF (File ← Export PDF…)، مش صورة');
+    return;
+  }
+  if (isDesign) {                                                   // a PDF's design kept with it, to open again
+    const sha = await store.sha256(bytes);
+    await store.putBlob(d.id, sha, bytes);
+    doc.design = { sha, kind };
+    log(d, 'design-kept', { doc: doc.id });
+    await changed();
+    return;
+  }
+  if (kind === 'pdf' || PICTURES.includes(doc.kind)) { const design = doc.design; await newVersion(doc.id, bytes, kind === 'pdf' ? `${stem(doc.name)}.pdf` : name, 'program'); if (design) { doc.design = design; await changed(); } return; }
+  throw new Error('صدّر PDF (File ← Export PDF…)، مش صورة');
+}
 async function keepPdfOf(docId, bytes) {
   const d = state.d, doc = d.docs.find(x => x.id === docId);
   const sha = await store.sha256(bytes);
@@ -372,6 +496,7 @@ function factsTable(doc) {
   if (!doc.facts?.length) return '';
   return `<details><summary>اللي اتقرا منه (${doc.facts.length})</summary><div class="scroll"><table class="facts">${doc.facts.map(f => `<tr><td>${esc(FIELD[f.field] || f.field)}</td><td dir="auto">${esc(f.value)}</td><td>ص ${f.page}${f.by === 'claude' ? ' · Claude' : ''}</td></tr><tr><td colspan="3"><blockquote class="q" dir="auto">${esc(f.quote)}</blockquote></td></tr>`).join('')}</table></div></details>`;
 }
+const firstScan = doc => (doc.pages || []).find(p => p.by === 'ocr' || p.by === 'claude')?.n || 1;   // the first scanned page, to clean
 function tabDocs() {
   const d = state.d, docs = docsOf(d);
   if (!docs.length) return '<p class="empty">لسه مفيش مستندات. ضيف ملفات من فوق.</p>';
@@ -388,8 +513,10 @@ function tabDocs() {
       ${fs.length ? `<details${lvl === 'red' ? ' open' : ''}><summary>ملاحظات (${fs.length})</summary><ul class="list">${fs.map(f => `<li class="fine">● ${esc(f.title)}</li>`).join('')}</ul></details>` : ''}
       ${factsTable(doc)}
       <div class="row"><button class="btn small quiet" data-act="doc-open" data-id="${esc(doc.id)}">افتح</button>${doc.madeBy === 'program' ? `<button class="btn small quiet" data-act="draft-view" data-id="${esc(doc.place)}">شوف المسودة</button>` : ''}
-        ${available(programFor(doc.madeBy === 'program' ? 'docx' : doc.kind)) ? `<button class="btn small quiet" data-act="doc-program" data-id="${esc(doc.id)}">افتحه في ${esc(PROGRAMS[programFor(doc.madeBy === 'program' ? 'docx' : doc.kind)].ar)}</button>` : ''}
+        ${available(appOf(doc)) ? `<button class="btn small quiet" data-act="doc-program" data-id="${esc(doc.id)}">افتحه في ${esc(PROGRAMS[appOf(doc)].ar)}</button>` : ''}
         ${['docx', 'doc'].includes(doc.kind) && available('wordcraft') ? `<button class="btn small quiet" data-act="word-pdf" data-id="${esc(doc.id)}">${doc.pdf ? 'اعمله PDF تاني' : 'اعمله PDF'}</button>` : ''}${doc.pdf ? '<span class="badge ok">ليه PDF</span>' : ''}
+        ${doc.kind === 'pdf' && !doc.picture && doc.madeBy !== 'program' && available('photocraft') ? `<span class="pagepick">صفحة <input type="number" min="1" max="${doc.pages?.length || 1}" value="${firstScan(doc)}" data-page-of="${esc(doc.id)}" aria-label="رقم الصفحة"><button class="btn small quiet" data-act="page-photo" data-id="${esc(doc.id)}">نضّفها في برنامج الصور</button></span>` : ''}
+        ${(doc.kind === 'pdf' || PICTURES.includes(doc.kind)) && doc.madeBy !== 'program' && available('designcraft') ? `<button class="btn small quiet" data-act="doc-design" data-id="${esc(doc.id)}">${doc.design ? 'افتح تصميمه في برنامج التصميم' : 'حطه في برنامج التصميم'}</button>` : ''}
         <label class="btn small quiet"><input type="file" data-act="doc-upload" data-id="${esc(doc.id)}">ارفع نسخة جديدة</label><button class="btn small danger" data-act="doc-remove" data-id="${esc(doc.id)}">شيله من الملف</button></div></li>`;
   }).join('')}</ul>${dups.length ? `<p class="fine">${dups.length} ${dups.length === 1 ? 'ملف مكرر اتعرف' : 'ملفات مكررة اتعرفت'} ومادخلتش تاني: ${esc(dups.map(x => x.name).join('، '))}</p>` : ''}`;
 }
@@ -430,6 +557,7 @@ function needActions(n) {
     if (a === 'claude') return n.doc && claudeOn() ? `<button class="btn small quiet" data-act="need-claude" data-id="${esc(n.id)}">${actionName(a)}</button>` : '';
     if (a === 'create') return `<button class="btn small" data-act="create" data-id="${esc(n.place)}">${actionName(a)}</button>`;
     if (a === 'pdf') return n.doc && available('wordcraft') ? `<button class="btn small" data-act="word-pdf" data-id="${esc(n.doc)}">${actionName(a)}</button>` : '';
+    if (a === 'design') return n.place && available('designcraft') ? `<button class="btn small" data-act="place-design" data-id="${esc(n.place)}">${actionName(a)}</button>` : '';
     if (a === 'fill') return `<button class="btn small" data-act="tab" data-id="data">${actionName(a)}</button>`;
     if (a === 'place') return `<select data-act="move" data-id="${esc(n.doc)}">${placeOptions(null)}</select>${(n.suggestion || []).map(s => `<button class="chip" data-act="move-to" data-id="${esc(n.doc)}" data-place="${esc(s.id)}">${esc(s.ctd)} ${esc(s.ar)}</button>`).join('')}`;
     if (a === 'cut') return `<button class="btn small" data-act="cut-ok" data-id="${esc(n.doc)}">التقطيع صح</button><button class="btn small quiet" data-act="cut-undo" data-id="${esc(n.doc)}">رجّعه ملف واحد</button>`;
@@ -440,7 +568,7 @@ function tabNeeds() {
   if (!state.needs.length) return '<div class="status ok">مفيش حاجة محتاجاك دلوقتي.</div>';
   return `<ul class="list">${state.needs.map(n => `<li class="item ${n.level}" id="need-${esc(n.id)}"><h3>${esc(n.title)}</h3><p class="detail">${esc(n.detail || '')}</p>
     ${n.places ? `<details open><summary>الأماكن (${n.places.length})</summary><ul class="list">${n.places.map(p => `<li class="row"><span class="ctd">${esc(p.ctd)}</span> ${esc(p.ar)}
-      <label class="btn small quiet"><input type="file" multiple data-act="place-upload" data-id="${esc(p.id)}">ارفع</label><button class="btn small quiet" data-act="need-accept" data-id="${esc(p.finding)}">مش مطلوب (بسبب)</button></li>`).join('')}</ul></details>` : ''}
+      <label class="btn small quiet"><input type="file" multiple data-act="place-upload" data-id="${esc(p.id)}">ارفع</label>${DESIGN_PLACES.has(p.id) && available('designcraft') ? `<button class="btn small quiet" data-act="place-design" data-id="${esc(p.id)}">اعمله في برنامج التصميم</button>` : ''}<button class="btn small quiet" data-act="need-accept" data-id="${esc(p.finding)}">مش مطلوب (بسبب)</button></li>`).join('')}</ul></details>` : ''}
     ${(n.evidence || []).length ? `<details><summary>الكلام اللي في الصفحات (${n.evidence.length})</summary>${n.evidence.map(e => `<div class="fine"><bdi>${esc(e.name)}</bdi> — ص ${e.page}</div><blockquote class="q" dir="auto">${esc(e.quote)}</blockquote>`).join('')}</details>` : ''}
     ${n.rule ? `<p class="cite">القاعدة: ${esc(n.rule.ar)}${n.rule.cite?.length ? ` — ${esc(n.rule.cite.map(c => [c.src, c.at].filter(Boolean).join(' ')).join('؛ '))}` : ''}</p>` : ''}
     <div class="row">${needActions(n)}</div>
@@ -493,7 +621,7 @@ function viewDrawer() {
   return `<button class="btn small quiet close" data-act="drawer-close">اقفل ✕</button>
     <h2><span class="ctd">${esc(card.ctd)}</span> ${esc(card.title.ar)}</h2><p class="fine" dir="ltr">${esc(card.title.en)}</p>
     <div class="row"><span class="lvl ${p.level}">${{ R: 'مطلوب', O: 'اختياري', NR: 'مش مطلوب', NA: 'لا ينطبق' }[p.level]}</span>${p.why ? `<span class="fine">الشرط: <span class="ltr">${esc(p.why)}</span></span>` : ''}</div>
-    <div class="row"><label class="btn small"><input type="file" multiple data-act="place-upload" data-id="${esc(dr.id)}">ارفع مستند هنا</label>${gen ? `<button class="btn small quiet" data-act="create" data-id="${esc(dr.id)}">${state.drafts[dr.id] ? 'اعمل المسودة تاني' : 'اعمل المسودة'}</button>${state.drafts[dr.id] ? `<button class="btn small quiet" data-act="draft-view" data-id="${esc(dr.id)}">شوف المسودة</button>` : ''}` : ''}</div>
+    <div class="row"><label class="btn small"><input type="file" multiple data-act="place-upload" data-id="${esc(dr.id)}">ارفع مستند هنا</label>${gen ? `<button class="btn small quiet" data-act="create" data-id="${esc(dr.id)}">${state.drafts[dr.id] ? 'اعمل المسودة تاني' : 'اعمل المسودة'}</button>${state.drafts[dr.id] ? `<button class="btn small quiet" data-act="draft-view" data-id="${esc(dr.id)}">شوف المسودة</button>` : ''}` : ''}${DESIGN_PLACES.has(dr.id) && available('designcraft') ? `<button class="btn small quiet" data-act="place-design" data-id="${esc(dr.id)}">${docs.length ? 'اعمل تصميم تاني في برنامج التصميم' : 'اعمله في برنامج التصميم'}</button>` : ''}</div>
     <div class="card-rows">
       <div><span class="lab">المستندات هنا</span>${docs.length ? docs.map(x => `<span>● <bdi>${esc(x.name)}</bdi></span>`).join('') : '<span class="fine">مفيش</span>'}</div>
       ${fs.length ? `<div><span class="lab">الملاحظات</span>${fs.map(f => `<span class="${f.level === 'red' ? 'badge bad' : 'badge warn'}">${esc(f.title)}</span>`).join(' ')}</div>` : ''}
@@ -540,7 +668,8 @@ async function newVersion(docId, bytes, name, how = 'upload') {
   await store.putBlob(d.id, sha, bytes);
   doc.versions = [...(doc.versions || []), { sha: doc.fixed || doc.sha, at: new Date().toISOString(), name: doc.name }];
   const draft = doc.madeBy === 'program';
-  Object.assign(doc, { sha, size: bytes.length, kind: read?.kind || doc.kind, pages: read?.pages || [], fixed: undefined, fixes: [], info: undefined, pdf: undefined });
+  Object.assign(doc, { sha, size: bytes.length, kind: read?.kind || doc.kind, pages: read?.pages || [], fixed: undefined, fixes: [], info: undefined, pdf: undefined,
+                       picture: undefined, psd: undefined, design: undefined });
   if (draft && how === 'program') doc.editedBy = 'you';          // a draft edited in the Word program: never written over by the program again
   else { doc.madeBy = undefined; doc.name = name; }               // an upload (the signed scan) takes the draft's place
   delete doc.unread; delete doc.note;
@@ -548,7 +677,10 @@ async function newVersion(docId, bytes, name, how = 'upload') {
   const { factsByRules } = await import('./understand.js');
   doc.facts = factsByRules(doc.pages);
   log(d, 'uploaded', { doc: doc.id, name, how });
-  await changed();
+  await recompute();
+  const fixed = await fixAll(d, state.findings.filter(f => f.doc === doc.id), env());   // what never touches a page (version, outline, a picture made a PDF)
+  if (fixed.length) await recompute();
+  await save(); render();
 }
 async function uploadVersion(docId, file) {
   await newVersion(docId, new Uint8Array(await file.arrayBuffer()), file.name, 'upload');
@@ -658,6 +790,10 @@ document.addEventListener('click', async e => {
     else if (act === 'doc-open') await openDocFile(id);
     else if (act === 'doc-program') await openInProgram(id);
     else if (act === 'program-close') hideProgram();
+    else if (act === 'program-place') await placeIntoDesign();
+    else if (act === 'page-photo') await pageInPhoto(id, document.querySelector(`[data-page-of="${CSS.escape(id)}"]`)?.value);
+    else if (act === 'doc-design') await docInDesign(id);
+    else if (act === 'place-design') await designForPlace(id);
     else if (act === 'word-pdf') await wordToPdf(id);
     else if (act === 'doc-remove') { if (el.dataset.sure) { const d = state.d; d.docs = d.docs.filter(x => x.id !== id); log(d, 'removed', { doc: id }); await changed(); } else { el.dataset.sure = '1'; el.textContent = 'متأكد؟'; } }
     else if (act === 'need-accept') { const box = document.querySelector(`[data-accept="${CSS.escape(id)}"]`) || el.closest('.item')?.querySelector('.accept'); if (box) { box.hidden = false; box.dataset.target = id; box.querySelector('textarea').focus(); } }

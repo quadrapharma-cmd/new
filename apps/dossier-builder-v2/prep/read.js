@@ -7,7 +7,7 @@
 import { kindOf } from '../agent/workspace.js';
 import { pageTextOf } from '../core/pdftext.js';
 import { unzip } from './zip.js';
-import { cfb, docText, docxText } from './office.js';
+import { cfb, docText, docxText, idmlText } from './office.js';
 import { core as rarCore } from './rar.js';
 
 // A PDF page with fewer letters than this in its own text is a scan (a stamp, a page number or a header line is not a text layer).
@@ -121,7 +121,10 @@ export async function readFiles(files, env = {}) {
       if (kind === 'doc') { add(name, kind, { pages: docText(bytes) }, bytes); return; }
       if (kind === 'docx') { add(name, kind, { pages: await docxText(bytes) }, bytes); return; }
       if (kind === 'text') { add(name, kind, { pages: [{ n: 1, text: new TextDecoder().decode(bytes), by: 'plain' }] }, bytes); return; }
-      if (['png', 'jpeg', 'tiff', 'gif', 'webp'].includes(kind)) {
+      if (kind === 'idml') { add(name, kind, { pages: await idmlText(bytes) }, bytes); return; }
+      // a design file the design program keeps (its own, or InDesign's own document): no words read here — its PDF is what goes in
+      if (kind === 'designcraft' || kind === 'indd') { add(name, kind, { pages: [], note: 'design' }, bytes); return; }
+      if (['png', 'jpeg', 'tiff', 'gif', 'webp', 'psd'].includes(kind)) {
         if (!env.ocr || !env.drawImage) { add(name, kind, { unread: 'no-ocr' }, bytes); return; }
         const pics = await env.drawImage(bytes, kind);
         const pages = [];

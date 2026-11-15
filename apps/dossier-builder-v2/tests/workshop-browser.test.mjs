@@ -219,3 +219,96 @@ test('the Word and PDF programs open from the page: a change saved there comes b
     await ctx.close();
   } finally { await browser.close(); }
 });
+
+test('the photo and design programs from the page: a page cleaned takes its place, a picture comes back with its layers, an artwork is made and its PDF goes in', { timeout: 900000 }, async t => {
+  const b = await ensureBuilt();
+  if (!b.programs.includes('photocraft') || !b.programs.includes('designcraft')) { t.skip('the programs are not built here (tools/craft/build.mjs)'); return; }
+  const { chromium } = require('playwright');
+  const browser = await chromium.launch({ args: GPU });
+  try {
+    const chosen = await dossierFiles(browser);
+    const scan = chosen.find(f => /stability \(scan\)\.pdf$/.test(f));
+    const photo = path.join(TMP, 'pack photo.png');               // a made-up photo of a pack
+    if (!fs.existsSync(photo)) {
+      const p = await browser.newPage();
+      const b64 = await p.evaluate(async () => { const c = document.createElement('canvas'); c.width = 640; c.height = 420; const g = c.getContext('2d');
+        g.fillStyle = '#f4f0e6'; g.fillRect(0, 0, 640, 420); g.fillStyle = '#1b3a5a'; g.font = 'bold 44px sans-serif'; g.fillText('Made-up Tablets', 60, 180); g.font = '30px sans-serif'; g.fillText('500 mg — 20 tablets', 60, 240);
+        const u = new Uint8Array(await (await new Promise(r => c.toBlob(r, 'image/png'))).arrayBuffer()); let s = ''; for (const x of u) s += String.fromCharCode(x); return btoa(s); });
+      fs.writeFileSync(photo, Buffer.from(b64, 'base64'));
+      await p.close();
+    }
+    const { ctx, page, errors } = await open(browser);
+    const d = await newDossier(page, [scan, photo]);
+    const docOf = name => page.evaluate(n => JSON.parse(JSON.stringify(window.__workshop.state.d.docs.find(x => x.name === n))), name);
+    const frame = app => page.frameLocator(`#program-frames iframe[title="${{ photocraft: 'برنامج الصور', designcraft: 'برنامج التصميم' }[app]}"]`);
+    const started = async app => { await frame(app).locator(`#${app}_loading`).waitFor({ state: 'detached', timeout: 180000 }); };
+    const box = async () => page.locator('#program-frames iframe:not([hidden])').boundingBox();
+    const keys = async (...list) => { const r = await box(); await page.mouse.click(r.x + r.width / 2, r.y + r.height / 2); for (const k of list) { await page.keyboard.press(k); await page.waitForTimeout(1200); } };
+    const logs = [];
+    page.on('console', m => logs.push(m.text().slice(0, 300)));
+    const shot = async name => { if (process.env.SHOTS) { await page.screenshot({ path: path.join(process.env.SHOTS, `programs-${name}.png`) }).catch(() => {}); fs.writeFileSync(path.join(process.env.SHOTS, 'programs-console.txt'), logs.join('\n')); } };
+    try {
+
+    // 1. a scanned page in the photo program: saved (Ctrl+S gives a PSD), it takes its page's place; the other pages stay as they were
+    const s0 = await docOf('stability (scan).pdf');
+    const n = Math.min(2, s0.pages.length);
+    await page.click('[data-act="tab"][data-id="docs"]');
+    await page.fill(`[data-page-of="${s0.id}"]`, String(n));
+    await page.click(`[data-act="page-photo"][data-id="${s0.id}"]`);
+    await page.waitForFunction(() => !document.getElementById('program').hidden);
+    await started('photocraft');
+    await page.waitForTimeout(2500);                               // the page is dropped on the program and opened
+    await keys('Control+s');
+    await page.waitForFunction(id => window.__workshop.state.d.log.some(e => e.what === 'uploaded' && e.doc === id && e.how === 'program'), s0.id, { timeout: 180000 });
+    const s1 = await docOf('stability (scan).pdf');
+    assert.equal(s1.versions.length, 1);
+    assert.equal(s1.pages.length, s0.pages.length);
+    for (const p of s0.pages.filter(x => x.n !== n)) assert.equal(s1.pages[p.n - 1].text, p.text, `page ${p.n} is untouched`);
+    assert.deepEqual(await page.evaluate(id => window.__workshop.state.d.log.filter(e => e.what === 'page-cleaned' && e.doc === id).map(e => e.page), s0.id), [n]);
+    await page.click('[data-act="program-close"]');
+
+    // 2. the photo in the photo program: it comes back as a picture the PDF can carry, its layers (the PSD) kept to open again
+    const p0 = await docOf('pack photo.png');
+    await page.click(`[data-act="doc-program"][data-id="${p0.id}"]`);
+    await page.waitForFunction(() => !document.getElementById('program').hidden);
+    await page.waitForTimeout(2500);
+    await keys('Control+s');
+    await page.waitForFunction(id => !!window.__workshop.state.d.docs.find(x => x.id === id).psd, p0.id, { timeout: 120000 });
+    const p1 = await docOf(await page.evaluate(id => window.__workshop.state.d.docs.find(x => x.id === id).name, p0.id));
+    assert.equal(p0.picture, 'png', 'the photo had been made a PDF, and opened in the photo program as the picture it was');
+    assert.ok(['png', 'jpeg'].includes(p1.picture) && p1.kind === 'pdf', `the cleaned picture is made a PDF again: ${p1.kind}/${p1.picture}`);
+    assert.equal(p1.versions.length, 1);
+    await page.click('[data-act="program-close"]');
+
+    // 3. the pack's artwork made in the design program for its empty place: saved, it is the document there (a design file:
+    //    not a PDF yet); exported as a PDF, the PDF is what goes in
+    await page.click('[data-act="tab"][data-id="board"]');
+    await page.click('[data-act="place"][data-id="EG-EDA/M1-11"]');
+    await page.click('[data-act="place-design"][data-id="EG-EDA/M1-11"]');
+    await page.waitForFunction(() => !document.getElementById('program').hidden);
+    await started('designcraft');
+    await page.waitForTimeout(1500);
+    await keys('Control+n', 'Enter');
+    await keys('Control+s');
+    await page.waitForFunction(() => window.__workshop.state.d.docs.some(x => x.place === 'EG-EDA/M1-11' && x.kind === 'designcraft'), null, { timeout: 180000 });
+    const art = await page.evaluate(() => window.__workshop.state.d.docs.find(x => x.place === 'EG-EDA/M1-11').id);
+    assert.ok((await page.evaluate(() => window.__workshop.state.findings.map(f => f.id))).includes(`not-pdf-${art}`), 'a design file is not yet a PDF');
+    const r = await box();
+    await page.mouse.click(r.x + 59, r.y + 18);                   // File
+    await page.waitForTimeout(800);
+    await page.mouse.click(r.x + 81, r.y + 324);                  // Export PDF…
+    await page.waitForTimeout(1500);
+    await page.keyboard.press('Enter');                            // the dialog's OK
+    await page.waitForFunction(id => !!window.__workshop.state.d.docs.find(x => x.id === id).pdf, art, { timeout: 120000 });
+    assert.ok(!(await page.evaluate(() => window.__workshop.state.findings.map(f => f.id))).includes(`not-pdf-${art}`), 'its PDF goes in');
+    await page.click('[data-act="program-close"]');
+    await page.click('[data-act="tab"][data-id="ready"]');
+    const [dl] = await Promise.all([page.waitForEvent('download'), page.click('[data-act="ready-zip"]')]);
+    const { files } = await unzip(new Uint8Array(fs.readFileSync(await dl.path())));
+    const inZip = files.filter(f => /^[^/]+\/Module 1\//.test(f.name) && /1\.1\.10|Layout|M1-11/i.test(f.name)).map(f => f.name);
+    assert.ok(inZip.some(nm => nm.endsWith('.pdf')), `the artwork goes into the ready folder as a PDF: ${inZip.join(', ')}`);
+    assert.deepEqual(errors, []);
+    } catch (e) { await shot('failed'); throw e; }
+    await ctx.close();
+  } finally { await browser.close(); }
+});

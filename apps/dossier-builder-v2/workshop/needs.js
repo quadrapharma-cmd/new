@@ -4,6 +4,7 @@
 const ACTIONS = {
   program: 'افتحه في البرنامج', claude: 'خلّي Claude يصلّحه', upload: 'ارفع نسخة جديدة', accept: 'اقبله كده (بسبب)',
   place: 'اختار مكانه', cut: 'اتأكد من التقطيع', create: 'اعمل المسودة', fill: 'كمّل بيانات الشركة', pdf: 'اعمله PDF',
+  design: 'اعمله في برنامج التصميم',
 };
 export const actionName = a => ACTIONS[a] || a;
 // A count in Arabic as it is said: one, two, three to ten (plural), eleven and more (singular).

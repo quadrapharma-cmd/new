@@ -1,0 +1,160 @@
+diff --git a/crates/engine/src/cmd/inspect.rs b/crates/engine/src/cmd/inspect.rs
+index c1ddcf0..6bc3696 100644
+--- a/crates/engine/src/cmd/inspect.rs
++++ b/crates/engine/src/cmd/inspect.rs
+@@ -10,7 +10,7 @@ pub fn specs() -> Vec<CommandSpec> {
+     vec![
+         cmd!(query "document.inspect", "Inspect Document", [], None, "{} → pages, spreads, items, stories (with overset), styles, swatches, selection", has_doc, inspect),
+         cmd!(query "app.links", "Community & Project Links", [], None,
+-            "{} → {discord, website, appPage, github, issues} (ArtCraft Discord, website, DesignCraft page and repository)", always, |_, _| Ok(crate::links::all())),
++            "{} → {discord, website, appPage, github, issues} (community Discord, website, DesignCraft page and repository)", always, |_, _| Ok(crate::links::all())),
+         cmd!(query "document.list", "List Documents", [], None, "{}", always, |s, _| {
+             let preview = s.new_document_preview();
+             Ok(json!(s
+diff --git a/crates/ui-egui/src/about.rs b/crates/ui-egui/src/about.rs
+index 90d6eb7..93583b7 100644
+--- a/crates/ui-egui/src/about.rs
++++ b/crates/ui-egui/src/about.rs
+@@ -154,10 +154,8 @@ pub fn show(app: &mut DesignApp, ctx: &egui::Context) {
+             return;
+         }
+         ui.vertical_centered(|ui| {
+-            ui.add_space(8.0);
+-            let (r, _) = ui.allocate_exact_size(vec2(72.0, 72.0), Sense::hover());
+-            paint_mark(ui, r, BRAND);
+-            ui.add_space(6.0);
++            // A modified build shows neither the ArtCraft mark nor its name (docs/brand/LICENSE-brand.txt).
++            ui.add_space(14.0);
+             ui.label(crate::rtl::widget(
+                 ui,
+                 egui::RichText::new(crate::i18n::tr(&app.ui.language, "DesignCraft")).font(semibold(26.0)).color(t.text_strong),
+@@ -175,20 +173,14 @@ pub fn show(app: &mut DesignApp, ctx: &egui::Context) {
+                     .size(13.0)
+                     .color(t.text),
+             ));
+-            ui.label(crate::rtl::widget(
+-                ui,
+-                egui::RichText::new(crate::i18n::tr(&app.ui.language, "Part of the ArtCraft suite of open creative tools."))
+-                    .size(12.0)
+-                    .color(t.text_dim),
+-            ));
+             ui.add_space(16.0);
+-            if discord_button(ui, crate::i18n::tr(&app.ui.language, "Join the ArtCraft Discord"), vec2(300.0, 40.0)) {
++            if discord_button(ui, crate::i18n::tr(&app.ui.language, "Community on Discord"), vec2(300.0, 40.0)) {
+                 open = Some("discord");
+             }
+             ui.add_space(4.0);
+             ui.label(crate::rtl::widget(
+                 ui,
+-                egui::RichText::new(crate::i18n::tr(&app.ui.language, "discord.gg/artcraft — help, feedback and show-and-tell"))
++                egui::RichText::new(crate::i18n::tr(&app.ui.language, "Help, feedback and show-and-tell"))
+                     .size(11.0)
+                     .color(t.text_dim),
+             ));
+@@ -198,7 +190,7 @@ pub fn show(app: &mut DesignApp, ctx: &egui::Context) {
+                 let w = 330.0;
+                 ui.add_space(((ui.available_width() - w) / 2.0).max(0.0));
+                 for (text, key) in
+-                    [("DesignCraft page", "appPage"), ("GitHub", "github"), ("getartcraft.com", "website"), ("Report an issue", "issues")]
++                    [("DesignCraft page", "appPage"), ("GitHub", "github"), ("Project website", "website"), ("Report an issue", "issues")]
+                 {
+                     if link(ui, crate::i18n::tr(&app.ui.language, text), links::get(key).unwrap_or_default(), t.accent) {
+                         open = Some(key);
+@@ -207,31 +199,6 @@ pub fn show(app: &mut DesignApp, ctx: &egui::Context) {
+                 }
+             });
+             ui.add_space(16.0);
+-            ui.separator();
+-            ui.add_space(6.0);
+-            ui.label(crate::rtl::widget(
+-                ui,
+-                egui::RichText::new(crate::i18n::tr(&app.ui.language, "More ArtCraft apps")).font(semibold(12.0)).color(t.text_strong),
+-            ));
+-            ui.add_space(4.0);
+-            ui.horizontal(|ui| {
+-                let pad = ui.spacing().button_padding.x * 2.0 + ui.spacing().item_spacing.x;
+-                let w: f32 = SIBLINGS
+-                    .iter()
+-                    .map(|(_, n, _)| ui.painter().layout_no_wrap(n.to_string(), egui::FontId::proportional(12.0), Color32::WHITE).size().x + pad)
+-                    .sum::<f32>()
+-                    - ui.spacing().item_spacing.x;
+-                ui.add_space(((ui.available_width() - w) / 2.0).max(0.0));
+-                for (slug, name, what) in SIBLINGS {
+-                    let url = format!("{}/apps/{slug}", links::WEBSITE);
+-                    let b = ui
+-                        .add(egui::Button::new(egui::RichText::new(*name).size(12.0)).corner_radius(10.0))
+-                        .on_hover_text(format!("{} — {url}", crate::i18n::tr(&app.ui.language, what)));
+-                    if b.clicked() {
+-                        app.ui.pending_urls.push(url);
+-                    }
+-                }
+-            });
+             ui.add_space(12.0);
+             ui.label(crate::rtl::widget(
+                 ui,
+diff --git a/crates/ui-egui/src/chrome/start_screen.rs b/crates/ui-egui/src/chrome/start_screen.rs
+index 6e52487..48a3fc4 100644
+--- a/crates/ui-egui/src/chrome/start_screen.rs
++++ b/crates/ui-egui/src/chrome/start_screen.rs
+@@ -63,7 +63,10 @@ pub fn start_screen(app: &mut DesignApp, ui: &mut egui::Ui) {
+                     }
+                 });
+                 ui.add_space(20.0);
+-                community_card(app, ui);
++                // A modified build shows neither the ArtCraft mark nor its name (docs/brand/LICENSE-brand.txt).
++                if false {
++                    community_card(app, ui);
++                }
+                 recent_files(app, ui);
+                 ui.add_space(24.0);
+                 ui.label(crate::rtl::widget(
+diff --git a/crates/ui-egui/src/i18n/ar.rs b/crates/ui-egui/src/i18n/ar.rs
+index adf22f4..e1de766 100644
+--- a/crates/ui-egui/src/i18n/ar.rs
++++ b/crates/ui-egui/src/i18n/ar.rs
+@@ -2195,6 +2195,12 @@ pub(super) const TABLE: &[(&str, &str)] = &[
+     ("a, b, c, d...", "أ، ب، ج، د..."),
+     ("i, ii, iii, iv...", "أ، ب، ج، د..."),
+     ("lowercase", "صغير"),
++    ("Community on Discord…", "المجتمع على Discord…"),
++    ("Community on Discord", "المجتمع على Discord"),
++    ("Help, feedback and show-and-tell", "مساعدة وآراء وعرض الأعمال"),
++    ("Project website", "موقع المشروع"),
++    ("Project Website…", "موقع المشروع…"),
++    ("App Page…", "صفحة التطبيق…"),
+ ];
+ 
+ /// Contexts whose Arabic caption differs from the shared label.
+diff --git a/crates/ui-egui/src/menus/tree.rs b/crates/ui-egui/src/menus/tree.rs
+index 6ab2e17..90b28ad 100644
+--- a/crates/ui-egui/src/menus/tree.rs
++++ b/crates/ui-egui/src/menus/tree.rs
+@@ -107,7 +107,7 @@ pub enum AppMenuItem {
+ pub const MAC_APP_MENU: &[AppMenuItem] = &[
+     AppMenuItem::Cmd { id: "dc-about", label: "About DesignCraft", command: "help.about" },
+     AppMenuItem::Cmd { id: "dc-updates", label: "Check for Updates…", command: "help.checkForUpdates" },
+-    AppMenuItem::Cmd { id: "dc-discord", label: "Join the ArtCraft Discord…", command: "help.discord" },
++    AppMenuItem::Cmd { id: "dc-discord", label: "Community on Discord…", command: "help.discord" },
+     AppMenuItem::Sep,
+     AppMenuItem::Cmd { id: "dc-settings", label: "Settings…", command: "app.preferences" },
+     AppMenuItem::Language,
+diff --git a/crates/ui-egui/src/menus/ui_commands.rs b/crates/ui-egui/src/menus/ui_commands.rs
+index 0021b42..badb7f3 100644
+--- a/crates/ui-egui/src/menus/ui_commands.rs
++++ b/crates/ui-egui/src/menus/ui_commands.rs
+@@ -384,12 +384,12 @@ pub const UI_COMMANDS: &[(&str, &str, Option<&str>, &str)] = &[
+         "{on?: bool, at?: [x, y] (points from the canvas's top-left)} — the Contextual Task Bar stays where it is (or at `at`) instead of following the selection; with neither, toggles",
+     ),
+     ("window.taskBarReset", "Reset Bar Position", None, "{} — the Contextual Task Bar follows the selection again, under it"),
+-    ("help.discord", "Join the ArtCraft Discord…", None, "{} — opens https://discord.gg/artcraft in the browser"),
++    ("help.discord", "Community on Discord…", None, "{} — opens https://discord.gg/artcraft in the browser"),
+     ("help.appPage", "DesignCraft Website…", None, "{} — opens https://getartcraft.com/apps/designcraft"),
+     ("help.github", "DesignCraft on GitHub…", None, "{} — opens https://github.com/storytold/designcraft"),
+     ("help.issues", "Report an Issue…", None, "{} — opens the GitHub issue tracker"),
+-    ("help.website", "ArtCraft Website…", None, "{} — opens https://getartcraft.com"),
+-    ("help.app", "ArtCraft App Page…", None, "{app} — opens https://getartcraft.com/apps/{app} (e.g. photocraft)"),
++    ("help.website", "Project Website…", None, "{} — opens https://getartcraft.com"),
++    ("help.app", "App Page…", None, "{app} — opens https://getartcraft.com/apps/{app} (e.g. photocraft)"),
+     (
+         "help.about",
+         "About DesignCraft",

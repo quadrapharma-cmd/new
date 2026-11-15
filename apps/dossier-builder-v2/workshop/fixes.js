@@ -40,14 +40,14 @@ export async function fixAll(d, findings, env) {
         if (!items.length) { f.fixFailed = 'مالقاش سطور في الفهرس فيها أرقام صفحات'; continue; }
         out = await withOutline(bytes, items); ar = `اتعمله ${items.length} bookmark من الفهرس`;
       } else if (f.fix.auto === 'picture') {
-        out = await picturesToPdf([{ bytes, kind: doc.kind === 'png' ? 'png' : 'jpeg' }]); ar = 'الصورة بقت صفحة PDF';
+        out = await picturesToPdf([{ bytes, kind: ['png', 'psd'].includes(doc.kind) ? doc.kind : 'jpeg' }]); ar = 'الصورة بقت صفحة PDF';
       }
       if (!out) continue;
       const sha = await sha256(out);
       await env.putBlob(d.id, sha, out);
       doc.fixes = [...(doc.fixes || []), { id: f.fix.auto, ar, from: doc.fixed || doc.sha, to: sha, at: new Date().toISOString() }];
       doc.fixed = sha;
-      if (f.fix.auto === 'picture') doc.kind = 'pdf';
+      if (f.fix.auto === 'picture') { doc.picture = doc.kind; doc.kind = 'pdf'; }   // a PDF now; the picture it was (doc.sha) opens in the photo program
       delete doc.info;
       log(d, 'fixed', { doc: doc.id, fix: f.fix.auto });
       done.push({ doc: doc.id, fix: f.fix.auto });

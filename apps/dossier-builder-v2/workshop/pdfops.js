@@ -3,6 +3,8 @@
 // right direction, give a document its outline (bookmarks) and its title, make pictures into a PDF. A page's content is copied as it
 // is, so a document of another party stays the paper it was.
 import { PDFDocument, PDFName, PDFDict, PDFArray, PDFString, PDFHexString, PDFNumber, PDFRef, degrees } from 'pdf-lib';
+import { psdComposite } from './psd.js';
+import { pngOf } from './png.js';
 
 const header = bytes => {
   const head = new TextDecoder('latin1').decode(bytes.subarray(0, 1024));
@@ -131,14 +133,40 @@ export async function withTitle(bytes, title) {
 }
 
 // Pictures (JPEG or PNG bytes) as the pages of one PDF, each page the picture's own shape at A4 width.
+// A picture as pdf-lib can draw it: PNG and JPEG as they are; a Photoshop file's picture as a PNG.
+async function embedPicture(doc, bytes, kind) {
+  if (kind === 'psd') return doc.embedPng(await pngOf(psdComposite(bytes)));
+  return kind === 'png' ? doc.embedPng(bytes) : doc.embedJpg(bytes);
+}
+
 export async function picturesToPdf(pictures) {
   const doc = await PDFDocument.create();
   for (const { bytes, kind } of pictures) {
-    const img = kind === 'png' ? await doc.embedPng(bytes) : await doc.embedJpg(bytes);
+    const img = await embedPicture(doc, bytes, kind);
     const w = 595.28, h = (img.height / img.width) * w;
     const page = doc.addPage([w, h]);
     page.drawImage(img, { x: 0, y: 0, width: w, height: h });
   }
+  return doc.save({ useObjectStreams: false });
+}
+
+// One page of a PDF made the picture of it a person cleaned in the photo program: the same page (so the outline and links that point
+// to it still do), now showing only the picture, as large as the page showed before (its turn taken in, then set upright). Every
+// other page stays as it was.
+export async function replacePage(bytes, index, { bytes: pic, kind }) {
+  const doc = await load(bytes);
+  const page = doc.getPage(index);
+  const box = page.getCropBox();
+  const turned = Math.abs(page.getRotation().angle % 180) === 90;
+  const [w, h] = turned ? [box.height, box.width] : [box.width, box.height];
+  const img = await embedPicture(doc, pic, kind);
+  page.node.delete(PDFName.of('Contents'));
+  page.node.set(PDFName.of('Resources'), doc.context.obj({}));
+  for (const k of ['TrimBox', 'BleedBox', 'ArtBox']) page.node.delete(PDFName.of(k));
+  page.setRotation(degrees(0));
+  page.setMediaBox(0, 0, w, h);
+  page.setCropBox(0, 0, w, h);
+  page.drawImage(img, { x: 0, y: 0, width: w, height: h });
   return doc.save({ useObjectStreams: false });
 }
 

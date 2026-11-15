@@ -88,6 +88,10 @@ export const PARTY = {
 export const partyOf = docClass => PARTY[docClass]?.party || 'company';
 
 // Egypt: the document type each place holds (its validity, who issues it), where the library's types name one.
+// Where a dossier holds its pack's artwork — the coloured outer and inner packs, the mock-ups, the carton and container labels — in
+// each country's Module 1: the design program (DesignCraft) makes or changes it, and gives the PDF that goes in.
+export const DESIGN_PLACES = new Set(['EG-EDA/M1-11', 'EU/EU-1.3.2', 'GCC/GCC-1.3.4', 'US-FDA/US-1.14.1.1', 'US-FDA/US-1.14.2.1', 'OTHER/X-1.3.4']);
+
 export const DOCTYPE_OF = {
   'EG-EDA/M1-04': 'registration_licence', 'EG-EDA/M1-05': 'pricing_certificate', 'EG-EDA/M1-06': 'eda_letter', 'EG-EDA/M1-07': 'variation_approval',
   'EG-EDA/M1-09': 'leaflet', 'EG-EDA/M1-11': 'artwork', 'EG-EDA/M1-12': 'analysis_conformity', 'EG-EDA/M1-13': 'import_approval',
