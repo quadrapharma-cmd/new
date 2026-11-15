@@ -19,7 +19,9 @@ import { unzip } from '../prep/zip.js';
 
 const require = createRequire(import.meta.url);
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const INDEX = `file://${path.join(ROOT, 'dist', 'workshop', 'index.html')}`;
+// WORKSHOP_DIR=<a folder unzipped from the ZIP that is handed over>: the same tests on that folder, as it is, without building
+const UNZIPPED = process.env.WORKSHOP_DIR || null;
+const INDEX = `file://${UNZIPPED ? path.join(UNZIPPED, 'index.html') : path.join(ROOT, 'dist', 'workshop', 'index.html')}`;
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'db-workshop-'));
 const GPU = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'];
 const READINGS = Object.fromEntries([['licence (scan).pdf', LICENCE], ['stability (scan).pdf', STABILITY], ['receipts (scan).pdf', RECEIPTS]]
@@ -27,7 +29,9 @@ const READINGS = Object.fromEntries([['licence (scan).pdf', LICENCE], ['stabilit
 const FIVE = ['cross-manufacturer-changed', 'cross-approved-limit-ascorbic-acid', 'cross-form-citric-acid', 'cross-review_date', 'cross-conditions'];
 
 let built = null;
-const ensureBuilt = async () => built || (built = await buildWorkshop());
+const ensureBuilt = async () => built || (built = UNZIPPED
+  ? { programs: fs.readdirSync(path.join(UNZIPPED, 'programs')).filter(n => n.endsWith('.html')).map(n => n.slice(0, -5)) }
+  : await buildWorkshop());
 let files = null;
 async function dossierFiles(browser) { return files || (files = await madeUpDossier(browser, path.join(TMP, 'dossier'))); }
 
