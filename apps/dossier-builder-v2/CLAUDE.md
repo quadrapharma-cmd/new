@@ -178,7 +178,9 @@ the readiness report and a checklist). «شغّل لوحدك» runs it all; «خ
   frame mode cannot connect). Open a document, every save comes back as a new version (an edited draft is then never rewritten);
   «اعمله PDF» has the Word program export a Word file without a person (it waits until the program has that document open). Both
   carry a patch taking the ArtCraft logo and name out of their screens (`tools/craft/patches/`; the PDF program carries our OCR
-  patches too, and its brand licence asks a modified version to remove the logos); the copyright notices stay. Not here yet: the
+  patches too, and its brand licence asks a modified version to remove the logos); the copyright notices stay. Rebuilt with them on
+  15/11 (`node tools/craft/build.mjs <app> web`; the JavaScript wasm-opt takes 20–50 min a program: `WASM_OPT_SKIP=1` for a quick
+  build, then `node tools/craft/optimize.mjs <app>`). Not here yet: the
   photo and design programs (no host bridge in their releases), the PDF program's own OCR (its worker cannot start from a file).
 - Code `workshop/` (expr, board, understand, pipeline, checks, fixes, generators + templates/annex1.json, docx, zipw, store, export,
   needs, claude, tools, programs, desktop-assets, page, body, style, build). The page loads as classic scripts only: pdf.js on its own

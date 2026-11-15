@@ -126,5 +126,6 @@ export function placeStatus(placeId, d, findings) {
   const fs = findings.filter(f => !f.accepted && (f.place === placeId || docs.some(x => x.id === f.doc)));
   if (fs.some(f => f.level === 'red')) return docs.length ? 'red' : 'empty';
   if (fs.some(f => f.level === 'amber')) return 'amber';
+  if (docs.length && docs.every(x => x.madeBy === 'program')) return 'amber';     // only a draft: to be signed, stamped and scanned
   return docs.length ? 'green' : 'empty';
 }

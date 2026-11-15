@@ -41,9 +41,11 @@ export function readiness(d, board, findings, needs) {
   const filled = new Set(d.docs.filter(x => x.place && !x.dup && !x.split && !x.unread).map(x => x.place));
   const red = findings.filter(f => !f.accepted && f.level === 'red' && f.kind !== 'missing'), amber = findings.filter(f => !f.accepted && f.level === 'amber' && f.kind !== 'missing');
   const required = open.filter(p => p.level === 'R');
-  return { required: required.length, filled: required.filter(p => filled.has(p.id)).length, red: red.length, amber: amber.length,
+  // a place holding only the program's draft still waits for the signed paper
+  const drafts = required.filter(p => { const ds = d.docs.filter(x => x.place === p.id && !x.dup && !x.split); return ds.length && ds.every(x => x.madeBy === 'program'); });
+  return { required: required.length, filled: required.filter(p => filled.has(p.id)).length, red: red.length, amber: amber.length, drafts: drafts.length,
            accepted: findings.filter(f => f.accepted).length, needs: needs.length,
-           ready: red.length === 0 && required.every(p => filled.has(p.id) || findings.some(f => f.place === p.id && f.kind === 'missing' && f.accepted)) };
+           ready: red.length === 0 && drafts.length === 0 && required.every(p => filled.has(p.id) || findings.some(f => f.place === p.id && f.kind === 'missing' && f.accepted)) };
 }
 
 const DONE = { received: 'استلم الملفات', cut: 'قطّع ملف مجمّع', understood: 'قرا المستندات وحطها في أماكنها', 'placed-by-claude': 'Claude حط مستند في مكانه',
@@ -62,8 +64,8 @@ table{border-collapse:collapse;width:100%;font-size:13px}td,th{border:1px solid 
 .ltr{direction:ltr;unicode-bidi:isolate}small{color:#56646d}</style></head><body>
 <h1>تقرير الجاهزية — <span class="ltr">${esc(layout.root)}</span></h1>
 <p>${esc(board.country.ar)} · ${esc(board.country.note)} · العمود ${esc(board.column)} · ${esc(new Date().toISOString().slice(0, 10))}</p>
-<p class="${r.ready ? 'ok' : 'bad'}"><b>${r.ready ? 'الملف جاهز: كل الأماكن المطلوبة فيها مستندات، ومفيش ملاحظة لازم تتحل.' : 'الملف لسه مش جاهز.'}</b>
-الأماكن المطلوبة: ${r.filled} من ${r.required} فيها مستندات · ملاحظات لازم تتحل: ${r.red} · لازم تتوضح: ${r.amber} · اتقبلت بسبب: ${r.accepted}</p>
+<p class="${r.ready ? 'ok' : 'bad'}"><b>${r.ready ? 'الملف جاهز: كل الأماكن المطلوبة فيها مستندات، ومفيش ملاحظة لازم تتحل، ومفيش مسودة مستنية توقيع.' : 'الملف لسه مش جاهز.'}</b>
+الأماكن المطلوبة: ${r.filled} من ${r.required} فيها مستندات${r.drafts ? ` (${r.drafts} منها مسودات لسه محتاجة توقيع)` : ''} · ملاحظات لازم تتحل: ${r.red} · لازم تتوضح: ${r.amber} · اتقبلت بسبب: ${r.accepted}</p>
 <h2>اللي البرنامج عمله لوحده</h2><ul>${byProgram.map(e => `<li>${esc(DONE[e.what] || e.what)} <small>${esc(e.at.slice(0, 16).replace('T', ' '))}</small></li>`).join('') || '<li>—</li>'}</ul>
 <h2>اللي اتعمل بإيدك</h2><ul>${byYou.map(e => `<li>${esc(DONE[e.what] || e.what)}${e.reason ? `: «${esc(e.reason)}»` : ''} <small>${esc(e.at.slice(0, 16).replace('T', ' '))}</small></li>`).join('') || '<li>—</li>'}</ul>
 <h2>لسه ناقص أو غلط</h2>

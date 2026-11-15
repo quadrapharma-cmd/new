@@ -113,6 +113,7 @@ a { color: var(--accent); }
          padding: 6px 10px; background: var(--surface); cursor: pointer; text-align: start; width: 100%; }
 .place:hover { border-color: var(--accent); }
 .place .t { min-width: 0; overflow-wrap: anywhere; }
+.place .ctd, .place .lvl { justify-self: start; }
 .place .docs-in { grid-column: 3 / -1; font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
 .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line); display: inline-block; }
 .dot.green { background: var(--ok); } .dot.amber { background: var(--warn); } .dot.red { background: var(--bad); } .dot.empty { background: transparent; border: 2px solid var(--muted); }

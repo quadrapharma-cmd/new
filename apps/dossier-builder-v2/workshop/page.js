@@ -304,7 +304,8 @@ function viewWizard() {
       <label class="field"><span>اسم الملف (اختياري؛ البرنامج بيطلّع اسم المستحضر من المستندات)</span><input data-wiz="name" value="${esc(w.name)}" placeholder="مثلاً: مستحضر X 500 مجم"></label>
       ${q('activity', w.profile.activity)}${q('dossier_kind', w.profile.dossier_kind)}${q('origin', w.profile.origin)}${q('licence', w.profile.licence)}${q('leaflet', w.profile.leaflet)}
     </div>
-    <p class="fine">الإجابات دي بتحدد إيه المطلوب في ملفك من جدول NP.CAPP.065 (العمود: <span class="ltr">${esc(boardOf(KNOW, { countryId: w.country, profile: w.profile }).column)}</span>). تقدر تغيّرها بعدين من «المعلومات».</p></section>
+    <p class="fine">${w.country === 'EG' ? `الإجابات دي بتحدد إيه المطلوب في ملفك من جدول NP.CAPP.065 (العمود: <span class="ltr">${esc(boardOf(KNOW, { countryId: w.country, profile: w.profile }).column)}</span>).`
+      : 'الإجابات دي بتحدد إيه المطلوب في ملفك من موديول 1 بتاع الدولة في المكتبة.'} تقدر تغيّرها بعدين من «المعلومات».</p></section>
   <section class="box"><h2>٣. ارمي كل اللي عندك هنا</h2>
     <div class="drop" id="drop"><p>اسحب الملفات أو الفولدر هنا</p>
       <div class="row" style="justify-content:center"><label class="btn"><input type="file" id="wiz-files" multiple>اختار ملفات</label><label class="btn quiet"><input type="file" id="wiz-folder" webkitdirectory multiple>اختار فولدر</label></div>
@@ -449,7 +450,8 @@ function tabNeeds() {
 function tabReady() {
   const d = state.d, r = readiness(d, state.board, state.findings, state.needs), layout = layoutOf(d, state.board);
   const left = [r.required > r.filled ? count(r.required - r.filled, 'مكان مطلوب فاضي', 'مكانين مطلوبين فاضيين', 'أماكن مطلوبة فاضية', 'مكان مطلوب فاضي') : '',
-                r.red ? count(r.red, 'ملاحظة لازم تتحل', 'ملاحظتين لازم يتحلوا', 'ملاحظات لازم تتحل', 'ملاحظة لازم تتحل') : ''].filter(Boolean).join('، و');
+                r.red ? count(r.red, 'ملاحظة لازم تتحل', 'ملاحظتين لازم يتحلوا', 'ملاحظات لازم تتحل', 'ملاحظة لازم تتحل') : '',
+                r.drafts ? count(r.drafts, 'مسودة مستنية توقيع', 'مسودتين مستنيين توقيع', 'مسودات مستنية توقيع', 'مسودة مستنية توقيع') : ''].filter(Boolean).join('، و');
   return `<div class="status ${r.ready ? 'ok' : 'warn'}">${r.ready ? 'الملف جاهز: كل الأماكن المطلوبة فيها مستندات، ومفيش ملاحظة لازم تتحل.' : `لسه: ${left}. تقدر تنزّل الفولدر برضه، والتقرير بيقول الناقص.`}</div>
     <div class="row"><button class="btn" data-act="ready-zip">نزّل فولدر الملف (ZIP) وتقرير الجاهزية</button><button class="btn quiet" data-act="ready-report">افتح تقرير الجاهزية</button></div>
     <p class="fine">الفولدر بشكل ملف ${esc(state.board.country.ar)}: موديول، وجواه مكان كل مستند، وكل ملف متسمّي باسم مكانه. ${layout.files.length} ملف.</p>

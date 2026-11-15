@@ -143,7 +143,8 @@ test('with a key, Claude reads the scans as pictures, places what the rules cann
     await page.fill('#api-key', 'sk-ant-test-key');
     await page.click('[data-act="key-test"]');
     await page.waitForSelector('#settings .status.ok');
-    assert.deepEqual(await page.$$eval('#api-model option', o => o.map(x => x.value)), ['stand-in-large', 'stand-in-small']);
+    // the models the key may use, the newest first within a family (the stand-in's two are of no family the page ranks)
+    assert.deepEqual(await page.$$eval('#api-model option', o => o.map(x => x.value)), ['stand-in-small', 'stand-in-large']);
     await page.click('[data-act="settings-close"]');
     const d = await newDossier(page, chosen);
     const scans = d.docs.filter(x => x.name.includes('(scan)'));
@@ -199,8 +200,8 @@ test('the Word and PDF programs open from the page: a change saved there comes b
     await page.click(`[data-act="doc-program"][data-id="${annex}"]`);
     await page.waitForFunction(() => !document.getElementById('program').hidden);
     const opened = await page.evaluate(async () => { for (let i = 0; i < 240; i++) { try { const r = await window.__workshop.programs.inspect('wordcraft'); if (r?.blocks) return r.blocks.map(x => x.text).join('\n'); } catch { /* not yet */ } await new Promise(r => setTimeout(r, 500)); } return ''; });
-    assert.match(opened, /Annex I — Application form/);
-    assert.match(opened, /Testamin powder for oral solution/);
+    assert.match(opened, /Annex I — Application form/);                   // the program's paragraphs (the tables' cells are not in them)
+    assert.match(opened, /نتقدم لسيادتكم بملف التسجيل/);
     await page.evaluate(async () => { const p = window.__workshop.programs; await p.execute('wordcraft', 'text.insert', { text: 'Edited in the Word program. ' }); await p.execute('wordcraft', 'file.save', {}); });
     await page.waitForFunction(id => window.__workshop.state.d.docs.find(x => x.id === id).editedBy === 'you', annex, { timeout: 60000 });
     assert.match(await page.evaluate(id => window.__workshop.state.d.docs.find(x => x.id === id).pages.map(p => p.text).join(' '), annex), /Edited in the Word program/);
