@@ -373,6 +373,16 @@ When a part is done or an open item is closed, update «What exists» and «Open
   817 passed; opening time unchanged (first 5.16 → 5.04 s, next 4.53 → 4.40 s; version 49 served with its own engine read back);
   the five files read back byte for byte equal to the build; the working copy in the browser edition, the office and both
   programs' tests passed on the page as served.
+- **15/11/2026, step 7 measured on his real phone photos — nothing added** (he said «كمل خطتك زي ما كنت»). Photos: five WhatsApp
+  pictures of documents from his Drive folder «Wouncure_Inspection_Appeal» (24 there: supply orders and sales reports, on paper and
+  on a screen, three of them sideways; kept in `scratchpad/photos-wa`, local only), 62 facts read by eye
+  (`scratchpad/photos-wa/truth.json`, `photos-wa-run.py`). The program already makes a photo put in an item a PDF (PdfCraft's
+  `image_to_pdf`; in the page, `asDossierFile`), and in claude.ai Claude reads its picture. Tesseract «best» on the photo as it is:
+  30/62 (48 %), the same turning the page first (OSD). The PDF program's «Enhance camera image» (`page_enhance_camera`) found the
+  sheet's edges by itself on 1 photo of 5 (the screen): there colour 7/14 as before, black-and-white 1/14; with the corners set by
+  hand, 6/12 for 7 and 4/12 for 5 — no better. The photos are WhatsApp-compressed (0.7–0.8 megapixels). So no straightening step;
+  for a document of the file, CamScanner (as most of his scans already are) or the photo sent «as a document» keeps what a reader
+  needs. Claude's reading of the photos was not measured (no API key).
   Found on the way and fixed: **the real export button failed from the page for a first sequence** — the page sends
   `submission: null` and the server refused it with 422 since the EU work (`ef51a39`), and no test clicked that button; now
   `tests/test_ui_export_all.py` clicks it for Egypt (its three formats: `ctd.zip` CTD One Submission, `ectd32.zip`, `ectd40.zip`), the
