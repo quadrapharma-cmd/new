@@ -316,14 +316,26 @@ When a part is done or an open item is closed, update «What exists» and «Open
   Arabic and 26 Latin facts Tesseract alone found, and won 16). So nothing moved: the old program's reader stays, and «94 %» is
   not to be quoted again without «on made-up pages». Claude, the reader that matters in the claude.ai edition, could not be
   measured on these pages here (no API key yet).
+- **15/11/2026, steps 3–4: the Word and PDF programs inside the old program** (`ui/assets/programs.js`, `web/build.py
+  programs_dist`, README «The Word and PDF programs inside the page»). Each runs in a frame the page writes itself (`srcdoc`: no
+  address fetched, so claude.ai's refusal of other sites' frames does not apply; checked under `frame-src 'none'` and no `blob:`
+  scripts), its glue a module from the page's own files reading `window.__dbQuery` for the address it has none of, its
+  WebAssembly fetched only on first use (three parts of ≤ 12 MB each, SHA-256 checked, kept in IndexedDB `db-programs`). Decided
+  on his real files: the Word program opens **.docx only** (four of his and two of the program's own Dramrin drafts kept every
+  word, table and page; his .doc files lost table columns and a signature footer), **no Word «Export PDF»** (other fonts, more
+  pages, Arabic that breaks apart when copied — the PDF is still made in Word), saving only after a change; the PDF program on
+  seven of his PDFs appends only the change (the engine's findings the same before and after). What only he can see: a .docx
+  saved by the program, opened in Word on his computer (a list's picture bullet is dropped; mixed Arabic/Latin lines are written
+  as separate runs). Opening time unchanged (5.6 s / 4.7 s against version 47). The photo and design programs (steps 5–6) and a
+  phone photo as a document (step 7) come next, the same way.
 
 ## Open items (propose when relevant; do when he asks)
 - Old program, claude.ai edition: its fonts never load — `web/build.py` writes the font link's `onload="this.media=\'all\'"` with
   the backslashes kept (a script error on every opening, in the version he has used since 13/11 too), so the page shows the
   system's fonts. Left as it is (the look he knows); fix only if he asks.
-- Old program, next pieces (one at a time, each on his real files first): the 14/11 update (needs the API key), «شروط الشكل لكل
-  دولة», the Word program, the Assistant on his account and «المشغّل» (cannot be tested inside claude.ai from here), a phone
-  photo as a document (needs real photos from him), the photo and design programs (desktop only, after his approval).
+- Old program, next pieces (one at a time, each on his real files first): the photo and design programs (steps 5–6 of
+  «رتبهم خطوة بخطوة»), a phone photo as a document (step 7: needs real photos from him), the 14/11 update (needs the API key),
+  «شروط الشكل لكل دولة», the Assistant on his account and «المشغّل» (cannot be tested inside claude.ai from here).
 - Online version check of the ICH, EMA, FDA, WHO and GCC sources. Unreachable from this environment: admin.ich.org (ICH's content
   service), esubmission.ema.europa.eu, sfda.gov.sa — they would need his approval to add.
 - 64 sources have no copy kept.
