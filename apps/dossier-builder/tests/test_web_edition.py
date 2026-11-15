@@ -142,7 +142,7 @@ def test_an_image_put_in_an_item_becomes_a_pdf_inside_the_browser_edition(site):
 def test_a_started_project_is_still_there_after_the_page_is_closed(site, tmp_path):
     """«I started adding a document and left»: the draft and its files are in the browser's storage before their reading ends, so a
     page closed in the middle opens again with the draft in the projects list. A ZIP and a RAR are opened inside the browser (the RAR
-    by the page's own reader: the engine has no unpacker there); a 7z says why not."""
+    by the page's own reader: the engine has no unpacker there); a 7z the page cannot open (a damaged one) says why."""
     import time, zipfile
     z = tmp_path / 'Dermacure documents.zip'
     with zipfile.ZipFile(z, 'w', zipfile.ZIP_DEFLATED) as f:
@@ -172,7 +172,7 @@ def test_a_started_project_is_still_there_after_the_page_is_closed(site, tmp_pat
 
         page = open_('#/new')
         page.wait_for_selector('#intakeBtn', timeout=120000)
-        give(page, z7)                                                                  # no unpacker for 7z inside a browser: said, with what to do
+        give(page, z7)                                                                  # a 7z that is only a signature: said damaged, with what to do
         page.wait_for_function("() => /ZIP/.test(document.querySelector('#toast').textContent)", timeout=60000)
         assert '7z' in page.inner_text('#toast')
         give(page, z)
@@ -201,6 +201,30 @@ def test_a_started_project_is_still_there_after_the_page_is_closed(site, tmp_pat
                                "drafts: (await (await fetch('/api/intake/drafts', {headers: {'X-DB': '1'}})).json()).map(d => d.files)})")
             raise AssertionError(f'the continued draft did not read its six documents again: {st}; page errors {errors}') from e
         assert page.evaluate("() => Object.keys(S.wiz.texts).sort()") == ['licence.pdf', 'notes.txt', 'pricing certificate (2).txt', 'pricing certificate.txt', 'تقرير الثبات.txt', 'ثبات.txt']
+        assert errors == [], errors
+        b.close()
+
+
+def test_a_7z_is_opened_inside_the_browser(site):
+    """15/11/2026: the browser edition refused a 7z («unpack it first»); the page's own reader (ui/assets/sevenz.js) now opens it, so
+    its documents reach the wizard like a ZIP's."""
+    z7 = pathlib.Path(__file__).parent / 'data' / 'archives' / 'dermacure.7z'                 # made-up documents, an Arabic name, a folder
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch()
+        page = b.new_context(viewport={'width': 1280, 'height': 800}).new_page()
+        errors = []
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+        page.add_init_script("localStorage.setItem('db.lang','en')")
+        page.goto(site + '/index.local.html#/new')
+        page.wait_for_selector('#boot', state='detached', timeout=180000)
+        page.wait_for_selector('#intakeBtn', timeout=120000)
+        assert page.evaluate('() => !!window.DBWEB && !!window.DB7Z')                     # the browser edition, with the page's own reader
+        with page.expect_file_chooser() as fc:
+            page.click('#intakeBtn')
+        fc.value.set_files(str(z7))
+        page.wait_for_function("() => typeof S !== 'undefined' && S.wiz && (S.wiz.allFiles || []).length === 2", timeout=120000)
+        assert sorted(page.evaluate("() => S.wiz.allFiles.map(f => f.name)")) == ['pricing certificate.txt', 'ثبات.txt']
         assert errors == [], errors
         b.close()
 

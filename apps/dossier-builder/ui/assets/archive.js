@@ -85,8 +85,8 @@
     if (code === 'big' || code === 'memory') return noMemory();
     if (code === 'volume') return fail('E-ARCHIVE-VOLUME', 'ده أرشيف 7z متقسّم أجزاء أو ناقص: فكّه على جهازك وارفع الملفات نفسها.', 'This 7z archive is split in parts or incomplete: unpack it on your computer and upload the files themselves.');
     if (code === 'unsupported') return fail('E-ARCHIVE-METHOD', 'الأرشيف مضغوط بطريقة الصفحة مابتقراهاش' + how + ': فكّه على جهازك، أو اضغط الملفات ZIP أو 7z بالطريقة العادية.', 'The archive uses a compression method this page does not read' + how + ': unpack it on your computer, or pack the files as ZIP or a standard 7z.');
-    if (code === 'damaged' || code === 'unreadable') return fail('E-ARCHIVE', 'ملف الـ 7z تالف أو مش مكتمل.', 'The 7z file is damaged or incomplete.');
-    return fail('E-ARCHIVE', 'ملف الـ 7z ما اتفتحش.', 'The 7z file could not be opened.');
+    if (code === 'damaged' || code === 'unreadable') return fail('E-ARCHIVE', 'أرشيف الـ 7z ده تالف أو مش مكتمل: افتحه على جهازك، ولو اتفتح اضغط الملفات ZIP وارفعها.', 'This 7z archive is damaged or incomplete: open it on your computer; if it opens there, pack the files as ZIP and add that.');
+    return fail('E-ARCHIVE', 'أرشيف الـ 7z ده ما اتفتحش: فكّه على جهازك، أو اضغط الملفات ZIP.', 'This 7z archive could not be opened: unpack it on your computer, or pack the files as ZIP.');
   }
   /* opts.keep: a RegExp of the names worth taking (the others are unpacked only where they share a solid block with one) */
   async function un7z(file, opts) {

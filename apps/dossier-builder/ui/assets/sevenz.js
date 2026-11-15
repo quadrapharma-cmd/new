@@ -416,6 +416,8 @@ function DB7Z_MAIN(root) {
       if (vols.length !== 1) throw E('volume');
       const b = vols[0];
       if (b.length < 32 || SIG.some((x, i) => b[i] !== x)) throw E('damaged', 'signature');
+      if (b[6] !== 0) throw E('unsupported', 'format version ' + b[6]);
+      if (crc32(b.subarray(12, 32)) !== ((b[8] | (b[9] << 8) | (b[10] << 16) | (b[11] << 24)) >>> 0)) throw E('damaged', 'start header');   // its own CRC, as 7-Zip checks
       const start = new Reader(b, 12);
       const offset = start.u32() + start.u32() * 4294967296, size = start.u32() + start.u32() * 4294967296, headCrc = start.u32();
       if (32 + offset + size > b.length) throw E('volume');           // cut short, or the first of several parts

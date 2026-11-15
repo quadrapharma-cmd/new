@@ -273,8 +273,8 @@ def test_an_archive_with_many_documents_asks_which_ones(clean, browser, tmp_path
 
 def test_an_archive_that_cannot_be_opened_says_why(clean, browser, tmp_path, monkeypatch):
     server = clean
-    monkeypatch.setattr(archives, 'tools', lambda: [])                                  # as in the browser edition: no unpacker for 7z
-    z7 = tmp_path / 'backup.7z'
+    monkeypatch.setattr(archives, 'tools', lambda: [])                                  # as in the browser edition: no unpacker on the machine
+    z7 = tmp_path / 'backup.7z'                                                         # a signature and nothing else: the page's reader says damaged
     z7.write_bytes(b"7z\xbc\xaf'\x1c" + b'\0' * 200)
     page = _open(browser, server)
     _upload(page, '#intakeBtn', [z7])
