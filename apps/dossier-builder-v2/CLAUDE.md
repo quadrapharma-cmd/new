@@ -356,8 +356,31 @@ When a part is done or an open item is closed, update «What exists» and «Open
   Adobe Illustrator PDFs) has its words in outlines — the only live text is the designer's notes (sticker: 10 lines; leaflet: 10
   English lines) — so no program can change its words; only the designer, from the Illustrator file. The design program would
   only make new artwork from scratch. Both left out unless he wants them for something else.
+- **15/11/2026, the working copy with its XML, and the real export from the page** (he asked «ليه مش بيطله امتداد xml ?», then
+  «اعمله، خلي نسخة العمل تطلع بالـ XML», «اشتغل زي ما القواعد بتقول», «انا عايز برنامج كامل لكل الدول و مصر بالتلات صيغ اللي اتفقنا
+  عليهم», «اي نسخة تصدر للتقديم»; `18f214f`; README «A working copy at any time»). claude.ai lets a page save a zip but never a bare
+  `.xml` (the downloads allowlist), so the XML travels in its zip. The working copy now also writes the authority's eCTD
+  (`ectd32-working.zip`, and `ectd40-working.zip` for Egypt) by the real export's own code (`exporter._sequences`, `working`), beside
+  the export, never recorded, «WORKING COPY — NOT FOR SUBMISSION» in the envelope's description and in a note beside the sequence;
+  a Word file without its PDF (the browser edition has no LibreOffice), a sheet or a picture is left out and named («item (file)»
+  and why, in both languages). Tried on his real Wouncure files (24 placed by the program's classifier, 33 MB): with LibreOffice
+  the two Word leaflets, made PDFs without their PI type and language, cost the whole XML — so now a refused sequence has each
+  document written alone (`_cannot_take`) and only those left out; the XML came with 22 of his PDFs both ways, and its checks found
+  a CoA PDF with security restrictions, no cover letter yet and scans without a text layer. Also found by the whole suite: the
+  programs' delayed «ready» hint wrote over «اتحفظ» when a save ended within 1.5 s of opening (`ui/assets/programs.js`) — the Word
+  test's intermittent failure; fixed.
+  Found on the way and fixed: **the real export button failed from the page for a first sequence** — the page sends
+  `submission: null` and the server refused it with 422 since the EU work (`ef51a39`), and no test clicked that button; now
+  `tests/test_ui_export_all.py` clicks it for Egypt (its three formats: `ctd.zip` CTD One Submission, `ectd32.zip`, `ectd40.zip`), the
+  EU, the Gulf, the US and another country. And GCC-1.1 (Module 1 table of contents) carried an eCTD node its own text says it
+  has none: a document there stopped the Gulf's eCTD; now a CTD-folder item like ICH's M2–M5 tables of contents. **For submission:**
+  the «تصدير المخرجات المختارة» button, once the gate is open — for Egypt `ctd.zip` is what EDA receives today (NP.CAPP.065 v5);
+  `ectd32.zip` and `ectd40.zip` follow the provisional EG profiles (EDA drafts), ready for when EDA takes eCTD, not «EDA-valid».
 
 ## Open items (propose when relevant; do when he asks)
+- Old program: a dossier whose product has no indication passes the gate, and its real export then stops late with «5.3.5.4 needs
+  an indication (ICH DTD #REQUIRED)» (the ICH DTD asks it of the Module 5 efficacy and safety studies). The gate could ask for it
+  first; found 15/11/2026 on a made-up Gulf dossier, not yet changed.
 - Old program, claude.ai edition: its fonts never load — `web/build.py` writes the font link's `onload="this.media=\'all\'"` with
   the backslashes kept (a script error on every opening, in the version he has used since 13/11 too), so the page shows the
   system's fonts. Left as it is (the look he knows); fix only if he asks.

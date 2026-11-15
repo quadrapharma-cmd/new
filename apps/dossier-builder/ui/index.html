@@ -495,7 +495,7 @@ const T = {
   wkBtn:{en:'Export a working copy of what is ready',ar:'صدّر نسخة عمل باللي جاهز دلوقتي'},
   wkSub:{en:'CTD folders with every document that is in the dossier now, a navigator and the list of what is still missing — and, where the authority takes an eCTD, its sequence with index.xml and the Module 1 XML, checked by the program. Marked «not for submission»; nothing is recorded as submitted.',
          ar:'مجلدات CTD بكل المستندات اللي في الملف دلوقتي، مع فهرس وقائمة بالناقص — ومعاها، لو الهيئة بتاخد eCTD، التسلسل بالـ XML بتاعه (index.xml وملف موديول 1) متراجع بقواعد البرنامج. مكتوب عليها «ليست للتقديم»، ومفيش حاجة بتتسجل كتقديم.'},
-  wkCtdZ:{en:'CTD folders',ar:'مجلدات CTD'}, wkLeft:{en:'Left out of the eCTD (it takes PDF only)',ar:'اتساب برّه الـ eCTD (بياخد PDF بس)'},
+  wkCtdZ:{en:'CTD folders',ar:'مجلدات CTD'}, wkLeft:{en:'Left out of the eCTD',ar:'اتساب برّه الـ eCTD'},
   wkSkip:{en:'Not written',ar:'ما اتكتبش'}, wkNoEctd:{en:'This authority takes CTD folders: no eCTD XML.',ar:'الهيئة دي بتاخد مجلدات CTD: مفيش eCTD بـ XML.'},
   wkDone:{en:'Working copy',ar:'نسخة العمل'}, wkDocs:{en:'documents in place',ar:'مستند في مكانه'}, wkMiss:{en:'required still missing',ar:'مطلوب لسه ناقص'},
   auCtdD:{en:"Folders in the order of the authority's Module 1 and the common CTD, with a navigator and a checklist.",ar:'مجلدات بترتيب موديول ١ بتاع الهيئة والـ CTD المشترك، مع فهرس وقائمة.'}, auExportSub:{en:'One dossier, as CTD folders.',ar:'ملف واحد بمجلدات CTD.'},
@@ -3289,7 +3289,7 @@ async function exportView(tok){
     if(eu){ const cs=$$('#euCs input:checked').map(i=>i.value); if(cs.length) sub.countries=cs;      /* the working eCTD takes what the real one would */
       if(!follow&&$('#euTrack')&&$('#euTrack').value.trim()) sub.tracking=$('#euTrack').value.trim(); }
     try{ const r=await api(`/dossiers/${S.dossier.id}/export`,{method:'POST',json:{working:true,outputs:['ctd'],submission:Object.keys(sub).length?sub:null}});
-      const lab={'ctd-working':t('wkCtdZ'),'ectd32-working':'eCTD 3.2.2 — XML','ectd40-working':'eCTD 4.0 — XML'}, ec=r.ectd, sep=S.lang==='ar'?'، ':', ';
+      const lab={'ctd-working':t('wkCtdZ'),'ectd32-working':'eCTD 3.2.2 — XML','ectd40-working':'eCTD 4.0 — XML'}, ec=r.ectd;
       const sq=Object.entries(r.sequences||{}).map(([k,v])=>`<span class="tag">${k==='ectd32'?'eCTD 3.2.2':'eCTD 4.0'} · ${esc(t('seqDone'))} <span class="code">${esc(v.sequence)}</span></span>`).join(' ');
       const val=Object.entries(r.validation||{}).map(([k,v])=>`<div class="alert ${v.ok?'ok':'bad'}"><p><b>${esc(k)}</b> — ${bdi(v.label)}<br><span class="small">${esc(t('vPass'))} ${v.counts.pass} · ${esc(t('vFail'))} ${v.counts.fail} · ${esc(t('vWarn'))} ${v.counts.warning} · ${esc(t('vNotRun'))} ${v.counts.not_run}</span></p></div>`).join('');
       $('#wkRes').innerHTML=`<div class="alert ok">${icon('check')}<p><b>${esc(t('wkDone'))}</b> — ${r.documents} ${esc(t('wkDocs'))} · ${r.missing_required} ${esc(t('wkMiss'))}<br><span class="small">${esc(S.lang==='ar'&&r.label_ar?r.label_ar:r.label)}</span></p></div>
@@ -3297,7 +3297,7 @@ async function exportView(tok){
           ${r.report?`<a class="btn soft" href="${esc(r.report)}" target="_blank" rel="noopener" id="wkRep">${icon('shield')} ${esc(t('vReport'))}</a>`:''}</div>
         ${sq?`<div class="row gap-s small" style="flex-wrap:wrap">${sq}</div>`:''}${val}
         ${ec?'':`<p class="small muted">${esc(t('wkNoEctd'))}</p>`}
-        ${ec&&(ec.left_out||[]).length?`<div class="small"><b>${esc(t('wkLeft'))}:</b> ${ec.left_out.map(x=>bdi(x)).join(sep)}</div>`:''}
+        ${ec&&(ec.left_out||[]).length?`<div class="small" id="wkLeft"><b>${esc(t('wkLeft'))}:</b><ul style="margin:4px 0 0;padding-inline-start:18px">${ec.left_out.map(x=>`<li>${bdi(x.name)} — ${esc(S.lang==='ar'?x.why.ar:x.why.en)}</li>`).join('')}</ul></div>`:''}
         ${ec?Object.entries(ec.skipped||{}).map(([k,v])=>`<div class="alert bad"><p class="small"><b>${esc(t('wkSkip'))} — ${esc(k==='ectd32'?'eCTD 3.2.2':k==='ectd40'?'eCTD 4.0':'eCTD')}</b>: ${esc(S.lang==='ar'?v.ar:v.en)}</p></div>`).join(''):''}`;
     }catch(e){ $('#wkRes').innerHTML=`<div class="alert bad">${icon('alert')}<p>${esc(e.message)}</p></div>`; }
     finally{ b.disabled=false; b.innerHTML=`${icon('download')} ${esc(t('wkBtn'))}`; } };

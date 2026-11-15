@@ -265,7 +265,9 @@
         const copy = opts.bytes.slice().buffer;
         post({ type: 'open', name: opts.name, bytes: copy }, [copy]);
 
-        setTimeout(() => { if (!closed && !saving) status(say('ready')); }, 1500);
+        // the hint, once the document is open — unless something was said meanwhile (a save done within these 1.5 s kept «saved»
+        // only until this fired: seen when the program opens from the device and the save is quick)
+        setTimeout(() => { if (!closed && !saving && $('.dbprog-status').textContent === say('opening')) status(say('ready')); }, 1500);
         try { frame.focus(); } catch (err) { /* the frame takes focus on its first click */ }
       } else if (msg.type === 'dirty') { if (msg.dirty !== false) { unsaved = true; saveBtn().disabled = false; } }
       else if (msg.type === 'failed') failed(msg.error || 'unknown');

@@ -191,6 +191,9 @@ holds both edits, its Arabic and its table; a .doc shows no button; a PDF's page
 keeps nothing), the new version's first page turned and its second not; without WebAssembly the program says it cannot run.
 `web/build.py` now takes the page's body up to its **last** `</body>` (the loader writes one in a string, and the first one cut
 the page there).
+The hint «عدّل في الملف، وبعدين احفظه…» comes 1.5 s after the program opens only if nothing was said meanwhile: a save finished
+within those 1.5 s (the program opened from the device) showed «اتحفظ» and then the hint over it — the Word test failed twice in
+the whole suite that way (15/11/2026).
 
 ## The library inside the program, and 7z in every edition (15/11/2026) — «نحطها في البرنامج القديم»
 
@@ -351,8 +354,15 @@ fictional documents (`tests/test_trial_fixes.py`, `tests/test_ui_working_copy.py
   «WORKING COPY — NOT FOR SUBMISSION», `00-WORKING-COPY-NOT-FOR-SUBMISSION.txt` lies beside the sequence in the zip (never inside
   it); nothing is recorded, so the next working copy and the real export take the same number. It asks neither the follow-on's
   type nor its new cover letter (the page sends the next-sequence form's values when there is one). Only PDFs go in: a Word file
-  through its PDF as in the real export, and where none can be made (no LibreOffice: the browser edition) it is left out and
-  named, item and file («Pricing Certificate (costs.xlsx)»), as are sheets, pictures and other files; the CTD folders keep them.
+  through its PDF as in the real export; where none can be made (no LibreOffice: the browser edition) it is left out, as are
+  sheets, pictures and other files, and the CTD folders keep them. A document the eCTD writer refuses (a leaflet in 1.3.1 without
+  its PI type and language, a 3.2.S document without its substance…) does not cost the whole XML: each document is then written
+  alone beside a plain tracking page, without the checks (`_cannot_take`), and the ones refused are left out. Each left-out
+  document is named with its item and file and why, in both languages (`ectd.left_out`: `{name, why: {en, ar}}`; «Pricing
+  Certificate (costs.xlsx)» — «الـ eCTD بياخد PDF بس»), on the page and in the note beside the sequence. Tried on his real Wouncure
+  files (24 placed by the program's classifier, 33 MB): the XML written with 22 of his PDFs and the tracking table; the SmPC and
+  PIL Word files left out (in the browser edition: add their PDF; with LibreOffice: their PI type and language); the checks found
+  one CoA PDF with security restrictions (EG-PF-16.3), no cover letter yet and scans without a text layer.
   The program's eCTD checks run on it (`validation-report.html`). An output that cannot be written says why and the others are
   still given; an authority without an eCTD gives the CTD folders only. claude.ai lets a page save a zip but never a bare `.xml`
   (its downloads allow gif png jpg jpeg webp mp4 webm mov txt json md docx pptx epub csv ttf html svg pdf xlsx zip fig), which is

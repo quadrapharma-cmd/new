@@ -26,6 +26,21 @@ class ExportError(Exception):
 
 WORKING = {'en': 'WORKING COPY — NOT FOR SUBMISSION', 'ar': 'نسخة عمل — ليست للتقديم'}
 WORKING_NOTE = '00-WORKING-COPY-NOT-FOR-SUBMISSION.txt'
+WHY_NOT_PDF = {'en': 'an eCTD takes PDF only', 'ar': 'الـ eCTD بياخد PDF بس'}
+WHY_WORD = {'en': 'a Word file: add its PDF to the item (save it as PDF from Word)', 'ar': 'ملف Word: ضيف الـ PDF بتاعه في البند (احفظه PDF من Word)'}
+WHY_WRITER = (                                    # the eCTD writers' own reasons for a document, said in Arabic too
+    ('needs pi_type and lang', 'نوع النشرة (SmPC أو PIL) ولغتها ناقصين: افتح البند واختارهم'),
+    ('needs substance and manufacturer', 'المادة الفعالة ومصنّعها ناقصين لمستند الـ 3.2.S ده'),
+    ('needs an indication', 'دواعي الاستعمال (indication) ناقصة في بيانات المنتج'),
+    ('needs its country', 'الدولة اللي المستند ده بيخصها ناقصة'),
+    ('the language is one of', 'لغة المستند ناقصة أو مش من لغات الهيئة'),
+    ('not a document heading', 'البند ده مالوش مكان مستند في موديول 1 للـ eCTD'),
+)
+
+
+def _why(msg):
+    msg = str(msg)
+    return {'en': msg, 'ar': next((ar for key, ar in WHY_WRITER if key in msg), 'مكانه في الـ eCTD محتاج تفاصيل: ' + msg)}
 
 
 def _zip(src_root, rel_folder, out, note=None):
@@ -48,7 +63,7 @@ def _working_text(note, left_out):
              'قبل ما الملف يكمل. مش متسجّل كتقديم: التصدير الحقيقي الجاي هياخد نفس رقم التسلسل. المستندات المطلوبة الناقصة مش فيه '
              '(00-MISSING.txt في نسخة العمل بتاعة الـ CTD فيه قايمتها).', '', note['en'], note['ar']]
     if left_out:
-        lines += ['', 'Left out of this eCTD (an eCTD takes PDF) / اتساب برّه الـ eCTD ده (الـ eCTD بياخد PDF بس):'] + [f'- {t}' for t in left_out]
+        lines += ['', 'Left out of this eCTD / اتساب برّه الـ eCTD ده:'] + [f"- {t['name']}: {t['why']['en']} / {t['why']['ar']}" for t in left_out]
     return '\n'.join(lines) + '\n'
 
 
@@ -80,7 +95,7 @@ def _working_ectd(st, did, d, slots, base, exp_id, sub, p40, ig_zip, note):
             if ext not in ('.pdf', '.docx', '.doc', '.rtf', '.odt'):
                 with open(src, 'rb') as fh:
                     if fh.read(5) != b'%PDF-':           # a spreadsheet, a picture…: the CTD folders keep it, the eCTD does not take it
-                        left_out.append(_named(doc['title'], doc['filename']))
+                        left_out.append({'name': _named(doc['title'], doc['filename']), 'why': WHY_NOT_PDF})
                         continue
                 ext = '.pdf'
             p = work / f"{doc['id']}{ext}"
@@ -94,22 +109,64 @@ def _working_ectd(st, did, d, slots, base, exp_id, sub, p40, ig_zip, note):
     eff = {k: v for k, v in files_e.items() if not k.startswith('M1-44')}
     x = SimpleNamespace(d=d, env=env, pr=pr, prof=prof, product=product, region=region, slots=slots, files_e=files_e,
                         docs_ectd=list(docs_for(slots, prof, eff)[0]), current_ids={y.doc_id for y in docs_all})
-    text = _working_text(note, left_out)
     res = {'region': region, 'downloads': {}, 'sequences': {}, 'reports': {}, 'skipped': {}, 'left_out': left_out}
     for o in outs:
-        try:
-            r = _sequences(st, did, x, [o], sub, base, exp_id, p40, ig_zip, working=text)
-        except ExportError as ex:
-            res['skipped'][o] = {'en': ex.en, 'ar': ex.ar}
-            continue
-        except Exception as ex:                       # the CTD folders are still given; this output says why it is not
-            res['skipped'][o] = {'en': f'Not written: {ex}', 'ar': f'ما اتكتبش: {ex}'}
-            continue
-        res['downloads'].update(r['zips'])
-        res['sequences'].update(r['seqinfo'])
-        res['reports'].update(r['reports'])
+        docs, r = list(x.docs_ectd), None
+        for attempt in (1, 2):
+            y = SimpleNamespace(**{**vars(x), 'docs_ectd': docs})
+            try:
+                r = _sequences(st, did, y, [o], sub, base, exp_id, p40, ig_zip, working=_working_text(note, left_out))
+                break
+            except ExportError as ex:
+                res['skipped'][o] = {'en': ex.en, 'ar': ex.ar}
+            except WriterError as ex:                 # a document the writer cannot take: each one tried alone, those left out, the rest written
+                bad = _cannot_take(st, did, y, o, sub, base, exp_id, p40, ig_zip, note) if attempt == 1 else None
+                if bad:
+                    for doc in [d for d in docs if d.doc_id in bad]:
+                        entry = {'name': _named(doc.title, (doc.aliases or (None,))[0]), 'why': _why(bad[doc.doc_id])}
+                        if entry not in left_out:
+                            left_out.append(entry)
+                    docs = [d for d in docs if d.doc_id not in bad]
+                    shutil.rmtree(base / ('ectd-3.2.2' if o == 'ectd32' else 'ectd-4.0'), ignore_errors=True)   # what the refused try left
+                    continue
+                res['skipped'][o] = {'en': f'Not written: {ex}', 'ar': f'ما اتكتبش: {_why(ex)["ar"]}'}
+            except Exception as ex:                   # the CTD folders are still given; this output says why it is not
+                res['skipped'][o] = {'en': f'Not written: {ex}', 'ar': f'ما اتكتبش: {ex}'}
+            break
+        if r:
+            res['downloads'].update(r['zips'])
+            res['sequences'].update(r['seqinfo'])
+            res['reports'].update(r['reports'])
     shutil.rmtree(work, ignore_errors=True)
+    shutil.rmtree(base / '_probe', ignore_errors=True)
     return res
+
+
+def _cannot_take(st, did, x, o, sub, base, exp_id, p40, ig_zip, note):
+    """The documents an output's sequence cannot take, each written alone beside a plain tracking page, without the checks:
+    {doc_id: the writer's reason}. Empty when even a sequence without them is refused (then the sequence itself is the problem)."""
+    tdir = Path(tempfile.mkdtemp())
+    letters.tracking_table({'trade_name': x.d['name'], 'sequences': [{'sequence': '0000', 'related': '0000', 'description': WORKING['en'],
+                                                                      'type': '', 'unit': '', 'date': time.strftime('%Y-%m-%d'),
+                                                                      'tracking': '', 'status': 'Working copy'}]}, tdir / 'tracking.docx')
+    tp = basic_pdf(tdir / 'tracking.docx')
+
+    def refused(docs):
+        probe = base / '_probe'
+        try:
+            _sequences(st, did, SimpleNamespace(**{**vars(x), 'docs_ectd': docs}), [o], sub, probe, exp_id, p40, ig_zip,
+                       working=_working_text(note, []), check=False, tracking_pdf=tp)
+            return None
+        except (WriterError, ExportError) as ex:
+            return str(ex) if isinstance(ex, WriterError) else ex.en
+        finally:
+            shutil.rmtree(probe, ignore_errors=True)
+    try:
+        if refused([]):
+            return {}
+        return {d.doc_id: why for d in x.docs_ectd for why in [refused([d])] if why}
+    finally:
+        shutil.rmtree(tdir, ignore_errors=True)
 
 
 def _working_copy(st, did, g, sub=None, p40=None, ig_zip=None):
@@ -193,7 +250,7 @@ def ectd_files(files, left_out=None):
                 pdf = to_pdf(Path(f['file']))
             except Exception:                             # no LibreOffice here, or it failed on this file
                 if left_out is not None:
-                    left_out.append(_named(f.get('title'), f.get('orig')))
+                    left_out.append({'name': _named(f.get('title'), f.get('orig')), 'why': WHY_WORD})
                     continue
                 raise ExportError(422, 'E-WORD-PDF', f"«{f.get('title')}» is a Word file and an eCTD takes PDF: add its PDF to the item "
                                   '(save it as PDF from Word), or export on a machine with LibreOffice.',
@@ -311,7 +368,7 @@ def _previous(lroot, seq):
     return sorted(p for p in lroot.iterdir() if p.is_dir() and p.name != seq) if lroot.is_dir() else []
 
 
-def _sequences(st, did, x, outputs, sub, base, exp_id, p40, ig_zip, replace_last=False, working=None):
+def _sequences(st, did, x, outputs, sub, base, exp_id, p40, ig_zip, replace_last=False, working=None, check=True, tracking_pdf=None):
     """The eCTD sequence of each of `outputs` (ectd32, ectd40), from x: the dossier (d, env, pr, prof, product, region, slots) and its
     documents for the eCTD (files_e, docs_ectd, current_ids). A real export writes each sequence into the dossier's lifecycle folder
     under the next number of its history, and the caller records it (`done`). A working copy (`working`: the note that goes beside
@@ -359,11 +416,14 @@ def _sequences(st, did, x, outputs, sub, base, exp_id, p40, ig_zip, replace_last
                          'date': time.strftime('%Y-%m-%d'), 'tracking': sub.get('tracking') or last_tracking(hist) or env.get('tracking', ''),
                          'status': 'Working copy — not for submission' if working else 'This sequence'})
             tdir = Path(tempfile.mkdtemp())
-            letters.tracking_table({'trade_name': env.get('invented_name') or d['name'], 'sequences': rows}, tdir / 'tracking.docx')
-            try:
-                tpdf = to_pdf(tdir / 'tracking.docx')
-            except RuntimeError:                         # no LibreOffice (browser edition): a text-only PDF of the same table
-                tpdf = basic_pdf(tdir / 'tracking.docx')
+            if tracking_pdf:                             # a working copy's probe of one document: any tracking page does
+                tpdf = tracking_pdf
+            else:
+                letters.tracking_table({'trade_name': env.get('invented_name') or d['name'], 'sequences': rows}, tdir / 'tracking.docx')
+                try:
+                    tpdf = to_pdf(tdir / 'tracking.docx')
+                except RuntimeError:                     # no LibreOffice (browser edition): a text-only PDF of the same table
+                    tpdf = basic_pdf(tdir / 'tracking.docx')
             tdoc = ectd32.Doc('1.0', str(tpdf), f'Tracking table — sequence {seq}', name='tracking', doc_id=f'tracking-{out}-{seq}')
             docs = x.docs_ectd + [tdoc]
             if region == 'eu':
@@ -381,13 +441,14 @@ def _sequences(st, did, x, outputs, sub, base, exp_id, p40, ig_zip, replace_last
                 from ..validators import ectd32_gcc as v32gcc
                 root = base / 'ectd-3.2.2' if working else lc / 'ectd-3.2.2'
                 r = ectd32_gcc.write(root, e, product, to_ectd32(steps), links=_earlier(st, did, hist))
-                reports['eCTD 3.2.2 (GCC M1 1.5)'] = v32gcc.validate(r['path'])
+                if check:
+                    reports['eCTD 3.2.2 (GCC M1 1.5)'] = v32gcc.validate(r['path'])
                 _zip(root, seq, base / f'{zname}.zip', note=working)
             elif out == 'ectd32' and region == 'eu':
                 root = base / 'ectd-3.2.2' if working else lc / 'ectd-3.2.2'
                 r = ectd32_eu.write(root, e, product, to_ectd32(steps), links=_earlier(st, did, hist))
-                prev = _previous(lc / 'ectd-3.2.2', seq)
-                reports['eCTD 3.2.2 (EU M1 3.1.1)'] = v32eu.validate(r['path'], ectd32_eu.DEFAULT_PROFILE, previous=prev)
+                if check:
+                    reports['eCTD 3.2.2 (EU M1 3.1.1)'] = v32eu.validate(r['path'], ectd32_eu.DEFAULT_PROFILE, previous=_previous(lc / 'ectd-3.2.2', seq))
                 _zip(root, seq, base / f'{zname}.zip', note=working)
             elif out == 'ectd32':
                 root = base / 'ectd-3.2.2' if working else lc / 'ectd-3.2.2'
@@ -397,8 +458,8 @@ def _sequences(st, did, x, outputs, sub, base, exp_id, p40, ig_zip, replace_last
                                     inn=env.get('inn', []), sequence=seq, related_sequence=[activity],
                                     description=desc, mode=sub.get('mode') if stype.startswith('var-') else None)
                 r = ectd32.write(root, e, product, to_ectd32(steps), links=_earlier(st, did, hist))
-                prev = _previous(lc / 'ectd-3.2.2', seq)
-                reports['eCTD 3.2.2'] = v32.validate(r['path'], ectd32.DEFAULT_PROFILE, previous=prev)
+                if check:
+                    reports['eCTD 3.2.2'] = v32.validate(r['path'], ectd32.DEFAULT_PROFILE, previous=_previous(lc / 'ectd-3.2.2', seq))
                 _zip(root, seq, base / f'{zname}.zip', note=working)
             else:
                 root = base / 'ectd-4.0' if working else lc / 'ectd-4.0'
@@ -410,7 +471,8 @@ def _sequences(st, did, x, outputs, sub, base, exp_id, p40, ig_zip, replace_last
                                       registration=ectd32.REG_TYPE[prof.licence], marketing=env.get('marketing', 'local'))
                 docs4, suspend = to_ectd40(steps)
                 r = ectd40.write(root, e4, product, docs4, profile=p40, suspend=suspend)
-                reports['eCTD 4.0'] = v40.validate(r['path'], p40, ig_zip, st.root / 'cache')
+                if check:
+                    reports['eCTD 4.0'] = v40.validate(r['path'], p40, ig_zip, st.root / 'cache')
                 _zip(root, f"{env['application_uuid'].lower()}/{seq}", base / f'{zname}.zip', note=working)
                 e = e4
             shutil.rmtree(tdir, ignore_errors=True)
