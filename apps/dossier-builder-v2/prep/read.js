@@ -1,13 +1,14 @@
 // Every file of a dossier opened by its content (never its name) and read page by page: a PDF's own text where it has one, a scanned
 // page (or a picture) read by the page's scan reader when one is given (prep/ocr.js, in the browser), Word files old and new, and
-// the files inside ZIP and RAR archives, as deep as archives go in archives. What cannot be read says why; nothing is guessed.
+// Excel and PowerPoint files old and new, and the files inside ZIP, RAR and 7z archives, as deep as archives go in archives. What cannot be read says why; nothing is guessed.
 //   readFiles(files: [{name, bytes}], env) → [{id, name, kind, pages: [{n, text, by: 'text'|'ocr'|'claude'|'word'|'plain'}], unread?, note?}]
 //   env: {pdfjs, ocr?: {page(canvas, {dpi, name, page, pages}) → text or {text, by}, lanes?}, drawPdf?(page) → canvas,
 //         drawImage?(bytes, kind) → canvases, onProgress?, unrar?}
 import { kindOf } from '../agent/workspace.js';
 import { pageTextOf } from '../core/pdftext.js';
 import { unzip } from './zip.js';
-import { cfb, docText, docxText, idmlText } from './office.js';
+import { cfb, docText, docxText, idmlText, xlsxText, pptxText, xlsText, pptText } from './office.js';
+import { sevenz } from './sevenz.js';
 import { core as rarCore } from './rar.js';
 
 // A PDF page with fewer letters than this in its own text is a scan (a stamp, a page number or a header line is not a text layer).
@@ -105,8 +106,8 @@ export async function readFiles(files, env = {}) {
       try { kind = cfb(bytes).names.includes('WordDocument') ? 'doc' : kind; } catch { /* reported below as it is */ }
     }
     try {
-      if ((kind === 'zip' || kind === 'rar') && depth < 4) {
-        const { files: inner, skipped } = kind === 'zip' ? await unzip(bytes) : await (env.unrar || rarHere)(bytes);
+      if ((kind === 'zip' || kind === 'rar' || kind === '7z') && depth < 4) {
+        const { files: inner, skipped } = kind === 'zip' ? await unzip(bytes) : kind === '7z' ? sevenz(bytes) : await (env.unrar || rarHere)(bytes);
         for (const s of skipped) add(`${name}/${s.name}`, 'unknown', { unread: s.why });
         for (const f of inner) if (f.bytes) await one(`${name}/${f.name}`, f.bytes, depth + 1);
         return;
@@ -121,6 +122,10 @@ export async function readFiles(files, env = {}) {
       if (kind === 'doc') { add(name, kind, { pages: docText(bytes) }, bytes); return; }
       if (kind === 'docx') { add(name, kind, { pages: await docxText(bytes) }, bytes); return; }
       if (kind === 'text') { add(name, kind, { pages: [{ n: 1, text: new TextDecoder().decode(bytes), by: 'plain' }] }, bytes); return; }
+      if (kind === 'xlsx') { add(name, kind, { pages: await xlsxText(bytes) }, bytes); return; }
+      if (kind === 'pptx') { add(name, kind, { pages: await pptxText(bytes) }, bytes); return; }
+      if (kind === 'xls') { add(name, kind, { pages: xlsText(bytes) }, bytes); return; }
+      if (kind === 'ppt') { add(name, kind, { pages: pptText(bytes) }, bytes); return; }
       if (kind === 'idml') { add(name, kind, { pages: await idmlText(bytes) }, bytes); return; }
       // a design file the design program keeps (its own, or InDesign's own document): no words read here — its PDF is what goes in
       if (kind === 'designcraft' || kind === 'indd') { add(name, kind, { pages: [], note: 'design' }, bytes); return; }

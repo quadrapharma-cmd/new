@@ -43,7 +43,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 const KIND = { pdf: 'PDF', doc: 'Word قديم', docx: 'Word', png: 'صورة', jpeg: 'صورة', tiff: 'TIFF', gif: 'صورة', webp: 'صورة', text: 'نص', xls: 'Excel قديم',
                xlsx: 'Excel', ppt: 'PowerPoint قديم', pptx: 'PowerPoint', '7z': '7z', zip: 'ZIP', rar: 'RAR', heic: 'HEIC', psd: 'Photoshop',
                idml: 'تصميم InDesign (IDML)', indd: 'تصميم InDesign', designcraft: 'تصميم (برنامج التصميم)', unknown: 'مش معروف' };
-const BY = { text: 'نص الملف', ocr: 'قارئ المسح', claude: 'Claude', word: 'Word', plain: 'نص', program: 'البرنامج' };
+const BY = { text: 'نص الملف', ocr: 'قارئ المسح', claude: 'Claude', word: 'Word', plain: 'نص', program: 'البرنامج', sheet: 'Excel', slides: 'PowerPoint' };
 const FIELD = { product_name: 'المستحضر', trade_name: 'المستحضر', dosage_form: 'الشكل الصيدلي', manufacturer: 'المصنع', license_holder: 'صاحب الترخيص',
                 applicant: 'مقدم الطلب', document_code: 'كود المستند', issue_date: 'تاريخ الإصدار', review_date: 'تاريخ المراجعة',
                 invalidation_date: 'تاريخ الانتهاء', registration_number: 'رقم التسجيل', composition: 'التركيب', approved_limit: 'حد اتوافق عليه',

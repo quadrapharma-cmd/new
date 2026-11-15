@@ -43,6 +43,8 @@ function formatFindings(doc, info) {
     if (['doc', 'docx'].includes(doc.kind)) add('not-pdf', 'amber', `«${doc.name}» ملف Word، والملف لازم يبقى PDF`, 'المستند ده لازم يتقدّم PDF. «اعمله PDF» ببرنامج الـ Word اللي جوه الورشة، أو ارفع نسخته الـ PDF.', fmt('pdf'), { human: ['pdf', 'upload', 'accept'] });
     else if (DESIGN_KINDS.includes(doc.kind)) add('not-pdf', 'amber', `«${doc.name}» ملف تصميم، والملف لازم يبقى PDF`, 'افتحه في برنامج التصميم اللي جوه الورشة وصدّره PDF (File ← Export PDF): الـ PDF بيتحط في الملف بداله. أو ارفع نسخته الـ PDF.', fmt('pdf'), { human: ['program', 'upload', 'accept'] });
     else if (PICTURES.includes(doc.kind)) add('not-pdf', 'amber', `«${doc.name}» صورة، والملف لازم يبقى PDF`, 'البرنامج يقدر يحوّل الصورة لصفحة PDF.', fmt('pdf'), { auto: 'picture', human: ['upload', 'accept'] });
+    else if (['xlsx', 'xls', 'pptx', 'ppt'].includes(doc.kind)) add('not-pdf', 'amber', `«${doc.name}» ملف ${doc.kind.includes('xl') ? 'Excel' : 'PowerPoint'}، والملف لازم يبقى PDF`,
+      `البرنامج قراه علشان يعرف مكانه، لكن اللي بيتقدّم PDF: افتحه في ${doc.kind.includes('xl') ? 'Excel' : 'PowerPoint'} واحفظه PDF (File ← Save As ← PDF)، وارفع النسخة الـ PDF مكانه.`, fmt('pdf'), { human: ['upload', 'accept'] });
     return out;
   }
   if (!info) return out;
