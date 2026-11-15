@@ -2,25 +2,30 @@
    ZIP, TAR and GZ are unpacked by the engine everywhere. RAR is opened here in the page, in every edition, by the program's own
    reader (rar.js: RAR 2.9 to RAR5, solid archives, archives split in parts, names in any language; every file checked against its
    CRC); what the reader does not open — an archive older than RAR 2.9, one the page's memory cannot hold — goes to the machine's own
-   unpacker where there is one (desktop, server). There is no limit of the program's own on an archive's size or on the files in it. An archive found inside an archive is opened too. A 7z in the browser edition is
-   refused with the reason. */
+   unpacker where there is one (desktop, server). 7z is opened here in the page too, in every edition, by the program's own reader
+   (sevenz.js: LZMA2 and LZMA, the x86 and delta filters, solid archives, names in any language; every file checked against its
+   CRC); what it does not read — another compression method (PPMd, BZip2…), a password, an archive split in parts — goes to the
+   machine's own unpacker where there is one (desktop, server), and is refused with its reason in the browser edition. There is no
+   limit of the program's own on an archive's size or on the files in it. An archive found inside an archive is opened too. */
 (function () {
   const ARCH_RX = /\.(zip|rar|7z|tar|tgz|tbz2?|txz|gz|bz2|xz|[rs]\d\d)$/i;
   const RAR_RX = /\.(rar|[rs]\d\d)$/i;
+  const SEVENZ_RX = /\.7z$/i;
   const AR = () => (document.documentElement.lang || 'ar') !== 'en';
   const say = (ar, en) => AR() ? ar : en;
   const SYSTEM = /(^|\/)(__MACOSX\/|\.DS_Store$|Thumbs\.db$|desktop\.ini$|~\$[^/]*$|\._[^/]*$|\.~lock\.[^/]*$)/i;
 
   async function head(file, n) { return String.fromCharCode.apply(null, new Uint8Array(await file.slice(0, n || 8).arrayBuffer())); }
-  /* 'rar' | 'archive' | null — by its name, or by its first bytes when the name has no extension (a Drive title) */
+  /* 'rar' | '7z' | 'archive' | null — by its name, or by its first bytes when the name has no extension (a Drive title) */
   async function kindOf(file) {
     const name = (file && file.name) || '';
     if (!file) return null;
     if (RAR_RX.test(name)) return 'rar';
+    if (SEVENZ_RX.test(name)) return '7z';
     if (ARCH_RX.test(name)) return 'archive';
     if (/\.[A-Za-z0-9]{1,6}$/.test(name)) return null;
     const s = await head(file);
-    return s.startsWith('Rar!\x1a\x07') ? 'rar' : s.startsWith("7z\xbc\xaf'\x1c") ? 'archive' : null;
+    return s.startsWith('Rar!\x1a\x07') ? 'rar' : s.startsWith("7z\xbc\xaf'\x1c") ? '7z' : null;
   }
   async function isArchive(file) { return !!(await kindOf(file)); }
 
@@ -72,6 +77,43 @@
     return { kind: 'rar', files: named(r.files), skipped: r.skipped, left: r.left || 0 };
   }
 
+  /* ---------------- 7z in the page: the program's own reader (sevenz.js), in a worker */
+  function sevenzError(e) {
+    const code = e && e.z7, how = e && e.why && !/^(bomb|files|total)$/.test(e.why) ? ' (' + e.why + ')' : '';
+    if (code === 'password') return fail('E-ARCHIVE-PASSWORD', 'الأرشيف عليه كلمة سر: فكّه الأول.', 'The archive is protected with a password: unpack it first.');
+    if (code === 'big' && e.why === 'bomb') return Object.assign(fail('E-ARCHIVE-BIG', 'الأرشيف بيتفك لحجم كبير جدًا (مئات المرات قد حجمه): فكّه على جهازك واختار اللي الملف محتاجه.', 'The archive expands hundreds of times its size: unpack it on your computer and choose what the dossier needs.'), { bomb: true });
+    if (code === 'big' || code === 'memory') return noMemory();
+    if (code === 'volume') return fail('E-ARCHIVE-VOLUME', 'ده أرشيف 7z متقسّم أجزاء أو ناقص: فكّه على جهازك وارفع الملفات نفسها.', 'This 7z archive is split in parts or incomplete: unpack it on your computer and upload the files themselves.');
+    if (code === 'unsupported') return fail('E-ARCHIVE-METHOD', 'الأرشيف مضغوط بطريقة الصفحة مابتقراهاش' + how + ': فكّه على جهازك، أو اضغط الملفات ZIP أو 7z بالطريقة العادية.', 'The archive uses a compression method this page does not read' + how + ': unpack it on your computer, or pack the files as ZIP or a standard 7z.');
+    if (code === 'damaged' || code === 'unreadable') return fail('E-ARCHIVE', 'ملف الـ 7z تالف أو مش مكتمل.', 'The 7z file is damaged or incomplete.');
+    return fail('E-ARCHIVE', 'ملف الـ 7z ما اتفتحش.', 'The 7z file could not be opened.');
+  }
+  /* opts.keep: a RegExp of the names worth taking (the others are unpacked only where they share a solid block with one) */
+  async function un7z(file, opts) {
+    opts = opts || {};
+    if (!window.DB7Z) throw fail('E-ARCHIVE-TOOL', 'فك 7z مش متاح في الصفحة دي: فك الأرشيف على جهازك، أو اضغط الملفات ZIP.', '7z cannot be opened in this page: unpack the archive on your computer, or pack the files as ZIP.');
+    let r;
+    try {
+      r = await window.DB7Z.extract([file], { skipRx: SYSTEM.source,
+        keepRx: opts.keep ? '(' + opts.keep.source + ')|(' + ARCH_RX.source + ')' : null }, name => { if (opts.onStatus) opts.onStatus(say('بيفك ', 'Unpacking ') + name.split('/').pop() + '…'); });
+    } catch (e) { throw sevenzError(e); }
+    const skipped = r.skipped.map(x => x.why === 'unsupported' ? { name: x.name, why: 'method' } : { name: x.name, why: x.why });
+    const real = r.files.filter(f => f.parts.some(x => (x.byteLength || 0) > 0));                  // an empty file is not a document
+    if (!real.length && skipped.some(x => x.why === 'password')) throw sevenzError({ z7: 'password' });
+    if (!real.length && skipped.length && skipped.every(x => x.why === 'method')) throw sevenzError({ z7: 'unsupported', why: r.skipped[0].method });
+    return { kind: '7z', files: named(r.files), skipped, left: r.left || 0 };
+  }
+  async function un7zSet(file, opts) {
+    let mine = null, err = null;
+    try { mine = await un7z(file, opts); } catch (e) { err = e; }
+    const weak = err ? !err.bomb && /^E-ARCHIVE(-TOOL|-BIG|-METHOD|-VOLUME)?$/.test(err.code || '') : !mine.files.length || mine.skipped.some(x => x.why === 'method');
+    if (weak && !window.DBWEB) {                                     // desktop, server: the machine's own unpacker may know the method
+      try { const theirs = await unpack(file); if (!mine || theirs.files.length > mine.files.length) return theirs; } catch (e) {}
+    }
+    if (err) throw err;
+    return mine;
+  }
+
   /* the parts of an archive split by WinRAR: name.part1.rar, name.part2.rar … or name.rar, name.r00, name.r01 … */
   function volume(name) {
     const m = /(\.part(\d+))?\.(rar|[rs]\d\d)$/i.exec(name || '');
@@ -109,6 +151,9 @@
           }
           if (opts.onStatus) opts.onStatus(say('بيفك ', 'Unpacking ') + f.name + '…');
           r = await unrarSet(set.slice().sort((a, b) => a.order - b.order), opts);
+        } else if (kinds[i] === '7z') {
+          if (opts.onStatus) opts.onStatus(say('بيفك ', 'Unpacking ') + f.name + '…');
+          r = await un7zSet(f, opts);
         } else {
           if (opts.onStatus) opts.onStatus(say('بيفك ', 'Unpacking ') + f.name + '…');
           r = await unpack(f);
@@ -130,12 +175,12 @@
   function summary(notes) {
     const why = { password: say('كلمة سر', 'password'), 'too large': say('كبير جدًا', 'too large'), link: say('رابط', 'a link'), unreadable: say('تالف', 'damaged'),
       volume: say('جزء من الأرشيف ناقص', 'a part of the archive is missing'), unsupported: say('نسخة RAR قديمة جدًا', 'a very old RAR version'),
-      memory: say('ذاكرة المتصفح ما كفتش', 'the browser ran out of memory') };
+      memory: say('ذاكرة المتصفح ما كفتش', 'the browser ran out of memory'), method: say('طريقة ضغط الصفحة مابتقراهاش', 'a compression method this page does not read') };
     return notes.map(n => n.error ? `${n.archive}: ${n.error}`
       : say(`«${n.archive}» اتفك: ${n.taken} مستند`, `«${n.archive}» unpacked: ${n.taken} document(s)`)
         + (n.left ? say(`، و${n.left} ملف تاني اتساب`, `, ${n.left} other file(s) left out`) : '')
         + (n.skipped.length ? say(`، و${n.skipped.length} ما اتفتحش`, `, ${n.skipped.length} not opened`) + ' (' + n.skipped.slice(0, 3).map(s => s.name.split('/').pop() + ': ' + (why[s.why] || s.why)).join('، ') + ')' : '')).join(' · ');
   }
 
-  window.DBARCH = { ARCH_RX, isArchive, kindOf, unpack, unrar, expand, summary };
+  window.DBARCH = { ARCH_RX, isArchive, kindOf, unpack, unrar, un7z, expand, summary };
 })();

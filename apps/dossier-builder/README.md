@@ -329,7 +329,7 @@ bytes; a Word, Excel or OpenDocument file is a ZIP inside and is never mistaken 
 | ZIP, TAR, `.tar.gz` / `.tgz`, `.tar.bz2`, a single `.gz` / `.bz2` | every edition (the standard library), the browser one included |
 | `.xz`, `.tar.xz` | the desktop and server editions (the browser edition's Python has no xz: said, with what to do) |
 | RAR (RAR 2.9–4.x and RAR5) | **every edition**: the page opens it itself with the program's own reader (`ui/assets/rar.js`, below), the same way everywhere. What the reader does not open (an archive older than RAR 2.9, one the page's memory cannot hold) goes to the unpacker the machine has, in the desktop and server editions (`tar` on Windows 10+ and macOS is bsdtar, else 7-Zip, unrar or unar) |
-| 7z | the desktop and server editions (the machine's unpacker). The browser edition refuses it with the reason («unpack it first, or pack the files as ZIP») |
+| 7z | **every edition** (since 15/11/2026): the page opens it itself with the program's own reader (`ui/assets/sevenz.js`, below). What the reader does not read — another method (PPMd, BZip2, Deflate, BCJ2), a password, an archive split in parts — goes to the machine's unpacker in the desktop and server editions, and is refused with its reason in the browser edition |
 
 Names keep their Arabic (UTF-8, or the Windows code pages 1256/720 when the UTF-8 flag is missing); `..`, drive letters and leading
 slashes are dropped, nothing is written outside a private temporary folder; `__MACOSX`, `Thumbs.db`, `~$…` are left out; an archive
@@ -389,6 +389,25 @@ one of them is cut short, and both programs refuse the same file in it), 17 pack
 from 128 KB to 64 MB, solid, up to 11 parts, every filter) and 43 public archives of the libarchive project, among them damaged
 ones that must be refused without a crash or a hang. Tests: `tests/test_rar_reader.py` (the archives in
 `tests/data/archives/rar` were made for it with RAR 7.00 from made-up documents; the public ones are fetched by `web/vendor.sh`).
+
+**7z inside the page (`ui/assets/sevenz.js`, 15/11/2026).** Before, the browser edition refused a 7z («unpack it first»). The
+program's own reader now opens it in every edition, the same way as RAR: no library and nothing fetched, in a worker made from its
+own source (on the page's thread where a worker cannot be made). Written from the 7z format's public description (7zFormat.txt)
+and the LZMA specification with the reference decoder of the LZMA SDK (Igor Pavlov, public domain), it reads what 7-Zip and the
+other packers write for documents: LZMA2 (7-Zip's default) and LZMA, the x86 branch filter and the delta filter, stored files,
+solid archives and one-file-per-block ones, a header that is itself packed, names in any language (a leading «./», drive letters
+and «..» are dropped). Every file is checked against its CRC-32: one that does not match is reported, never handed over. Left
+out, each with its reason: files under a password (and the whole archive when its names are under one too), the methods it does
+not have (PPMd, BZip2, Deflate, BCJ2, the filters for other processors: «a compression method this page does not read», named),
+an archive cut short or split in parts (`.7z.001 …`), what the page's memory cannot hold, and a «bomb» as in the engine (more than
+100 MB declared from less than a 250th of it, refused before anything is unpacked). Only the names worth taking are handed over;
+a block that holds none of them is not unpacked at all. In the desktop and server editions what it does not read goes to the
+machine's own unpacker (7-Zip, bsdtar…), which is taken when it gives more. Checked: ten packings by 7-Zip 23.01 of made-up
+documents (every method above, Arabic names, an empty file, an empty folder, a program for the x86 filter, a file that cannot be
+packed) give back every file byte for byte; and the owner's nine real Dramrin files (kept on this machine only), packed by 7-Zip
+as one 7z and given to the browser edition, gave the same 13 documents as the nine files given as they are — the same names and
+the same bytes, the RAR inside the 7z opened too — in about 1.6 seconds. Tests: `tests/test_sevenz_reader.py` (the archives are
+made by 7-Zip at test time from made-up documents, skipped where it is not installed).
 
 ### The reading rules, reviewed on real layouts (November 2026)
 
