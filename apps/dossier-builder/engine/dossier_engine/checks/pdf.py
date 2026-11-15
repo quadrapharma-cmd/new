@@ -38,6 +38,21 @@ ECTD_DRAFT = {'EG-PF-15.4', 'ICH-NAME', 'EG-PF-16.3', 'EG-BP-E23', 'PDF-JS', 'EG
               'PDF-FONTS', 'PDF-VIEW', 'PDF-ZOOM', 'PDF-INFO', 'PDF-ATTACH', 'PDF-ANNOT', 'PDF-SIZE'}
 FMT = 'ICH M2 eCTD file formats v1.3 §2.1 (no JavaScript, attachments or annotations)'
 SIZE_LIMIT = 100 * 1000 * 1000                         # ICH eCTD specification App. 7: 100 MB a file
+# The largest file each authority takes, with where it says so (the library's rule cards, each read at its page and line, 15/11/2026).
+# Egypt's stays the program's own rule as it was.
+LIMITS = {
+    'EG-EDA': (100, 'ICH', 'ICH eCTD specification App. 7 (100 MB a file); ICH M2 file formats v1.3 §2.3 (500 MB)'),
+    'GCC': (100, 'ICH', 'ICH eCTD specification v3.2.2, Appendix 7, p.114, l. 14 (100 MB a file)'),
+    'OTHER': (100, 'ICH', 'ICH eCTD specification v3.2.2, Appendix 7, p.114, l. 14 (100 MB a file)'),
+    'EU': (500, 'EU', 'EU eCTD validation criteria v8.2, criterion 15.BP1 (500 MB a file)'),
+    'US-FDA': (400, 'FDA', 'FDA eCTD validation criteria, criterion 1238, p.12 (400 MB a file)'),
+}
+
+
+def size_limit(authority=None):
+    """The largest file the dossier's authority takes, in bytes (Egypt's when none is said); ICH's 100 MB is SIZE_LIMIT itself."""
+    mb = LIMITS.get(authority or 'EG-EDA', LIMITS['OTHER'])[0]
+    return SIZE_LIMIT if mb == 100 else mb * 1000 * 1000
 # the draft eCTD guidance's rules (EDA eCTD technical guidance v1.0/2026, not in force) and ICH's: they decide eCTD readiness, not
 # whether a document conforms for the One Submission in force (NP.CAPP.065 v5 asks a searchable PDF that opens)
 
@@ -178,7 +193,7 @@ def props(rd, r, add, has_outline, doc_class='company_technical'):
                     src + '; EU VC 8.2 16.BP11 (1.3.1, centralised procedure)'))
 
 
-def check(path, doc_class='company_technical', ectd_name=False):
+def check(path, doc_class='company_technical', ectd_name=False, authority=None):
     r = Report(path)
     add = r.findings.append
     name = os.path.basename(path)
@@ -187,10 +202,11 @@ def check(path, doc_class='company_technical', ectd_name=False):
         add(Finding('EG-PF-16.5', 'block', 'The file is empty (0 bytes).', 'الملف فاضي (0 بايت).',
                     're_obtain' if doc_class in LOCKED else 'user_fix', 'EU VC 16.5 via EG provisional profile'))
         return r
-    if size > SIZE_LIMIT:
-        add(Finding('PDF-SIZE', 'warn', f'{size / 1e6:.0f} MB; an eCTD file is at most 100 MB (ICH) — PdfCraft can make it smaller (images above 225 ppi brought to 150 ppi), or split it.',
-                    f'{size / 1e6:.0f} ميجا؛ ملف الـ eCTD بالكتير 100 ميجا (ICH) — PdfCraft ممكن يصغّره (الصور اللي فوق 225 نقطة/بوصة تبقى 150)، أو قسّمه.',
-                    'user_fix' if doc_class in LOCKED else 'auto_fix', 'ICH eCTD specification App. 7 (100 MB a file); ICH M2 file formats v1.3 §2.3 (500 MB)'))
+    mb, who, where = LIMITS.get(authority or 'EG-EDA', LIMITS['OTHER'])          # the dossier's authority: 100 MB, the EU 500, the FDA 400
+    if size > size_limit(authority):
+        add(Finding('PDF-SIZE', 'warn', f'{size / 1e6:.0f} MB; an eCTD file is at most {mb} MB ({who}) — PdfCraft can make it smaller (images above 225 ppi brought to 150 ppi), or split it.',
+                    f'{size / 1e6:.0f} ميجا؛ ملف الـ eCTD بالكتير {mb} ميجا ({who}) — PdfCraft ممكن يصغّره (الصور اللي فوق 225 نقطة/بوصة تبقى 150)، أو قسّمه.',
+                    'user_fix' if doc_class in LOCKED else 'auto_fix', where))
     if len(name) > 64:
         add(Finding('EG-PF-15.4', 'warn', f'File name has {len(name)} characters; an eCTD name has at most 64 — the export gives the file its eCTD name.',
                     f'اسم الملف {len(name)} حرف؛ اسم الـ eCTD بالكتير 64 — التصدير بيدّي الملف اسمه في الـ eCTD.', 'none', 'EG eCTD TG draft p.12 l.275'))

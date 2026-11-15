@@ -496,7 +496,7 @@ class Store:
             tmp = self.root / 'blobs' / f'.check-{uuid.uuid4().hex}.pdf'
             shutil.copyfile(self.blob_path(sha), tmp)
             try:
-                rep = pdf_check(str(tmp), doc_class or s.doc_class)
+                rep = pdf_check(str(tmp), doc_class or s.doc_class, authority=self.authority_id(did))
             finally:
                 tmp.unlink(missing_ok=True)
         if meta.get('fixed_from'):                    # a repaired / readable copy of a stored document: the verdict on the document it was made from stands
@@ -613,7 +613,7 @@ class Store:
         dz = self.dossier(did)
         fixes.DOC_INFO = {'/Title': d['title'] or (s.title['en'] if s else d['filename']), '/Subject': f"{s.ctd} {s.title['en']}" if s else '',
                           '/Author': (dz['envelope'] or {}).get('applicant') or '', '/Keywords': (dz['product'] or {}).get('name') or ''}
-        r = fixes.apply(self.blob_path(d['sha256']), d['findings'], d['doc_class'])
+        r = fixes.apply(self.blob_path(d['sha256']), d['findings'], d['doc_class'], authority=self.authority_id(did))
         new = None
         if r['data']:
             from .. import extract as _extract
@@ -1364,7 +1364,8 @@ class Store:
         from withdrawn (kept in the history). The pages are not changed, so a third party's document is cut too.
         → {parts: [documents]} or {parts: [], why}."""
         from .. import pdfcraft
-        from ..checks.pdf import SIZE_LIMIT
+        from ..checks.pdf import size_limit
+        SIZE_LIMIT = size_limit(self.authority_id(did))                 # the dossier's authority: 100 MB, the EU 500, the FDA 400
         d = self._current_pdf(did, doc_id)
         data = self.blob_path(d['sha256']).read_bytes()
         if len(data) <= SIZE_LIMIT or not pdfcraft.available() or not d.get('slot_id'):
@@ -1643,6 +1644,13 @@ class Store:
         return self.document(doc_id)
 
     # ---------------- board
+    def authority_id(self, did):
+        """Whose dossier this is ('EG-EDA', 'GCC', 'EU', 'US-FDA', 'OTHER'): the rules that differ by authority follow it."""
+        try:
+            return self.pack(self.dossier(did)['pack']).authority.get('id')
+        except Exception:
+            return None
+
     def board(self, did):
         out = []
         for s in self.slots(did):

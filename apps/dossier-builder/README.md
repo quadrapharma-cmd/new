@@ -124,6 +124,18 @@ and what was built since goes into it one piece at a time, each tried on his rea
   sharing a link name), and each of the 349 links opens its own record in the library as published (read back from claude.ai).
   Tests: `tests/test_library_links.py`.
 - **7z** is opened in the page in every edition (it was refused in the browser edition): see «7z inside the page» below.
+- **The EDA review questions cite what the library checked word for word** (93 of the 226): GL.CADC.002 version 3 is in force,
+  so 48 citations moved from «v02/2024 §6.5.x» to «v3/2026 §5.6.x»; sections and quotes corrected for NP.CAPP.090, GL.CAPP.039,
+  GL.CAPP.024, NP.CAPP.040 and NP.CAPP.065; the nitrosamine questions rest on EDA's own guideline (GL.BIOINN/…/PPMA.001 v1/2025
+  §5.3.1.1) beside the WHO checklist, the reliance questions on GL.CAPP.025. The review desk, the assessment report and the
+  deficiency letter cite them so. `tools/library_sync.py` brings them over (only each question's `source:` line, so the files keep
+  their shape; a document keeps the program's own label when it is the same document); `tests/test_library_sync.py` fails when the
+  library and the program part again.
+- **The largest file follows the dossier's authority** (the library's rule cards, each cited to its page and line): 100 MB for
+  Egypt, the Gulf and the others (ICH eCTD specification, Appendix 7), 500 MB for the EU (EU validation criteria v8.2, 15.BP1),
+  400 MB for the FDA (criterion 1238) — at upload, in the fixes' check after a fix, and for «split it» (`checks.pdf.LIMITS`,
+  `size_limit`, `Store.authority_id`). Egypt's finding is word for word what it was; the owner's 29 real PDFs (Dramrin, Wouncure)
+  give Egypt the same findings as before and no other difference anywhere. Tests: `tests/test_size_by_authority.py`.
 
 The update made from the 14/11 run on his real files (`864cd3c`) is held back (`7b9c763`): it changes what is sent to Claude, so it
 goes out only after it is compared with real Claude readings of his files.

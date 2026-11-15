@@ -371,7 +371,7 @@ def _browser_searchable(cur, nxt, origin):
                       'مفيش أي كلام اتقرى من الصفحات (المسح فاضي أو مش واضح): امسحه تاني.')
 
 
-def apply(path, findings, doc_class):
+def apply(path, findings, doc_class, authority=None):
     """Returns {'data': bytes|None, 'done': [...], 'refused': [...], 'report': check Report of the result}."""
     from . import pdfcraft
     ops = ops_for(findings)
@@ -446,5 +446,5 @@ def apply(path, findings, doc_class):
             done.append({'op': op, 'en': LABEL[op][0], 'ar': LABEL[op][1]})
         if not done:
             return {'data': None, 'done': [], 'refused': refused, 'report': None}
-        rep = check(str(cur), doc_class)
+        rep = check(str(cur), doc_class, authority=authority)
         return {'data': cur.read_bytes(), 'done': done, 'refused': refused, 'report': rep}
