@@ -110,6 +110,61 @@ An EU dossier exports an **eCTD 3.2.2 sequence** beside its CTD folders, on the 
 - Tests: `tests/test_ectd32_eu.py` (9: DTD validity for the three procedures, what the writer refuses, the validator's pass,
   its catches, a follow-on replace, the API export, the leaflet item), `tests/test_ui_eu_ectd.py`.
 
+## The Word and PDF programs inside the page (15/11/2026) — «فين الادوات بتاعة كرافت»
+
+The owner, 15/11/2026, asked where the editing programs built for the new workshop went, and to finish them in the old program
+step by step. The first two are **the Word program** (WordCraft) and **the PDF program** (PdfCraft's own screen — the old
+program already had PdfCraft's tools without one), both built from their source for the browser (`apps/dossier-builder-v2/tools/craft`):
+on a document of an item, «افتحه في برنامج الـ Word» (a .docx) or «افتحه في برنامج الـ PDF» opens it in the program above the
+page; what he saves there after changing it — «احفظه نسخة جديدة» or Ctrl+S — becomes a **new version** of the document (as an
+upload with «replaces» does: the old version is kept, and «compare with the previous version» shows what changed).
+
+- **How it runs inside claude.ai's page** (`ui/assets/programs.js`): in a frame the page writes itself (`srcdoc`), so no address
+  is fetched for it — claude.ai refuses frames of other sites, and this is none; closing it gives its memory back. Its glue is a
+  module from the page's own files (no script from a `blob:`), and the address the program reads its settings from
+  (`?webgl&control`) comes from `window.__dbQuery` (`web/build.py` changes the one line of the glue that reads it: a written frame
+  has no address). Each program's WebAssembly (52.7 MB and 53.5 MB) is fetched only when a document is first opened in it: gzip in
+  base64, three parts of at most 12 MB (25.4 MB and 28.8 MB), joined and checked against its SHA-256, then kept on the device
+  (IndexedDB `db-programs`), so the next opening downloads nothing. PdfCraft's own scan reader is not started (English-only
+  models): the page writes the text layer of a scan itself, as before. The page's own opening is unchanged (nothing of the program loads with it). Where the page refuses
+  WebAssembly the layer says «الصفحة دي مش سامحة بتشغيل البرامج جواها» instead of waiting.
+- **What it opens was decided on his real files** (kept on this machine only, never in the repository): his four .docx files
+  (Wouncure SPC, PIL, the file index, a source file with pictures and a header) and two of this program's drafts made from Dramrin's
+  data, each opened, one word typed at its start and saved. Every word of every file was kept, with the typed word the only one
+  added (932, 617, 432, 1,023, 424, 199 words); the same tables, rows, pictures, paragraphs, sections, page size and margins; the
+  same number of pages, drawn by LibreOffice the same except where the typed word moved the text. His old **.doc** files did not
+  come back whole: Dramrin's method of analysis lost columns of its «Index of change» table and its first page's signature footer,
+  its certificate of analysis came back drawn differently (8.6 % of the page): **a .doc is not offered** (open it in Word and save
+  it as .docx first). Two things change inside a
+  .docx and only Word on his computer can show whether they matter: a list's **picture bullet** (the SPC's: an EMF the numbering
+  uses) is dropped, so the list keeps an ordinary bullet; and a line mixing Arabic with Latin letters or digits is written as
+  separate runs (it draws the same in LibreOffice).
+- **No «Export PDF».** The program's own PDF of the same files, beside LibreOffice's (what the desktop edition makes): the SPC
+  4 pages instead of 3 and the source file 8 instead of 5 (its fonts — Source Serif and Sans — are not the documents' Times
+  and Arial; the page has no access to the computer's fonts), and the PIL's Arabic breaks apart when copied from the PDF (half of
+  its words are not words any more). So the PDF is still made in Word, and the saved message says so.
+- **The PDF program, on seven of his real PDFs** (Dramrin's 12-page monograph and its 152-page validation chromatograms, the
+  stability approval letter — a scan in Arabic, Wouncure's working standards — a 12-page scan with 8 bookmarks, a certificate with
+  bookmarks, a pharmacopoeia sheet, the printed leaflet): each opened (every page), its first page turned (a scan that came in
+  sideways) and saved. The program **adds only the change to the end of the file**: the old file's bytes are the new one's first
+  bytes, and 270 to 850 bytes follow (the page with its new turn); the same pages, PDF version, pictures (14,799 in the 152-page
+  file), fonts and bookmarks; every other page drawn exactly as before; and the program's own checks of each new version found
+  word for word what they found in the old one (seven files, the same findings and the same status).
+- **Saving waits for a change** (the program's «dirty» event): a save with nothing changed only writes the file anew, and a version
+  that differs from the old one only by that would be noise (Ctrl+S in the PDF program then says «مفيش تعديل يتحفظ»). The bar says
+  «بيحفظ…» at once, and if the program gives no file back in 30 s it says so and the button works again.
+- Not offered on third-party and EDA documents (locked: a certificate or an authority's letter is never altered) or on external
+  references, and not in the desktop and server editions (their build has no programs). The page's own opening is unchanged
+  (8 interleaved rounds against version 47: first opening 5.6 s, next 4.7 s, both).
+
+Tests: `tests/test_programs_web.py` (made-up files, under page rules as strict as claude.ai's could be: no frame fetched, no
+`blob:` script, WebAssembly allowed — and once without WebAssembly): each program's parts rejoin to its SHA-256; the page carries
+the whole loader; a Word file is edited and saved twice (the second time the program comes from the device), the new version
+holds both edits, its Arabic and its table; a .doc shows no button; a PDF's page is turned and saved (Ctrl+S before any change
+keeps nothing), the new version's first page turned and its second not; without WebAssembly the program says it cannot run.
+`web/build.py` now takes the page's body up to its **last** `</body>` (the loader writes one in a string, and the first one cut
+the page there).
+
 ## The library inside the program, and 7z in every edition (15/11/2026) — «نحطها في البرنامج القديم»
 
 The owner, 15/11/2026, after the new workshop read his real files badly: this program («منشئ ملفات التسجيل») is the program again,

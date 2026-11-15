@@ -1,4 +1,4 @@
-/* The editing programs inside the page — the Word program first (the PDF, photo and design programs follow the same way).
+/* The editing programs inside the page — the Word program and the PDF program (the photo and design programs follow the same way).
    Each is the real program, built from its source for the browser (WebAssembly; apps/dossier-builder-v2/tools/craft), and runs in a
    frame of its own above the page. The page writes that frame itself (srcdoc): a written frame is the page's own document under the
    page's own rules — claude.ai refuses frames of other sites, and no address is fetched for this one — and closing it gives its
@@ -24,7 +24,11 @@
   'use strict';
   const PROGRAMS = {
     wordcraft: { ar: 'برنامج الـ Word', en: 'the Word program', canvas: 'wordcraft_canvas', loading: 'wordcraft_loading', host: 'page',
-                 query: '?webgl&control', files: /\.docx$/i },
+                 query: '?webgl&control', files: /\.docx$/i,
+                 afterSave: { ar: 'الـ PDF بتاعه اعمله من Word على جهازك زي العادة.', en: 'Make its PDF in Word on your computer, as before.' } },
+    // PdfCraft's own scan reader is not started (no <meta name="pdfcraft-ocr-worker">): English-only models; the page has its own.
+    pdfcraft: { ar: 'برنامج الـ PDF', en: 'the PDF program', canvas: 'pdfcraft', loading: 'pdfcraft_loading', host: 'page',
+                query: '?webgl&control', files: /\.pdf$/i },
   };
   const list = () => (root.DB_PROGRAMS && root.DB_PROGRAMS.apps) || {};
   const available = app => !!(PROGRAMS[app] && list()[app] && typeof WebAssembly === 'object' && typeof DecompressionStream === 'function');
@@ -39,8 +43,9 @@
     opening: { ar: 'بيفتح الملف…', en: 'Opening the file…' },
     ready: { ar: 'عدّل في الملف، وبعدين «احفظه نسخة جديدة» (أو Ctrl+S). النسخة القديمة بتفضل محفوظة.', en: 'Edit the file, then «Save as a new version» (or Ctrl+S). The old version is kept.' },
     saving: { ar: 'بيحفظ نسخة جديدة…', en: 'Saving a new version…' },
-    saved: { ar: 'اتحفظ نسخة جديدة: {n}. الـ PDF بتاعه اعمله من Word على جهازك زي العادة.', en: 'Saved as a new version: {n}. Make its PDF in Word on your computer, as before.' },
+    saved: { ar: 'اتحفظ نسخة جديدة: {n}.', en: 'Saved as a new version: {n}.' },
     nothing: { ar: 'مفيش تعديل يتحفظ.', en: 'Nothing was changed: nothing to save.' },
+    noFile: { ar: 'البرنامج مارجّعش الملف. جرّب «احفظه نسخة جديدة» تاني (أو Ctrl+S).', en: 'The program gave no file back. Try «Save as a new version» again (or Ctrl+S).' },
     saveFail: { ar: 'ماقدرتش أحفظ: {e}', en: 'Could not save: {e}' },
     failed: { ar: '{p} ماقدرش يشتغل هنا: {e}', en: '{p} could not start here: {e}' },
     blocked: { ar: 'الصفحة دي مش سامحة بتشغيل البرامج جواها.', en: 'This page does not allow programs to run inside it.' },
@@ -271,7 +276,7 @@
         if (!unsaved) { status(say('nothing')); return; }               // Ctrl+S with nothing changed: the file as it is stays
         status(say('saving')); saveBtn().disabled = true;
         saving = Promise.resolve().then(() => opts.onSave({ name: msg.name || opts.name, bytes: new Uint8Array(msg.bytes) }))
-          .then(() => { unsaved = false; status(say('saved', { n: msg.name || opts.name }), 'good'); },
+          .then(() => { unsaved = false; status(say('saved', { n: msg.name || opts.name }) + (p.afterSave ? ' ' + p.afterSave[lang] : ''), 'good'); },
                 e => { saveBtn().disabled = false; status(say('saveFail', { e: (e && e.message) || e }), 'bad'); })
           .finally(() => { saving = null; });
       }
@@ -300,10 +305,12 @@
     // «Save»: the program saves (in host mode the file comes back as a «save» message), and the page keeps it as a new version.
     async function save() {
       if (!ready || !unsaved) return;
+      status(say('saving')); saveBtn().disabled = true;                   // said at once: the program answers with the file
       try { await call('execute', { command: 'file.save', params: {} }); }
-      catch (e) { status(say('saveFail', { e: e.message }), 'bad'); return; }
-      for (let i = 0; i < 100 && !saving && unsaved; i++) await new Promise(r => setTimeout(r, 100));
+      catch (e) { saveBtn().disabled = false; status(say('saveFail', { e: e.message }), 'bad'); return; }
+      for (let i = 0; i < 300 && !saving && unsaved; i++) await new Promise(r => setTimeout(r, 100));
       if (saving) await saving;
+      else if (unsaved && !closed) { saveBtn().disabled = false; status(say('noFile'), 'bad'); }    // no file in 30 s: never a silent wait
     }
     saveBtn().onclick = () => save();
     layer.querySelector('[data-act="close"]').onclick = () => close(false);

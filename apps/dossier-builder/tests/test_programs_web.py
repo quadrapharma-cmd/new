@@ -1,5 +1,6 @@
 """The editing programs inside the browser edition (ui/assets/programs.js, web/build.py programs_dist): the Word program opens a
-Word file of an item in a frame the page writes itself, and what the person saves after changing it becomes a new version.
+Word file of an item, the PDF program a PDF, in a frame the page writes itself, and what the person saves after changing it becomes
+a new version.
 Run under page rules as strict as claude.ai's could be — no frame fetched from any address, no script from a blob:, WebAssembly
 allowed — and once without WebAssembly, where the program must say it cannot run instead of waiting for ever.
 The fixtures are made up. Needs `python3 web/build.py` with the Word program built (dossier-builder-v2/tools/craft/build.mjs)."""
@@ -58,9 +59,11 @@ def page_text():
     return (DIST / 'index.html').read_text(encoding='utf-8')
 
 
-def test_the_program_is_served_in_parts_the_artifact_host_takes():
+@pytest.mark.parametrize('app', ['wordcraft', 'pdfcraft'])
+def test_the_program_is_served_in_parts_the_artifact_host_takes(app):
     m = json.loads(re.search(r'window\.DB_PROGRAMS=(\{.*?\});', page_text()).group(1))
-    w = m['apps']['wordcraft']
+    w = m['apps'][app]
+    PROG = DIST / 'assets' / 'programs' / app
     parts = [PROG / f'wasm.gz.b64.{k}.txt' for k in range(1, w['parts'] + 1)]
     assert all(p.stat().st_size <= 12_000_000 for p in parts)                  # a file of the page holds 16 MB
     text = ''.join(p.read_text() for p in parts)
@@ -117,7 +120,7 @@ def test_a_word_file_is_edited_in_the_program_and_kept_as_a_new_version(site, tm
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
         did, (slot, slot_doc) = open_board(page, site, tmp_path, [w, old])
-        page.evaluate('() => { window.__m = []; addEventListener("message", e => { const m = e.data || {}; if (m.dbprog) window.__m.push([m.type, m.fromDevice]); }); }')
+        page.evaluate('() => { window.__m = []; addEventListener("message", e => { const m = e.data || {}; if (m.dbprog) window.__m.push([m.type, m.fromDevice, m.dirty, m.name || "", m.bytes ? m.bytes.byteLength : null]); }); }')
         page.evaluate('s => openWhy(s)', slot_doc)
         page.wait_for_selector('#dBody .finding', timeout=20000)
         assert not page.query_selector('[data-prog]')
@@ -138,7 +141,10 @@ def test_a_word_file_is_edited_in_the_program_and_kept_as_a_new_version(site, tm
             page.keyboard.type(f'EDITED{round_} ')
             page.wait_for_function("() => !document.querySelector('.dbprog [data-act=\"save\"]').disabled", timeout=20000)
             page.click('.dbprog [data-act="save"]')
-            page.wait_for_function("() => /اتحفظ|Saved/.test(document.querySelector('.dbprog-status').textContent)", timeout=60000)
+            try:
+                page.wait_for_function("() => /اتحفظ|Saved/.test(document.querySelector('.dbprog-status').textContent)", timeout=60000)
+            except Exception:
+                raise AssertionError(f'round {round_}: not saved — status «{status(page)}», messages {page.evaluate("() => window.__m")}, errors {errors}')
             page.click('.dbprog [data-act="close"]')
             page.wait_for_selector('.dbprog', state='detached', timeout=10000)        # saved: closing asks nothing
             page.wait_for_selector('[data-prog]', timeout=20000)                       # the item's drawer is back
@@ -154,6 +160,63 @@ def test_a_word_file_is_edited_in_the_program_and_kept_as_a_new_version(site, tm
     assert 'نتقدم بملف تسجيل مستحضر ديرماكيور ٢٠ مجم كريم (مثال مؤلف للاختبار).' in texts
     assert [[c.text for c in r.cells] for r in saved.tables[0].rows] == [['Product', 'Dermacure 20 mg cream'], ['Pack', 'Tube of 30 g']]
     assert not [e for e in errors if 'Invalid or unexpected token' not in e]   # (that one is the fonts' link, web/build.py: known)
+
+
+def made_up_pdf(path):
+    """Two pages written by hand (no library): a made-up certificate."""
+    objs = ['<< /Type /Catalog /Pages 2 0 R >>', '<< /Type /Pages /Kids [3 0 R 5 0 R] /Count 2 >>',
+            '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 7 0 R >> >> >>', None,
+            '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 6 0 R /Resources << /Font << /F1 7 0 R >> >> >>', None,
+            '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>']
+    texts = {3: 'BT /F1 16 Tf 72 760 Td (Certificate of analysis - Exampletine 20 mg, made up) Tj ET',
+             5: 'BT /F1 16 Tf 72 760 Td (Batch EX-001 - Example Pharm, made up) Tj ET'}
+    for i, t in texts.items():
+        objs[i] = f'<< /Length {len(t)} >>\nstream\n{t}\nendstream'
+    out, offs = b'%PDF-1.7\n', []
+    for n, o in enumerate(objs, 1):
+        offs.append(len(out))
+        out += f'{n} 0 obj\n{o}\nendobj\n'.encode('latin1')
+    x = len(out)
+    out += f'xref\n0 {len(objs) + 1}\n0000000000 65535 f \n'.encode() + b''.join(f'{o:010d} 00000 n \n'.encode() for o in offs)
+    out += f'trailer\n<< /Size {len(objs) + 1} /Root 1 0 R >>\nstartxref\n{x}\n%%EOF\n'.encode()
+    path.write_bytes(out)
+    return path
+
+
+def test_a_pdf_page_is_turned_in_the_pdf_program_and_kept_as_a_new_version(site, tmp_path):
+    pypdf = pytest.importorskip('pypdf')
+    pdf = made_up_pdf(tmp_path / 'made-up-certificate.pdf')
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch(args=GPU)
+        page = b.new_page(viewport={'width': 1280, 'height': 860})
+        page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+        did, (slot,) = open_board(page, site, tmp_path, [pdf])
+        page.evaluate('s => openWhy(s)', slot)
+        page.wait_for_selector('[data-prog]', timeout=20000)
+        assert 'PDF' in page.inner_text('[data-prog]')
+        page.click('[data-prog]')
+        page.wait_for_function("() => document.querySelector('.dbprog') && !document.querySelector('.dbprog-wait')", timeout=240000)
+        page.wait_for_function("""async () => { const f = document.querySelector('.dbprog iframe'); if (!f || !f.contentWindow.pdfcraft) return false;
+            const d = await f.contentWindow.pdfcraft.docInspect(); return (d.documents || []).some(x => x.pages === 2); }""", timeout=60000)
+        box = page.query_selector('.dbprog iframe').bounding_box()
+        page.mouse.click(box['x'] + box['width'] * 0.6, box['y'] + box['height'] * 0.5)
+        page.keyboard.press('Control+s')                                               # nothing changed: nothing kept
+        page.wait_for_function("() => /مفيش تعديل|Nothing was changed/.test(document.querySelector('.dbprog-status').textContent)", timeout=20000)
+        assert page.evaluate("() => document.querySelector('.dbprog [data-act=\"save\"]').disabled")
+        page.evaluate("async () => { await document.querySelector('.dbprog iframe').contentWindow.pdfcraft.execute('page.rotate', {}); }")   # a sideways scan's page
+        page.wait_for_function("() => !document.querySelector('.dbprog [data-act=\"save\"]').disabled", timeout=20000)
+        page.click('.dbprog [data-act="save"]')
+        page.wait_for_function("() => /اتحفظ|Saved/.test(document.querySelector('.dbprog-status').textContent)", timeout=60000)
+        assert 'Word' not in page.evaluate("() => document.querySelector('.dbprog-status').textContent")
+        page.click('.dbprog [data-act="close"]')
+        page.wait_for_selector('.dbprog', state='detached', timeout=10000)
+        docs = page.evaluate("async ([id, slot]) => (await (await fetch(`/api/dossiers/${id}/board`)).json()).slots.find(s => s.slot_id === slot).documents", [did, slot])
+        assert [(d['version'], d['filename']) for d in docs] == [(2, 'made-up-certificate.pdf')]
+        data = bytes(page.evaluate("async ([id, doc]) => Array.from(new Uint8Array(await (await fetch(`/api/dossiers/${id}/documents/${doc}/file`)).arrayBuffer()))", [did, docs[0]['id']]))
+        b.close()
+    r = pypdf.PdfReader(io.BytesIO(data))
+    assert len(r.pages) == 2 and (r.pages[0].get('/Rotate') or 0) % 360 == 90 and (r.pages[1].get('/Rotate') or 0) % 360 == 0
+    assert 'Exampletine 20 mg' in r.pages[0].extract_text() and 'Batch EX-001' in r.pages[1].extract_text()
 
 
 def test_without_webassembly_the_program_says_it_cannot_run(tmp_path):
