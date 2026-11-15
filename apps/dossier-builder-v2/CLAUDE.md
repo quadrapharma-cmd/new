@@ -306,6 +306,17 @@ When a part is done or an open item is closed, update «What exists» and «Open
   Opening time unchanged (8 interleaved rounds: first 5.2 s, next 4.6 s, before and after). The whole suite: 777 passed after
   two 7z fixes it found.
 
+- **15/11/2026, «رتبهم خطوة بخطوة و خلصهم» — the scan readers measured on his real pages before anything moved.** Eleven first pages
+  of his real scans (Wouncure: final and extension licences, pack addition, conformity, price, toll contract, import approval,
+  follow-up receipt; Dramrin: final licence, stability appeal decision, fee receipts), 250 facts written down by eye from the
+  pages (kept in the scratchpad only), the same score as the made-up measure (`tools/measure/score.mjs`):
+  Tesseract alone with the «best» models (what the old program's claude.ai edition writes as the text layer) **74 %**; the old
+  program's desktop reading (its own `pdfcraft.ocr`: PdfCraft's Tesseract, PaddleOCR on the unsure words) 64 % (62 % without the
+  PaddleOCR pass); the measure's copy of that way 66 %; **the new reader that scored 94 % on the made-up pages: 58 %** (it lost 29
+  Arabic and 26 Latin facts Tesseract alone found, and won 16). So nothing moved: the old program's reader stays, and «94 %» is
+  not to be quoted again without «on made-up pages». Claude, the reader that matters in the claude.ai edition, could not be
+  measured on these pages here (no API key yet).
+
 ## Open items (propose when relevant; do when he asks)
 - Old program, claude.ai edition: its fonts never load — `web/build.py` writes the font link's `onload="this.media=\'all\'"` with
   the backslashes kept (a script error on every opening, in the version he has used since 13/11 too), so the page shows the
