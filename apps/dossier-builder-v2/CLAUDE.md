@@ -330,6 +330,15 @@ When a part is done or an open item is closed, update «What exists» and «Open
   as version 48 (31 files: the page and the two programs, 55.6 MB in one publish); every file read back byte for byte equal to
   the build, and both programs edited and saved a made-up file on the page as served. The photo and design programs (steps 5–6)
   and a phone photo as a document (step 7) come next, the same way.
+- **15/11/2026, «المكتب» and the live preview** (the owner: «محتاج جزء يكون ملحق مع رفع المستندات يكون فيه كل المستندات ممكن تتعدل
+  … و كمان المستندات و هي بتترفع و تتمسح تظهر بريڤيو ايه اللي بيحصل»; `56a592f`; README «المكتب, and what happens to a file…»).
+  «المكتب» is on the preparation page and in the menu (`#/d/<id>/office`): every current document with its first page, edited
+  in its program where there is one. The preview (`ui/assets/preview.js`) on the preparation page and in the new-dossier wizard:
+  each file's pages, and while it is worked on the step, the page being read and the very picture Claude is given (boot.js
+  `db-pictures`) or the reader's own page (ocr.js progress `picture`). It draws nothing while the reader reads or draws for
+  Claude (`DBOCR.busy()`). Checked that it changes no reading: his nine Dramrin files through version 48 and the new build,
+  twice each, the same mock for Claude — the same prompts, page pictures byte for byte, items, names, conditions, OCR quality,
+  fields; only the contact sheets for cutting combined files vary run to run, in version 48 as much (pdf.js), with the same cuts.
 
 ## Open items (propose when relevant; do when he asks)
 - Old program, claude.ai edition: its fonts never load — `web/build.py` writes the font link's `onload="this.media=\'all\'"` with
