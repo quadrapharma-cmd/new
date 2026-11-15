@@ -287,8 +287,9 @@ When a part is done or an open item is closed, update «What exists» and «Open
 - **15/11/2026, after trying the workshop on his files:** «الملفات لا تقرا لا بكلود و لا بالماسح المحلي كل اللي اتقرا اتقرا غلط»,
   «الواجهة سيئة عايز نرجع للواجهة بتاع البرنامج القديم اللي … كان بيقرا المعلومات و بيحطها في مكانها و بيشتغل شغل كويس جدا».
   Measured the same day on Dramrin's nine files: the workshop (scan reader) named the product «p DRAMRIN Casals», garbled the
-  manufacturer, cut the 152-page validation file into 11 parts, put the method of analysis in the specification's place and read
-  a limit for a substance Dramrin does not have; the old program, in the 14/11 run where Claude's reading was a stand-in written
+  manufacturer, cut the 152-page validation file into 11 parts and put the method of analysis in the specification's place (its
+  «limit of ascorbic acid 50–120 %» was right after all: EDA's appeal decision of 20/11/2025 adds it to Dramrin's finished-product
+  specification — said wrongly to him on 15/11 and corrected the same day); the old program, in the 14/11 run where Claude's reading was a stand-in written
   here from the pages, filled the name, form, manufacturer, the three substances with their makers and the applicant, and placed all
   13 documents (its real reading on his account cannot run here: his own use of it is the evidence — corrected to him on 15/11).
   The live artifact (version 1794612920, 13/11 23:35 UTC) is commit 0cc4d69; `864cd3c` (14/11 00:26, the fixes that run on his real
