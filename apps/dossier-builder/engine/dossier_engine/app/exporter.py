@@ -7,6 +7,7 @@ the submission history: only new / replaced / deleted documents go into it; the
 tracking table (M1-44) is rebuilt from the history every time. The download zip
 holds just the new sequence (what is uploaded to the portal)."""
 import json, shutil, tempfile, time, uuid, zipfile
+from types import SimpleNamespace
 from pathlib import Path
 from ..assemble import docs_for
 from ..lifecycle import plan, to_ectd32, to_ectd40
@@ -23,14 +24,97 @@ class ExportError(Exception):
         self.status, self.code, self.en, self.ar, self.extra = status, code, en, ar, extra
 
 
-def _zip(src_root, rel_folder, out):
+WORKING = {'en': 'WORKING COPY — NOT FOR SUBMISSION', 'ar': 'نسخة عمل — ليست للتقديم'}
+WORKING_NOTE = '00-WORKING-COPY-NOT-FOR-SUBMISSION.txt'
+
+
+def _zip(src_root, rel_folder, out, note=None):
     with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED) as zf:
+        if note:                                          # a working copy says what it is beside its sequence, never inside it
+            zf.writestr(WORKING_NOTE, note)
         for f in sorted((src_root / rel_folder).rglob('*')):
             if f.is_file():
                 zf.write(f, f.relative_to(src_root))
 
 
-def _working_copy(st, did, g):
+def _working_text(note, left_out):
+    """What goes beside a working copy's eCTD sequence in its zip: what it is, in both languages."""
+    lines = [WORKING['en'], WORKING['ar'], '',
+             "This eCTD sequence is written from what the dossier holds now, by the program's own eCTD writer, so that its XML "
+             "(index.xml and the regional XML) can be seen before the dossier is complete. It is not recorded as a submission: the next "
+             "real export takes the same sequence number. Required documents still missing are not in it (00-MISSING.txt in the CTD "
+             "working copy lists them).",
+             'التسلسل ده اتكتب من اللي في الملف دلوقتي، بنفس كاتب الـ eCTD بتاع البرنامج، علشان تشوف الـ XML (index.xml والـ XML الإقليمي) '
+             'قبل ما الملف يكمل. مش متسجّل كتقديم: التصدير الحقيقي الجاي هياخد نفس رقم التسلسل. المستندات المطلوبة الناقصة مش فيه '
+             '(00-MISSING.txt في نسخة العمل بتاعة الـ CTD فيه قايمتها).', '', note['en'], note['ar']]
+    if left_out:
+        lines += ['', 'Left out of this eCTD (an eCTD takes PDF) / اتساب برّه الـ eCTD ده (الـ eCTD بياخد PDF بس):'] + [f'- {t}' for t in left_out]
+    return '\n'.join(lines) + '\n'
+
+
+def _working_ectd(st, did, d, slots, base, exp_id, sub, p40, ig_zip, note):
+    """The working copy's eCTD: the sequence(s) this authority takes (3.2.2 with its own Module 1; 4.0 for Egypt), written from what
+    the dossier holds now by the real export's own code (_sequences, working) — the XML the real export will write — beside the
+    export, never recorded. Only PDFs go in (a Word file through its PDF, as in the real export); anything else stays in the CTD
+    folders and is named. Each output on its own: one that cannot be written says why, and the others are still written. None when
+    the authority takes no eCTD."""
+    pk = st.pack(d['pack'])
+    region = pk.ectd_region
+    if not region:
+        return None
+    env, pr = d.get('envelope') or {}, d.get('product') or {}
+    outs = [o for o in pk.outputs_for(env.get('country')) if o in ('ectd32', 'ectd40')]
+    prof = Profile.from_dict(d['profile'])
+    product = ectd32.Product(pr.get('name') or d['name'], pr.get('dosageform') or 'to be advised',
+                             pr.get('manufacturer') or env.get('applicant') or 'to be advised', pr.get('indication'))
+    work = base / '_ectd_files'
+    work.mkdir(parents=True, exist_ok=True)
+    files, left_out = {}, []
+    for s in slots:
+        for doc in st.documents(did, s.slot_id) if s.active else []:
+            meta = doc.get('meta') or {}
+            if meta.get('external'):
+                continue
+            ext = '.' + doc['filename'].rsplit('.', 1)[-1].lower() if '.' in doc['filename'][-6:] else ''
+            src = st.blob_path(doc['sha256'])
+            if ext not in ('.pdf', '.docx', '.doc', '.rtf', '.odt'):
+                with open(src, 'rb') as fh:
+                    if fh.read(5) != b'%PDF-':           # a spreadsheet, a picture…: the CTD folders keep it, the eCTD does not take it
+                        left_out.append(_named(doc['title'], doc['filename']))
+                        continue
+                ext = '.pdf'
+            p = work / f"{doc['id']}{ext}"
+            shutil.copyfile(src, p)
+            ref = meta.get('reference') or {}
+            files.setdefault(s.slot_id, []).append({'file': str(p), 'title': doc['title'], **meta, 'doc_id': doc['id'], 'ext': ext,
+                                                    'orig': doc['filename'],
+                                                    **({'ref': f"../{ref['seq']}/{ref['href']}"} if ref.get('output') == 'ectd32' else {})})
+    files_e = ectd_files(files, left_out=left_out)
+    docs_all, _ = docs_for(slots, prof, files_e)
+    eff = {k: v for k, v in files_e.items() if not k.startswith('M1-44')}
+    x = SimpleNamespace(d=d, env=env, pr=pr, prof=prof, product=product, region=region, slots=slots, files_e=files_e,
+                        docs_ectd=list(docs_for(slots, prof, eff)[0]), current_ids={y.doc_id for y in docs_all})
+    text = _working_text(note, left_out)
+    res = {'region': region, 'downloads': {}, 'sequences': {}, 'reports': {}, 'skipped': {}, 'left_out': left_out}
+    for o in outs:
+        try:
+            r = _sequences(st, did, x, [o], sub, base, exp_id, p40, ig_zip, working=text)
+        except ExportError as ex:
+            res['skipped'][o] = {'en': ex.en, 'ar': ex.ar}
+            continue
+        except Exception as ex:                       # the CTD folders are still given; this output says why it is not
+            res['skipped'][o] = {'en': f'Not written: {ex}', 'ar': f'ما اتكتبش: {ex}'}
+            continue
+        res['downloads'].update(r['zips'])
+        res['sequences'].update(r['seqinfo'])
+        res['reports'].update(r['reports'])
+    shutil.rmtree(work, ignore_errors=True)
+    return res
+
+
+def _working_copy(st, did, g, sub=None, p40=None, ig_zip=None):
+    """The CTD folders with what the dossier holds now and the list of what is missing, and — where the authority takes an eCTD — its
+    sequence with its XML, all marked «not for submission» and never recorded (_working_ectd)."""
     d = st.dossier(did)
     slots = st.slots(did)
     exp_id = time.strftime('%Y%m%d-%H%M%S-') + uuid.uuid4().hex[:6] + '-working'
@@ -60,18 +144,41 @@ def _working_copy(st, did, g):
         shutil.rmtree(base, ignore_errors=True)
         raise ExportError(422, 'E-WRITER', f'Export failed: {ex}', f'التصدير فشل: {ex}')
     shutil.rmtree(work, ignore_errors=True)
-    st.db.execute('insert into export values (?,?,?,?,?,?)', (exp_id, did, json.dumps(['ctd-working']), str(base), 0, time.time()))
+    try:
+        ectd = _working_ectd(st, did, d, slots, base, exp_id, sub or {}, p40, ig_zip, note)
+    except Exception as ex:                           # the CTD working copy is given whatever happens to its eCTD
+        ectd = {'region': st.pack(d['pack']).ectd_region, 'downloads': {}, 'sequences': {}, 'reports': {}, 'left_out': [],
+                'skipped': {'ectd': {'en': f'Not written: {ex}', 'ar': f'ما اتكتبش: {ex}'}}}
+    downloads = {'ctd-working': f'/api/dossiers/{did}/exports/{exp_id}/ctd-working.zip', **(ectd['downloads'] if ectd else {})}
+    reports = ectd['reports'] if ectd else {}
+    if reports:
+        (base / 'validation-report.json').write_text(json.dumps(reports, ensure_ascii=False, indent=1), encoding='utf-8')
+        (base / 'validation-report.html').write_text(vreport.render(f"{d['name']} — {WORKING['en']}", reports,
+                                                                    vreport.EU_NOTE if ectd['region'] == 'eu' else vreport.EG_NOTE), encoding='utf-8')
+    sequences = ectd['sequences'] if ectd else {}
+    st.db.execute('insert into export values (?,?,?,?,?,?)', (exp_id, did, json.dumps(list(downloads)), str(base), 0, time.time()))
     st.db.commit()
-    st.audit(did, 'export.working', id=exp_id, documents=n_docs, missing_required=missing)
-    return {'id': exp_id, 'working': True, 'downloads': {'ctd-working': f'/api/dossiers/{did}/exports/{exp_id}/ctd-working.zip'}, 'documents': n_docs,
+    st.audit(did, 'export.working', id=exp_id, documents=n_docs, missing_required=missing,
+             ectd={o: v['sequence'] for o, v in sequences.items()})
+    return {'id': exp_id, 'working': True, 'downloads': downloads, 'documents': n_docs,
             'missing_required': missing, 'non_conforming': len(g.get('non_conforming') or []), 'unsigned': len(g.get('unsigned') or []),
-            'sequences': {}, 'validation': {}, 'report': None, 'ctd_only': [], 'label': note['en'], 'label_ar': note['ar']}
+            'sequences': sequences,
+            'validation': {k: {'ok': r['ok'], 'counts': r['counts'], 'coverage': r['coverage'], 'label': r['label']} for k, r in reports.items()},
+            'report': f'/api/dossiers/{did}/exports/{exp_id}/validation-report.html' if reports else None,
+            'ectd': {k: ectd[k] for k in ('region', 'left_out', 'skipped')} if ectd else None,
+            'ctd_only': [], 'label': note['en'], 'label_ar': note['ar']}
 
 
-def ectd_files(files):
+def _named(title, filename):
+    """A document as a person finds it: its item's title and its own file name."""
+    return f'{title} ({filename})' if title and filename and title != filename else (title or filename or '')
+
+
+def ectd_files(files, left_out=None):
     """The files an eCTD takes: PDF. A Word document (the proposed leaflet, asked in Word for the One Submission) goes in as its PDF —
     the one the item holds beside it with the same language and type, else converted here (LibreOffice); without either the eCTD
-    export stops and says so (it never writes a Word file under a .pdf name)."""
+    export stops and says so (it never writes a Word file under a .pdf name). A working copy passes `left_out` (a list): such a
+    Word file is then left out of its eCTD and named there, and the rest is still written."""
     out = {}
     for sid, fs in files.items():
         keep = []
@@ -85,6 +192,9 @@ def ectd_files(files):
             try:
                 pdf = to_pdf(Path(f['file']))
             except Exception:                             # no LibreOffice here, or it failed on this file
+                if left_out is not None:
+                    left_out.append(_named(f.get('title'), f.get('orig')))
+                    continue
                 raise ExportError(422, 'E-WORD-PDF', f"«{f.get('title')}» is a Word file and an eCTD takes PDF: add its PDF to the item "
                                   '(save it as PDF from Word), or export on a machine with LibreOffice.',
                                   f"«{f.get('title')}» ملف Word والـ eCTD بياخد PDF: ضيف الـ PDF بتاعه في البند (احفظه PDF من Word)، "
@@ -196,12 +306,136 @@ def _earlier(st, did, hist):
     return links.earlier_targets(hist, names_of)
 
 
+def _previous(lroot, seq):
+    """The sequences of the dossier's lifecycle folder before `seq`, for the lifecycle checks."""
+    return sorted(p for p in lroot.iterdir() if p.is_dir() and p.name != seq) if lroot.is_dir() else []
+
+
+def _sequences(st, did, x, outputs, sub, base, exp_id, p40, ig_zip, replace_last=False, working=None):
+    """The eCTD sequence of each of `outputs` (ectd32, ectd40), from x: the dossier (d, env, pr, prof, product, region, slots) and its
+    documents for the eCTD (files_e, docs_ectd, current_ids). A real export writes each sequence into the dossier's lifecycle folder
+    under the next number of its history, and the caller records it (`done`). A working copy (`working`: the note that goes beside
+    it) writes it beside the export instead, under the number the next real sequence would take, its envelope's description
+    beginning «WORKING COPY — NOT FOR SUBMISSION», without the follow-on's checks (its type, its new cover letter), and nothing is
+    recorded: the history, the lifecycle folder and the next number stay as they were."""
+    d, env, prof, product, region = x.d, x.env, x.prof, x.product, x.region
+    lc = st.root / 'lifecycle' / did
+    applicant = (env.get('applicant') or x.pr.get('manufacturer') or d['name']) if working else None
+    results, reports, zips, seqinfo, done = {}, {}, {}, {}, []
+    try:
+        for out in [o for o in ('ectd32', 'ectd40') if o in outputs]:
+            hist = st.history(did, out)
+            zname = f'{out}-working' if working else out
+            if replace_last and not working and hist and not hist[-1]['frozen']:       # the last one never went: this export takes its number
+                st.discard_sequence(did, out, hist[-1]['seq'])
+                hist = st.history(did, out)
+            seq = next_seq(hist, out)
+            follow = bool(hist)
+            if follow and not working:                    # a working copy asks neither the follow-on's type nor its new cover letter
+                if not sub.get('type'):
+                    raise ExportError(422, 'E-SUBMISSION', 'A follow-on sequence needs its submission type (e.g. var-pac-b).',
+                                      'التسلسل التالي محتاج نوع التقديم (مثلاً var-pac-b).')
+                submitted = {lf['doc_id'] for h in hist for lf in h['leaves']}
+                covers = [c for c in x.docs_ectd if c.node == '1.0' and c.name != 'tracking']
+                if not covers or all(c.doc_id in submitted for c in covers):
+                    raise ExportError(409, 'E-COVER', f'Generate the cover letter for sequence {seq} first (a new cover letter goes in every sequence).',
+                                      f'ولّد خطاب التغطية للتسلسل {seq} الأول (كل تسلسل له خطاب تغطية جديد).')
+            stype = sub.get('type') or env.get('submission_type', 'maa')
+            if region == 'eu' and not follow and stype not in ectd32_eu.default_profile().values['submission_types']:
+                stype = 'maa'                             # the dossier's first sequence: a marketing authorisation application
+            unit = sub.get('unit') or 'initial'
+            activity = seq if unit in ('initial', 'reformat') else sub.get('activity') or (hist[-1].get('activity') if hist else seq)
+            act_row = next((h for h in hist if h['seq'] == activity), None)
+            # tracking table rebuilt from the history (M1-44, tool-generated)
+            rows = [{'sequence': str(h['seq']), 'related': str(h.get('activity') or ''), 'description': h['envelope'].get('description', ''),
+                     'type': h['envelope'].get('type', ''), 'unit': h['envelope'].get('unit', ''),
+                     'date': time.strftime('%Y-%m-%d', time.localtime(h['created'])), 'tracking': h['envelope'].get('tracking') or env.get('tracking', ''),
+                     'status': 'Submitted'} for h in hist]
+            desc = sub.get('description') or (env.get('description') if not follow else stype) or (
+                'Initial marketing authorisation application' if not follow else stype)          # the envelope never goes without its description
+            if working:                                   # the XML itself says what it is
+                desc = f"{WORKING['en']} — {desc}"
+            rows.append({'sequence': str(seq), 'related': str(activity), 'description': desc, 'type': stype, 'unit': unit,
+                         'date': time.strftime('%Y-%m-%d'), 'tracking': sub.get('tracking') or last_tracking(hist) or env.get('tracking', ''),
+                         'status': 'Working copy — not for submission' if working else 'This sequence'})
+            tdir = Path(tempfile.mkdtemp())
+            letters.tracking_table({'trade_name': env.get('invented_name') or d['name'], 'sequences': rows}, tdir / 'tracking.docx')
+            try:
+                tpdf = to_pdf(tdir / 'tracking.docx')
+            except RuntimeError:                         # no LibreOffice (browser edition): a text-only PDF of the same table
+                tpdf = basic_pdf(tdir / 'tracking.docx')
+            tdoc = ectd32.Doc('1.0', str(tpdf), f'Tracking table — sequence {seq}', name='tracking', doc_id=f'tracking-{out}-{seq}')
+            docs = x.docs_ectd + [tdoc]
+            if region == 'eu':
+                tracking = [sub.get('tracking') or last_tracking(hist) or env.get('tracking') or 'to be advised']
+                e = eu_envelope(d, prof, sub, hist, seq, stype, unit, activity, desc, tracking)
+                docs = ectd32_eu.resolve(docs, e)            # each document's country before the plan: one location per document
+            if region == 'gcc':
+                e = gcc_envelope(d, sub, seq, stype, unit, activity, desc, hist)
+                docs = gcc_docs(docs, x.files_e, x.slots)
+            steps = plan(hist, docs, x.current_ids | {tdoc.doc_id})
+            if region != 'eu':
+                tracking = [sub.get('tracking') or last_tracking(hist) or env.get('tracking') or 'to be advised']
+            if out == 'ectd32' and region == 'gcc':           # the Gulf: GCC Module 1 v1.5 (SFDA), its DTD and structure
+                from ..writers import ectd32_gcc
+                from ..validators import ectd32_gcc as v32gcc
+                root = base / 'ectd-3.2.2' if working else lc / 'ectd-3.2.2'
+                r = ectd32_gcc.write(root, e, product, to_ectd32(steps), links=_earlier(st, did, hist))
+                reports['eCTD 3.2.2 (GCC M1 1.5)'] = v32gcc.validate(r['path'])
+                _zip(root, seq, base / f'{zname}.zip', note=working)
+            elif out == 'ectd32' and region == 'eu':
+                root = base / 'ectd-3.2.2' if working else lc / 'ectd-3.2.2'
+                r = ectd32_eu.write(root, e, product, to_ectd32(steps), links=_earlier(st, did, hist))
+                prev = _previous(lc / 'ectd-3.2.2', seq)
+                reports['eCTD 3.2.2 (EU M1 3.1.1)'] = v32eu.validate(r['path'], ectd32_eu.DEFAULT_PROFILE, previous=prev)
+                _zip(root, seq, base / f'{zname}.zip', note=working)
+            elif out == 'ectd32':
+                root = base / 'ectd-3.2.2' if working else lc / 'ectd-3.2.2'
+                e = ectd32.Envelope(identifier=env['application_uuid'], submission_type=stype, tracking=tracking, unit=unit,
+                                    applicant=applicant or env['applicant'], invented_name=env.get('invented_name', d['name']),
+                                    registration=ectd32.REG_TYPE[prof.licence], marketing=env.get('marketing', 'local'),
+                                    inn=env.get('inn', []), sequence=seq, related_sequence=[activity],
+                                    description=desc, mode=sub.get('mode') if stype.startswith('var-') else None)
+                r = ectd32.write(root, e, product, to_ectd32(steps), links=_earlier(st, did, hist))
+                prev = _previous(lc / 'ectd-3.2.2', seq)
+                reports['eCTD 3.2.2'] = v32.validate(r['path'], ectd32.DEFAULT_PROFILE, previous=prev)
+                _zip(root, seq, base / f'{zname}.zip', note=working)
+            else:
+                root = base / 'ectd-4.0' if working else lc / 'ectd-4.0'
+                suuid = str(uuid.uuid4()) if unit == 'initial' else (act_row or {}).get('submission_uuid') or str(uuid.uuid4())
+                e4 = ectd40.Envelope4(application_uuid=env['application_uuid'], submission_uuid=suuid, tracking=tracking[0],
+                                      submission_type=stype, unit=unit, sequence=seq, title=desc, applicant=applicant or env['applicant'],
+                                      applicant_portal_id=env.get('portal_id', 'UNKNOWN'),
+                                      product_name=env.get('invented_name', d['name']), inn=env.get('inn', []),
+                                      registration=ectd32.REG_TYPE[prof.licence], marketing=env.get('marketing', 'local'))
+                docs4, suspend = to_ectd40(steps)
+                r = ectd40.write(root, e4, product, docs4, profile=p40, suspend=suspend)
+                reports['eCTD 4.0'] = v40.validate(r['path'], p40, ig_zip, st.root / 'cache')
+                _zip(root, f"{env['application_uuid'].lower()}/{seq}", base / f'{zname}.zip', note=working)
+                e = e4
+            shutil.rmtree(tdir, ignore_errors=True)
+            results[out] = r['path']
+            zips[zname] = f'/api/dossiers/{did}/exports/{exp_id}/{zname}.zip'
+            seqinfo[out] = {'sequence': seq, 'operations': {k: sum(1 for s_ in steps if s_.op == k) for k in ('new', 'replace', 'delete')}}
+            if r.get('links') and (r['links']['rewritten'] or r['links']['unresolved']):
+                seqinfo[out]['links'] = r['links']        # links made relative, and the file links no document of the dossier answers
+            envj = {'type': stype, 'unit': unit, 'description': desc, 'tracking': tracking[0]}
+            if region == 'eu':
+                envj |= {'procedure': e.procedure, 'countries': e.countries}
+            done.append((out, seq, activity, getattr(e, 'submission_uuid', None), envj, r['history'], r['path']))
+    except (WriterError, ExportError):
+        for out, seq, *_rest, path in done:
+            shutil.rmtree(path, ignore_errors=True)          # no half-recorded sequence
+        raise
+    return {'results': results, 'reports': reports, 'zips': zips, 'seqinfo': seqinfo, 'done': done}
+
+
 def export(st, did, outputs, ack, sub, p40, ig_zip, working=False, replace_last=False):
-    """working: a working copy — the CTD folders with what the dossier holds now and the list of what is missing, whatever the gate
-    says; never an eCTD sequence, never recorded as a submission."""
+    """working: a working copy — the CTD folders with what the dossier holds now and the list of what is missing, and the authority's
+    eCTD sequence with its XML, whatever the gate says; all marked «not for submission», never recorded as a submission."""
     g = st.gate(did)
     if working:
-        return _working_copy(st, did, g)
+        return _working_copy(st, did, g, sub, p40, ig_zip)
     if not g['ok']:
         raise ExportError(409, 'E-GATE', 'Export blocked: required documents are missing or non-conforming.',
                           'التصدير متوقف: فيه مستندات مطلوبة ناقصة أو غير مطابقة.', gate=g)
@@ -254,8 +488,9 @@ def export(st, did, outputs, ack, sub, p40, ig_zip, working=False, replace_last=
     current_ids = {x.doc_id for x in docs_all}
     eff = {k: v for k, v in files_e.items() if not k.startswith('M1-44')}
     docs_ectd = [x for x in docs_for(slots, prof, eff)[0]] if region else []
-    results, reports, zips, seqinfo, done = {}, {}, {}, {}, []
-    lc = st.root / 'lifecycle' / did
+    results, reports, zips = {}, {}, {}
+    x = SimpleNamespace(d=d, env=env, pr=pr, prof=prof, product=product, region=region, slots=slots, files_e=files_e, docs_ectd=docs_ectd,
+                        current_ids=current_ids)
     try:
         if 'nees' in outputs:                           # the eCTD's folders and names with PDF tables of contents (updates list, item 40)
             from ..writers import nees
@@ -276,114 +511,18 @@ def export(st, did, outputs, ack, sub, p40, ig_zip, working=False, replace_last=
             results['ctd'] = ctd.write(base / 'ctd', d['name'], slots, files)['path']
             _zip(Path(results['ctd']).parent, Path(results['ctd']).name, base / 'ctd.zip')
             zips['ctd'] = f'/api/dossiers/{did}/exports/{exp_id}/ctd.zip'
-        for out in [o for o in ('ectd32', 'ectd40') if o in outputs]:
-            hist = st.history(did, out)
-            if replace_last and hist and not hist[-1]['frozen']:       # the last one never went: this export takes its number
-                st.discard_sequence(did, out, hist[-1]['seq'])
-                hist = st.history(did, out)
-            seq = next_seq(hist, out)
-            follow = bool(hist)
-            if follow:
-                if not sub.get('type'):
-                    raise ExportError(422, 'E-SUBMISSION', 'A follow-on sequence needs its submission type (e.g. var-pac-b).',
-                                      'التسلسل التالي محتاج نوع التقديم (مثلاً var-pac-b).')
-                submitted = {lf['doc_id'] for h in hist for lf in h['leaves']}
-                covers = [x for x in docs_ectd if x.node == '1.0' and x.name != 'tracking']
-                if not covers or all(c.doc_id in submitted for c in covers):
-                    raise ExportError(409, 'E-COVER', f'Generate the cover letter for sequence {seq} first (a new cover letter goes in every sequence).',
-                                      f'ولّد خطاب التغطية للتسلسل {seq} الأول (كل تسلسل له خطاب تغطية جديد).')
-            stype = sub.get('type') or env.get('submission_type', 'maa')
-            if region == 'eu' and not follow and stype not in ectd32_eu.default_profile().values['submission_types']:
-                stype = 'maa'                             # the dossier's first sequence: a marketing authorisation application
-            unit = sub.get('unit') or 'initial'
-            activity = seq if unit in ('initial', 'reformat') else sub.get('activity') or (hist[-1].get('activity') if hist else seq)
-            act_row = next((h for h in hist if h['seq'] == activity), None)
-            # tracking table rebuilt from the history (M1-44, tool-generated)
-            rows = [{'sequence': str(h['seq']), 'related': str(h.get('activity') or ''), 'description': h['envelope'].get('description', ''),
-                     'type': h['envelope'].get('type', ''), 'unit': h['envelope'].get('unit', ''),
-                     'date': time.strftime('%Y-%m-%d', time.localtime(h['created'])), 'tracking': h['envelope'].get('tracking') or env.get('tracking', ''),
-                     'status': 'Submitted'} for h in hist]
-            desc = sub.get('description') or (env.get('description') if not follow else stype) or (
-                'Initial marketing authorisation application' if not follow else stype)          # the envelope never goes without its description
-            rows.append({'sequence': str(seq), 'related': str(activity), 'description': desc, 'type': stype, 'unit': unit,
-                         'date': time.strftime('%Y-%m-%d'), 'tracking': sub.get('tracking') or last_tracking(hist) or env.get('tracking', ''),
-                         'status': 'This sequence'})
-            tdir = Path(tempfile.mkdtemp())
-            letters.tracking_table({'trade_name': env.get('invented_name') or d['name'], 'sequences': rows}, tdir / 'tracking.docx')
-            try:
-                tpdf = to_pdf(tdir / 'tracking.docx')
-            except RuntimeError:                         # no LibreOffice (browser edition): a text-only PDF of the same table
-                tpdf = basic_pdf(tdir / 'tracking.docx')
-            tdoc = ectd32.Doc('1.0', str(tpdf), f'Tracking table — sequence {seq}', name='tracking', doc_id=f'tracking-{out}-{seq}')
-            docs = docs_ectd + [tdoc]
-            if region == 'eu':
-                tracking = [sub.get('tracking') or last_tracking(hist) or env.get('tracking') or 'to be advised']
-                e = eu_envelope(d, prof, sub, hist, seq, stype, unit, activity, desc, tracking)
-                docs = ectd32_eu.resolve(docs, e)            # each document's country before the plan: one location per document
-            if region == 'gcc':
-                e = gcc_envelope(d, sub, seq, stype, unit, activity, desc, hist)
-                docs = gcc_docs(docs, files_e, slots)
-            steps = plan(hist, docs, current_ids | {tdoc.doc_id})
-            if region != 'eu':
-                tracking = [sub.get('tracking') or last_tracking(hist) or env.get('tracking') or 'to be advised']
-            if out == 'ectd32' and region == 'gcc':           # the Gulf: GCC Module 1 v1.5 (SFDA), its DTD and structure
-                from ..writers import ectd32_gcc
-                from ..validators import ectd32_gcc as v32gcc
-                root = lc / 'ectd-3.2.2'
-                r = ectd32_gcc.write(root, e, product, to_ectd32(steps), links=_earlier(st, did, hist))
-                reports['eCTD 3.2.2 (GCC M1 1.5)'] = v32gcc.validate(r['path'])
-                _zip(root, seq, base / 'ectd32.zip')
-            elif out == 'ectd32' and region == 'eu':
-                root = lc / 'ectd-3.2.2'
-                r = ectd32_eu.write(root, e, product, to_ectd32(steps), links=_earlier(st, did, hist))
-                prev = sorted(p for p in root.iterdir() if p.is_dir() and p.name != seq)
-                reports['eCTD 3.2.2 (EU M1 3.1.1)'] = v32eu.validate(r['path'], ectd32_eu.DEFAULT_PROFILE, previous=prev)
-                _zip(root, seq, base / 'ectd32.zip')
-            elif out == 'ectd32':
-                root = lc / 'ectd-3.2.2'
-                e = ectd32.Envelope(identifier=env['application_uuid'], submission_type=stype, tracking=tracking, unit=unit,
-                                    applicant=env['applicant'], invented_name=env.get('invented_name', d['name']),
-                                    registration=ectd32.REG_TYPE[prof.licence], marketing=env.get('marketing', 'local'),
-                                    inn=env.get('inn', []), sequence=seq, related_sequence=[activity],
-                                    description=desc, mode=sub.get('mode') if stype.startswith('var-') else None)
-                r = ectd32.write(root, e, product, to_ectd32(steps), links=_earlier(st, did, hist))
-                prev = sorted(p for p in root.iterdir() if p.is_dir() and p.name != seq)
-                reports['eCTD 3.2.2'] = v32.validate(r['path'], ectd32.DEFAULT_PROFILE, previous=prev)
-                _zip(root, seq, base / 'ectd32.zip')
-            else:
-                root = lc / 'ectd-4.0'
-                suuid = str(uuid.uuid4()) if unit == 'initial' else (act_row or {}).get('submission_uuid') or str(uuid.uuid4())
-                e4 = ectd40.Envelope4(application_uuid=env['application_uuid'], submission_uuid=suuid, tracking=tracking[0],
-                                      submission_type=stype, unit=unit, sequence=seq, title=desc, applicant=env['applicant'],
-                                      applicant_portal_id=env.get('portal_id', 'UNKNOWN'),
-                                      product_name=env.get('invented_name', d['name']), inn=env.get('inn', []),
-                                      registration=ectd32.REG_TYPE[prof.licence], marketing=env.get('marketing', 'local'))
-                docs4, suspend = to_ectd40(steps)
-                r = ectd40.write(root, e4, product, docs4, profile=p40, suspend=suspend)
-                reports['eCTD 4.0'] = v40.validate(r['path'], p40, ig_zip, st.root / 'cache')
-                _zip(root, f"{env['application_uuid'].lower()}/{seq}", base / 'ectd40.zip')
-                e = e4
-            shutil.rmtree(tdir, ignore_errors=True)
-            results[out] = r['path']
-            zips[out] = f'/api/dossiers/{did}/exports/{exp_id}/{out}.zip'
-            seqinfo[out] = {'sequence': seq, 'operations': {k: sum(1 for s_ in steps if s_.op == k) for k in ('new', 'replace', 'delete')}}
-            if r.get('links') and (r['links']['rewritten'] or r['links']['unresolved']):
-                seqinfo[out]['links'] = r['links']        # links made relative, and the file links no document of the dossier answers
-            envj = {'type': stype, 'unit': unit, 'description': desc, 'tracking': tracking[0]}
-            if region == 'eu':
-                envj |= {'procedure': e.procedure, 'countries': e.countries}
-            done.append((out, seq, activity, getattr(e, 'submission_uuid', None), envj, r['history'], r['path']))
+        seqs = _sequences(st, did, x, outputs, sub, base, exp_id, p40, ig_zip, replace_last=replace_last)
     except WriterError as ex:
         shutil.rmtree(base, ignore_errors=True)
-        for out, seq, *_rest, path in done:
-            shutil.rmtree(path, ignore_errors=True)          # no half-recorded sequence
         raise ExportError(422, 'E-WRITER', f'Export failed: {ex}', f'التصدير فشل: {ex}')
     except ExportError:
         shutil.rmtree(base, ignore_errors=True)
-        for out, seq, *_rest, path in done:
-            shutil.rmtree(path, ignore_errors=True)
         raise
-    for out, seq, activity, suuid, envj, history, path in done:
+    results.update(seqs['results'])
+    reports.update(seqs['reports'])
+    zips.update(seqs['zips'])
+    seqinfo = seqs['seqinfo']
+    for out, seq, activity, suuid, envj, history, path in seqs['done']:
         st.record_submission(did, out, seq, activity, suuid, envj, history, path)
     shutil.rmtree(work, ignore_errors=True)
     if reports:

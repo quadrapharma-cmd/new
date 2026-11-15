@@ -60,3 +60,20 @@ def test_a_gulf_dossier_exports_its_ectd(c, tmp_path):
     assert r.json()['validation']['eCTD 3.2.2 (GCC M1 1.5)']['ok'], r.json()['validation']
     names = zipfile.ZipFile(io.BytesIO(c.get(r.json()['downloads']['ectd32']).content)).namelist()
     assert '0000/m1/gc/gc-regional.xml' in names and any(n.startswith('0000/m1/gc/10-cover/sa/') for n in names)
+
+
+def test_the_gulf_module_1_table_of_contents_goes_into_the_ctd_folders_only(c, tmp_path):
+    """GCC-1.1 is named by the GCC Module 1 specification but is no document of an eCTD (the backbone is the table of contents): a
+    document put there stays in the CTD folders and the NeeS, and the eCTD is still written (it stopped the export until 15/11/2026,
+    «no unique ICH element for 1.1»)."""
+    did = new(c, 'SA')['id']
+    pdf = make_pdf(tmp_path / 'd.pdf', 'content').read_bytes()
+    for s in c.get(f'/api/dossiers/{did}/board').json()['slots']:
+        if s['level'] == 'R' or s['slot_id'] == 'GCC-1.1':
+            assert c.post(f"/api/dossiers/{did}/slots/{s['slot_id']}/documents", files={'file': ('x.pdf', io.BytesIO(pdf), 'application/pdf')},
+                          data={'meta': json.dumps({'signed': True})}).status_code == 201
+    r = c.post(f'/api/dossiers/{did}/export', json={'outputs': ['ctd', 'ectd32', 'nees'], 'submission': None})
+    assert r.status_code == 201, r.text
+    j = r.json()
+    assert sorted(j['downloads']) == ['ctd', 'ectd32', 'nees'] and 'GCC-1.1' in j['ctd_only']
+    assert all(v['ok'] for v in j['validation'].values()), j['validation']

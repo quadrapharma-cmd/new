@@ -462,3 +462,63 @@ def test_pdfcraft_runs_inside_the_browser(site, tmp_path):
         assert '/JavaScript' not in str(out.trailer['/Root'].get('/Names', {}))
         assert not errors, errors
         b.close()
+
+
+def test_the_working_copy_gives_its_ectd_xml_inside_the_browser(site, tmp_path):
+    """The working copy in the browser edition (claude.ai's page; the owner, 15/11/2026: «خلي نسخة العمل تطلع بالـ XML»): beside the
+    CTD folders, the eCTD with its XML (index.xml, eg-regional.xml), written by the engine inside the page — a Word file left out
+    of it and named there (no LibreOffice here; an eCTD takes PDF) — and every file handed to claude.ai's downloads has a name it
+    lets a page save (zip, html: an .xml alone would be refused). Nothing recorded as a submission."""
+    import base64
+    from docx import Document
+    pdf = make_pdf(tmp_path / 'gmp.pdf', 'Certificate of GMP compliance')
+    w = Document()
+    w.add_paragraph('Finished product specification (made up)')
+    w.save(str(tmp_path / 'fps.docx'))
+    allowed = 'gif png jpg jpeg webp mp4 webm mov txt json md docx pptx epub csv ttf html svg pdf xlsx zip fig'.split()
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch()
+        page = b.new_context(viewport={'width': 1280, 'height': 900}).new_page()
+        errors = []
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+        page.add_init_script("""localStorage.setItem('db.lang','ar'); window.__saved = [];
+            window.claude = { use: async n => n !== 'downloads' ? null : { save: async ({ filename, data }) => {
+              window.__saved.push({ filename, size: data.size || data.byteLength || data.length || 0 }); return { status: 'saved' }; } } };""")
+        page.goto(site + '/index.local.html#/')
+        page.wait_for_selector('#boot', state='detached', timeout=180000)
+        page.evaluate('() => DBWEB.ready()')
+        did = page.evaluate("""async ([p64, w64]) => {
+            const j = (u, o) => fetch(u, Object.assign({headers: {'X-DB': '1', 'content-type': 'application/json'}}, o)).then(r => r.json());
+            const d = await j('/api/dossiers', {method: 'POST', body: JSON.stringify({name: 'Dermacure (made up)',
+                product: {name: 'Dermacure', dosageform: 'Cutaneous powder', manufacturer: 'Example Pharm Co.'},
+                envelope: {applicant: 'Example Pharm Co.', invented_name: 'Dermacure', tracking: 'T-0001'},
+                profile: {dossier_kind: 'generic', origin: 'local', licence: 'toll', activity: 'new', apis: [{name: 'Neomycin sulphate', manufacturer: 'Example API Co.', option: 'FULL'}]}})});
+            const file = (b64, name, type) => { const s = atob(b64), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return new File([u], name, {type}); };
+            for (const [slot, f] of [['M1-37', file(p64, 'gmp.pdf', 'application/pdf')], ['P-09', file(w64, 'fps.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')]]) {
+              const fd = new FormData(); fd.append('file', f); fd.append('meta', '{}');
+              const r = await fetch('/api/dossiers/' + d.id + '/slots/' + slot + '/documents', {method: 'POST', body: fd, headers: {'X-DB': '1'}});
+              if (r.status !== 201) throw new Error(slot + ' ' + r.status + ' ' + await r.text()); }
+            return d.id; }""", [base64.b64encode(pdf.read_bytes()).decode(), base64.b64encode((tmp_path / 'fps.docx').read_bytes()).decode()])
+        page.evaluate('id => { location.hash = `#/d/${id}/export`; }', did)
+        page.wait_for_selector('#wkGo', timeout=60000)
+        page.click('#wkGo')
+        page.wait_for_selector('[data-wk="ectd32-working"]', timeout=240000)
+        res = ' '.join(page.inner_text('#wkRes').split())
+        assert 'eCTD 3.2.2 — XML' in res and 'ectd32-working.zip' in res and 'التسلسل 0000' in res and '(fps.docx)' in res, res   # the Word file named
+        names = page.evaluate("""async () => { const a = document.querySelector('[data-wk="ectd32-working"]');
+            const u = new Uint8Array(await (await fetch(a.getAttribute('href'))).arrayBuffer());
+            let s = ''; for (let i = 0; i < u.length; i += 8192) s += String.fromCharCode.apply(null, u.subarray(i, i + 8192)); return s; }""")
+        assert '0000/index.xml' in names and '0000/m1/eg/eg-regional.xml' in names and '00-WORKING-COPY-NOT-FOR-SUBMISSION.txt' in names
+        assert '.docx' not in names                                                     # an eCTD takes PDF only
+        page.click('[data-wk="ectd32-working"]')
+        page.wait_for_function('() => window.__saved.length >= 1', timeout=60000)
+        page.click('#wkRep')
+        page.wait_for_function('() => window.__saved.length >= 2', timeout=60000)
+        saved = page.evaluate('window.__saved')
+        assert [s['filename'] for s in saved] == ['ectd32-working.zip', 'validation-report.html'] and saved[0]['size'] > 2000, saved
+        assert all(s['filename'].rsplit('.', 1)[-1] in allowed for s in saved)           # claude.ai saves these; it refuses an .xml alone
+        subs = page.evaluate("id => fetch('/api/dossiers/' + id + '/submissions', {headers: {'X-DB': '1'}}).then(r => r.json())", did)
+        assert subs == {'ectd32': [], 'ectd40': []}
+        assert not errors, errors
+        b.close()

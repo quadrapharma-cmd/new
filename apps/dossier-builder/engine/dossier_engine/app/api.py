@@ -62,7 +62,7 @@ class ExportReq(BaseModel):
     outputs: list = ['ctd', 'ectd32', 'ectd40']           # this default means «what the authority has»; 'nees' is asked by name
     acknowledge_provisional: bool = False
     working: bool = False        # a working copy: what is in the dossier now + the list of what is missing, whatever the gate says
-    submission: dict = None      # follow-on sequence: {type, unit, mode, description, activity, tracking}
+    submission: dict | None = None   # follow-on sequence: {type, unit, mode, description, activity, tracking}; the page sends null for a first one
     replace_last: bool = False   # the last sequence was not submitted: this export takes its number (a submitted one never)
 
 

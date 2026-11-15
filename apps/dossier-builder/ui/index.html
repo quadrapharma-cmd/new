@@ -493,8 +493,10 @@ const T = {
   auStExportD:{en:'When the gate is green: the CTD folders, with a navigator and a checklist.',ar:'لما البوابة تخضرّ: مجلدات CTD مع فهرس وقائمة.'},
   auBoardSub:{en:"Every item comes from the authority's Module 1 or the common CTD, with its reason and source.",ar:'كل بند من موديول ١ بتاع الهيئة أو الـ CTD المشترك، مع سببه ومصدره.'},
   wkBtn:{en:'Export a working copy of what is ready',ar:'صدّر نسخة عمل باللي جاهز دلوقتي'},
-  wkSub:{en:'CTD folders with every document that is in the dossier now, a navigator and the list of what is still missing. Marked «not for submission».',
-         ar:'مجلدات CTD بكل المستندات اللي في الملف دلوقتي، مع فهرس وقائمة بالناقص. مكتوب عليها «ليست للتقديم».'},
+  wkSub:{en:'CTD folders with every document that is in the dossier now, a navigator and the list of what is still missing — and, where the authority takes an eCTD, its sequence with index.xml and the Module 1 XML, checked by the program. Marked «not for submission»; nothing is recorded as submitted.',
+         ar:'مجلدات CTD بكل المستندات اللي في الملف دلوقتي، مع فهرس وقائمة بالناقص — ومعاها، لو الهيئة بتاخد eCTD، التسلسل بالـ XML بتاعه (index.xml وملف موديول 1) متراجع بقواعد البرنامج. مكتوب عليها «ليست للتقديم»، ومفيش حاجة بتتسجل كتقديم.'},
+  wkCtdZ:{en:'CTD folders',ar:'مجلدات CTD'}, wkLeft:{en:'Left out of the eCTD (it takes PDF only)',ar:'اتساب برّه الـ eCTD (بياخد PDF بس)'},
+  wkSkip:{en:'Not written',ar:'ما اتكتبش'}, wkNoEctd:{en:'This authority takes CTD folders: no eCTD XML.',ar:'الهيئة دي بتاخد مجلدات CTD: مفيش eCTD بـ XML.'},
   wkDone:{en:'Working copy',ar:'نسخة العمل'}, wkDocs:{en:'documents in place',ar:'مستند في مكانه'}, wkMiss:{en:'required still missing',ar:'مطلوب لسه ناقص'},
   auCtdD:{en:"Folders in the order of the authority's Module 1 and the common CTD, with a navigator and a checklist.",ar:'مجلدات بترتيب موديول ١ بتاع الهيئة والـ CTD المشترك، مع فهرس وقائمة.'}, auExportSub:{en:'One dossier, as CTD folders.',ar:'ملف واحد بمجلدات CTD.'},
   auT:{en:'Countries and authorities',ar:'الدول والهيئات'}, auItems:{en:'items',ar:'بند'}, auAny:{en:'any other country',ar:'أي دولة تانية'},
@@ -3283,9 +3285,20 @@ async function exportView(tok){
      <label class="alert" style="cursor:pointer" ${eg?'':'hidden'}><input type="checkbox" id="ack" style="margin-top:3px"> <p class="small">${esc(t('ack'))}</p></label>
      <div><button class="btn pri lg" id="go" ${g.ok?'':'disabled'}>${icon('package')} ${esc(t('doExport'))}</button></div></div><div id="res"></div>`;
   $('#wkGo').onclick=async()=>{ const b=$('#wkGo'); b.disabled=true; b.textContent=t('exporting');
-    try{ const r=await api(`/dossiers/${S.dossier.id}/export`,{method:'POST',json:{working:true,outputs:['ctd']}});
+    const sub = follow? {type:$('#sqType').value, unit:$('#sqUnit').value, mode:$('#sqMode').value, tracking:$('#sqTrack').value.trim()||null, description:$('#sqDesc').value.trim()||null} : {};
+    if(eu){ const cs=$$('#euCs input:checked').map(i=>i.value); if(cs.length) sub.countries=cs;      /* the working eCTD takes what the real one would */
+      if(!follow&&$('#euTrack')&&$('#euTrack').value.trim()) sub.tracking=$('#euTrack').value.trim(); }
+    try{ const r=await api(`/dossiers/${S.dossier.id}/export`,{method:'POST',json:{working:true,outputs:['ctd'],submission:Object.keys(sub).length?sub:null}});
+      const lab={'ctd-working':t('wkCtdZ'),'ectd32-working':'eCTD 3.2.2 — XML','ectd40-working':'eCTD 4.0 — XML'}, ec=r.ectd, sep=S.lang==='ar'?'، ':', ';
+      const sq=Object.entries(r.sequences||{}).map(([k,v])=>`<span class="tag">${k==='ectd32'?'eCTD 3.2.2':'eCTD 4.0'} · ${esc(t('seqDone'))} <span class="code">${esc(v.sequence)}</span></span>`).join(' ');
+      const val=Object.entries(r.validation||{}).map(([k,v])=>`<div class="alert ${v.ok?'ok':'bad'}"><p><b>${esc(k)}</b> — ${bdi(v.label)}<br><span class="small">${esc(t('vPass'))} ${v.counts.pass} · ${esc(t('vFail'))} ${v.counts.fail} · ${esc(t('vWarn'))} ${v.counts.warning} · ${esc(t('vNotRun'))} ${v.counts.not_run}</span></p></div>`).join('');
       $('#wkRes').innerHTML=`<div class="alert ok">${icon('check')}<p><b>${esc(t('wkDone'))}</b> — ${r.documents} ${esc(t('wkDocs'))} · ${r.missing_required} ${esc(t('wkMiss'))}<br><span class="small">${esc(S.lang==='ar'&&r.label_ar?r.label_ar:r.label)}</span></p></div>
-        <div class="dl">${Object.entries(r.downloads).map(([k,u])=>`<a class="btn pri" href="${esc(u)}" download id="wkDl">${icon('download')} ${esc(k)}.zip</a>`).join('')}</div>`;
+        <div class="dl">${Object.entries(r.downloads).map(([k,u],i)=>`<a class="btn ${i?'':'pri'}" href="${esc(u)}" download ${i?`data-wk="${esc(k)}"`:'id="wkDl"'}>${icon('download')} ${esc(lab[k]||k)} · <span class="code">${esc(k)}.zip</span></a>`).join('')}
+          ${r.report?`<a class="btn soft" href="${esc(r.report)}" target="_blank" rel="noopener" id="wkRep">${icon('shield')} ${esc(t('vReport'))}</a>`:''}</div>
+        ${sq?`<div class="row gap-s small" style="flex-wrap:wrap">${sq}</div>`:''}${val}
+        ${ec?'':`<p class="small muted">${esc(t('wkNoEctd'))}</p>`}
+        ${ec&&(ec.left_out||[]).length?`<div class="small"><b>${esc(t('wkLeft'))}:</b> ${ec.left_out.map(x=>bdi(x)).join(sep)}</div>`:''}
+        ${ec?Object.entries(ec.skipped||{}).map(([k,v])=>`<div class="alert bad"><p class="small"><b>${esc(t('wkSkip'))} — ${esc(k==='ectd32'?'eCTD 3.2.2':k==='ectd40'?'eCTD 4.0':'eCTD')}</b>: ${esc(S.lang==='ar'?v.ar:v.en)}</p></div>`).join(''):''}`;
     }catch(e){ $('#wkRes').innerHTML=`<div class="alert bad">${icon('alert')}<p>${esc(e.message)}</p></div>`; }
     finally{ b.disabled=false; b.innerHTML=`${icon('download')} ${esc(t('wkBtn'))}`; } };
   const vb=$('#viewsBtn'); if(vb) vb.onclick=()=>openViews(hist.ectd32.length?'ectd32':'ectd40');

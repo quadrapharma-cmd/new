@@ -59,6 +59,19 @@ def test_a_working_copy_from_the_export_page(server, tmp_path):
         dl.value.save_as(out)
         names = zipfile.ZipFile(out).namelist()
         assert any(n.endswith('00-MISSING.txt') for n in names) and any('/Module 1/' in n and n.endswith('.pdf') for n in names)
+        # and its eCTD with the XML (the owner, 15/11/2026: «خلي نسخة العمل تطلع بالـ XML»), the program's checks, nothing recorded
+        res = ' '.join(page.inner_text('#wkRes').split())
+        assert 'eCTD 3.2.2 — XML' in res and 'ectd32-working.zip' in res and 'eCTD 4.0 — XML' in res and 'التسلسل 0000' in res
+        assert page.locator('#wkRep').count() == 1 and 'ناجح' in res
+        with page.expect_download(timeout=60000) as dl:
+            page.click('[data-wk="ectd32-working"]')
+        assert dl.value.suggested_filename == 'ectd32-working.zip'
+        out = tmp_path / 'e.zip'
+        dl.value.save_as(out)
+        z = zipfile.ZipFile(out)
+        assert {'0000/index.xml', '0000/m1/eg/eg-regional.xml', '00-WORKING-COPY-NOT-FOR-SUBMISSION.txt'} <= set(z.namelist())
+        assert 'WORKING COPY — NOT FOR SUBMISSION' in z.read('0000/m1/eg/eg-regional.xml').decode('utf-8')
+        assert json.loads(urllib.request.urlopen(urllib.request.Request(f'{server}/api/dossiers/{did}/submissions', headers={'X-DB': '1'}), timeout=30).read()) == {'ectd32': [], 'ectd40': []}
         # the wizard's cards
         page.goto(f'{server}/#/new')
         page.wait_for_selector('.doccards')

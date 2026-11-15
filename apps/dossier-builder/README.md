@@ -343,6 +343,22 @@ fictional documents (`tests/test_trial_fixes.py`, `tests/test_ui_working_copy.py
   the CTD folders with every document in the dossier now (Word drafts stay Word, each document keeps its own name where an item
   holds several), `00-navigator.html`, `00-checklist.csv` and `00-MISSING.txt`; marked «not for submission», never recorded as a
   submission. The gate still guards the real export.
+  Since 15/11/2026 (the owner: «خلي نسخة العمل تطلع بالـ XML») it also gives, where the authority takes an eCTD, its sequence with
+  the XML — `ectd32-working.zip` (`<seq>/index.xml`, `<seq>/m1/eg|eu|gc/<region>-regional.xml`, `index-md5.txt`, `util/dtd`) and,
+  for Egypt, `ectd40-working.zip` (`submissionunit.xml`, `sha256.txt`) — written by the real export's own code (`exporter._sequences`
+  with `working`), so its XML is the one the real export will write: the next sequence's number, only what changed after a
+  submitted sequence. It is written beside the export, never into the lifecycle folder; the envelope's description begins
+  «WORKING COPY — NOT FOR SUBMISSION», `00-WORKING-COPY-NOT-FOR-SUBMISSION.txt` lies beside the sequence in the zip (never inside
+  it); nothing is recorded, so the next working copy and the real export take the same number. It asks neither the follow-on's
+  type nor its new cover letter (the page sends the next-sequence form's values when there is one). Only PDFs go in: a Word file
+  through its PDF as in the real export, and where none can be made (no LibreOffice: the browser edition) it is left out and
+  named, item and file («Pricing Certificate (costs.xlsx)»), as are sheets, pictures and other files; the CTD folders keep them.
+  The program's eCTD checks run on it (`validation-report.html`). An output that cannot be written says why and the others are
+  still given; an authority without an eCTD gives the CTD folders only. claude.ai lets a page save a zip but never a bare `.xml`
+  (its downloads allow gif png jpg jpeg webp mp4 webm mov txt json md docx pptx epub csv ttf html svg pdf xlsx zip fig), which is
+  why the XML always travels in its zip. Tests: `tests/test_working_ectd.py`, `tests/test_ui_working_copy.py`,
+  `tests/test_web_edition.py::test_the_working_copy_gives_its_ectd_xml_inside_the_browser`.
+  The same day: the export request takes `"submission": null` (the page sends it for a first sequence; it was refused with 422).
 - Generators' forms prefill who signs (asked once, remembered across forms), the shelf life, the pack and the composition from
   what the dossier already knows; «Conforms» for a descriptive test is a result, not a missing figure.
 - A draft continued right after the page loads is filled once the vocabulary has arrived: the form — and the product's name
