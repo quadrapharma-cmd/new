@@ -173,23 +173,49 @@ the readiness report and a checklist). «شغّل لوحدك» runs it all; «خ
   (its answer must be a place of the board), «اسأل Claude» (the workshop's tools: list_documents, read_page, find_in_documents,
   list_findings, board, search_knowledge, get_record, record_fact — words checked on the page — place_document). The key is kept in
   memory, or on the computer if he ticks «افتكر» (said: every page opened from files can read it). No key: everything but Claude.
-- The programs: the Word and PDF programs (`vendor/craft`, built from source) in their own pages beside the workshop
-  (`programs/<app>.html`), run in «page» host mode with a relay (a file:// page is its own origin, so the programs' same-origin
-  frame mode cannot connect). Open a document, every save comes back as a new version (an edited draft is then never rewritten);
-  «اعمله PDF» has the Word program export a Word file without a person (it waits until the program has that document open). Both
-  carry a patch taking the ArtCraft logo and name out of their screens (`tools/craft/patches/`; the PDF program carries our OCR
-  patches too, and its brand licence asks a modified version to remove the logos); the copyright notices stay. Rebuilt with them on
-  15/11 (`node tools/craft/build.mjs <app> web`; the JavaScript wasm-opt takes 20–50 min a program: `WASM_OPT_SKIP=1` for a quick
-  build, then `node tools/craft/optimize.mjs <app>`). Not here yet: the
-  photo and design programs (no host bridge in their releases), the PDF program's own OCR (its worker cannot start from a file).
+- The programs (`vendor/craft`, built from source with `tools/craft/patches/<app>/`, each taking the ArtCraft logo and name out of
+  its screens, as the brand licence asks of a modified build; copyright notices stay), each in its own page beside the workshop
+  (`programs/<app>.html`; a file:// page is its own origin, so a relay there passes messages with postMessage):
+  · Word and PDF programs: their «page» host mode (events on the canvas, commands: «اعمله PDF» has the Word program export a Word
+    file without a person). The PDF program also carries our OCR patches.
+  · Photo program (PhotoCraft) and design program (DesignCraft) have no host mode: the relay drops the file on the canvas as a
+    person would (at the window's corner, so the photo program opens it rather than placing it in the open picture), knows they
+    started when they take away their own «loading» note, and keeps what they save (they save by a download: a link to a blob,
+    clicked) instead of letting it reach the Downloads folder. Ctrl+S in the photo program gives a PSD: `workshop/psd.js` reads its
+    shown picture, `workshop/png.js` writes PNG where the browser cannot. Uses: a scanned page cleaned («نضّفها في برنامج الصور»,
+    the page at 200 dpi; what comes back replaces that page, same page object — `replacePage`); a picture (made a PDF by the
+    picture fix, `doc.picture` keeps its kind, `doc.psd` its layers); the pack's artwork places of each country (`DESIGN_PLACES`)
+    made in the design program (its `.designcraft` is the document until File ← Export PDF…, whose PDF goes in — `doc.pdf`);
+    a PDF or picture placed into an open design (`doc.design` keeps the design to reopen).
+  · Every save is a new version; a new version gets the safe fixes at once (version, outline, picture to PDF, text layer).
+  Rebuilt on 15/11 (`WASM_OPT_SKIP=1 node tools/craft/build.mjs <app> web`, then `node tools/craft/optimize.mjs <app>`: the
+  JavaScript wasm-opt takes 15–50 min a program). PdfCraft's own web OCR is not used (English-only ocrs models, CC-BY-SA, set aside
+  in the plan): the workshop makes the text layer itself (below).
+- Searchable scans (`workshop/textlayer.js`, `ocr.layer()` in `prep/ocr.js`): each page without its own text is read as for the
+  dossier (upright, straightened) and Tesseract writes its text-only PDF of it (GlyphLessFont, in the core); the workshop lays it
+  over the page with the straightening, the turn and the page's /Rotate undone (`layerMatrix`, exact to 1e-13 pt in the tests).
+  By itself up to 40 pages (`TEXT_AUTO`), on a click above (its time said).
+- Reading also: Excel and PowerPoint old and new (`prep/office.js`: sheets with their dates, slides in order; BIFF8 records and
+  [MS-PPT] atoms), 7z (`prep/sevenz.js` + `prep/lzma.js`, written from the public-domain LZMA SDK's spec: LZMA, LZMA2, BCJ, delta,
+  copy; PPMd, encryption and split parts said, not read), IDML (its stories' words), DesignCraft and InDesign files, PSD.
+- Countries (`board.js`): Egypt, the Gulf, Europe, the US and other countries all «كامل»: each its own questions (the conditions of
+  its Module 1: `gcc_agency`, `eu_procedure`, `eu_legal_basis`, `us_application`, `biological_origin_materials`, `novel_excipient`
+  — yes/no kept as true/false), its file rules `FORMATS[country]` each cited to page and line (the test reads every cited line in
+  `dist/texts`: it caught Egypt's own rules a line off — fixed), its size limit (EG/GCC/OTHER 100 MB, EU 500, US 400) and the PDF
+  version its fix writes (1.7 for EG/EU, 1.4 elsewhere, ICH's agreed version). Documents are placed by each country's own words
+  (`recognitionOf` in pipeline.js; they were off outside Egypt), known types find the same place of the common modules (P-09…),
+  Egypt's words serve ICH's places. Validity outside Egypt: the date written on the document (no type months in those rules).
 - Code `workshop/` (expr, board, understand, pipeline, checks, fixes, generators + templates/annex1.json, docx, zipw, store, export,
-  needs, claude, tools, programs, desktop-assets, page, body, style, build). The page loads as classic scripts only: pdf.js on its own
-  thread (`globalThis.pdfjsWorker`), the scan reader's files as scripts handing their content to `__dbAsset`, Tesseract's worker a
-  blob carrying its code, core and languages (a blob worker may import only blobs it makes itself), the ORT module from a blob.
+  needs, claude, tools, programs, psd, png, textlayer, pdfops, desktop-assets, page, body, style, build). The page loads as classic
+  scripts only: pdf.js on its own thread (`globalThis.pdfjsWorker`; close a pdf.js file through its loading task, `task.destroy()`),
+  the scan reader's files as scripts handing their content to `__dbAsset`, Tesseract's worker a blob carrying its code, core and
+  languages (a blob worker may import only blobs it makes itself), the ORT module from a blob.
 - Build `npm run build && node workshop/build.mjs [--zip]` → `dist/workshop/` (+ `dist/Dossier-Builder-Workshop.zip`).
-- Tests `node --test tests/workshop.test.mjs` (Node: the board for each case, rule cards' sources exist, the made-up dossier received,
-  cut, placed, checked, drafted, exported) and `tests/workshop-browser.test.mjs` (Chromium from file://: the scan reader, Claude
-  through `tests/helpers/fake-api.mjs`, a wrong key against the real API, the programs). Made-up files only.
+- Tests `node --test tests/workshop.test.mjs` (Node: the board for each case and country, every cited line, rule cards, PSD/PNG,
+  kinds by content, the text layer's matrix, the made-up dossier for Egypt and the Gulf), `tests/office-7z.test.mjs` (files written
+  by LibreOffice and 7-Zip — `apt-get install p7zip-full` for the 7z part) and `tests/workshop-browser.test.mjs` (Chromium from
+  file://: the scan reader and the text layer, Claude through `tests/helpers/fake-api.mjs`, a wrong key against the real API, the
+  four programs, a Gulf dossier). Made-up files only. `SHOTS=<dir>` keeps a screenshot when the programs' test fails.
 - Dossiers are kept in the browser's IndexedDB on his computer; «احفظ نسخة» gives one file (`.dossier.zip`) that opens again.
 
 ### 5. The open-source eCTD projects and the eCTD timelines (monthly, or when he asks)
