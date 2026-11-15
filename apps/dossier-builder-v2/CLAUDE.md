@@ -297,8 +297,21 @@ When a part is done or an open item is closed, update «What exists» and «Open
   written here, tuned on made-up files. Decision: back to the old program, its interface and its reading; the v2 workshop
   (`workshop/`, delivered 15/11) is frozen and not built on. New parts go into the old program one at a time, each measured on his
   real files first (rule 13). The library (Part 1) stays as it is.
+- **15/11/2026, «ok» to the first two pieces in the old program** — published as version 46 of «منشئ ملفات التسجيل» (`7b9c763`…):
+  the library inside it (a button, and each item opens its own record there — all 349 links checked against the library as
+  published) and 7z opened in the page in every edition (the owner's Dramrin files packed as one 7z gave the same 13 documents,
+  byte for byte). Built on the live version (0cc4d69, checked equal to what claude.ai served); `864cd3c` held back until it is
+  compared with real Claude readings (the API key: he adds it as an environment variable; not seen by this session yet).
+  Opening time unchanged (8 interleaved rounds: first 5.2 s, next 4.6 s, before and after). The whole suite: 777 passed after
+  two 7z fixes it found.
 
 ## Open items (propose when relevant; do when he asks)
+- Old program, claude.ai edition: its fonts never load — `web/build.py` writes the font link's `onload="this.media=\'all\'"` with
+  the backslashes kept (a script error on every opening, in the version he has used since 13/11 too), so the page shows the
+  system's fonts. Left as it is (the look he knows); fix only if he asks.
+- Old program, next pieces (one at a time, each on his real files first): the 14/11 update (needs the API key), «شروط الشكل لكل
+  دولة», the Word program, the Assistant on his account and «المشغّل» (cannot be tested inside claude.ai from here), a phone
+  photo as a document (needs real photos from him), the photo and design programs (desktop only, after his approval).
 - Online version check of the ICH, EMA, FDA, WHO and GCC sources. Unreachable from this environment: admin.ich.org (ICH's content
   service), esubmission.ema.europa.eu, sfda.gov.sa — they would need his approval to add.
 - 64 sources have no copy kept.
