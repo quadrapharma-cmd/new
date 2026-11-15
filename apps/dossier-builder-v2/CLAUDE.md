@@ -368,7 +368,11 @@ When a part is done or an open item is closed, update «What exists» and «Open
   document written alone (`_cannot_take`) and only those left out; the XML came with 22 of his PDFs both ways, and its checks found
   a CoA PDF with security restrictions, no cover letter yet and scans without a text layer. Also found by the whole suite: the
   programs' delayed «ready» hint wrote over «اتحفظ» when a save ended within 1.5 s of opening (`ui/assets/programs.js`) — the Word
-  test's intermittent failure; fixed.
+  test's intermittent failure; fixed. Published as **version 50** (`19a1915`; the page, suite.html, engine.worker.js and the
+  engine — everything else is version 49's, the page's own record of each file's hash shows only the engine changed): whole suite
+  817 passed; opening time unchanged (first 5.16 → 5.04 s, next 4.53 → 4.40 s; version 49 served with its own engine read back);
+  the five files read back byte for byte equal to the build; the working copy in the browser edition, the office and both
+  programs' tests passed on the page as served.
   Found on the way and fixed: **the real export button failed from the page for a first sequence** — the page sends
   `submission: null` and the server refused it with 422 since the EU work (`ef51a39`), and no test clicked that button; now
   `tests/test_ui_export_all.py` clicks it for Egypt (its three formats: `ctd.zip` CTD One Submission, `ectd32.zip`, `ectd40.zip`), the
