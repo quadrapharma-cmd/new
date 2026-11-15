@@ -344,6 +344,18 @@ When a part is done or an open item is closed, update «What exists» and «Open
   suite 802 passed; opening time unchanged (first 5.56 → 5.51 s, next 4.58 → 4.70 s, median of 8 interleaved rounds); both
   files read back byte for byte equal to the build, and the office test passed on the page as served. The Drive tools' names
   checked against their schemas and one real listing call: the fields the page reads are there.
+- **15/11/2026, steps 5–6 measured on his real files — nothing added, proposed to him.** Step 5, the photo program: in the old
+  program a picture is not a document (the upload gate refuses it, NP.CAPP.065 v5 general note 4), so its one use would be
+  cleaning scans, which the PDF program already does in place (Scan & OCR ▸ Enhance ▸ Scanned document, `ocr.enhance`; automation
+  `page_enhance_scan`: the same image objects, the text layer and links kept). On the 11 measured pages (250 facts, Tesseract
+  «best» at 300 dpi, `scratchpad/scanclean/run.py`, local only): before 185 (74 %); level 25 185; level 50, the default, 184 (won
+  13 facts, lost 14); level 75 192 (won 19, lost 12); every file 13–71 % bigger (its JPEG written again at quality 90). His scans
+  come from CamScanner, already cleaned. So no automatic cleaning, no photo program; the tool stays in the PDF program's menu for
+  a grey photocopy. Claude's reading of cleaned pages was not measured (no API key). Step 6, the design program: DesignCraft
+  opens IDML, INDD and its own files and places a PDF whole (vectors, a form XObject); his artwork (Wouncure sticker and leaflet,
+  Adobe Illustrator PDFs) has its words in outlines — the only live text is the designer's notes (sticker: 10 lines; leaflet: 10
+  English lines) — so no program can change its words; only the designer, from the Illustrator file. The design program would
+  only make new artwork from scratch. Both left out unless he wants them for something else.
 
 ## Open items (propose when relevant; do when he asks)
 - Old program, claude.ai edition: its fonts never load — `web/build.py` writes the font link's `onload="this.media=\'all\'"` with
