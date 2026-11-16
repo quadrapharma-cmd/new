@@ -1,5 +1,6 @@
 """HTTP API on localhost (D1). Errors always carry code + en + ar (+ action)."""
-import errno, json, os, re, shutil, sys, tempfile, time, traceback, uuid, zipfile
+import errno, json, os, re, shutil, sys, tempfile, time, traceback, uuid, zipfile, zlib
+from datetime import date as _date
 from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, Response
@@ -80,7 +81,7 @@ class ExportReq(BaseModel):
 class GenReq(BaseModel):
     data: dict
     ctx: dict = {}
-    slot_id: str = None
+    slot_id: str | None = None
 
 
 class OpReq(BaseModel):
@@ -91,9 +92,9 @@ class ReqReq(BaseModel):
     issuer: str
     lang: str = 'en'
     due_days: int = 21
-    company: str = None
-    signatory: str = None
-    signatory_title: str = None
+    company: str | None = None
+    signatory: str | None = None
+    signatory_title: str | None = None
 
 
 class _OpenRequest(Request):
@@ -363,7 +364,7 @@ def create_app(workspace, auth_enabled=None):
 
     class CloneReq(BaseModel):
         country: str
-        name: str = None
+        name: str | None = None
 
     @app.post('/api/dossiers/{did}/clone', status_code=201)
     def clone(did: str, body: CloneReq):
@@ -414,7 +415,23 @@ def create_app(workspace, auth_enabled=None):
 
     @app.get('/api/dossiers/{did}/board')
     def board(did: str):
-        return st.board(did)
+        """The dossier's items with their documents — and each tree point closed or open (`point`, `open_why`; a document's own
+        state in `prep`), with the one count every screen shows: `points` {required, closed, open}."""
+        b = st.board(did)
+        pts = _points(did, b)
+        for x in b['slots']:
+            pt = pts.get(x['slot_id']) or {}
+            x['point'], x['open_why'] = pt.get('point'), pt.get('why') or []
+            for doc in x.get('documents') or []:
+                doc['prep'] = (pt.get('docs') or {}).get(doc['id'])
+        b['points'] = _point_counts(b['slots'])
+        return b
+
+    @app.put('/api/dossiers/{did}/target-date')
+    def put_target_date(did: str, body: dict):
+        """The day the dossier is meant to be submitted (yyyy-mm-dd; empty takes it away): a certificate is judged valid on that day
+        too, so one that will have expired by then is said now."""
+        return {'target_date': st.set_target_date(did, (body or {}).get('target_date'))}
 
     @app.post('/api/dossiers/{did}/documents/{doc_id}/page', status_code=201)
     async def put_page(did: str, doc_id: str, page: int = Form(...), file: UploadFile = File(...)):
@@ -1459,6 +1476,13 @@ def create_app(workspace, auth_enabled=None):
             fx = extra.get(f.filename) if isinstance(extra, dict) else None
             if isinstance(fx, dict):
                 m.update({k: fx[k] for k in ('kind', 'text') if fx.get(k)})
+                try:                                         # read by Claude in «القراءة والفرز»: kept as store.keep_model_reading keeps one
+                    m['valid_until'] = _date.fromisoformat(str(fx.get('valid_until') or '')[:10]).isoformat()
+                    m['validity_note'] = 'read by Claude'
+                    if fx.get('issued'):
+                        m['issued'] = _date.fromisoformat(str(fx['issued'])[:10]).isoformat()
+                except ValueError:
+                    pass
             doc = _storage.stage_document(st, did, f.filename, data, meta=m)
             out.append(doc)
         return out
@@ -1481,7 +1505,16 @@ def create_app(workspace, auth_enabled=None):
         title = (body or {}).get('title') or d0.get('title')
         if title == d0['filename']:
             title = None                                    # a staged file's title is its file name: the item's own title names it in the dossier
-        new = st.add_document(did, slot_id, d0['filename'], data, title, meta, kind=d0['meta'].get('kind'))
+        replaces = (body or {}).get('replaces') or None     # a newer copy: it takes that document's place as its new version (the old one is kept)
+        if replaces:
+            try:
+                r0 = st.document(replaces)
+            except StoreError:
+                r0 = None
+            if not r0 or r0['dossier_id'] != did or r0['state'] != 'current' or r0.get('slot_id') != slot_id or replaces == doc_id:
+                err(422, 'E-REPLACES', 'The document to replace is not a current document of this item.',
+                    'المستند المراد استبداله ليس مستندًا حاليًّا في هذا البند.')
+        new = st.add_document(did, slot_id, d0['filename'], data, title, meta, kind=d0['meta'].get('kind'), supersede=replaces)
         if d0['state'] == 'current':
             st.withdraw(did, doc_id, 'placed')
         return new
@@ -1546,15 +1579,30 @@ def create_app(workspace, auth_enabled=None):
         attest = ((d.get('data') or {}).get('attest') or {}).get(slot_id)
         return req, pk, attest
 
+    _verdicts = {}                                       # (document, item, pack, what it holds, the day, the target day) → (lines, state)
+
     def _verdict(did, doc, reading=None, slot_id=None, ctx=None):
         """The document against its item's conditions (prepare.py): [lines], {counts, ready}."""
         from .. import prepare as _prep
         req, pk, attest = _req_of(did, doc, slot_id, ctx)
         if pk is None:
             return [], {}
+        day, target = st.today(), st.target_day(did)
+        key = None
+        if reading is None:                              # the verdict on a document as it is kept: the same until something of it changes
+            key = (doc['id'], (req or {}).get('id'), pk.id, zlib.crc32(json.dumps([doc.get('meta'), doc.get('findings'), attest], sort_keys=True,
+                                                                              ensure_ascii=False, default=str).encode('utf-8')), day, target)
+            got = _verdicts.get(key)
+            if got:
+                return got
         lines = _prep.verdict(doc, req, pk, reading=reading if reading is not None else (doc.get('meta') or {}).get('extracted') or {},
-                              attest=attest, today=st.today())
-        return lines, _prep.summary(lines)
+                              attest=attest, today=day, target=target)
+        out = lines, _prep.summary(lines)
+        if key:
+            if len(_verdicts) > 4000:
+                _verdicts.clear()
+            _verdicts[key] = out
+        return out
 
     def _wants_model(did, doc, reading=None, slot_id=None, ctx=None):
         """Whether Claude should look at this document's pages: a scan with no text of its own, or an item whose conditions only eyes
@@ -1637,7 +1685,32 @@ def create_app(workspace, auth_enabled=None):
                         'split_title': (doc.get('meta') or {}).get('split_title')})
         return out
 
-    def _tree(did, place=None):
+    def _newer_of(doc, slot):
+        """The document of its item a waiting file looks like a newer copy of, or None. Said only where it can be: the item takes a
+        certificate or a document of the authority, it holds one document, the file's own validity date is known, and that date is
+        later than the document's — or the document has expired and the file has not. A proposal: nothing is replaced unless the
+        person approves the tree with it."""
+        if slot.get('doc_class') not in ('third_party_certificate', 'eda_document'):
+            return None
+        there = [x for x in slot.get('documents') or [] if not (x.get('meta') or {}).get('external')]
+        if len(there) != 1:
+            return None
+        meta = doc.get('meta') or {}
+
+        def day(v):
+            try:
+                return _date.fromisoformat(str(v or '')[:10])
+            except ValueError:
+                return None
+        new = day(meta.get('valid_until')) or day(((meta.get('model') or {}).get('doc') or {}).get('valid_until'))
+        old = day((there[0].get('meta') or {}).get('valid_until'))
+        if not new or new < st.today():
+            return None
+        if (old and new > old) or any(f.get('rule') == 'DOC-EXPIRED' for f in there[0].get('findings') or []):
+            return there[0]['id']
+        return None
+
+    def _tree(did, place=None, replaces=None):
         """Station 5, «الشجرة المقترحة» (the owner, 16/11/2026: the documents «shown as tree points before the file is made»): the
         dossier's items with the documents placed in them, and every waiting file with what was read of it, the item it would go to
         (the program's own proposal, or the person's choice in `place`: {doc_id: slot_id, '' for none}) and the name it would carry
@@ -1646,10 +1719,20 @@ def create_app(workspace, auth_enabled=None):
         board = st.board(did)
         waiting = _waiting(did)
         place = place if isinstance(place, dict) else {}
+        replaces = replaces if isinstance(replaces, dict) else {}
         active = {s['slot_id'] for s in board['slots'] if s.get('level') in ('R', 'O')}
+        by_slot = {s['slot_id']: s for s in board['slots']}
         for w in waiting:
             want = place.get(w['id'], w.get('auto')) or None
             w['place'] = want if want in active else None
+            w['beside'], w['newer_of'], w['replaces'] = [], None, None
+            if w['place']:                                   # what is in that item already: it goes in beside it, or takes its place
+                sl = by_slot[w['place']]
+                w['beside'] = [{'id': x['id'], 'filename': x['filename'], 'version': x.get('version'), 'valid_until': (x.get('meta') or {}).get('valid_until')}
+                               for x in sl.get('documents') or [] if not (x.get('meta') or {}).get('external')]
+                w['newer_of'] = _newer_of(st.document(w['id']), sl)
+                rp = replaces.get(w['id'], w['newer_of']) or None
+                w['replaces'] = rp if rp in {x['id'] for x in w['beside']} else None
             kn = _extract.KIND_NAMES.get(w.get('kind') or '')
             w['kind_name'] = kn if kn and w.get('kind') != 'other' else None
         slots = st.slots(did)
@@ -1661,8 +1744,13 @@ def create_app(workspace, auth_enabled=None):
             if w['place']:
                 doc = st.document(w['id'])
                 title = None if doc.get('title') == doc['filename'] else doc.get('title')       # as place_document names it
-                files.setdefault(w['place'], []).append({'file': doc['id'], 'title': title,
-                                                         **{k: v for k, v in (doc.get('meta') or {}).items() if k not in ('text',)}})
+                entry = {'file': doc['id'], 'title': title, **{k: v for k, v in (doc.get('meta') or {}).items() if k not in ('text',)}}
+                row = files.setdefault(w['place'], [])
+                at = next((i for i, f in enumerate(row) if f['file'] == w['replaces']), None) if w['replaces'] else None
+                if at is None:
+                    row.append(entry)
+                else:
+                    row[at] = entry                          # a new version sits where its document sat: it carries that name
         try:
             plan = ctd.write('/nonexistent', d['name'], slots, files, dry_run=True)
             for sid, paths in plan['plan'].items():
@@ -1672,13 +1760,18 @@ def create_app(workspace, auth_enabled=None):
             of = {}
         for w in waiting:
             w['name'] = of.get(w['id'])
+            if w['replaces']:                                # the document it would take the place of keeps showing the name they share
+                of.setdefault(w['replaces'], w['name'])
         gen = {v['req'] for v in letters.SCHEMAS.values() if v.get('req')}
+        pts = _points(did, board)
         out = []
         for s in board['slots']:
             if s.get('level') not in ('R', 'O'):
                 continue
             docs = [x for x in s.get('documents') or [] if not (x.get('meta') or {}).get('external')]
             out.append({'slot_id': s['slot_id'], 'req_id': s['req_id'], 'ctd': s.get('ctd'), 'module': s.get('module'), 'level': s['level'],
+                        'point': (pts.get(s['slot_id']) or {}).get('point'), 'open_why': (pts.get(s['slot_id']) or {}).get('why') or [],
+                        'library': s.get('library'),
                         'doc_class': s.get('doc_class'), 'title': s.get('title'), 'item': s.get('item'), 'generable': s['req_id'] in gen,
                         'external': bool(s.get('external')) or any((x.get('meta') or {}).get('external') for x in s.get('documents') or []),
                         'documents': [{'id': x['id'], 'filename': x['filename'], 'version': x.get('version'), 'check_status': x.get('check_status'),
@@ -1699,41 +1792,250 @@ def create_app(workspace, auth_enabled=None):
 
     @app.post('/api/dossiers/{did}/tree')
     def tree_with(did: str, body: dict = None):
-        """The proposed tree with the person's own choices: {place: {doc_id: slot_id, or '' for «no place yet»}}."""
-        return _tree(did, (body or {}).get('place'))
+        """The proposed tree with the person's own choices: {place: {doc_id: slot_id, or '' for «no place yet»}, replaces: {doc_id:
+        the document of that item it takes the place of, or '' for «beside it»}}."""
+        return _tree(did, (body or {}).get('place'), (body or {}).get('replaces'))
+
+    def _points(did, board=None, states=None):
+        """Every tree point — an item that is required, or optional with a document in it — closed or open, said the same way on
+        stations 5, 6 and 7 (the owner, 16/11/2026: «the closed and the open points said throughout»). Closed: the item has what it
+        needs, and every document in it has been prepared with nothing left to fix or to answer (or the program makes the item
+        itself at the export). Open, and why: 'missing' (no document), 'not_prepared', 'needs_you', 'to_check', 'cross' (the data and
+        the documents disagree), 'non_conforming', 'unsigned', 'external', and 'waiting' beside them when it was asked of its issuer.
+        → {slot_id: {point: 'closed' | 'open' | None, why: [..], docs: {doc_id: {prepared, ready, needs_you, check, fix}}}}"""
+        board = board or st.board(did)
+        ctx, out = None, {}
+        for x in board['slots']:
+            if x.get('level') not in ('R', 'O'):
+                continue
+            docs, why = {}, []
+            for doc in x.get('documents') or []:
+                if (doc.get('meta') or {}).get('external'):
+                    continue
+                state = (states or {}).get(doc['id'])
+                if state is None:
+                    ctx = ctx or _prep_ctx(did)
+                    state = _verdict(did, doc, slot_id=x['slot_id'], ctx=ctx)[1]
+                prepared = bool(((doc.get('meta') or {}).get('extracted') or {}).get('reader'))
+                docs[doc['id']] = {'prepared': prepared, 'ready': prepared and bool(state.get('ready')), 'needs_you': state.get('needs_you', 0),
+                                   'check': state.get('check', 0), 'fix': state.get('fix', 0)}
+            if x.get('status') == 'auto':
+                point = 'closed'
+            elif not x.get('documents'):
+                point = 'open' if x['level'] == 'R' else None
+                why += ['missing'] if point else []
+            else:
+                if x.get('external'):
+                    why.append('external')
+                if any(not v['prepared'] or v['fix'] for v in docs.values()):
+                    why.append('not_prepared')
+                if any(v['needs_you'] for v in docs.values()):
+                    why.append('needs_you')
+                if any(v['check'] for v in docs.values()):
+                    why.append('to_check')
+                if any(f.get('severity') == 'block' for f in x.get('cross') or []):
+                    why.append('cross')
+                if x.get('unsigned'):
+                    why.append('unsigned')
+                if x.get('status') == 'non_conforming' and not why:
+                    why.append('non_conforming')
+                point = 'open' if why else 'closed'
+            if x.get('request') and point == 'open':
+                why.append('waiting')
+            out[x['slot_id']] = {'point': point, 'why': why, 'docs': docs}
+        return out
+
+    def _point_counts(slots):
+        """The one count every screen shows: the required points, how many are closed, how many open."""
+        req = [x for x in slots if x.get('level') == 'R']
+        return {'required': len(req), 'closed': sum(1 for x in req if x.get('point') == 'closed'), 'open': sum(1 for x in req if x.get('point') == 'open')}
+
+    def _bucket(prepared, state):
+        """Where a document of the vault stands, in one word: 'ready', 'needs_you' (something only the person can answer or change),
+        'not_prepared' (not prepared yet, or the program can still fix something: «تجهيز» does it)."""
+        if not prepared:
+            return 'not_prepared'
+        if state.get('needs_you') or state.get('check'):
+            return 'needs_you'
+        return 'not_prepared' if state.get('fix') else 'ready'
 
     @app.get('/api/dossiers/{did}/prepare')
     def prepare_overview(did: str):
-        """The preparation stage at a glance: the items still asking for a document, the files waiting to be placed (each read — a scan
-        by OCR — with the item it belongs to), and every placed document with what can still be fixed and its name in the dossier."""
+        """Station 6, «التجهيز والمراجعة»: the vault — every placed document with how it was read, what it was cut from, what was fixed,
+        its conditions and its name in the dossier —, the files still waiting for a place (the proposed tree's), the items still
+        asking for a document (station 7's), and the counts the sign is made of: `counts` {documents, ready, needs_you, not_prepared,
+        waiting, conflicts, missing} and `ready` — every document prepared and ready, nothing waiting, no difference left to choose."""
         from .. import pdfcraft as _pc
         board = st.board(did)
         names = _names(did)
         requested = [{'slot_id': s['slot_id'], 'ctd': s.get('ctd'), 'title': s.get('title'), 'level': s.get('level'), 'doc_class': s.get('doc_class')}
                      for s in board['slots'] if s.get('level') == 'R' and not s.get('documents') and s.get('status') not in ('not_applicable',)]
         waiting = _waiting(did)
-        placed, ctx = [], _prep_ctx(did)
+        placed, ctx, states = [], _prep_ctx(did), {}
         for s in board['slots']:
             for doc in s.get('documents') or []:
-                if (doc.get('meta') or {}).get('external'):
+                meta = doc.get('meta') or {}
+                if meta.get('external'):
                     continue
                 fx, left = _prep_left(doc)
                 lines, state = _verdict(did, doc, slot_id=s['slot_id'], ctx=ctx)
+                states[doc['id']] = state
+                prepared = bool((meta.get('extracted') or {}).get('reader'))
+                cut = None
+                if meta.get('split_from'):                   # cut from a file of several documents (or, over the size limit, into parts)
+                    try:
+                        src = st.document(meta['split_from'])['filename']
+                    except StoreError:
+                        src = None
+                    cut = {'from': src, 'pages': meta.get('pages'), 'part': meta.get('part'), 'by': meta.get('split_by') or meta.get('staged_by')}
                 placed.append({'id': doc['id'], 'slot_id': s['slot_id'], 'ctd': s.get('ctd'), 'item': s.get('title'), 'filename': doc['filename'],
-                               'conditions': lines, 'state': state, 'prepared': bool(((doc.get('meta') or {}).get('extracted') or {}).get('reader')),
-                               'model': ((doc.get('meta') or {}).get('model') or {}).get('doc') or None, 'model_wanted': _wants_model(did, doc, slot_id=s['slot_id'], ctx=ctx),
-                               'absorbed': (doc.get('meta') or {}).get('absorbed') or None, 'doc_class': s.get('doc_class'),
-                               'version': doc.get('version'), 'improved': bool((doc.get('meta') or {}).get('optimized')),
-                               'original_name': (doc.get('meta') or {}).get('original_name') or doc['filename'], 'version': doc.get('version'),
+                               'module': s.get('module'), 'req_id': s.get('req_id'), 'level': s.get('level'), 'slot_item': s.get('item'),
+                               'library': s.get('library'),
+                               'conditions': lines, 'state': state, 'prepared': prepared, 'bucket': _bucket(prepared, state),
+                               'reader': 'model' if meta.get('model') else (meta.get('extracted') or {}).get('reader') or None,
+                               'cut': cut, 'converted': meta.get('converted') or None, 'valid_until': meta.get('valid_until') or None,
+                               'model': (meta.get('model') or {}).get('doc') or None, 'model_wanted': _wants_model(did, doc, slot_id=s['slot_id'], ctx=ctx),
+                               'absorbed': meta.get('absorbed') or None, 'doc_class': s.get('doc_class'),
+                               'improved': bool(meta.get('optimized')),
+                               'original_name': meta.get('original_name') or doc['filename'], 'version': doc.get('version'),
                                'status': doc.get('check_status'), 'fixable': fx, 'needs_you': left, 'names': names.get(doc['id'], {}),
-                               'extracted': (doc.get('meta') or {}).get('extracted', {}).get('found', []),
-                               'ocr_quality': (doc.get('meta') or {}).get('extracted', {}).get('ocr_quality'),
-                               'optimized': (doc.get('meta') or {}).get('optimized'),
-                               'improvable': bool(_pc.available() and doc['filename'].lower().endswith('.pdf')
-                                                  and not (doc.get('meta') or {}).get('optimized'))})
+                               'extracted': (meta.get('extracted') or {}).get('found', []),
+                               'ocr_quality': (meta.get('extracted') or {}).get('ocr_quality'),
+                               'optimized': meta.get('optimized'),
+                               'improvable': bool(_pc.available() and doc['filename'].lower().endswith('.pdf') and not meta.get('optimized'))})
         open_conf = [c for c in ((ctx[0].get('data') or {}).get('conflicts') or []) if isinstance(c, dict)]
+        pts = _points(did, board, states)
+        for x in placed:
+            x['point'] = (pts.get(x['slot_id']) or {}).get('point')
+        n = {k: sum(1 for x in placed if x['bucket'] == k) for k in ('ready', 'needs_you', 'not_prepared')}
+        counts = {'documents': len(placed), **n, 'waiting': len(waiting), 'conflicts': len(open_conf),
+                  'missing': sum(1 for sl in board['slots'] if sl.get('level') == 'R' and 'missing' in (pts.get(sl['slot_id']) or {}).get('why', []))}
         return {'requested': requested, 'waiting': waiting, 'placed': placed, 'engine': _pc.status(), 'ocr': _pc.ocr_info(),
-                'model': 'server' if _ai_key() else None, 'conflicts': open_conf}
+                'model': 'server' if _ai_key() else None, 'conflicts': open_conf, 'counts': counts,
+                'ready': bool(placed) and n['ready'] == len(placed) and not waiting and not open_conf,
+                'target_date': (ctx[0].get('envelope') or {}).get('target_date')}
+
+    @app.get('/api/dossiers/{did}/documents/{doc_id}/text')
+    def doc_words(did: str, doc_id: str):
+        """A document's words, page by page — what «عرض ومراجعة» shows of a file that has no pages to draw here (Word, Excel, text),
+        so that it too is looked at inside the program. Read once and kept (the search's own store). The current version of the
+        document the id belongs to, as the viewer's pages."""
+        cur = st.current_of(did, doc_id) or doc_id
+        d = st.document(cur)
+        if d['dossier_id'] != did:
+            err(404, 'E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
+        pages = st.text_pages(d)
+        return {'id': cur, 'filename': d['filename'], 'pages': pages, 'chars': sum(len(x or '') for x in pages)}
+
+    def _party(d, x):
+        """Who issues an item's document: the company itself, the authority the dossier is for, the manufacturer of one active
+        substance, or another party (each of those is named by the item's own «how to get it»)."""
+        cls = x.get('doc_class')
+        if cls == 'eda_document':
+            au = _authority(d['pack'], d['envelope'])
+            return 'authority', 'authority', au.get('name') or {'en': 'The authority', 'ar': 'الجهة الرقابية'}
+        if cls == 'third_party_certificate':
+            it = x.get('item') or {}
+            if it.get('manufacturer'):
+                nm = f"{it['manufacturer']} — {it.get('name') or ''}".rstrip(' —')
+                return 'api:' + it['manufacturer'].strip().lower(), 'api', {'en': nm, 'ar': nm}
+            return 'other', 'other', {'en': 'Other parties', 'ar': 'جهات أخرى'}
+        return 'company', 'company', {'en': 'Your company', 'ar': 'شركتك'}
+
+    @app.get('/api/dossiers/{did}/missing')
+    def missing(did: str):
+        """Station 7, «النواقص حسب الجهة المُصدِرة»: every required point that is still open, under who issues its document — the
+        company itself, the authority, each active substance's manufacturer, the other parties — with why it is open, how its
+        document is obtained, and the request already made for it. → {parties: [{key, kind, name, items, asked}], points}."""
+        d = st.dossier(did)
+        b = st.board(did)
+        pts = _points(did, b)
+        gen = {v['req'] for v in letters.SCHEMAS.values() if v.get('req')}
+        order, groups = ['company', 'authority', 'api', 'other'], {}
+        for x in b['slots']:
+            pt = pts.get(x['slot_id']) or {}
+            x['point'], x['open_why'] = pt.get('point'), pt.get('why') or []
+            if x.get('level') != 'R' or pt.get('point') != 'open':
+                continue
+            key, kind, name = _party(d, x)
+            g = groups.setdefault(key, {'key': key, 'kind': kind, 'name': name, 'items': []})
+            rq = x.get('request')
+            g['items'].append({'slot_id': x['slot_id'], 'req_id': x['req_id'], 'ctd': x.get('ctd'), 'module': x.get('module'), 'title': x.get('title'),
+                               'item': x.get('item'), 'doc_class': x.get('doc_class'), 'status': x.get('status'), 'why': pt.get('why') or [],
+                               'how': x.get('how'), 'library': x.get('library'), 'generable': x['req_id'] in gen,
+                               'documents': [{'id': y['id'], 'filename': y['filename'], 'version': y.get('version')} for y in x.get('documents') or []],
+                               'request': rq and {k: rq.get(k) for k in ('id', 'issuer', 'sent', 'due', 'overdue', 'batch', 'lang')}})
+        parties = sorted(groups.values(), key=lambda g: (order.index(g['kind']), g['key']))
+        for g in parties:
+            g['asked'] = sum(1 for i in g['items'] if i['request'])
+        return {'parties': parties, 'points': _point_counts(b['slots']), 'target_date': (d.get('envelope') or {}).get('target_date')}
+
+    class PartyReq(BaseModel):
+        issuer: str
+        slot_ids: list
+        lang: str = 'en'
+        due_days: int = 21
+        company: str | None = None
+        signatory: str | None = None
+        signatory_title: str | None = None
+
+    @app.post('/api/dossiers/{did}/requests', status_code=201)
+    def request_party(did: str, body: PartyReq):
+        """One request to one party for every item asked of it (eBOX stage 3: «one request per party, followed up»): one letter that
+        lists them, and each item «waiting on its issuer» with the same due date. Each item's request closes by itself when its
+        document arrives, as a request for one item does. One item: the letter for one item, as before."""
+        ids = [str(x) for x in body.slot_ids or [] if x]
+        if len(set(ids)) != len(ids) or not ids:
+            err(422, 'E-REQUEST', 'Choose the items to ask for.', 'اختر البنود المراد طلبها.')
+        if not (body.issuer or '').strip():
+            err(422, 'E-REQUEST', 'Write who the request goes to.', 'اكتب اسم الجهة التي يُوجَّه إليها الطلب.')
+        if len(ids) == 1:
+            r = request_reobtain(did, ids[0], ReqReq(issuer=body.issuer, lang=body.lang, due_days=body.due_days, company=body.company,
+                                                     signatory=body.signatory, signatory_title=body.signatory_title))
+            return {'batch': None, 'request_ids': [r['request_id']], 'letter': r['letter'], 'items': 1}
+        d = st.dossier(did)
+        slots = {x['slot_id']: x for x in st.board(did)['slots']}
+        lang = body.lang if body.lang in ('en', 'ar') else 'en'
+        asked, docs = [], []
+        for sid in ids:
+            x = slots.get(sid)
+            if not x or x['level'] not in ('R', 'O'):
+                err(422, 'E-SLOT-INACTIVE', 'This item is not required for this product.', 'هذا البند غير مطلوب لهذا المنتج.')
+            if x.get('request'):
+                err(422, 'E-REQUEST-OPEN', f"{x.get('ctd') or sid}: a request for this item is already open.",
+                    f"{x.get('ctd') or sid}: يوجد طلب مفتوح لهذا البند بالفعل.")
+            req = next(r for r in st.pack(d['pack']).requirements if r['id'] == x['req_id'])
+            problems = [f[lang if lang in f else 'en'] for doc in x['documents'] for f in doc['findings'] if f['severity'] == 'block']
+            problems += [f[lang if lang in f else 'en'] for f in x['cross']]
+            title = x['title'][lang if lang in x['title'] else 'en']
+            it = x.get('item') or {}
+            if it.get('name'):
+                title += f" — {it['name']}"
+            asked.append((sid, problems))
+            docs.append({'document': title, 'problems': problems, 'acceptance': req.get('acceptance_text')})
+        last = {}
+        for doc in st.documents(did):
+            if doc['meta'].get('data', {}).get('signatory'):
+                last = doc['meta']['data']
+        au = (_authority(d['pack'], d['envelope']).get('name') or {})
+        data = {'issuer': body.issuer.strip(), 'documents': docs, 'lang': lang, 'authority': au.get(lang),
+                'trade_name': d['envelope'].get('invented_name') or d['product'].get('name'),
+                'company': body.company or d['envelope'].get('applicant'),
+                'signatory': body.signatory or last.get('signatory'), 'signatory_title': body.signatory_title or last.get('signatory_title')}
+        tmp = Path(tempfile.mkdtemp())
+        try:
+            try:
+                letters.reobtain_request(data, tmp / 'request.docx')
+            except MissingData as e:
+                err(422, 'E-MISSING-DATA', 'Some data is missing: ' + ', '.join(e.fields), 'توجد بيانات ناقصة: ' + '، '.join(e.fields),
+                    request_data=e.fields)
+            sha = st.put_blob(to_pdf(tmp / 'request.docx').read_bytes() if find_soffice() else (tmp / 'request.docx').read_bytes())
+            st.put_blob((tmp / 'request.docx').read_bytes())
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+        batch, at = str(uuid.uuid4()), time.time()
+        rids = [st.open_request(did, sid, data['issuer'], lang, body.due_days, sha, problems, batch=batch, at=at) for sid, problems in asked]
+        return {'batch': batch, 'request_ids': rids, 'letter': f'/api/dossiers/{did}/requests/{rids[0]}/letter', 'items': len(rids)}
 
     @app.post('/api/dossiers/{did}/prepare/{doc_id}')
     def prepare_one(did: str, doc_id: str, body: dict = None):

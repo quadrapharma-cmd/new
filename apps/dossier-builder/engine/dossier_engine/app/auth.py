@@ -362,8 +362,8 @@ def install(app, auth, store):
         return {'ok': True}
 
     class RoleBody(BaseModel):
-        role: str = None
-        password: str = None
+        role: str | None = None
+        password: str | None = None
 
     @app.put('/api/users/{username}')
     def users_update(username: str, body: RoleBody):

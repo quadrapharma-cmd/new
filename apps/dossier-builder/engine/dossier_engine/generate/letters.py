@@ -320,9 +320,51 @@ SCHEMAS = {
 }
 
 
+def _reobtain_several(data, documents, out, letterhead=None):
+    """One request to one party for several documents (eBOX stage 3, 16/11/2026: «one request per party»): each document with what
+    the review found in the copy at hand, where there is one, and what it has to meet. documents: [{document, problems [str],
+    acceptance (str)}]; data as reobtain_request, with `authority` (the authority the dossier is for, in the letter's language)."""
+    require(data, ['issuer', 'trade_name', 'company', 'signatory', 'signatory_title'])
+    ar = data.get('lang') == 'ar'
+    d = new_doc(letterhead=letterhead)
+    if ar:
+        para(d, f"السادة/ {data['issuer']}", ar=True, bold=True)
+        para(d, 'تحية طيبة وبعد،', ar=True)
+        para(d, f"الموضوع: طلب مستندات لاستكمال ملف تسجيل المستحضر {data['trade_name']}", ar=True, bold=True)
+        para(d, f"نتشرف نحن {data['company']} بطلب المستندات الآتية لاستكمال ملف التسجيل لدى {data.get('authority') or 'هيئة الدواء المصرية'}:", ar=True)
+        for i, x in enumerate(documents, 1):
+            para(d, f"{i}. {x['document']}", ar=True, bold=True)
+            for p in [p for p in (x.get('problems') or []) if p]:
+                para(d, p, ar=True, bullet=True)
+            if x.get('acceptance'):
+                para(d, f"المطلوب أن يستوفي المستند: {x['acceptance']}", ar=True)
+        para(d, 'مع رجاء إرسال كل مستند بصيغة PDF غير محمية (بدون كلمة مرور أو قيود طباعة/نسخ)، وقابلة للبحث إن أمكن.', ar=True)
+        para(d, 'وتفضلوا بقبول فائق الاحترام،', ar=True)
+    else:
+        para(d, f"To: {data['issuer']}", bold=True)
+        para(d, f"Subject: Request for documents — registration dossier of {data['trade_name']}", bold=True)
+        para(d, f"{data['company']} kindly requests the following documents for its registration dossier at "
+                f"{data.get('authority') or 'the Egyptian Drug Authority'}:")
+        for i, x in enumerate(documents, 1):
+            para(d, f"{i}. {x['document']}", bold=True)
+            for p in [p for p in (x.get('problems') or []) if p]:
+                para(d, p, bullet=True)
+            if x.get('acceptance'):
+                para(d, f"The document must meet: {x['acceptance']}")
+        para(d, 'Please send each as a PDF without passwords or printing/copying restrictions, text-searchable where possible. '
+                'If a document is digitally signed, please keep printing and content copying allowed.')
+        para(d, 'Yours faithfully,')
+    _sign(d, data)
+    d.save(out)
+    return Path(out)
+
+
 def reobtain_request(data, out, letterhead=None):
     """Request to the issuer of a third-party/EDA document for a conforming copy (02-LOGIC §6 «re-obtain»).
     data: issuer, document, trade_name, problems [str], acceptance (str), company, signatory, signatory_title, lang en|ar."""
+    several = [x for x in (data.get('documents') or []) if isinstance(x, dict) and x.get('document')]
+    if len(several) > 1:
+        return _reobtain_several(data, several, out, letterhead)
     require(data, ['issuer', 'document', 'trade_name', 'company', 'signatory', 'signatory_title'])
     ar = data.get('lang') == 'ar'
     d = new_doc(letterhead=letterhead)

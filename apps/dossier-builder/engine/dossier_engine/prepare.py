@@ -16,7 +16,7 @@ from . import conditions as _cond, fixes as _fixes
 
 WARN_DAYS = 90
 FORM_RULES = ('EG-PF-', 'EG-BP-', 'PDF-', 'NTA065-', 'ICH-NAME')      # the PDF rules: the document's form; any other finding is about its content
-NOT_FORM = {'DOC-EXPIRED', 'DOC-EXPIRING',            # validity is a content condition here
+NOT_FORM = {'DOC-EXPIRED', 'DOC-EXPIRING', 'DOC-EXPIRES-BEFORE-SUBMISSION',      # validity is a content condition here
             'NTA065-N4'}                               # «searchable» is the item's first form condition (_searchable)
 SAY = {
     'ok_text': ('read in its text', 'قُرئ من نصه'),
@@ -109,10 +109,11 @@ def _searchable(c, doc, reading):
     return _line(c, 'ok', 'It has its own text: searchable.', 'له نص: قابل للبحث.', how='text')
 
 
-def _validity(c, doc, md, today):
+def _validity(c, doc, md, today, target=None):
     meta = doc.get('meta') or {}
     vu = _date(meta.get('valid_until')) or _date(md.get('valid_until'))
-    how = 'person' if meta.get('valid_until') and not md.get('valid_until') else ('model' if md.get('valid_until') else 'text')
+    read = bool(md.get('valid_until')) or (bool(meta.get('valid_until')) and meta.get('validity_note') == 'read by Claude')   # also the reading of «القراءة والفرز», kept with the file
+    how = 'model' if read else ('person' if meta.get('valid_until') else 'text')
     if not vu:
         return _line(c, 'check', 'No end date read on it: write the date it stops being valid (or confirm it has none).',
                      'لم يُقرأ عليه تاريخ انتهاء: اكتب تاريخ انتهائه (أو أكِّد أنه بلا تاريخ انتهاء).', action='set_validity')
@@ -120,6 +121,10 @@ def _validity(c, doc, md, today):
     if vu < today:
         return _line(c, 'needs_you', f'Expired on {shown}: a current one from the issuer is needed.', f'منتهٍ منذ {shown}: يجب تقديم نسخة سارية من الجهة التي أصدرته.',
                      how=how, action='re_obtain')
+    if target and vu < target:                          # valid today, not on the day the dossier is meant to be submitted
+        day = target.strftime('%d/%m/%Y')
+        return _line(c, 'needs_you', f'Valid until {shown}: it will have expired by the target submission date ({day}). Renew it before then.',
+                     f'سارٍ حتى {shown}: ستنتهي صلاحيته قبل تاريخ التقديم المستهدف ({day}). جدِّده قبل ذلك.', how=how, action='re_obtain')
     if vu <= today + timedelta(days=WARN_DAYS):
         return _line(c, 'check', f'Valid until {shown} — less than {WARN_DAYS} days: start the renewal.', f'سارٍ حتى {shown} — أقل من {WARN_DAYS} يوم: ابدأ التجديد.',
                      how=how, action='re_obtain')
@@ -144,7 +149,7 @@ def _seen(c, md, keys, attest, need, en_ok, ar_ok, en_no, ar_no):
     return _line(c, 'check', SAY['look'][0], SAY['look'][1], action='attest')
 
 
-def verdict(doc, req, pack, reading=None, attest=None, today=None):
+def verdict(doc, req, pack, reading=None, attest=None, today=None, target=None):
     """Every condition of this document's item, read against the document: [{id, kind: form | content, label {en, ar}, source,
     status: ok | fixed | fix | needs_you | check, why {en, ar}, how?: text | model | person, action?}], form first. `reading`: what the
     program read from it (extract.read_files' entry: chars, scanned, text…); `attest`: the person's answer to the item's question."""
@@ -163,7 +168,7 @@ def verdict(doc, req, pack, reading=None, attest=None, today=None):
             form.append(_line(c, 'ok' if ok else 'needs_you', 'A Word file.' if ok else 'Not a Word (.docx) file: add the Word file.',
                               'ملف Word.' if ok else 'ليس ملف Word (.docx): أضف ملف Word.', how='text', action=None if ok else 'replace'))
         elif cid == 'valid':
-            content.append(_validity(c, doc, md, today))
+            content.append(_validity(c, doc, md, today, target))
         elif cid == 'dated':
             found = _date(md.get('issued')) or _date((doc.get('meta') or {}).get('issued')) or re.search(
                 r'\b(?:\d{1,2}[/.-]\d{1,2}[/.-](?:19|20)\d{2}|(?:19|20)\d{2}-\d{2}-\d{2})\b', text)

@@ -41,9 +41,10 @@ create table if not exists intake_file(draft_id text not null, filename text not
 EXPIRY_WARN_DAYS = 90
 
 
-def _validity(d, today):
-    """Expired evidence blocks its item; evidence expiring within 90 days is flagged. Computed on every read,
-    so a document turns red on the day it expires without anyone re-uploading it."""
+def _validity(d, today, target=None):
+    """Expired evidence blocks its item; evidence expiring within 90 days is flagged; and where the dossier has a target submission
+    date (eBOX stage 3, 16/11/2026), evidence that is valid today but will have expired by that day is said now, not on the day.
+    Computed on every read, so a document turns red on the day it expires without anyone re-uploading it."""
     vu = d['meta'].get('valid_until')
     if not vu:
         return
@@ -57,6 +58,13 @@ def _validity(d, today):
             'en': f'Expired on {shown} ({(today - end).days} days ago). Obtain a current certificate from the issuer.',
             'ar': f'منتهٍ منذ {shown} (منذ {(today - end).days} يوم). يجب تقديم نسخة سارية من الجهة التي أصدرته.'}]
         d['check_status'] = 'non_conforming'
+    elif target and end < target:
+        day = target.strftime('%d/%m/%Y')
+        d['findings'] = d['findings'] + [{'rule': 'DOC-EXPIRES-BEFORE-SUBMISSION', 'severity': 'warn', 'action': 're_obtain',
+            'en': f'Valid until {shown}: it will have expired by the target submission date ({day}). Renew it before then.',
+            'ar': f'سارٍ حتى {shown}: ستنتهي صلاحيته قبل تاريخ التقديم المستهدف ({day}). جدِّده قبل ذلك.'}]
+        if d['check_status'] in ('conforming', 'received'):
+            d['check_status'] = 'needs_attention'
     elif end <= today + timedelta(days=EXPIRY_WARN_DAYS):
         d['findings'] = d['findings'] + [{'rule': 'DOC-EXPIRING', 'severity': 'warn', 'action': 're_obtain',
             'en': f'Expires on {shown} (in {(end - today).days} days). Start renewal now.',
@@ -93,6 +101,7 @@ MIGRATIONS = [
         "create trigger if not exists audit_no_delete before delete on audit begin select raise(abort, 'audit is append-only'); end"]),
     (4, 'a project can be put in the trash', ["alter table dossier add column deleted real"]),
     (5, 'a sequence keeps its receipt once submitted', ["alter table submission add column receipt text not null default '{}'"]),
+    (6, 'one request to an issuer may ask for several items', ["alter table request add column batch text"]),
 ]
 
 
@@ -149,6 +158,7 @@ class Store:
         self._packs = {}
         self._pack_lock = threading.Lock()
         self._page_totals = {}                               # SHA-256 → pages: a stored file never changes, so it is counted once
+        self._targets = {}                                   # dossier → its target submission date (read once; set_target_date forgets it)
 
     @property
     def db(self):
@@ -239,6 +249,10 @@ class Store:
         did = str(uuid.uuid4())
         envelope = dict(envelope)
         envelope.setdefault('application_uuid', str(uuid.uuid4()))
+        try:                                                 # the target submission date, when the product card gave one: a real date or none
+            envelope['target_date'] = date.fromisoformat(str(envelope.get('target_date') or '')[:10]).isoformat()
+        except ValueError:
+            envelope.pop('target_date', None)
         self.db.execute('insert into dossier(id, name, profile, product, envelope, pack, created) values (?,?,?,?,?,?,?)',
                         (did, name, json.dumps(profile, ensure_ascii=False), json.dumps(product, ensure_ascii=False),
                          json.dumps(envelope, ensure_ascii=False), pack, time.time()))
@@ -399,6 +413,39 @@ class Store:
         self.db.commit()
         self.audit(did, 'product.indication', indication=text)
         return pr
+
+    def target_day(self, did):
+        """The dossier's target submission date while it is still ahead, else None. A certificate is judged on that day as well as
+        today: one that will have expired by then is said now (the owner's list, 16/11/2026)."""
+        t = self._targets.get(did, 0)
+        if t == 0:
+            try:
+                r = self.db.execute('select envelope from dossier where id=?', (did,)).fetchone()
+                t = date.fromisoformat(str((json.loads(r['envelope'] or '{}') if r else {}).get('target_date') or '')[:10])
+            except (ValueError, TypeError):
+                t = None
+            self._targets[did] = t
+        return t if t and t > self.today() else None
+
+    def set_target_date(self, did, value):
+        """The day the dossier is meant to be submitted (ISO yyyy-mm-dd; empty takes it away) → the date kept, or None."""
+        d = self.dossier(did)
+        value = str(value or '').strip()[:10]
+        if value:
+            try:
+                value = date.fromisoformat(value).isoformat()
+            except ValueError:
+                raise StoreError('E-DATE', 'Use a date like 2027-03-31.', 'اكتب التاريخ بالصيغة 2027-03-31.')
+        env = dict(d['envelope'] or {})
+        if value:
+            env['target_date'] = value
+        else:
+            env.pop('target_date', None)
+        self.db.execute('update dossier set envelope=? where id=?', (json.dumps(env, ensure_ascii=False), did))
+        self.db.commit()
+        self._targets.pop(did, None)
+        self.audit(did, 'dossier.target_date', target_date=value or None)
+        return value or None
 
     def attest(self, did, slot_id, answer):
         """The answer to the item's one question (signed and stamped / legalised): 'yes', or 'no' — «not yet», which blocks the export."""
@@ -1396,14 +1443,16 @@ class Store:
         self.audit(did, 'submission.discarded', output=output, seq=str(seq))
 
     # ---------------- requests to issuers (re-obtain)
-    def open_request(self, did, slot_id, issuer, lang, due_days, letter_sha, reason):
+    def open_request(self, did, slot_id, issuer, lang, due_days, letter_sha, reason, batch=None, at=None):
+        """`batch`: the one letter this request shares with the other items asked of the same party (eBOX stage 3: one request per
+        party); each item still has its own row, so each closes when its own document arrives."""
         rid = str(uuid.uuid4())
-        now = time.time()
-        self.db.execute('insert into request(id, dossier_id, slot_id, issuer, lang, sent, due, letter_sha, reason) values (?,?,?,?,?,?,?,?,?)',
+        now = at or time.time()                              # the items of one letter share its day and its due date
+        self.db.execute('insert into request(id, dossier_id, slot_id, issuer, lang, sent, due, letter_sha, reason, batch) values (?,?,?,?,?,?,?,?,?,?)',
                         (rid, did, slot_id, issuer, lang, now, now + 86400 * int(due_days), letter_sha,
-                         json.dumps(reason, ensure_ascii=False)))
+                         json.dumps(reason, ensure_ascii=False), batch))
         self.db.commit()
-        self.audit(did, 'request.opened', request=rid, slot=slot_id, issuer=issuer, due_days=due_days)
+        self.audit(did, 'request.opened', request=rid, slot=slot_id, issuer=issuer, due_days=due_days, **({'batch': batch} if batch else {}))
         return rid
 
     def requests(self, did, state='open'):
@@ -1416,7 +1465,7 @@ class Store:
             raise StoreError('E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
         d = dict(r)
         d['meta'], d['findings'] = json.loads(d['meta']), json.loads(d['findings'])
-        _validity(d, self.today())
+        _validity(d, self.today(), self.target_day(d['dossier_id']))
         return d
 
     def today(self):
@@ -1436,6 +1485,8 @@ class Store:
             meta['issued'] = issued
         if note:
             meta['validity_note'] = note
+        else:
+            meta.pop('validity_note', None)                  # the person wrote this date: it is no longer the one a reading gave
         self.db.execute('update document set meta=? where id=?', (json.dumps(meta, ensure_ascii=False), doc_id))
         self.db.commit()
         self.audit(did, 'document.validity', doc=doc_id, valid_until=valid_until)
