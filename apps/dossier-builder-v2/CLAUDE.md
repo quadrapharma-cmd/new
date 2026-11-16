@@ -629,6 +629,50 @@ When a part is done or an open item is closed, update «What exists» and «Open
   runs are made again, all of them — the scripts now write `made_on` (site, digests of the page and the engine, time) into
   each result, and a result older than the page is not quoted.
   **Next is unchanged: stage 3** — only when he says go.
+- **16/11/2026, he said «كمل» after version 53: stage 3 started** (stations 6 and 7). The design, decided before building
+  (the prepare page, «مراجعة المستندات وتعديلها», the board, the item's drawer and the requests were read whole first):
+  · **Station 6 «التجهيز والمراجعة» is one page with «الخزنة» in it** (`#/d/{id}/prepare`; `/office` stays an address of the
+  same page). Before it, the page was two lists of the same documents: a card for each with its conditions, then «مراجعة
+  المستندات وتعديلها» with their first pages and programs. Now: **the sign** first (`#readySign`: «المستندات جاهزة لتكوين
+  الملف» or what is left, as counted lines that lead to it — not prepared, needs you, waiting for a place, differences in
+  the data, and the required items still without a document, which are station 7's), then **«الخزنة»**: every document once,
+  under its tree point, with what was done to it (how it was read, the file and pages it was cut from, what the program
+  fixed), its state, «عرض ومراجعة», its program and its conditions. One list is filtered (all / needs you / ready / not
+  prepared) and searched.
+  · **«عرض ومراجعة» is a reader over the whole page, not the side panel** (`pageViewer`, the same ids): the page large, the
+  page number and a slider, the search, the tools the document may have (turn; for the company's own: first, remove, cut;
+  its program), and beside it what was read from the document and its conditions with their answers — reviewed while it is
+  looked at. The document before and after it in the vault are one press away. A Word or Excel file shows its words (`GET
+  …/documents/{id}/text`) and, for a .docx, opens in the Word program. Nothing is downloaded to look.
+  · **A tree point is closed or open, said the same way on stations 5, 6 and 7** («مُغلق» / «مفتوح», with why it is open: no
+  document, a document that needs you, not prepared, waiting on its issuer). «إغلاق البند» — which withdraws an item's
+  documents — is renamed «سحب مستندات البند كلها»: «closed» now means one thing.
+  · **Station 7 «شجرة الملف والنواقص»** (`#/d/{id}/board`): the sign (closed of required, open by reason), then two views of
+  the same items — «الشجرة» (every point by module with its documents and, where open, what to do) and «النواقص حسب الجهة
+  المُصدِرة» (engine `GET /api/dossiers/{id}/missing`: the company itself — what the program writes for it and what it
+  brings —, the authority, each active substance's manufacturer, the other parties) with **one request per party** (`POST
+  /api/dossiers/{id}/requests`: one letter listing every item asked of that party, a due date, «متأخر» when it passes; an
+  item's request closes when its document arrives, as before). The board's own «إضافة مستندات», its Drive button and its
+  waiting box go: a file with no item yet is added, read and given its place on the proposed tree (a note with a link when
+  files wait); an item's own «رفع» stays (the person chose the place).
+  · **The proposed tree offers a newer copy as a new version**: a waiting file whose item already holds a document says so
+  and asks — it takes that document's place (a new version, the old one kept) or goes in beside it (`/place` with
+  `replaces`). Proposed only where both are certificates of the same kind; never done without the person's approval.
+  · **«التنفيذ التلقائي» (his «سيبها عليّ»)**, on the product card and on the proposed tree: the program places every
+  waiting file whose place it is sure of and that needs no answer, prepares every document, and comes back to station 6 with
+  the sign and one list. It takes nothing it is not sure of, changes no document's content, and a third party's or the
+  authority's document only as the preparation already may (E-LOCKED).
+  · **The library beside the stations**: «شروط البند ومصدرها» on a point of stations 5, 6 and 7 opens the side panel with
+  the item's conditions, each with its source, the reason it is required, how it is obtained and the link to its record in
+  the library.
+  · **The target submission date** (the product card and station 7): a certificate is judged valid on that day, not on today
+  — one that will have expired by then is said now.
+  · **The three things seen in stage 2**: the validity date the wizard's reading gave a scan goes with the file
+  (`meta.valid_until`, said to come from that reading); a document's own buttons wait while «تجهيز الكل» runs; the counted
+  nouns of `ui/suite/index.html`.
+  Before a publish, as stage 2: his real files through both doors against version 53 — the reading the same, every
+  difference in where a file lands or what is said of it explained — the whole suite with `-rs`, the click sweep by itself,
+  the opening time, the read-back, the served page.
 
 ## Open items (propose when relevant; do when he asks)
 - Old program, next pieces (one at a time, each on his real files first): the 14/11 update and measuring Claude's reading (need
