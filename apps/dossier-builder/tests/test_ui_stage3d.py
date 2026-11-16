@@ -73,7 +73,7 @@ def test_a_newer_copy_is_offered_as_the_new_version_of_its_document(server, tmp_
         page.click('#treeGo')
         page.wait_for_function("() => location.hash.endsWith('/prepare')", timeout=60000)
         docs = next(s for s in board(server, did)['slots'] if s['slot_id'] == 'M1-37')['documents']
-        assert len(docs) == 1 and docs[0]['version'] == 2 and docs[0]['filename'] == 'made-up-gmp-new.pdf' and docs[0]['meta']['valid_until'] == later
+        assert len(docs) == 1 and docs[0]['version'] == 2 and docs[0]['filename'] == 'made-up-gmp-new.pdf' and docs[0]['meta']['claude_valid_until'] == later
         b.close()
     assert not errors, errors
     assert not bad, bad

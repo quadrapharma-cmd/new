@@ -1481,6 +1481,7 @@ class Store:
         except (TypeError, ValueError):
             raise StoreError('E-DATE', 'Use a date like 2027-03-31.', 'اكتب التاريخ بالصيغة 2027-03-31.')
         meta = {**d['meta'], 'valid_until': valid_until}
+        meta.pop('valid_until_read', None)                   # not the one its text gave any more
         if issued:
             meta['issued'] = issued
         if note:
@@ -1490,6 +1491,23 @@ class Store:
         self.db.execute('update document set meta=? where id=?', (json.dumps(meta, ensure_ascii=False), doc_id))
         self.db.commit()
         self.audit(did, 'document.validity', doc=doc_id, valid_until=valid_until)
+        return self.document(doc_id)
+
+    def take_claude_date(self, did, doc_id):
+        """The validity date Claude read on a scan's pages in «القراءة والفرز» (meta claude_valid_until, kept with the file when it was
+        staged) becomes the document's date only where its own reading gave none — never over a date its text gives or the person
+        wrote (16/11/2026: carried as the document's own date, it stood over the expired dates five of his certificates' text gave).
+        Where the two differ, the preparation's condition says both (prepare._validity)."""
+        d = self.document(doc_id)
+        m = d['meta']
+        if d['dossier_id'] != did or not m.get('claude_valid_until') or m.get('valid_until'):
+            return d
+        meta = {**m, 'valid_until': m['claude_valid_until'], 'validity_note': 'read by Claude'}
+        if m.get('claude_issued') and not m.get('issued'):
+            meta['issued'] = m['claude_issued']
+        self.db.execute('update document set meta=? where id=?', (json.dumps(meta, ensure_ascii=False), doc_id))
+        self.db.commit()
+        self.audit(did, 'document.validity', doc=doc_id, valid_until=meta['valid_until'], by='reading in the wizard')
         return self.document(doc_id)
 
     def documents(self, did, slot_id=None, include_withdrawn=False):

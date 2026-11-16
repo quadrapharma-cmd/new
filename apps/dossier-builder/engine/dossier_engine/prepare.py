@@ -111,23 +111,32 @@ def _searchable(c, doc, reading):
 
 def _validity(c, doc, md, today, target=None):
     meta = doc.get('meta') or {}
-    vu = _date(meta.get('valid_until')) or _date(md.get('valid_until'))
-    read = bool(md.get('valid_until')) or (bool(meta.get('valid_until')) and meta.get('validity_note') == 'read by Claude')   # also the reading of «القراءة والفرز», kept with the file
-    how = 'model' if read else ('person' if meta.get('valid_until') else 'text')
+    mine = _date(meta.get('valid_until'))                # the document's own date: its text's, the person's, or a reading's kept with it
+    seen = _date(md.get('valid_until')) or _date(meta.get('claude_valid_until'))   # what Claude read on its pages (here, or in «القراءة والفرز»)
+    if mine:
+        vu = mine
+        how = 'model' if meta.get('validity_note') == 'read by Claude' else ('text' if meta.get('valid_until_read') else 'person')
+    else:
+        vu, how = seen, 'model'
+    other = seen if (how == 'text' and seen and seen != vu) else None      # two readings that do not agree: both said, the person decides
     if not vu:
         return _line(c, 'check', 'No end date read on it: write the date it stops being valid (or confirm it has none).',
                      'لم يُقرأ عليه تاريخ انتهاء: اكتب تاريخ انتهائه (أو أكِّد أنه بلا تاريخ انتهاء).', action='set_validity')
     shown = vu.strftime('%d/%m/%Y')
+    also = (f' Claude read another date on its pages: {other.strftime("%d/%m/%Y")} — write the right one if it is not this.',
+            f' وقرأ Claude على صفحاته تاريخًا آخر: {other.strftime("%d/%m/%Y")} — اكتب التاريخ الصحيح إن كان غير هذا.') if other else ('', '')
     if vu < today:
-        return _line(c, 'needs_you', f'Expired on {shown}: a current one from the issuer is needed.', f'منتهٍ منذ {shown}: يجب تقديم نسخة سارية من الجهة التي أصدرته.',
+        return _line(c, 'needs_you', f'Expired on {shown}: a current one from the issuer is needed.{also[0]}', f'منتهٍ منذ {shown}: يجب تقديم نسخة سارية من الجهة التي أصدرته.{also[1]}',
                      how=how, action='re_obtain')
     if target and vu < target:                          # valid today, not on the day the dossier is meant to be submitted
         day = target.strftime('%d/%m/%Y')
-        return _line(c, 'needs_you', f'Valid until {shown}: it will have expired by the target submission date ({day}). Renew it before then.',
-                     f'سارٍ حتى {shown}: ستنتهي صلاحيته قبل تاريخ التقديم المستهدف ({day}). جدِّده قبل ذلك.', how=how, action='re_obtain')
+        return _line(c, 'needs_you', f'Valid until {shown}: it will have expired by the target submission date ({day}). Renew it before then.{also[0]}',
+                     f'سارٍ حتى {shown}: ستنتهي صلاحيته قبل تاريخ التقديم المستهدف ({day}). جدِّده قبل ذلك.{also[1]}', how=how, action='re_obtain')
     if vu <= today + timedelta(days=WARN_DAYS):
-        return _line(c, 'check', f'Valid until {shown} — less than {WARN_DAYS} days: start the renewal.', f'سارٍ حتى {shown} — أقل من {WARN_DAYS} يوم: ابدأ التجديد.',
+        return _line(c, 'check', f'Valid until {shown} — less than {WARN_DAYS} days: start the renewal.{also[0]}', f'سارٍ حتى {shown} — أقل من {WARN_DAYS} يوم: ابدأ التجديد.{also[1]}',
                      how=how, action='re_obtain')
+    if other:
+        return _line(c, 'check', f'Valid until {shown} by its text.{also[0]}', f'سارٍ حتى {shown} بحسب نصه.{also[1]}', how=how, action='set_validity')
     return _line(c, 'ok', f'Valid until {shown}.', f'سارٍ حتى {shown}.', how=how)
 
 

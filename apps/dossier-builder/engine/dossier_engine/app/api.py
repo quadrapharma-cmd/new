@@ -1482,11 +1482,10 @@ def create_app(workspace, auth_enabled=None):
             fx = extra.get(f.filename) if isinstance(extra, dict) else None
             if isinstance(fx, dict):
                 m.update({k: fx[k] for k in ('kind', 'text') if fx.get(k)})
-                try:                                         # read by Claude in «القراءة والفرز»: kept as store.keep_model_reading keeps one
-                    m['valid_until'] = _date.fromisoformat(str(fx.get('valid_until') or '')[:10]).isoformat()
-                    m['validity_note'] = 'read by Claude'
-                    if fx.get('issued'):
-                        m['issued'] = _date.fromisoformat(str(fx['issued'])[:10]).isoformat()
+                try:                                         # read by Claude in «القراءة والفرز»: kept beside the document — its own
+                    m['claude_valid_until'] = _date.fromisoformat(str(fx.get('valid_until') or '')[:10]).isoformat()   # reading comes first
+                    if fx.get('issued'):                     # (store.take_claude_date, at its preparation)
+                        m['claude_issued'] = _date.fromisoformat(str(fx['issued'])[:10]).isoformat()
                 except ValueError:
                     pass
             doc = _storage.stage_document(st, did, f.filename, data, meta=m)
@@ -1684,7 +1683,7 @@ def create_app(workspace, auth_enabled=None):
             md = ((doc.get('meta') or {}).get('model') or {}).get('doc') or {}
             mk = (doc.get('meta') or {}).get('kind')
             out.append({**u, 'reading': {k: v for k, v in rd.items() if k not in ('rules', 'text')}, 'model': md or None,
-                        'valid_until': (doc.get('meta') or {}).get('valid_until') or md.get('valid_until') or None,     # its own date, where it is known
+                        'valid_until': (doc.get('meta') or {}).get('valid_until') or md.get('valid_until') or (doc.get('meta') or {}).get('claude_valid_until') or None,     # its own date, where it is known
                         'model_wanted': not md and bool(rd.get('scanned') and not rd.get('chars')),
                         'known': bool(mk and mk != 'other'),     # an earlier reading gave it its kind (the wizard's) — `kind` alone may be a hint in its name
 
@@ -1709,7 +1708,7 @@ def create_app(workspace, auth_enabled=None):
                 return _date.fromisoformat(str(v or '')[:10])
             except ValueError:
                 return None
-        new = day(meta.get('valid_until')) or day(((meta.get('model') or {}).get('doc') or {}).get('valid_until'))
+        new = day(meta.get('valid_until')) or day(((meta.get('model') or {}).get('doc') or {}).get('valid_until')) or day(meta.get('claude_valid_until'))
         old = day((there[0].get('meta') or {}).get('valid_until'))
         if not new or new < st.today():
             return None
@@ -2105,6 +2104,7 @@ def create_app(workspace, auth_enabled=None):
                 steps.append({'improved': {'before': imp['before'], 'after': imp['after']}})
             elif imp.get('why') != 'not here':
                 doc = st.document(doc['id'])                              # tried, nothing gained: said on the document (not tried again on the same bytes)
+        doc = st.take_claude_date(did, doc['id'])                         # the date Claude read in «القراءة والفرز», where its own reading gave none
         if body.get('split', True):
             cut = st.split_large(did, doc['id'])                          # over 100 MB still: cut into parts that fit, in the same item
             if cut['parts']:

@@ -55,8 +55,9 @@ def test_in_browser_journey(site, tmp_path):
             page.locator('tr', has_text='Composition certificate').locator('[data-up]').first.click()
         fc.value.set_files(str(pdf))
         page.wait_for_selector('#toast:not([hidden])', timeout=60000)
-        page.click('[data-f=all]')
-        page.wait_for_selector('tr:has-text("Composition certificate") .chip.c-ok', state='attached', timeout=60000)
+        # its document is in, not prepared yet: the point stays open and says why (stage 3: the board speaks of points)
+        page.wait_for_selector('tr:has-text("Composition certificate") [data-point="open"]:has-text("not prepared yet")', timeout=60000)
+        assert 'composition.pdf' in page.locator('tr', has_text='Composition certificate').first.inner_text()
         # a document download goes through the browser (outside claude.ai) — the blob is the stored PDF
         page.locator('tr', has_text='Composition certificate').locator('[data-why]').first.click()
         with page.expect_download(timeout=60000) as dl:

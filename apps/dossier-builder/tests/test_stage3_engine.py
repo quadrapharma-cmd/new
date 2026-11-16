@@ -167,7 +167,7 @@ def test_a_newer_copy_takes_its_documents_place_as_a_new_version(tmp_path):
     r = c.post(f'/api/dossiers/{did}/documents/{new}/place', headers=H, json={'slot_id': gmp, 'replaces': old['id']})
     assert r.status_code == 200, r.text[:300]
     docs = slot(c, did, '1.2.4.1')['documents']
-    assert len(docs) == 1 and docs[0]['version'] == 2 and docs[0]['filename'] == 'made-up-gmp-2026.pdf' and docs[0]['meta']['valid_until'] == later
+    assert len(docs) == 1 and docs[0]['version'] == 2 and docs[0]['filename'] == 'made-up-gmp-2026.pdf' and docs[0]['meta']['claude_valid_until'] == later   # its date goes with it (its own at its preparation)
     assert c.get(f'/api/dossiers/{did}/documents/{old["id"]}/text', headers=H).json()['id'] == docs[0]['id']       # the old id leads to the new version
     t4 = c.get(f'/api/dossiers/{did}/tree', headers=H).json()
     assert next(s for s in t4['slots'] if s['slot_id'] == gmp)['documents'][0]['name'] == name_of_old               # and the name did not change
@@ -272,15 +272,22 @@ def test_the_validity_date_read_with_the_file_stays_with_it(tmp_path):
     until = (date.today() + timedelta(days=700)).isoformat()
     up = staged(c, did, tmp_path, 'made-up-gmp.pdf', GMP, kind='gmp', valid_until=until, issued='2026-05-02')
     meta = next(u for u in board(c, did)['unassigned'] if u['id'] == up)['meta']
-    assert meta['valid_until'] == until and meta['validity_note'] == 'read by Claude' and meta['issued'] == '2026-05-02'
+    # kept beside the document, not as its own date: its own reading comes first (store.take_claude_date)
+    assert meta['claude_valid_until'] == until and meta['claude_issued'] == '2026-05-02' and 'valid_until' not in meta
     odd = staged(c, did, tmp_path, 'made-up-gmp-2.pdf', GMP + ['another'], kind='gmp', valid_until='not a date')
-    assert 'valid_until' not in next(u for u in board(c, did)['unassigned'] if u['id'] == odd)['meta']
+    assert 'claude_valid_until' not in next(u for u in board(c, did)['unassigned'] if u['id'] == odd)['meta']
     gmp = slot(c, did, '1.2.4.1')['slot_id']
     placed = c.post(f'/api/dossiers/{did}/documents/{up}/place', headers=H, json={'slot_id': gmp}).json()
-    assert placed['meta']['valid_until'] == until
+    assert placed['meta']['claude_valid_until'] == until and 'valid_until' not in placed['meta']      # its text gives no date
     valid = lambda: next(x for x in next(p for p in c.get(f'/api/dossiers/{did}/prepare', headers=H).json()['placed'] if p['slot_id'] == gmp)['conditions'] if x['id'] == 'valid')
     v = valid()
     assert v['status'] == 'ok' and v['how'] == 'model'                            # not asked again, and said to come from a reading
+    # prepared: its own reading gave no date, so the one Claude read becomes its date (the expiry rule then has it too)
+    c.post(f'/api/dossiers/{did}/prepare/{placed["id"]}', headers=H, json={})
+    doc = slot(c, did, '1.2.4.1')['documents'][0]
+    assert doc['meta']['valid_until'] == until and doc['meta']['validity_note'] == 'read by Claude' and doc['meta']['issued'] == '2026-05-02'
+    v = valid()
+    assert v['status'] == 'ok' and v['how'] == 'model'
     cur = slot(c, did, '1.2.4.1')['documents'][0]['id']
     other = (date.today() + timedelta(days=500)).isoformat()
     c.put(f'/api/dossiers/{did}/documents/{cur}/validity', headers=H, json={'valid_until': other})
@@ -342,3 +349,39 @@ def test_the_vault_counts_the_cross_document_findings_that_touch_its_documents(t
     held = {x['slot_id'] for x in ov['placed']}
     assert ov['counts']['cross'] == sum(1 for f in board(c, did)['cross'] if f['severity'] == 'block' and held & set(f['slots'])) >= 1
     assert ov['ready'] is True                                                              # the documents themselves are ready: what keeps the point open is counted beside
+
+
+def test_the_date_a_documents_own_text_gives_stands_and_another_reading_is_said(tmp_path):
+    """Found by his real files through «ملف جديد» against version 53: the date Claude read in «القراءة والفرز», carried as the
+    document's own date, stood over the date its own text gave — five certificates expired by their text passed as valid. The
+    document's text comes first; where Claude read another date, the condition says both and asks; a date read from the text is
+    said to come from the text (it was said to be the person's)."""
+    c, did = client(tmp_path)
+    gmp = slot(c, did, '1.2.4.1')['slot_id']
+    later = (date.today() + timedelta(days=700))
+
+    def through(name, lines, claude):
+        up = staged(c, did, tmp_path, name, lines, kind='gmp', valid_until=claude)
+        assert c.post(f'/api/dossiers/{did}/documents/{up}/place', headers=H, json={'slot_id': gmp}).status_code == 200
+        doc = next(d for d in slot(c, did, '1.2.4.1')['documents'] if d['filename'] == name)
+        c.post(f'/api/dossiers/{did}/prepare/{doc["id"]}', headers=H, json={})
+        row = next(p for p in c.get(f'/api/dossiers/{did}/prepare', headers=H).json()['placed'] if p['filename'] == name)
+        doc = next(d for d in slot(c, did, '1.2.4.1')['documents'] if d['filename'] == name)
+        return doc, next(x for x in row['conditions'] if x['id'] == 'valid')
+
+    # expired by its text, valid by Claude's reading: the text's date stands, the expiry is said, and so is the other reading
+    doc, v = through('made-up-gmp-old.pdf', GMP + ['Valid until 31 January 2019'], later.isoformat())
+    assert doc['meta']['valid_until'] == '2019-01-31' and doc['meta'].get('valid_until_read') and doc['meta']['claude_valid_until'] == later.isoformat()
+    assert any(f['rule'] == 'DOC-EXPIRED' for f in doc['findings'])
+    assert v['status'] == 'needs_you' and v['how'] == 'text' and later.strftime('%d/%m/%Y') in v['why']['ar'] and 'وقرأ Claude على صفحاته تاريخًا آخر' in v['why']['ar']
+    # valid by both, on different days: asked, not picked
+    text_day = date.today() + timedelta(days=400)
+    doc, v = through('made-up-gmp-two.pdf', GMP + ['two dates', f'Valid until {text_day.day} {text_day.strftime("%B %Y")}'], later.isoformat())
+    assert doc['meta']['valid_until'] == text_day.isoformat() and v['status'] == 'check' and v['how'] == 'text' and v['action'] == 'set_validity'
+    # the same day both ways: nothing to ask, and said to come from its text
+    doc, v = through('made-up-gmp-same.pdf', GMP + ['one date', f'Valid until {later.day} {later.strftime("%B %Y")}'], later.isoformat())
+    assert v['status'] == 'ok' and v['how'] == 'text'
+    # the person writes the date: it is theirs, whatever was read
+    c.put(f'/api/dossiers/{did}/documents/{doc["id"]}/validity', headers=H, json={'valid_until': (date.today() + timedelta(days=300)).isoformat()})
+    v = next(x for x in next(p for p in c.get(f'/api/dossiers/{did}/prepare', headers=H).json()['placed'] if p['filename'] == 'made-up-gmp-same.pdf')['conditions'] if x['id'] == 'valid')
+    assert v['status'] == 'ok' and v['how'] == 'person'
