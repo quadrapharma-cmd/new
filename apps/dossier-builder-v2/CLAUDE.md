@@ -555,6 +555,52 @@ When a part is done or an open item is closed, update «What exists» and «Open
   version, the library's side panel beside every station.
   Before a publish: his real files through the new way against version 51 — the reading must be the same, and every
   difference in where a file lands must be explained (the cut of combined files is one that is expected).
+- **16/11/2026, eBOX stage 2 delivered: version 52** (`eb3de33`; version id `1794834124-ec9a`; the page, `suite.html`,
+  `assets/engine.worker.js` and `assets/engine.zip.b64.txt` republished, the other 137 files carried forward). What it is:
+  the README's section «eBOX, stage 2». What it was tested with: the whole suite (871 passed, 3 skipped: 870 in the run, and
+  the one whose expected wording had been reworded, run again), every button of every screen clicked in both languages (only
+  refusals that give their reason), his real files through BOTH doors against version 51 (below), the opening time (first
+  opening 5.37 s → 5.27 s, later 4.57 s → 4.59 s, ten paired rounds), the published files read back byte for byte and the
+  browser edition's tests on the page as served (21 passed, 2 skipped).
+  · **His real files found six things that no made-up file had** — each fixed, each with a test that fails on the code before:
+  the kind rule was not asked again when a scan placed without words was read at its preparation (`store.judge_kind`); a new
+  version moved its document to the end of its item and renumbered every name there (`meta.seat`); a combined file was cut
+  wherever a page changed subject — a 12-page «specification and test method» into six, a 6-page validation protocol into
+  four (`pages.propose`: a part now begins under a title, at «page 1 of N», or at another batch's CoA); «المكتب»'s buttons did
+  nothing, silently, while documents were being prepared (`officeDoc`); the bookmarks fix told him «تعذّر التطبيق:
+  bookmark_from_text_styles: step 2 …» (`fixes.py`: a scan's invisible text layer has a nameless font; and «no headings» is a
+  refusal, said in both languages); «5 مستند» (`tests/test_formal_arabic.py` now refuses a number before a bare singular noun
+  in the eBOX page, its scripts and the start-up).
+  · **Two mistakes of mine the same files caught before he could**: skipping Claude's reading on the tree for every waiting
+  scan «that has a kind» — a kind may be a hint in the file's NAME, which places nothing (two real scans left unread and
+  unplaced): the engine now says `known` (an earlier reading gave the kind); and a harness that took «every line says read»
+  for «the card is filled» — which showed the card could be confirmed in that moment (`w.busyN`).
+  · **The comparison, for the next time a path changes** (scripts and results in the scratchpad, never committed):
+  `progproto/same_reading4.py` (files added on the prepare page: version 51 and before), `progproto/same_reading5.py` (added
+  on the tree page, the tree approved, then «تجهيز الكل»), `progproto/wizard_real.py old|new` (through «ملف جديد» itself),
+  `s1/cmp_same.py` and `s2/explain.py` (side by side: the questions to Claude in order, each document's item, findings, meta,
+  the names the tree showed against the names it ended with, the dossier data without run-specific ids). Version 51's
+  results: `same-51-dramrin-e.json`, `same-51-wouncure-e.json`, `wiz-51-dramrin.json`, `wiz-51-wouncure.json`; version 52's:
+  `same-s2-dramrin-g.json`, `same-s2-wouncure-g.json`, `wiz-s2-dramrin-g.json`, `wiz-s2-wouncure-g.json`. Run two at a time at
+  most: with three the machine is slow enough to change what a timing-sensitive wait sees. Dramrin's contact sheets for the
+  152-page file still differ in one or two pictures from run to run (as before).
+  · **What the comparison says** (the stand-in model calls every scan a licence, so it tests the program around the reading):
+  added on the tree — the same questions in the same order less the second look at a file already examined, the same items
+  and names for every document both versions place, the same kind objections; new: the RAR opened, the leaflet and SmPC
+  placed once their type and language are answered (version 51: E-META, left waiting), the two documents no longer cut.
+  Through the wizard — the same reading, the same item for every document version 51 placed, the same data; new: one
+  combined-file question for each scan of several pages, the kind rule's objections (Wouncure 0 → 12; version 51's wizard never
+  judged a scan by its words), names that stay.
+  · **Rules that came out of it.** A change of path changes WHEN something is known: every rule that ran «when the file
+  arrives» has to be looked at again (the kind rule; the page's own reading of a scan runs before `/prepare`, not before
+  `/place`). His files go through both doors before a publish, not one. A browser test waits for the state it checks, never
+  for a neighbouring sign of it (two tests failed only when the machine was busy).
+  · **Not done, and said to him**: «سيبها عليّ»; a newer copy of a certificate offered as a new version; the library beside
+  every station; the board's own «إضافة مستندات» and waiting box (the old way, until stage 3); the vault. **Seen, for stage 3**:
+  the validity date the wizard read for a scan is not carried to the document (the prepare page asks for it again unless
+  Claude reads the document there); the prepare cards' own buttons act while «تجهيز الكل» runs; `ui/suite/index.html` still
+  has counted nouns («بقي {n} يوم»).
+  **Next: stage 3** (التجهيز والمراجعة مع «الخزنة» → شجرة الملف والنواقص) — only when he says go.
 
 ## Open items (propose when relevant; do when he asks)
 - Old program, next pieces (one at a time, each on his real files first): the 14/11 update and measuring Claude's reading (need

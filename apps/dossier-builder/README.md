@@ -185,6 +185,12 @@ What cannot be tested from here: Claude's own reading on his account, claude.ai'
 **Left for stage 3** (said to him): «سيبها عليّ», a newer copy of a certificate offered as a new version, the library beside
 every station, the board's own «إضافة مستندات» and waiting box (they still work the old way), the vault.
 
+Delivered as **version 52** of the artifact (16/11/2026, `eb3de33`; version id `1794834124-ec9a`): the whole suite (871 passed,
+3 skipped), every button of every screen clicked in both languages (only refusals that give their reason), his real files
+through both doors against version 51 (above), the opening time against version 51 (first opening 5.37 s → 5.27 s, later
+4.57 s → 4.59 s), the four republished files read back byte for byte, and the browser edition's tests on the page as served
+(21 passed, 2 skipped).
+
 ## Countries and authorities (November 2026) — «تختار الدولة ويعمل على أساسها موديول ١»
 
 A dossier is built for one country. The wizard opens with «where will this dossier be submitted?»; the country gives the
