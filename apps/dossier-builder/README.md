@@ -99,6 +99,12 @@ every button — run before a publish), `test_web_faults.py`, `test_ui_shell.py`
 built page — the files read back from claude.ai after a publish (with `index.local.html` a copy of the served `index.html`).
 The tools that reworded the texts are kept in `tools/wording/`.
 
+Delivered as **version 51** of the artifact (16/11/2026, `7e010ce`): the whole suite (855 passed, 3 skipped), every button of
+every screen clicked in both languages, his real files against version 50 (the same calls, prompts, items, names, conditions
+and fields), the opening time against version 50 (first opening 5.50 s → 5.55 s, later 4.77 s → 4.71 s), the published files
+read back byte for byte, and the browser edition's tests on the page as served. Version 51 is also the first to hold the photo
+and design programs, the phone photo and the indication gate (below).
+
 ## Countries and authorities (November 2026) — «تختار الدولة ويعمل على أساسها موديول ١»
 
 A dossier is built for one country. The wizard opens with «where will this dossier be submitted?»; the country gives the

@@ -502,6 +502,36 @@ When a part is done or an open item is closed, update «What exists» and «Open
   that is one piece of a sentence joined in code must keep its end spaces (25 were lost; `edges.py` finds them).
   **Not changed:** the reading rules and their words, the prompts, the letters' wording, the desktop edition's read-me
   (`desktop/README-AR.txt` is still colloquial and out of date: for the day he approves a desktop build).
+- **16/11/2026, eBOX stage 1 delivered: version 51** (`7e010ce`; version id `1794816701-b6db`; the artifact's title is now
+  eBOX; private as before, its declaration carried forward). Sent: the page and 37 files — suite.html, engine.worker.js,
+  engine.zip.b64.txt, fonts/manifest.txt, and the photo and design programs (10 + 23 files) — so version 51 is also the
+  first to hold steps 5–7 and the indication gate, built before the re-ordering and never published until now. The
+  artifact holds 140 files; the 102 others are version 50's own, each checked by path and size against the build.
+  **Three faults found by the last click sweep, fixed before the publish** (all there since «المكتب» was added, so in
+  version 50 too): «المكتب» kept the list it had asked for before a change — after «تجهيز الكل» its buttons held ids of
+  versions no longer current, and «الصفحات» showed «تعذّر عرض هذه الصفحة»; the viewer asked for a page by the id it was
+  opened with; and after a page was turned, or anything done in an item's drawer, from «تجهيز المستندات», the board was
+  drawn in the page's place. Now the prepare page asks for its documents at every drawing, looking at a document by an
+  earlier id is shown the current version (`X-Doc-Id`), and `refreshCurrent` draws the screen the person is on. Desktop
+  and company editions only: a document of fewer than four pages showed «PDF» in place of its small pages (the engine
+  is now asked how many pages there are). Tests: `test_ui_office_fresh.py`, and parts of `test_prepare_office.py` and
+  `test_web_faults.py`; the two browser tests fail on the page before the fix.
+  **What was run on the tree that was published:** the whole suite, 855 passed and 3 skipped (22:59); every button of
+  every screen clicked in the browser edition, both languages (10:19) — what it met: the export gate and «لا يمكن تصغير
+  الملف أكثر», each said in words; his real files against version 50 as published, with the same stand-in for Claude —
+  Dramrin's 9 files: the same 9 calls, the same prompts word for word, the same 2 waiting and 12 placed with the same
+  items, names, conditions, reading quality and fields (the contact sheets of calls 2 and 7 vary from run to run, as
+  they did within version 49); Wouncure's 26 files: the same in everything (28 calls, 6 waiting, 20 placed, every
+  picture); opening time against version 50, twelve paired rounds: first opening 5.50 s → 5.55 s, later openings
+  4.77 s → 4.71 s, the page shown at 105 ms → 122 ms (the page is 68 KB larger) — within the spread of one round.
+  **After the publish:** the 38 files read back from claude.ai are the build's, byte for byte, and the tests of the
+  browser edition were run on the page as served (`DB_DIST`, `scratchpad/s1/pubsite.py`): 21 passed, 2 skipped (the two
+  skipped are the click sweep, run on the build itself before the publish — the served files are the same bytes).
+  **Not tested, because it cannot be from here:** Claude's own reading on his account (the comparison above uses a
+  stand-in; an API key in the environment would measure it), claude.ai's own «save this file?» step, and the Google
+  Drive connector (no call to it was made in this session).
+  **Next: stage 2** (الدولة → الرفع → القراءة والفرز → بطاقة المنتج → الشجرة المقترحة) — only when he says go, after he has
+  seen stage 1 and the names of the choices (the list was given to him in the chat with version 51).
 
 ## Open items (propose when relevant; do when he asks)
 - Old program, next pieces (one at a time, each on his real files first): the 14/11 update and measuring Claude's reading (need
