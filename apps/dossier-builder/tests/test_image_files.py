@@ -82,6 +82,36 @@ def test_an_image_put_in_an_item_is_kept_and_made_a_searchable_pdf_where_pdfcraf
         assert f['NTA065-N4']['severity'] == 'block' and 'searchable PDF' in f['NTA065-N4']['en'] and 'قابل للبحث' in f['NTA065-N4']['ar']
 
 
+@pytest.mark.skipif(not pdfcraft.available(), reason='needs PdfCraft')
+def test_a_tiff_of_several_pages_becomes_a_pdf_of_as_many_pages(dossier, monkeypatch):
+    """16/11/2026: the image was given to PdfCraft twice and «page 2» taken off — right for an image of one page; a three-page TIFF (a
+    fax, a scanner's file) came out as five pages: 1, 3, 1, 2, 3. Its second copy is taken off whole; and where PdfCraft finds another
+    number of pages than the file's header says, its own count is the one used."""
+    from pypdf import PdfReader
+    count = lambda pdf: len(PdfReader(io.BytesIO(pdf)).pages)
+    tif = fx('pages-g4.tif')
+    assert count(pdfcraft.image_to_pdf(tif, 'pages-g4.tif')) == 3
+    c, did = dossier                                                                # and so the document kept in its item
+    d = c.post(f'/api/dossiers/{did}/slots/M1-05/documents', files={'file': ('pages-g4.tif', tif, 'image/tiff')}).json()
+    assert d['filename'] == 'pages-g4.pdf' and count(c.get(f"/api/dossiers/{did}/documents/{d['id']}/file").content) == 3
+    for one in ('page-g4.tif', 'page-deflate.tif', 'page.png', 'page.jpg', 'page.gif', 'page.bmp'):      # one page stays one page
+        assert count(pdfcraft.image_to_pdf(fx(one), one)) == 1, one
+    for said in (5, 2, 1):                                                          # a header that says more pages than there are, or fewer
+        monkeypatch.setattr(I, 'tiff_pages', lambda data, said=said: said)
+        assert count(pdfcraft.image_to_pdf(tif, 'pages-g4.tif')) == 3, said
+
+
+@pytest.mark.skipif(not pdfcraft.available(), reason='needs PdfCraft')
+def test_the_pages_of_a_tiff_keep_their_order_in_the_pdf(monkeypatch):
+    pytest.importorskip('PIL.Image')
+    import image_pages
+    tif = fx('pages-g4.tif')
+    assert image_pages.shows(pdfcraft.image_to_pdf(tif, 'pages-g4.tif'), tif) == [1, 2, 3]
+    for said in (5, 2, 1):
+        monkeypatch.setattr(I, 'tiff_pages', lambda data, said=said: said)
+        assert image_pages.shows(pdfcraft.image_to_pdf(tif, 'pages-g4.tif'), tif) == [1, 2, 3], said
+
+
 def test_an_image_is_kept_aside_too(dossier):
     c, did = dossier
     r = c.post(f'/api/dossiers/{did}/unplaced', files=[('files', ('IMG_0001.JPG', fx('phone-rotated.jpg'), 'image/jpeg'))], data={'meta': '{}'})

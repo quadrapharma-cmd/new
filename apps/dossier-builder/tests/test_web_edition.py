@@ -109,11 +109,17 @@ def test_the_page_keeps_answering_while_the_engine_works(site):
 
 
 def test_an_image_put_in_an_item_becomes_a_pdf_inside_the_browser_edition(site):
-    """No converter in the in-browser engine: the page decodes the image (here a three-page fax-compressed TIFF) and the engine wraps
-    the pages into a PDF, all inside the browser."""
+    """A three-page fax-compressed TIFF put in an item inside the browser: the engine there makes it a PDF with PdfCraft's WebAssembly
+    program — its three pages, in their order — and the page's own decoder (UTIF.js) draws the same three pages for claude.ai's model.
+    16/11/2026: five pages came out (1, 3, 1, 2, 3: the image is given to PdfCraft twice and only «page 2» was taken off), and nothing
+    said so — this test had been skipped since the decoders moved to assets/ocr/img, and it asked the page for a function that had
+    gone when the engine began making the PDF itself."""
     tif = pathlib.Path(__file__).parent / 'data' / 'images' / 'pages-g4.tif'
-    if not (DIST / 'assets' / 'img' / 'UTIF.js').exists():
-        pytest.skip('image decoders not vendored (web/vendor.sh)')
+    if not (DIST / 'assets' / 'ocr' / 'img' / 'UTIF.js').exists():      # where the page loads it from (ocr.js: `img/UTIF.js` beside the readers)
+        pytest.skip('the image decoders were not fetched (web/ocr_assets.py)')
+    import base64
+    from pypdf import PdfReader
+    from dossier_engine import pdfcraft
     with pw.sync_playwright() as p:
         b = p.chromium.launch()
         page = b.new_context(viewport={'width': 1280, 'height': 800}).new_page()
@@ -124,18 +130,30 @@ def test_an_image_put_in_an_item_becomes_a_pdf_inside_the_browser_edition(site):
         page.goto(site + '/index.local.html#/')
         page.wait_for_selector('#boot', state='detached', timeout=180000)
         page.wait_for_selector('.caps .cap', timeout=120000)
-        page.evaluate("() => { const i = document.createElement('input'); i.type = 'file'; i.id = 'fxin'; document.body.appendChild(i); }")
-        page.set_input_files('#fxin', str(tif))
-        r = page.evaluate("""async () => {
+        r = page.evaluate("""async b64 => {
+            const bin = atob(b64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+            const tif = new File([u], 'pages-g4.tif', {type: 'image/tiff'});
             const j = (u, o) => fetch(u, Object.assign({headers: {'X-DB': '1', 'content-type': 'application/json'}}, o)).then(r => r.json());
             const d = await j('/api/dossiers', {method: 'POST', body: JSON.stringify({name: 'Dermacure', product: {name: 'Dermacure', dosageform: 'tablet', manufacturer: 'Example Pharma'},
                 profile: {dossier_kind: 'generic', origin: 'local', licence: 'own', activity: 'new', apis: [{name: 'Paracetamol', manufacturer: 'Granules', option: 'CEP'}]}})});
-            const pdf = await asDossierFile(document.querySelector('#fxin').files[0]);
-            const fd = new FormData(); fd.append('file', pdf); fd.append('meta', '{}');
+            const fd = new FormData(); fd.append('file', tif); fd.append('meta', '{}');
             const doc = await fetch('/api/dossiers/' + d.id + '/slots/M1-05/documents', {method: 'POST', body: fd, headers: {'X-DB': '1'}}).then(r => r.json());
-            const head = new Uint8Array(await pdf.slice(0, 5).arrayBuffer());
-            return {name: pdf.name, type: pdf.type, head: String.fromCharCode(...head), stored: doc.filename, findings: (doc.findings || []).map(f => f.rule)}; }""")
-        assert r['name'] == 'pages-g4.pdf' and r['head'] == '%PDF-' and r['stored'] == 'pages-g4.pdf', r
+            const pdf = new Uint8Array(await (await fetch('/api/dossiers/' + d.id + '/documents/' + doc.id + '/file', {headers: {'X-DB': '1'}})).arrayBuffer());
+            let s = ''; for (let i = 0; i < pdf.length; i++) s += String.fromCharCode(pdf[i]);
+            const pics = await DBOCR.pageImages(tif, {max: 3, pick: [1, 2, 3], budget: 6});
+            return {stored: doc.filename, converted: (doc.meta || {}).converted, original: (doc.meta || {}).original_name, pdf: btoa(s), pics: pics.map(x => [x.page, x.pages, x.part])}; }""",
+                          base64.b64encode(tif.read_bytes()).decode())
+        kept = base64.b64decode(r['pdf'])
+        assert r['stored'] == 'pages-g4.pdf' and kept[:5] == b'%PDF-' and r['converted'] == ['image_to_pdf'] and r['original'] == 'pages-g4.tif', (r['stored'], r['converted'])
+        assert len(PdfReader(io.BytesIO(kept)).pages) == 3                    # a page for each page of the TIFF, none twice
+        assert r['pics'] == [[1, 3, 'top'], [1, 3, 'bottom'], [2, 3, 'top'], [2, 3, 'bottom'], [3, 3, 'top'], [3, 3, 'bottom']], r['pics']
+        try:                                                                  # and in their order, where the PDF can be drawn here and the TIFF opened
+            import PIL.Image                                                  # noqa: F401
+            import image_pages
+            order = image_pages.shows(kept, tif.read_bytes()) if pdfcraft.available() else None
+        except ImportError:
+            order = None
+        assert order in (None, [1, 2, 3]), order
         assert not errors, errors
         b.close()
 

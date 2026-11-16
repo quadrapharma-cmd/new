@@ -892,18 +892,37 @@ def page_picture(data, page, picture):
 
 
 def image_to_pdf(data, name='image'):
-    """An image (PNG, JPEG, TIFF, GIF, BMP, JPEG 2000) made into a PDF page by PdfCraft. None when it cannot be."""
+    """An image (PNG, JPEG, TIFF, GIF, BMP, JPEG 2000) made into a PDF by PdfCraft: a page for each page of the image, in their order
+    (a TIFF may hold several — a fax, a scanner's file). None when it cannot be."""
     if not available():
         return None
+    from . import imagefiles
     ext = (name.rsplit('.', 1)[-1].lower() if '.' in name else 'png')[:5]
-    try:
+
+    def make(n):
+        """doc_combine takes two or more inputs: the image twice, then its second copy off — pages n+1 … 2n, where the image has n
+        (16/11/2026: «page 2» was taken off whatever n was; a three-page TIFF came out as five pages — 1, 3, 1, 2, 3).
+        → (the image's pages as PdfCraft counts them, the PDF — None when n is 0: only counted)"""
         with Job() as j:
-            j.put(f'in.{ext}', data)                         # doc_combine takes two or more inputs: the image twice, then one page off
+            j.put(f'in.{ext}', data)
             j.steps.append({'tool': 'doc_combine', 'args': {'paths': [f'in.{ext}', f'in.{ext}'], 'out': 'two.pdf', 'open': False}})
-            j.step('doc_open', path='two.pdf')
-            j.step('page_delete', doc=1, pages=[2])
-            j.step('doc_save', doc=1, path='out.pdf', full=True)
-            j.run()
-            return j.read('out.pdf')
-    except (PdfCraftError, OSError):
+            opened = j.step('doc_open', path='two.pdf')
+            if n:
+                j.step('page_delete', doc=1, pages=list(range(n + 1, 2 * n + 1)))
+                j.step('doc_save', doc=1, path='out.pdf', full=True)
+            res = j.run()
+            return int(first(res[opened])['pages']) // 2, (j.read('out.pdf') if n else None)
+
+    n = imagefiles.tiff_pages(data) if imagefiles.image_format(data) == 'tiff' else 1
+    try:
+        try:
+            had, pdf = make(n)
+        except PdfCraftError:
+            if n == 1:
+                raise
+            had, pdf = make(0)                               # fewer pages than its header promised (nothing there to take off): counted
+        if had != n:                                         # PdfCraft found another number of pages than expected: made again with its own
+            pdf = make(had)[1] if had else None
+        return pdf
+    except (PdfCraftError, OSError, KeyError, TypeError, ValueError):
         return None

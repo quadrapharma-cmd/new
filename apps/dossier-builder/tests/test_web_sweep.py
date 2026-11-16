@@ -103,6 +103,10 @@ def sweep(site, tmp_path, lang, width=1440, height=900, clicks=False):
         page.wait_for_selector('#boot', state='detached', timeout=240000)
         page.evaluate('() => DBWEB.ready()')
         page.evaluate(WRAP)
+        try:                                                              # the first screen drawn — the state the first look checks, not a second on the clock
+            page.wait_for_function("() => (document.getElementById('view').innerText || '').trim()", timeout=60000)      # (a busy machine took longer: 16/11/2026)
+        except Exception:
+            pass                                                          # still empty after a minute: the look below says so
         page.wait_for_timeout(1000)
 
         def flush(where):
