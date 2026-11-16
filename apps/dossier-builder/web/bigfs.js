@@ -38,8 +38,19 @@ function DB_BIGFS(IDBFS, limit) {
   const readBack = s => request(s, 'readonly', st => st.get(s.path))
     .then(e => { const b = e && e.contents; return b instanceof Blob ? b.slice(Math.max(0, b.size - 1)).arrayBuffer() : null; })       // its last byte: all of it is in the storage
     .catch(e => { plain = true; return request(s, 'readwrite', st => st.delete(s.path)).catch(() => {}).then(() => { throw e; }); });      // taken out: the next save writes its bytes
-  return (FS, populate) => new Promise((res, rej) => { waiting = [];
+  const once = (FS, populate) => new Promise((res, rej) => { waiting = [];
     FS.syncfs(populate, e => e ? rej(e) : Promise.all(waiting.concat(unread.splice(0).map(readBack))).then(() => res(), rej)); });
+  /* One save at a time (16/11/2026, the click sweep: «2 FS.syncfs operations in flight at once»). A save asked for while another
+     runs — the timer after a request, the wizard's own call once its files are posted, the tab being left — waits for it, then runs
+     for what was written meanwhile; those asked while one already waits to start share that one. Two at once did the work twice,
+     and shared this file's lists of what to read back (the second emptied the first's). */
+  let last = Promise.resolve(), next = null;                            // the save running (or the last to run) · a save waiting to start
+  return (FS, populate) => {
+    if (!populate && next) return next;
+    const p = last.catch(() => {}).then(() => { if (next === p) next = null; return once(FS, populate); });
+    if (!populate) next = p;
+    return (last = p);
+  };
 }
 
 /* The engine's files live in the page's memory, each in one block, and a browser gives no block over about 2 GB. A file that grew

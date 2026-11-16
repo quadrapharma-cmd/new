@@ -429,6 +429,7 @@
     },
   };
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && window.DBWEB) window.DBWEB.sync().catch(() => {}); });   // leaving the tab: write the storage now
-  window.DBWEB = { sync: () => S.worker ? ask({ type: 'sync' }).then(m => { if (m.error) throw new Error(m.error); }) : syncfs(false).then(() => storageNote(), e => { storageNote(String(e && (e.name || e.message) || e)); throw e; }), ready: () => S.ready, pyodide: () => S.pyodide,
+  window.DBWEB = { sync: () => S.ready.then(() => S.worker ? ask({ type: 'sync' }).then(m => { if (m.error) throw new Error(m.error); }) : syncfs(false).then(() => storageNote(), e => { storageNote(String(e && (e.name || e.message) || e)); throw e; })),     // asked before the engine is up (the tab left while it opens): after it, never a fault
+    ready: () => S.ready, pyodide: () => S.pyodide,
     engine: () => S.worker ? 'worker' : 'page', save: saveFromApi };
 })();

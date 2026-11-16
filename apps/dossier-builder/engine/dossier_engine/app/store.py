@@ -1496,7 +1496,7 @@ class Store:
     def take_claude_date(self, did, doc_id):
         """The validity date Claude read on a scan's pages in «القراءة والفرز» (meta claude_valid_until, kept with the file when it was
         staged) becomes the document's date only where its own reading gave none — never over a date its text gives or the person
-        wrote (16/11/2026: carried as the document's own date, it stood over the expired dates five of his certificates' text gave).
+        wrote (16/11/2026: carried as the document's own date, it stood over the expired dates four of his certificates' text gave).
         Where the two differ, the preparation's condition says both (prepare._validity)."""
         d = self.document(doc_id)
         m = d['meta']

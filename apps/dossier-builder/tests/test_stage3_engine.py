@@ -353,7 +353,7 @@ def test_the_vault_counts_the_cross_document_findings_that_touch_its_documents(t
 
 def test_the_date_a_documents_own_text_gives_stands_and_another_reading_is_said(tmp_path):
     """Found by his real files through «ملف جديد» against version 53: the date Claude read in «القراءة والفرز», carried as the
-    document's own date, stood over the date its own text gave — five certificates expired by their text passed as valid. The
+    document's own date, stood over the date its own text gave — four certificates expired by their text passed as valid. The
     document's text comes first; where Claude read another date, the condition says both and asks; a date read from the text is
     said to come from the text (it was said to be the person's)."""
     c, did = client(tmp_path)
