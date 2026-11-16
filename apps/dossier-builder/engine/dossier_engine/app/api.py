@@ -1684,6 +1684,7 @@ def create_app(workspace, auth_enabled=None):
             md = ((doc.get('meta') or {}).get('model') or {}).get('doc') or {}
             mk = (doc.get('meta') or {}).get('kind')
             out.append({**u, 'reading': {k: v for k, v in rd.items() if k not in ('rules', 'text')}, 'model': md or None,
+                        'valid_until': (doc.get('meta') or {}).get('valid_until') or md.get('valid_until') or None,     # its own date, where it is known
                         'model_wanted': not md and bool(rd.get('scanned') and not rd.get('chars')),
                         'known': bool(mk and mk != 'other'),     # an earlier reading gave it its kind (the wizard's) — `kind` alone may be a hint in its name
 

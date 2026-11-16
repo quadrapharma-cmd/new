@@ -57,7 +57,7 @@ def test_a_newer_copy_is_offered_as_the_new_version_of_its_document(server, tmp_
         box = page.locator(f'[data-tbeside="{new}"]')
         box.wait_for(timeout=60000)
         text = box.inner_text()
-        assert 'في هذا البند الآن:' in text and 'made-up-gmp-old.pdf' in text and f'وهذا الملف صالح حتى {later}' in text
+        assert 'في هذا البند الآن:' in text and 'made-up-gmp-old.pdf' in text and 'وهذا الملف صالح حتى ' + page.evaluate('d => dateL(d)', later) in text
         # the program proposes it is a newer copy (it is valid later): that choice is the one ticked, and said why
         assert page.is_checked(f'[data-trp="{new}"][value="{old}"]') and not page.is_checked(f'[data-trp="{new}"][value=""]')
         assert 'يقترح البرنامج أنه نسخة أحدث' in page.inner_text(f'[data-tbeside="{new}"] [data-tnewer]')
@@ -91,7 +91,8 @@ def test_beside_it_keeps_both_documents_in_the_item(server, tmp_path):
         page.click('#treeGo')
         page.wait_for_function("() => location.hash.endsWith('/prepare')", timeout=60000)
         docs = next(s for s in board(server, did)['slots'] if s['slot_id'] == 'M1-37')['documents']
-        assert sorted(d['filename'] for d in docs) == ['made-up-gmp-new.pdf', 'made-up-gmp-old.pdf'] and all(d['version'] == 1 for d in docs)
+        # both stay current in the item (its versions are numbered per item: the one added beside it is its second)
+        assert sorted((d['filename'], d['version']) for d in docs) == [('made-up-gmp-new.pdf', 2), ('made-up-gmp-old.pdf', 1)]
         assert page.evaluate(f"() => localStorage.getItem('db.treeRp.{did}')") in (None, '{}')                   # nothing left behind
         b.close()
     assert not errors, errors
@@ -164,7 +165,7 @@ def test_the_product_card_takes_the_target_date_and_runs_it_for_me(server, tmp_p
         assert page.inner_text('#wizAuto').strip() == 'اعتماد البطاقة والتنفيذ التلقائي'
         page.click('#wizAuto')
         # made, nothing to place, and on to station 6 by itself
-        page.wait_for_function("() => /\\/d\\/[^/]+\\/prepare$/.test(location.hash) && !!document.getElementById('readySign')", timeout=120000)
+        page.wait_for_function("() => /\\/d\\/[^/]+\\/prepare$/.test(location.hash) && !!document.getElementById('readyT') && document.getElementById('readyT').textContent.trim() !== '…'", timeout=120000)
         did = page.evaluate("() => location.hash.split('/')[2]")
         assert call(server, f'/api/dossiers/{did}')['envelope']['target_date'] == target
         assert page.inner_text('#readyT').strip() == 'لا يوجد مستند في البنود بعد'

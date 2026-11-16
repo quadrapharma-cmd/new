@@ -104,8 +104,8 @@ def test_a_number_is_never_followed_by_a_bare_singular_noun():
     know the forms — never a number filled in before a noun that cannot follow it (found on the owner's real files, 16/11/2026:
     «فُكَّ … : 5 مستند»). The eBOX page, its scripts and the browser edition's start-up."""
     found = []
-    for path in [ROOT / 'ui' / 'index.html', ROOT / 'web' / 'boot.js'] + sorted((ROOT / 'ui' / 'assets').glob('*.js')):
-        for n, text in page_texts(path):
+    for path in [ROOT / 'ui' / 'index.html', ROOT / 'ui' / 'suite' / 'index.html', ROOT / 'web' / 'boot.js'] + sorted((ROOT / 'ui' / 'assets').glob('*.js')):
+        for n, text in page_texts(path):                                      # the suite page too (stage 3: «بقي {n} يوم» stood there)
             if 'function arGen' in text or 'const COUNT' in text:                 # the two helpers that hold the forms themselves
                 continue
             for m in NUMBER_THEN_NOUN.finditer(text):

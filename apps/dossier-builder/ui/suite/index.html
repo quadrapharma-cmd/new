@@ -55,7 +55,7 @@ const T={
  addQ:{ar:'سؤال جديد',en:'Add a question'}, replyDoc:{ar:'خطاب الرد (Word)',en:'Reply letter (Word)'}, readGot:{ar:'قُرئ من الخطاب: {q} سؤال{due}',en:'Read from the letter: {q} question(s){due}'},
  noLetters:{ar:'لا توجد مراسلات بعد.',en:'No letters yet.'}, deadlines:{ar:'المواعيد',en:'Deadlines'}, deadlinesSub:{ar:'أسئلة الهيئة والخطابات والالتزامات التي لها موعد — المتأخر أولًا.',en:'Authority questions, letters and commitments with a due date — the overdue first.'},
  noDeadlines:{ar:'لا توجد مواعيد مفتوحة.',en:'No open deadlines.'}, overdue:{ar:'متأخر',en:'overdue'}, soon:{ar:'قريب',en:'soon'}, later:{ar:'لاحقًا',en:'later'},
- daysLeft:{ar:'بقي {n} يوم',en:'{n} days left'}, daysLate:{ar:'متأخر {n} يوم',en:'{n} days late'},
+ daysLeft:{ar:'الأيام المتبقية: {n}',en:'{n} days left'}, daysLate:{ar:'أيام التأخير: {n}',en:'{n} days late'},
  commitSub:{ar:'التزامات الشركة أمام الهيئة (بيانات ثبات، إبلاغ بتجديد، تشغيلات أولى…) ومواعيدها.',en:'The company\'s commitments to the authority (stability data, renewals to report, first batches…) and their deadlines.'},
  addCommit:{ar:'التزام جديد',en:'New commitment'}, commitText:{ar:'الالتزام',en:'Commitment'}, done:{ar:'نُفِّذ',en:'Done'}, evidence:{ar:'الدليل',en:'Evidence'},
  noCommit:{ar:'لا توجد التزامات بعد.',en:'No commitments yet.'}, product:{ar:'المنتج',en:'Product'}, navRef:{ar:'مرجع',en:'Reference'},
@@ -117,7 +117,7 @@ const prov=p=>p?`<span class="prov ${esc(p)}">${esc(t('p_'+p.replace(/-/g,'_')))
 const tn=x=>S.lang==='ar'?x.type_ar:x.type_en;
 const basis=b=>{ if(!b) return ''; if(b==='printed') return S.lang==='ar'?'التاريخ المكتوب على المستند':'date printed on the document';
   const m=b.match(/^(issued|reg_date)\+(\d+)$/); if(!m) return b;
-  return S.lang==='ar'?`${m[1]==='issued'?'تاريخ الإصدار':'تاريخ التسجيل'} + ${m[2]} شهر`:`${m[1]==='issued'?'issue date':'registration date'} + ${m[2]} months`; };
+  return S.lang==='ar'?`${m[1]==='issued'?'تاريخ الإصدار':'تاريخ التسجيل'} + مدة بالأشهر: ${m[2]}`:`${m[1]==='issued'?'issue date':'registration date'} + ${m[2]} months`; };
 function drawer(title,html){ openDrawer(title, html); }
 const NAV=[['home','#/','grid','navHome'],['products','#/products','pill','navProducts'],['docs','#/docs','file','navDocs'],['parties','#/parties','building','navParties'],['letters','#/letters','mail','navLetters'],['commit','#/commitments','target','navCommit']];
 const REF=[['rules','#/rules','book','navRules'],['activity','#/activity','history','navActivity'],['users','#/users','users','navUsers']];
@@ -257,7 +257,7 @@ async function productView(id,tab){
   if($('#delP')) $('#delP').onclick=async()=>{                                        // a product nobody wants any more: gone for good, with the documents that are only its own
     const ok=await DS.confirmBox(L({ar:'حذف المنتج',en:'Delete the product'}), `<p>${L({ar:`يُحذف المنتج «${esc(p.name)}» نهائيًا مع ربطه بالأطراف ومع مستنداته الخاصة به فقط. المستندات المشتركة مع منتجات أو أطراف أخرى تبقى في المكتبة، وملف التسجيل المبني منه لا يتأثر. هذا الحذف لا رجعة فيه.`,en:`The product «${esc(p.name)}» will be deleted for good, with its links to parties and the documents that are only its own. Documents shared with other products or parties stay in the library, and a dossier built from it is not touched. This cannot be undone.`})}</p>`,
       L({ar:'حذف نهائي',en:'Delete for good'}), {danger:true, cancel:L({ar:'إلغاء',en:'Cancel'}), typed:p.name, typedLabel:L({ar:'اكتب اسم المنتج للتأكيد',en:'Type the product\'s name to confirm'})});
-    if(!ok) return; try{ const r=await api(`/products/${id}`,{method:'DELETE'}); toast(L({ar:`حُذف المنتج (${r.documents} مستند)`,en:`Product deleted (${r.documents} document(s))`})); location.hash='#/products'; route(); }catch(e){ toast(e.message); } };
+    if(!ok) return; try{ const r=await api(`/products/${id}`,{method:'DELETE'}); toast(L({ar:`حُذف المنتج (عدد مستنداته: ${r.documents})`,en:`Product deleted (${r.documents} document(s))`})); location.hash='#/products'; route(); }catch(e){ toast(e.message); } };
   $$('[data-unlink]').forEach(b=>b.onclick=async()=>{ await api(`/products/${id}/parties/${b.dataset.unlink}`,{method:'DELETE'}); route(); });
   if($('#lpGo')) $('#lpGo').onclick=async()=>{ try{ await api(`/products/${id}/parties`,{method:'POST',json:{party_id:$('#lp-party').value,role:$('#lp-role').value,api_name:$('#lp-api').value||null}}); toast(t('saved')); route(); }catch(e){ toast(e.message); } };
   if($('#lpNew')) $('#lpNew').onclick=()=>partyForm();

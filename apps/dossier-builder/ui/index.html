@@ -774,7 +774,13 @@ const T = {
   board:{en:'Dossier tree and what is missing',ar:'شجرة الملف والنواقص'},
   bsAll:{en:'Every required point is closed',ar:'كل النقاط المطلوبة مغلقة'}, bsClosed:{en:'Points closed: {a} of {b}',ar:'النقاط المغلقة: {a} من {b}'},
   bsOpenWhy:{en:'The open ones, by reason:',ar:'النقاط المفتوحة بحسب السبب:'},
-  bsTarget:{en:'Target submission date',ar:'تاريخ التقديم المستهدف'}, bsTargetLeft:{en:'Days left until then: {n}.',ar:'الأيام المتبقية حتى هذا التاريخ: {n}.'},
+  bsTarget:{en:'Target submission date',ar:'تاريخ التقديم المستهدف'},
+  autoRun:{en:'Run it for me',ar:'التنفيذ التلقائي'}, cardAuto:{en:'Confirm the card and run it for me',ar:'اعتماد البطاقة والتنفيذ التلقائي'},
+  autoRunSub:{en:'Each file goes into the item the program is sure of, then every document is prepared, and what is left for you is shown. A file whose place is not sure, or that asks a question, stays here.',ar:'يوضع كل ملف في البند الذي يثق به البرنامج، ثم تُجهَّز المستندات كلها، ثم يُعرض عليك ما بقي يحتاج إليك. والملف الذي لا يثق البرنامج بموضعه، أو يحتاج إلى إجابة منك، يبقى هنا.'},
+  autoLeft:{en:'Files left on «Proposed tree» for you to decide: {n}',ar:'ملفات بقيت في «الشجرة المقترحة» تنتظر قرارك: {n}'},
+  treeBesideT:{en:'Already in this item:',ar:'في هذا البند الآن:'}, treeThisValid:{en:'this file is valid until',ar:'وهذا الملف صالح حتى'},
+  treeBeside:{en:'Add it beside',ar:'إضافته بجانبه'}, treeNewer:{en:'A newer copy of «{f}»: it takes its place, and the earlier one is kept',ar:'نسخة أحدث من «{f}»: تحل محله، ويُحفظ السابق'},
+  treeNewerSaid:{en:'The program proposes it is a newer copy: it is valid later.',ar:'يقترح البرنامج أنه نسخة أحدث: صلاحيته أبعد.'}, bsTargetLeft:{en:'Days left until then: {n}.',ar:'الأيام المتبقية حتى هذا التاريخ: {n}.'},
   bsTargetPast:{en:'This date has passed.',ar:'هذا التاريخ قد مضى.'}, bsTargetNone:{en:'No date is set: validity is judged on today.',ar:'لم يُحدَّد تاريخ بعد: تُحسب الصلاحية على تاريخ اليوم.'},
   bsTargetWhy:{en:'A certificate must still be valid on the day of submission.',ar:'يجب أن تكون كل شهادة سارية يوم التقديم.'},
   bsTargetSaved:{en:'The target date is saved.',ar:'حُفظ تاريخ التقديم المستهدف.'}, bsTargetCleared:{en:'The target date is removed.',ar:'أُزيل تاريخ التقديم المستهدف.'},
@@ -1856,7 +1862,9 @@ function wizard(){
      <label class="f"><span>${esc(t('apiOpt'))}</span><select data-api="${i}" data-f="option">${['CEP','DMF','PQ','FULL'].map(o=>`<option ${a.option===o?'selected':''}>${o}</option>`).join('')}</select></label>
      ${d.apis.length>1?`<div style="align-self:end"><button class="btn sm ghost" data-rmapi="${i}">${icon('x',14)} ${esc(t('remove'))}</button></div>`:''}</div>`).join('')}
      <div><button class="btn" id="addApi">${icon('plus')} ${esc(t('addApi'))}</button></div></section>
-    <section class="stack gap-s" data-card-sec="submission"><h3>${esc(t('secSub'))}</h3><div class="form">${txt('applicant','applicant')}${txt('tracking','tracking','P-MAA-0001')}${txt('portal','portal')}${txt('inn','inn','paracetamol')}</div></section>
+    <section class="stack gap-s" data-card-sec="submission"><h3>${esc(t('secSub'))}</h3><div class="form">${txt('applicant','applicant')}${txt('tracking','tracking','P-MAA-0001')}${txt('portal','portal')}${txt('inn','inn','paracetamol')}
+      <label class="f"><span>${esc(t('bsTarget'))}</span><input type="date" data-in="target_date" id="cardTarget" value="${esc(d.target_date||'')}"></label></div>
+      <p class="small muted">${esc(t('bsTargetWhy'))}</p></section>
     ${busy?`<div class="alert info" id="cardBusy">${icon('info')}<p class="small">${esc(t('cardBusy'))}</p></div>`:''}</div>${datalists()}`;
   const intakeCard = '';
   $('#view').innerHTML=`<div class="head"><div class="title"><div class="eyebrow">${esc(t('newDossier'))}</div><h1>${esc(t(steps[w.step]))}</h1><p class="sub">${esc(t('wizSub'+w.step))}</p></div>
@@ -1865,7 +1873,7 @@ function wizard(){
    <div class="wiz"><div class="stack">${intakeCard}<div class="card pad" id="wizBody">${body}</div><div id="wizErr"></div>
    <div class="row"><a class="btn ghost" href="#/dossiers" id="wizCancel">${esc(wizHasWork(w)?L({ar:'خروج (المسودة محفوظة)',en:'Leave (the draft is kept)'}):t('cancel'))}</a><span class="grow"></span>
    ${w.step?`<button class="btn" id="wizBack">${esc(t('back'))}</button>`:''}
-   ${w.step<3?`<button class="btn pri" id="wizNext">${esc(t('next'))}: ${esc(t(steps[w.step+1]))} <span class="flip">${icon('arrow',16)}</span></button>`:`<button class="btn pri" id="wizCreate" ${busy?'disabled':''}>${icon('check')} ${esc(t('cardGo'))}</button>`}</div></div>
+   ${w.step<3?`<button class="btn pri" id="wizNext">${esc(t('next'))}: ${esc(t(steps[w.step+1]))} <span class="flip">${icon('arrow',16)}</span></button>`:`<button class="btn" id="wizAuto" ${busy?'disabled':''} title="${esc(t('autoRunSub'))}">${icon('zap')} ${esc(t('cardAuto'))}</button><button class="btn pri" id="wizCreate" ${busy?'disabled':''}>${icon('check')} ${esc(t('cardGo'))}</button>`}</div></div>
    <aside class="card glow pv" id="pv"><div class="hd"><span class="ic-tile">${icon('checklist')}</span><h3>${esc(t('pvT'))}</h3></div><div class="pad" id="pvBody">${prevPv}</div></aside></div>`;
   const v=$('#view');
   const typed=w.typed=w.typed||{}; bindProfileControls(v, d, ()=>{ wizard(); wizSave(); }, k=>{ typed[k]=1; });
@@ -1895,17 +1903,21 @@ function wizard(){
   const keepStep=()=>{ if(wizHasWork(w)) wizSave(true); };                          // a wizard nothing was done in leaves no draft behind
   if($('#wizBack')) $('#wizBack').onclick=()=>{ w.step--; wizard(); keepStep(); };
   if($('#wizNext')) $('#wizNext').onclick=()=>{ w.step++; wizard(); keepStep(); };
-  if($('#wizCreate')) $('#wizCreate').onclick=async()=>{
+  const create=async auto=>{ $$('#wizCreate, #wizAuto').forEach(b=>b.disabled=true);
     try{
       const r = await api('/dossiers',{method:'POST',json:{name:d.name||d.trade||'Dossier',country:d.country||'EG',profile:profileOf(d),
         product:{name:d.trade||d.name,dosageform:d.form,manufacturer:d.man,indication:d.ind||null},
-        envelope:{tracking:d.tracking,applicant:d.applicant,invented_name:d.trade||d.name,inn:d.inn.split(',').map(s=>s.trim()).filter(Boolean),portal_id:d.portal,description:'Initial MAA'}}});
+        envelope:{tracking:d.tracking,applicant:d.applicant,invented_name:d.trade||d.name,inn:d.inn.split(',').map(s=>s.trim()).filter(Boolean),portal_id:d.portal,description:'Initial MAA',target_date:d.target_date||null}}});
       const w0=S.wiz; w0.created=r.id; await wizWrite(w0);          // the draft remembers its dossier: a refresh during the placement finishes it (wizResume)
       S.wiz=null; S.staging=r.id; location.hash=`#/d/${r.id}/tree`;          // the tree's page says the documents are on their way until they are all there
       await wizFinish(w0, r.id);
+      if(auto&&S.dossier&&S.dossier.id===r.id&&location.hash.endsWith('/tree')) await autoRun(r.id);     // «التنفيذ التلقائي»: placed and prepared without stopping here
     }catch(e){ const probs = e.detail && e.detail.problems, box=$('#wizErr');            // after «Create» the page is the board: the message goes to a toast, the draft stays for wizResume
-      if(box) box.innerHTML=`<div class="alert bad">${icon('alert')}<p>${probs?probs.map(p=>esc(p[S.lang])).join('<br>'):esc(e.message)}</p></div>`; else toast(e.message); }
+      if(box) box.innerHTML=`<div class="alert bad">${icon('alert')}<p>${probs?probs.map(p=>esc(p[S.lang])).join('<br>'):esc(e.message)}</p></div>`; else toast(e.message);
+      $$('#wizCreate, #wizAuto').forEach(b=>b.disabled=false); }
   };
+  if($('#wizCreate')) $('#wizCreate').onclick=()=>create(false);
+  if($('#wizAuto')) $('#wizAuto').onclick=()=>create(true);
   previewReq(true); paintPath();
   $$('#pathbar .sts a').forEach(a=>{ const n=+a.dataset.st; if(n>=2&&n<=4) a.onclick=e=>{ e.preventDefault(); if(S.wiz===w){ w.step=n-2; wizard(); if(wizHasWork(w)) wizSave(true); } }; });   // a station of the wizard is a way to its screen
 }
@@ -1918,13 +1930,18 @@ async function wizFinish(w0, did){
   if(navigator.locks&&w0.draftId) return navigator.locks.request(`db.wiz.${w0.draftId}`, run);
   return run();
 }
+/* the dates Claude read on a scan's pages in «القراءة والفرز», by file: only those (a file with text is read again from its text at its
+   preparation; a date Claude did not read is not said to be his) */
+function wizDates(w0){ const out={}, by=w0.ocrRead||{};
+  for(const f of ((w0.intakeFill||{}).documents||[])){ if(f&&f.filename&&f.valid_until&&by[f.filename]==='model') out[f.filename]={valid_until:f.valid_until, issued:f.issued||null}; }
+  return out; }
 async function wizFinishRun(w0, did){
   const d=w0.d, draftId=w0.draftId;
   if(draftId){ try{ const r=await api(`/intake/drafts/${draftId}`); if((r.state||{}).dataWritten) w0.dataWritten=true; }   // the draft as it is now: another tab may have gone further
     catch(e){ if(e&&e.status===404){ if(store.get(WIZ_KEY)===draftId) store.set(WIZ_KEY,''); return; } } }                    // gone: another tab finished everything
   const all=await wizFiles(w0), fill=w0.intakeFill;
   const refused=all.filter(f=>((w0.docs||{})[f.name]||{}).status==='mismatch').map(f=>f.name);
-  const placeOpts={texts:w0.texts||{}, kinds:w0.kinds||{}, stage:refused, noText:Object.keys(w0.docs||{}).filter(n=>w0.docs[n].status==='notext')};
+  const placeOpts={texts:w0.texts||{}, kinds:w0.kinds||{}, dates:wizDates(w0), stage:refused, noText:Object.keys(w0.docs||{}).filter(n=>w0.docs[n].status==='notext')};
   if(fill&&!w0.dataWritten){ try{ const data={apis:(d.apis||[]).filter(a=>a.name).map(a=>({name:a.name,manufacturer:a.manufacturer||'',option:a.option||'FULL',strength:a.strength||'',country:a.country||''})),
       composition:(fill.composition||[]).map(c=>({name:c.name,amount:c.amount||'',standard:c.standard||'',function:c.role==='active'?'active':(c.role||''),equivalent:c.equivalent||''})),
       batches:(fill.batches||[]).map(b=>({no:b.no,kind:b.kind||'fpp',api:b.api||'',size:b.size||'',date:b.date||'',site:b.site||'',expiry:b.expiry||'',conformity:b.conformity||''})),
@@ -2361,11 +2378,11 @@ function applyIntake(files){
    words). Its place is proposed on the tree's page, and nothing is placed before the person approves it there. (Until stage 2 the
    wizard placed its files itself, and a file that held several documents went whole into one item.) */
 async function stageFiles(did, files, opts){
-  opts=opts||{}; const texts=opts.texts||{}, kinds=opts.kinds||{}, lost=[], noText=[...(opts.noText||[])]; let staged=0, i=0;
+  opts=opts||{}; const texts=opts.texts||{}, kinds=opts.kinds||{}, dates=opts.dates||{}, lost=[], noText=[...(opts.noText||[])]; let staged=0, i=0;
   const say=x=>{ const m=$('#prepMsg'); if(m&&location.hash.endsWith('/tree')) m.textContent=x; };
   for(const f of files){ const fd=new FormData(); fd.append('files',f); const meta={};                          // one file a request, each with its own reading
     say(`${t('treeStagingN').replace('{i}', ++i).replace('{n}', files.length)} ${f.name}`);
-    if(kinds[f.name]||texts[f.name]) meta[f.name]={kind:kinds[f.name]||null, text:(texts[f.name]&&texts[f.name].text||'').slice(0,6000)};
+    if(kinds[f.name]||texts[f.name]||dates[f.name]) meta[f.name]={kind:kinds[f.name]||null, text:(texts[f.name]&&texts[f.name].text||'').slice(0,6000), ...(dates[f.name]||{})};
     fd.append('meta', JSON.stringify(meta));
     try{ await api(`/dossiers/${did}/unplaced`,{method:'POST',body:fd}); staged++; }
     catch(e){ if(e&&e.detail&&e.detail.code==='E-NOTEXT'){ noText.push(f.name); continue; } console.warn('unplaced', e); lost.push(`${f.name}: ${e&&e.message||e}`); } }
@@ -3343,6 +3360,10 @@ async function dropFiles(slotId, list){
    The person's own choices of place are kept on this device until the tree is approved. */
 function treeChoices(did){ try{ return JSON.parse(store.get('db.tree.'+did)||'{}')||{}; }catch(e){ return {}; } }
 function treeChoose(did, doc, slot){ const c=treeChoices(did); if(slot===undefined) delete c[doc]; else c[doc]=slot; try{ store.set('db.tree.'+did, JSON.stringify(c)); }catch(e){} }
+/* a file going into an item that holds a document already: beside it (''), or a newer copy of it (that document's id) — it then takes
+   its place as its new version, and the one before is kept. The program proposes «newer copy» where the file is valid later. */
+function treeRps(did){ try{ return JSON.parse(store.get('db.treeRp.'+did)||'{}')||{}; }catch(e){ return {}; } }
+function treeRp(did, doc, rp){ const c=treeRps(did); if(rp===undefined) delete c[doc]; else c[doc]=rp; try{ store.set('db.treeRp.'+did, JSON.stringify(c)); }catch(e){} }
 function treeView(tok){
   if(!fresh(tok)) return;
   const did=S.dossier.id;
@@ -3375,7 +3396,7 @@ let treeSeq=0;
 async function paintTree(){
   const out=$('#treeOut'); if(!out||!S.dossier) return; const did=S.dossier.id, my=++treeSeq; let r;
   const capsP=S.caps?null:caps().catch(()=>null);
-  try{ r=await api(`/dossiers/${did}/tree`,{method:'POST',json:{place:treeChoices(did)}}); }
+  try{ r=await api(`/dossiers/${did}/tree`,{method:'POST',json:{place:treeChoices(did), replaces:treeRps(did)}}); }
   catch(e){ if(my===treeSeq&&$('#treeOut')) $('#treeOut').innerHTML=`<div class="alert bad"><p class="small">${esc(e.message)}</p></div>`; return; }
   const inPage=!!(window.DBAI&&await window.DBAI.available());
   if(capsP) await capsP;
@@ -3398,6 +3419,11 @@ async function paintTree(){
       <div class="small"><b>${esc(t('treeKind'))}:</b> ${w.kind_name?esc(L(w.kind_name)):`<span class="muted">${esc(t('treeKindUnknown'))}</span>`}${md?` <span style="color:var(--ok)">· ${esc(t('prepModelSaw'))}: ${esc([md.title, md.number, md.issuer, md.valid_until?('→ '+md.valid_until):''].filter(Boolean).join(' · ')||md.kind||'')}</span>`:''}</div>
       ${w.reading.found&&w.reading.found.length?`<div class="small" style="color:var(--ok)">${esc(t('treeRead'))}: ${esc(foundNames(w.reading.found).join('، '))}</div>`:''}
       ${w.name?`<div class="small" data-tname><b>${esc(t('prepNewName'))}:</b> <bdi title="${esc(w.name)}">${esc(w.name.split('/').pop())}</bdi></div>`:''}
+      ${(w.beside||[]).length?`<div class="small stack gap-s" data-tbeside="${esc(w.id)}" style="margin-top:4px;padding:6px 8px;border:1px dashed var(--line);border-radius:8px">
+        <div><b>${esc(t('treeBesideT'))}</b> ${w.beside.map(x=>`<bdi>${esc(x.filename)}</bdi>${x.valid_until?` <span class="muted">(${esc(t('validUntil'))} ${esc(dateL(x.valid_until))})</span>`:''}`).join('، ')}${w.valid_until?` · ${esc(t('treeThisValid'))} ${esc(dateL(w.valid_until))}`:''}</div>
+        <label class="row gap-s" style="align-items:center"><input type="radio" name="trp-${esc(w.id)}" data-trp="${esc(w.id)}" value="" ${w.replaces?'':'checked'}> <span>${esc(t('treeBeside'))}</span></label>
+        ${w.beside.map(x=>`<label class="row gap-s" style="align-items:center"><input type="radio" name="trp-${esc(w.id)}" data-trp="${esc(w.id)}" value="${esc(x.id)}" ${w.replaces===x.id?'checked':''}> <span>${esc(t('treeNewer').replace('{f}', x.filename))}</span></label>`).join('')}
+        ${w.newer_of?`<div class="muted" data-tnewer>${esc(t('treeNewerSaid'))}</div>`:''}</div>`:''}
       ${maybe?`<div class="small" data-tmaybe style="color:var(--warn)">${esc(t('treeMaybe').replace('{n}', maybe))}</div>`:''}
       ${meta?`<div class="small" style="color:var(--warn)">${esc(t(meta==='pi'?'treeNeedsPi':meta==='study'?'treeNeedsStudy':'treeNeedsCountry'))}</div>`:''}
       <div class="row gap-s" style="flex-wrap:wrap;margin-top:4px;align-items:center"><label class="small">${esc(t('treePlace'))} <select data-tplace="${esc(w.id)}" style="max-width:min(36em,100%)">${options(w)}</select></label>
@@ -3406,13 +3432,14 @@ async function paintTree(){
   const sum=`<section class="card glow pad stack gap-s" id="treeSum"><div class="row gap-s" style="flex-wrap:wrap;align-items:center">
       <div class="grow" style="min-width:14em"><b id="treeSumT">${esc(W.length?t('treeSumWait').replace('{docs}', nOf(W.length,'doc')):S.staging===did?t('treeStaging'):t('treeEmpty'))}</b>
         <div class="small muted">${W.length?`${esc(t('treeSumProp').replace('{n}', c.proposed))}${c.unplaced?` · ${esc(t('treeSumLoose').replace('{n}', c.unplaced))}`:''} · `:''}${esc(t('treeSumItems').replace('{a}', c.filled).replace('{b}', c.required))}</div></div>
+      ${c.proposed?`<button class="btn" id="treeAuto" ${S.autoBusy?'disabled':''}>${icon('zap')} ${esc(t('autoRun'))}</button>`:''}
       ${c.proposed?`<button class="btn pri" id="treeGo">${icon('check')} ${esc(t('treeGo'))}</button>`:S.staging===did?'':`<a class="btn ${W.length?'':'pri'}" id="treeNext" href="#/d/${did}/prepare">${esc(t('treeToPrep'))} <span class="flip">${icon('arrow',14)}</span></a>`}</div>
-      ${c.proposed?`<div class="small muted">${esc(t('treeGoSub'))}</div>`:''}</section>`;
+      ${c.proposed?`<div class="small muted">${esc(t('treeGoSub'))}</div><div class="small muted" id="treeAutoSub"><b>${esc(t('autoRun'))}:</b> ${esc(t('autoRunSub'))}</div>`:''}</section>`;
   const loose=W.filter(w=>!w.place);
   const looseHtml=loose.length?`<section class="card pad" id="treeLoose"><div class="hd"><h3>${esc(t('treeLoose'))} <span class="tag">${loose.length}</span></h3></div><p class="small muted">${esc(t('treeLooseSub'))}</p>${loose.map(fileCard).join('')}</section>`:'';
   const lvl=sl=>`<span class="chip ${sl.level==='R'?'c-rec':'c-na'}">${esc(t(LEVEL[sl.level]))}</span>`;
   const mark=sl=>`${sl.generable?`<span class="tag brand" title="${esc(t('generable'))}">✦</span>`:''}${['third_party_certificate','eda_document'].includes(sl.doc_class)?`<span class="tag" title="${esc(t('thirdParty'))}">${icon('lock',11)}</span>`:''}`;
-  const itemRow=sl=>`<div class="treeitem" data-titem="${esc(sl.slot_id)}" style="padding:8px 0;border-top:1px solid var(--line)"><div class="row gap-s" style="flex-wrap:wrap"><span class="code">${esc(sl.ctd||'')}</span><b>${esc(L(sl.title))}</b>${sl.item?`<span class="small muted">· ${bdi(sl.item.name||'')}${sl.item.manufacturer?' — '+bdi(sl.item.manufacturer):''}</span>`:''}${lvl(sl)}${mark(sl)}</div>
+  const itemRow=sl=>`<div class="treeitem" data-titem="${esc(sl.slot_id)}" style="padding:8px 0;border-top:1px solid var(--line)"><div class="row gap-s" style="flex-wrap:wrap;align-items:center"><span class="code">${esc(sl.ctd||'')}</span><b>${esc(L(sl.title))}</b>${sl.item?`<span class="small muted">· ${bdi(sl.item.name||'')}${sl.item.manufacturer?' — '+bdi(sl.item.manufacturer):''}</span>`:''}${lvl(sl)}${mark(sl)}${sl.documents.length?pointChip(sl.point, sl.open_why):''}<span class="grow"></span><button class="btn sm ghost" data-lib="${esc(sl.slot_id)}">${icon('book',14)} ${esc(t('libBtn'))}</button></div>
       ${sl.documents.map(d=>`<div class="small" data-tplaced="${esc(d.id)}" style="margin-top:4px"><span class="chip c-ok"><i></i>${esc(t('treePlacedTag'))}</span> <bdi>${esc(d.filename)}</bdi>${d.name?` <span class="muted">· ${esc(t('prepNewName'))}: <bdi title="${esc(d.name)}">${esc(d.name.split('/').pop())}</bdi></span>`:''}</div>`).join('')}
       ${sl.proposed.map(id=>fileCard(W.find(w=>w.id===id))).join('')}</div>`;
   const mods=[1,2,3,4,5].map(m=>{ const rows=slots.filter(sl=>sl.module===m); if(!rows.length) return '';
@@ -3421,11 +3448,14 @@ async function paintTree(){
       ${withDocs.map(itemRow).join('')||`<p class="small muted">${esc(t('treeModNone'))}</p>`}
       ${missing.length?`<details style="margin-top:8px"><summary class="small">${esc(t('treeMissing').replace('{n}', missing.length))}</summary>${missing.map(sl=>`<div class="small" style="padding:3px 0"><span class="code">${esc(sl.ctd||'')}</span> ${esc(L(sl.title))}${sl.item?` <span class="muted">· ${bdi(sl.item.name||'')}</span>`:''} ${mark(sl)}</div>`).join('')}</details>`:''}</section>`; }).join('');
   out.innerHTML=sum+looseHtml+mods;
+  $$('[data-trp]', out).forEach(r=>r.onchange=()=>{ const w=W.find(x=>x.id===r.dataset.trp)||{}; treeRp(did, r.dataset.trp, r.value===(w.newer_of||'')?undefined:r.value); paintTree(); });   // the program's own proposal again: no choice is kept
   $$('[data-tplace]', out).forEach(sl=>sl.onchange=()=>{ const w=W.find(x=>x.id===sl.dataset.tplace)||{}; treeChoose(did, sl.dataset.tplace, sl.value===(w.auto||'')?undefined:sl.value); paintTree(); });   // back to the program's own proposal: no choice is kept
   $$('[data-tsplit]', out).forEach(b=>b.onclick=()=>splitDoc(b.dataset.tsplit));
+  $$('[data-lib]', out).forEach(b=>b.onclick=()=>openLib(b.dataset.lib));
   $$('[data-tdel]', out).forEach(b=>DS.twoStep(b, L({ar:'متأكد؟ اضغط مرة أخرى للإزالة',en:'Sure? Press again to remove'}), async()=>{
     try{ await api(`/dossiers/${did}/documents/${b.dataset.tdel}/withdraw`,{method:'POST'}); toast(t('withdrawn')); treeChoose(did, b.dataset.tdel); S.board=null; await paintTree(); pathLazy(); }catch(e){ toast(e.message); } }));
   const go=$('#treeGo'); if(go) go.onclick=treeApprove;
+  const ar=$('#treeAuto'); if(ar) ar.onclick=()=>autoRun(did);
   if(S.J&&S.Jdid===did&&S.J.unplaced!==W.length){ S.J.unplaced=W.length; paintPath(S.J); }      // the path's fifth station says how many wait
   if(window.DBPV){ DBPV.mount(out, did); DBPV.restore(out); }
   if(S.prepWaitP&&!S.treeBusy){ const m=$('#prepMsg'); if(m&&!m.textContent) m.textContent=t('treeWorking'); }
@@ -3449,7 +3479,7 @@ async function treeApprove(){
     for(const w of todo){ i++; const sl=byId[w.place]; let meta={};
       say(`${t('treePlacing').replace('{i}', i).replace('{n}', todo.length)} ${w.filename}`);
       if(needsMeta(sl)){ meta=await treeAskMeta(sl, w); if(!meta){ failed.push(w.filename); continue; } }
-      try{ await api(`/dossiers/${did}/documents/${w.id}/place`,{method:'POST',json:{slot_id:w.place, meta}}); n++; treeChoose(did, w.id); }
+      try{ await api(`/dossiers/${did}/documents/${w.id}/place`,{method:'POST',json:{slot_id:w.place, meta, replaces:w.replaces||null}}); n++; treeChoose(did, w.id); treeRp(did, w.id); }
       catch(e){ failed.push(`${w.filename}: ${e.message}`); } }
     S.board=null; say('');
     toast(t('treeDone').replace('{docs}', nOf(n,'doc'))+(failed.length?` · ${t('treeLeft').replace('{n}', failed.length)}: ${failed.slice(0,3).join(' · ')}`:''), failed.length?14000:undefined);
@@ -3457,6 +3487,29 @@ async function treeApprove(){
     if(n&&!failed.length&&!r.waiting.some(w=>!w.place)){ location.hash=`#/d/${did}/prepare`; return; }       // all in their items: on to preparing them
     await paintTree(); pathLazy();
   } finally { S.treeBusy=false; const g=$('#treeGo'); if(g) g.disabled=false; }
+}
+/* «التنفيذ التلقائي» (the owner's «سيبها عليّ», stage 3): every waiting file whose place the program is sure of — or the person chose —
+   and that asks nothing more (no details of its item, no choice between «beside» and «a newer copy») goes into its item; then every
+   document is prepared, on station 6, whose sign says what is left. It changes nothing in a document itself; a file it is not sure of
+   stays on the proposed tree, said there and on the sign. */
+async function autoRun(did){
+  if(S.autoBusy||S.treeBusy) return; S.autoBusy=did; S.treeBusy=true;
+  const say=x=>{ const m=$('#prepMsg'); if(m) m.textContent=x; }; $$('#treeAuto, #treeGo').forEach(b=>b.disabled=true);
+  try{
+    if(S.prepWaitP){ say(t('treeWorking')); await S.prepWaitP.catch(()=>{}); }      // what was added is still being read: its place comes from that
+    if(location.hash.endsWith('/tree')) await paintTree();
+    const r=S.tree; if(!r||!S.dossier||S.dossier.id!==did) return;
+    const byId=Object.fromEntries(r.slots.map(sl=>[sl.slot_id, sl])), mine=treeChoices(did), rps=treeRps(did);
+    const sure=w=>!!(w.place&&byId[w.place]&&(w.place===w.auto||w.id in mine)&&!needsMeta(byId[w.place])&&(!(w.beside||[]).length||w.id in rps));
+    const go=r.waiting.filter(sure); let n=0, i=0, failed=0;
+    for(const w of go){ i++; say(`${t('autoRun')}: ${t('treePlacing').replace('{i}', i).replace('{n}', go.length)} ${w.filename}`);
+      try{ await api(`/dossiers/${did}/documents/${w.id}/place`,{method:'POST',json:{slot_id:w.place, meta:{}, replaces:w.replaces||null}}); n++; treeChoose(did, w.id); treeRp(did, w.id); }
+      catch(e){ failed++; console.warn('auto place', w.filename, e); } }
+    S.board=null; say('');
+    if(!S.dossier||S.dossier.id!==did) return;
+    S.autoLeft=r.waiting.length-n; S.autoPrep=did;                    // station 6 prepares them all as it opens, and says what was left
+    const to=`#/d/${did}/prepare`; if(location.hash===to) route(); else location.hash=to;
+  } finally { S.autoBusy=null; S.treeBusy=false; $$('#treeAuto, #treeGo').forEach(b=>b.disabled=false); }
 }
 /* ---------------- station 6, «التجهيز والمراجعة» (eBOX stage 3, 16/11/2026 — the owner: «عايز خزنة للملفات اللي اتقرت و اتقطعت و اتجهزت
    اشوفها و اطلع عليها داخل البرنامج بدون تنزيل و ابقي شايف قبل ما ندخل علي التكوين اني جاهز»). One page: the sign — the documents are ready for
@@ -3645,6 +3698,9 @@ async function prepDraw(){
     try{ await api(`/dossiers/${S.dossier.id}/data/choose`,{method:'POST',json:{field:c.field, value:b.dataset.use==='read'?c.read:c.have, doc_id:b.dataset.use==='read'?c.doc_id:null}}); S.board=null; }catch(e){ toast(e.message); } paintPrepare(); });
   paintVault();
   if(S.prepOffice){ S.prepOffice=false; const o=$('#office'); if(o) o.scrollIntoView({block:'start'}); }
+  if(S.autoPrep===did){ S.autoPrep=null; const left=S.autoLeft||0; S.autoLeft=0;          // «التنفيذ التلقائي»: on to preparing them all
+    if(left) toast(t('autoLeft').replace('{n}', left), 12000);
+    setTimeout(()=>{ if(S.dossier&&S.dossier.id===did&&location.hash.endsWith('/prepare')) prepAll(); }, 0); }
 }
 /* while documents are being prepared, a document's own buttons wait — and say so (seen in stage 2: they acted in the middle of
    «تجهيز الكل», on a version that was about to be replaced). «عرض ومراجعة» still opens, to look only. */

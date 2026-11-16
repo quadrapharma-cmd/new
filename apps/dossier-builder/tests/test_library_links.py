@@ -84,6 +84,8 @@ def test_the_button_and_each_items_link_open_the_library(server):
         page.click('#lang-en')
         assert page.locator('#libBtn').inner_text().strip() == 'Library'
         page.goto(f'{server}/#/d/{sa}/board')                               # a Gulf dossier: its own items, and the common CTD's
+        page.wait_for_selector('#boardSign', timeout=20000)
+        page.click('[data-f="all"]')                                         # an optional item is not a point to close: under «الكل»
         page.wait_for_selector('[data-why="GCC-1.4.2"]', timeout=20000)
         page.click('[data-why="GCC-1.4.2"]')
         page.wait_for_selector('#libItem')
