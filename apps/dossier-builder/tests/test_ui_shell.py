@@ -73,15 +73,27 @@ def test_home_has_the_library_beside_my_dossiers(server, browser):
     # the path: nine stations, this screen the first
     assert page.locator('#pathbar .sts a').count() == 9 and page.evaluate(HERE) == [1] and page.locator('#pathNext').count() == 0
     assert [page.locator('#pathbar .sts a').nth(i).inner_text().split('\n')[-1].strip() for i in (0, 1, 8)] == ['الرئيسية', 'الدولة', 'التصدير']
-    # «بدء ملف لهذه الدولة»: the wizard opens with the country already chosen, on the stations of the country, the upload and the reading
+    # «بدء ملف لهذه الدولة»: the wizard opens with the country already chosen, on the country's station; each of its screens is one station
     page.fill('#libQ', 'SFDA')
     page.click('#libList .librow:not([hidden]) [data-libnew]')
     page.wait_for_selector('#auCard')
     assert page.evaluate('() => location.hash') == '#/new' and 'SFDA' in page.inner_text('#auName')
-    assert page.input_value('#auCountry') not in ('', 'EG') and page.evaluate(HERE) == [2, 3, 4]
+    assert page.input_value('#auCountry') not in ('', 'EG') and page.evaluate(HERE) == [2]
+    assert page.inner_text('#view h1').strip() == 'الدولة' and page.inner_text('#wizNext').strip().startswith('التالي: الرفع')
     page.click('#wizNext')
-    page.wait_for_function("() => document.querySelectorAll('#pathbar .sts a.here').length === 1")
-    assert page.evaluate(HERE) == [5]                                                  # the product and its answers decide the proposed tree
+    page.wait_for_selector('#intakeBtn')
+    assert page.evaluate(HERE) == [3] and page.inner_text('#view h1').strip() == 'الرفع'
+    page.click('#wizNext')
+    page.wait_for_selector('#sortNone')                                                # nothing uploaded: said, and the card is typed
+    assert page.evaluate(HERE) == [4] and page.inner_text('#view h1').strip() == 'القراءة والفرز'
+    page.click('#wizNext')
+    page.wait_for_selector('#pcard')
+    assert page.evaluate(HERE) == [4] and page.inner_text('#view h1').strip() == 'بطاقة المنتج'    # the card closes the reading station: it decides the items
+    assert page.inner_text('#wizCreate').strip() == 'اعتماد البطاقة وعرض الشجرة المقترحة' and page.locator('#wizNext').count() == 0
+    assert [x.strip() for x in page.locator('#pcard [data-card-sec] h3').all_inner_texts()] == ['المنتج', 'ما تتحدد به بنود الملف', 'المواد الفعالة', 'التقديم']
+    page.click('#pathbar .sts a[data-st="2"]')                                         # a station of the wizard is a way back to its screen
+    page.wait_for_selector('#auCard')
+    assert page.evaluate(HERE) == [2]
     assert not errors, errors
     page.close()
 
@@ -116,11 +128,11 @@ def test_the_menu_follows_the_path(server, browser):
     assert page.is_visible('#navD')
     # the dossier's pages carry the number of their station; the tools that are on no station come after, without one
     stations = {a.get_attribute('data-r'): a.locator('.stn').inner_text() for a in page.locator('#navD a').all() if a.locator('.stn').count()}
-    assert stations == {'prepare': '6', 'office': '6', 'board': '7', 'checks': '8', 'review': '8', 'export': '9'}, stations
+    assert stations == {'tree': '5', 'prepare': '6', 'office': '6', 'board': '7', 'checks': '8', 'review': '8', 'export': '9'}, stations
     tools = [a.get_attribute('data-r') for a in page.locator('#navD a').all() if not a.locator('.stn').count()]
     assert tools == ['guide', 'data', 'publisher', 'search', 'audit'], tools
     names = {a.get_attribute('data-r'): a.inner_text().split('\n')[-1].strip() for a in page.locator('#navD a').all()}
-    assert names['office'] == 'مراجعة المستندات وتعديلها' and names['board'] == 'شجرة الملف والنواقص' and names['guide'] == 'الخطوة التالية' and names['publisher'] == 'هيكل المخرجات'
+    assert names['tree'] == 'الشجرة المقترحة' and names['office'] == 'مراجعة المستندات وتعديلها' and names['board'] == 'شجرة الملف والنواقص' and names['guide'] == 'الخطوة التالية' and names['publisher'] == 'هيكل المخرجات'
     # the path: the first five stations are behind an open dossier, this screen is the seventh, and there is one «التالي»
     assert page.evaluate(HERE) == [7] and page.locator('#pathbar .sts a.done').count() >= 5 and page.locator('#pathNext').count() == 1
     nxt = page.inner_text('#pathNext')
@@ -130,6 +142,13 @@ def test_the_menu_follows_the_path(server, browser):
     assert page.get_attribute('#nav a[aria-current="page"]', 'data-r') == 'checks'
     page.click('#pathbar .sts a[data-st="6"]')                                         # a station is a way back, too
     page.wait_for_function("() => location.hash.endsWith('/prepare')")
+    page.click('#pathbar .sts a[data-st="5"]')                                         # the fifth station of an open dossier: the proposed tree's page
+    page.wait_for_function("() => location.hash.endsWith('/tree')")
+    page.wait_for_selector('#treeSum')
+    assert page.evaluate(HERE) == [5] and page.inner_text('#view h1').strip() == 'الشجرة المقترحة'
+    assert page.get_attribute('#nav a[aria-current="page"]', 'data-r') == 'tree'
+    assert page.get_attribute('#pathbar .sts a[data-st="3"]', 'href').endswith('/tree')   # a file is added there at any time: the box that is always open
+    assert page.locator('#pathbar .sts a[data-st="2"]').get_attribute('href') is None    # the country is settled when the dossier is made
     assert not errors, errors
     page.close()
 

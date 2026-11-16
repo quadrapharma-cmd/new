@@ -45,13 +45,13 @@
     const t = document.getElementById('bootTime'), h = document.getElementById('bootHelp');
     if (L0.done || !document.getElementById('boot')) { clearInterval(tick); return; }
     const secs = Math.round((Date.now() - L0.started) / 1000), still = Math.round((Date.now() - L0.moved) / 1000);
-    if (t && secs >= 8 && !L0.failed) t.textContent = AR ? `مضت ${secs} ثانية` : `${secs} s so far`;
+    if (t && secs >= 8 && !L0.failed) t.textContent = AR ? `الزمن المنقضي: ${secs} ث` : `${secs} s so far`;
     const fetching = !L0.total || L0.loaded < L0.total;                // still waiting for bytes; after them the engine works with no news for a while
     const stuck = L0.failed || still >= (fetching ? 40 : 150);
     if (h) { h.hidden = !stuck;
       if (stuck) { h.firstChild.textContent = L0.failed ? (AR ? 'تعذّر فتح البرنامج. أعد المحاولة؛ وإن تكرر ذلك فأرسل السطر الظاهر أعلاه.' : 'It did not open. Try again; if it repeats, send the line above.')
-          : fetching ? (AR ? `لم تصل أي بيانات منذ ${still} ثانية: الاتصال بطيء أو منقطع. انتظر قليلًا أو أعد المحاولة.` : `No data has arrived for ${still} s: the line is slow or down. Wait a little, or try again.`)
-          : (AR ? `المحرك يعمل منذ ${still} ثانية دون رد. انتظر قليلًا أو أعد المحاولة.` : `The engine has been starting for ${still} s with no answer. Wait a little, or try again.`);
+          : fetching ? (AR ? `لم تصل أي بيانات منذ ${still} ث: الاتصال بطيء أو منقطع. انتظر قليلًا أو أعد المحاولة.` : `No data has arrived for ${still} s: the line is slow or down. Wait a little, or try again.`)
+          : (AR ? `المحرك يعمل منذ ${still} ث دون رد. انتظر قليلًا أو أعد المحاولة.` : `The engine has been starting for ${still} s with no answer. Wait a little, or try again.`);
         h.lastChild.textContent = AR ? 'إعادة المحاولة' : 'Try again'; h.lastChild.onclick = () => location.reload(); } }
   }, 1000);
 
@@ -144,7 +144,7 @@
     let c;
     try { const r = await window.fetch(`/api/ocr/document/${m[1]}/${m[2] || m[3]}`); if (!r.ok) return; c = await r.json(); } catch (e) { return; }
     if (!c.why || c.here || !c.pages || (c.read >= c.pages && c.layout)) return;
-    if (c.pages > WHOLE) { ocrSay(c.filename, c.sha256, { stage: 'error', message: (document.documentElement.lang === 'en' ? `${c.pages} pages: more than this page reads at once (${WHOLE})` : `${c.pages} صفحة: أكثر مما تقرؤه الصفحة في مرة واحدة (${WHOLE})`) }); return; }
+    if (c.pages > WHOLE) { ocrSay(c.filename, c.sha256, { stage: 'error', message: (document.documentElement.lang === 'en' ? `${c.pages} pages: more than this page reads at once (${WHOLE})` : `عدد صفحاته ${c.pages}: أكثر مما تقرؤه الصفحة في مرة واحدة (${WHOLE})`) }); return; }
     try {
       const blob = await (await window.fetch(c.url)).blob();
       await readAndKeep(new File([blob], c.filename, { type: blob.type || 'application/pdf' }), c.sha256, c.pages, true);
@@ -178,7 +178,7 @@
     if (!window.dispatchEvent(ev)) return;                             // the page shows it where the file is
     const ar = (document.documentElement.lang || 'ar') !== 'en', T = window.DS && window.DS.toast;
     if (!T) return;
-    const pg = d.pages ? (ar ? ` · ${d.page} من ${d.pages} صفحة` : ` · ${d.page} of ${d.pages} pages`) : '';
+    const pg = d.pages ? (ar ? ` · الصفحة ${d.page} من ${d.pages}` : ` · ${d.page} of ${d.pages} pages`) : '';
     const msg = {
       load: ar ? 'جارٍ تجهيز قارئ المستندات الممسوحة ضوئيًا (في المرة الأولى فقط، ثم يبقى محفوظًا في المتصفح)…' : 'Getting the scan reader ready (the first time only; then it stays on this device)…',
       read: ar ? 'جارٍ قراءة المستند الممسوح ضوئيًا' : 'Reading the scan', check: ar ? 'جارٍ مراجعة الكلمات غير المؤكدة' : 'Checking the doubtful words',

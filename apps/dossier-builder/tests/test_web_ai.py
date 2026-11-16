@@ -67,9 +67,9 @@ def test_make_it_for_me_says_what_the_model_is_doing_and_why_it_did_not_answer(s
 
         # 1. the model answers after some seconds: thinking, then writing, then the page is filled with what it wrote
         page.click('#dpFill')
-        page.wait_for_function("() => /Claude يقرأ المستندات ويفكّر… \\d+ ثانية/.test(document.querySelector('#dpStat').textContent)", timeout=3000)
+        page.wait_for_function("() => /Claude يقرأ المستندات ويفكّر… \\(الزمن: \\d+ ث\\)/.test(document.querySelector('#dpStat').textContent)", timeout=3000)
         assert 'قد يستغرق حتى دقيقتين' in stat() and page.is_visible('#dpStop') and page.is_disabled('#dpFill')
-        page.wait_for_function("() => /Claude يكتب… \\d+ حرف/.test(document.querySelector('#dpStat').textContent)", timeout=6000)
+        page.wait_for_function("() => /Claude يكتب… عدد الأحرف: \\d+/.test(document.querySelector('#dpStat').textContent)", timeout=6000)
         page.wait_for_function("() => document.querySelector('#tplPanel').textContent.includes('white, homogeneous, smooth cream')", timeout=8000)
         assert 'مُلئت بنموذج claude.ai داخل الصفحة' in stat() and 'White soft paraffin' in page.inner_text('#tplPanel')
         assert not page.is_visible('#dpStop') and not page.is_disabled('#dpFill')

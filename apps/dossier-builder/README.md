@@ -105,6 +105,86 @@ and fields), the opening time against version 50 (first opening 5.50 s → 5.55 
 read back byte for byte, and the browser edition's tests on the page as served. Version 51 is also the first to hold the photo
 and design programs, the phone photo and the indication gate (below).
 
+## eBOX, stage 2 — the country, the upload, reading and sorting, the product card, the proposed tree (16/11/2026) — «كمل»
+
+Stations 2 to 5 of the path. Before it, «ملف جديد» was five steps of fields with the documents on the first, and the wizard put
+each file in an item by itself the moment the dossier was made; a file added later went through another door (the prepare
+page's own box), which alone knew how to cut a combined file. Now every document walks one way, and **nothing is placed before
+the person has seen where it would go and under which name** (the owner: «يتعرض عليا في شكل نقاط الشجرة قبل ما يتكون الملف»).
+
+**«ملف جديد» is four screens** (`#/new`, `wizard()` in `ui/index.html`; the path bar's stations 2–4 lead to them):
+1. **الدولة** — the country and its authority, its Module 1 laid out (`#auM1`), its record in the library (`#auLib`).
+2. **الرفع** — one box for anything (files, ZIP / RAR / 7z archives, a Drive folder); the named cards stay under it, optional
+   (`#upCards`), each with its kind rule. The live summary of what was recognised so far stays in sight.
+3. **القراءة والفرز** — what was read: «قُرئ: n · يحتاج إليك: m», the files that need the person first (`#sortBad`: not the
+   document its card asks for, no text, could not be read), then the files sorted by kind with each one's number, issuer and
+   validity where the reading gave them.
+4. **بطاقة المنتج** — the product, the answers that decide the items, the actives, the submission: the old steps 1–4 on one
+   screen (`#pcard`), each value marked with the document it came from; confirmed once. «اعتماد البطاقة وعرض الشجرة المقترحة»
+   waits for the reading to be in the card (`w.busyN`: a file's line says «read» a moment before its values are merged in).
+The reading itself is not touched: the same `readFiles`, the rules then the model, the same merge.
+
+**Confirming the card** makes the dossier, writes the read data once, and puts every file in the dossier's waiting box
+(`stageFiles` → `POST /unplaced`, with the kind and the text the wizard read). A draft made before stage 2 opens on the right
+screen (`wizRestore`); a refresh while the files are on their way finishes the job once (`wizResume`, one run per draft).
+
+**Station 5, «الشجرة المقترحة»** (`#/d/{id}/tree`, `treeView` / `paintTree`; engine `GET|POST /api/dossiers/{id}/tree`,
+`_tree()` in `app/api.py`): the dossier's items by module, each waiting file under the item proposed for it with what it is,
+what was read from it and **«اسمه في الملف»** — the CTD writer's own naming, asked without writing anything — the files with no
+sure place apart, the required items still empty. A file's item can be changed (kept on the device, `db.tree.<id>`), a file
+removed, a file of several pages cut by hand. As files arrive, a combined file is cut where its documents start and the scans
+that no reading has seen are read by Claude (`treeArrived` → `prepModelWaiting`; a scan the wizard already read is not read
+again: `known`). **«اعتماد الشجرة»** places each file as it is (`/documents/{id}/place`; an item that needs the document's own
+details — a leaflet's type and language, a study — asks for them then, and «تخطّيه الآن» leaves that file waiting) and goes on
+to station 6. The same page is the box that is always open: a document added later walks the same way.
+
+**The prepare page** keeps the documents that are in their items; its upload box and waiting list are the tree's (a note with a
+link while files wait, «إضافة مستندات» leads there).
+
+**What his real files showed on the new way, and what was put right** (each with a test that fails on the code before it):
+- **The kind rule after a late reading** (`store.judge_kind`, called by `prepare_one`). A scan placed from the tree has no words
+  yet; the rule passed it on what Claude took it for and was not asked again when the page read it for its preparation. Before
+  the tree this was true of every file the wizard placed (26 real files, a stand-in model that calls every scan a licence: 12
+  misplaced scans passed as conforming);
+  the prepare page's own upload read first and caught them. Now the rule judges a placed document again when it is prepared —
+  once, never after the person overruled it. `tests/test_kind_seat.py`.
+- **A new version keeps its document's seat** (`meta.seat`, `store.add_document` / `documents`). The documents of one item were
+  numbered in their names in the order of their current versions: one fixed after its neighbours jumped to the end and every
+  name in the item changed — the tree's «اسمه في الملف» would not have held. In every run of his files the names shown on the
+  tree are now the names the documents end with.
+- **A change of subject is not the beginning of a document** (`pages.propose`). A combined file was cut wherever a page read as
+  another kind than the page before it; two of his real documents — a «specification and test method» of 12 pages, a method
+  validation protocol of 6 — were cut into six and four at pages that begin in the middle of a sentence, their pages scattered
+  over three items. A part now begins under a title, at «page 1 of N», or at another batch's certificate of analysis; what the
+  rule misses the person cuts («تقسيم»). Every other real file is proposed as before.
+- **«المكتب» while documents are being prepared** (`officeDoc`). Its buttons looked the document up in the page's copy of the
+  board, which is dropped after every document prepared: they did nothing, and said nothing. Now the reason is said, the pages
+  can still be looked at (the viewer opens without its tools), and afterwards each button asks the file how the document stands.
+- **The bookmarks fix that cannot be made** (`fixes.py`). He read «تعذّر التطبيق: bookmark_from_text_styles: step 2 … font must
+  be a font name from text_styles» on a scanned licence and «تعذّر التطبيق: no headings found …» on a file of chromatograms. The
+  first was ours (the invisible text under a scan has a nameless font; its «sizes» were taken for heading styles); the second
+  is no failure. Both are now one sentence in each language: no headings to build bookmarks from, add them in the source.
+- **Counted nouns** («فُكَّ … : 5 مستند»): every such text names what is counted and gives the number after it; a test in
+  `tests/test_formal_arabic.py` refuses a number filled in before a bare singular noun.
+
+**His real files, the new way against version 51** (Dramrin: 9 files, one a RAR of 5; Wouncure: 26 — in the scratchpad, never
+committed; claude.ai's model stood in by the same mock, so this tests the program around the reading, not the reading):
+- *Added on the tree page* (version 51: on the prepare page). The same questions to Claude in the same order, less the second
+  look at a 152-page file (each file is examined once) and, for Dramrin, the readings of the parts that are no longer cut. The
+  same items for every document both versions place, the same names, the same kind objections (11 of Wouncure's in both). New:
+  the RAR is opened (5 documents more in 3.2.P.5.2–5.3), the leaflet and the SmPC go into 1.1.9 once their type and language
+  are answered (version 51 refused them: «هذا البند يحتاج إلى تفاصيل المستند أولًا»), and the «specification and test method»
+  stays whole in 1.2.3.2.
+- *Through «ملف جديد»* (version 51: the wizard placed the files itself). The same reading in the wizard, the same item for all
+  13 of Dramrin's and all 24 of Wouncure's that version 51 placed, the same dossier data (and what the two leaflet documents
+  say, now that they are in their item). New: one question to Claude for each
+  scan of several pages (does it hold several documents?), the kind rule's objections (0 → 12 on Wouncure: the stand-in calls
+  every scan a licence, and the rule now sees what each really is), and names that no longer change when a document is fixed.
+What cannot be tested from here: Claude's own reading on his account, claude.ai's save step, the Drive connector.
+
+**Left for stage 3** (said to him): «سيبها عليّ», a newer copy of a certificate offered as a new version, the library beside
+every station, the board's own «إضافة مستندات» and waiting box (they still work the old way), the vault.
+
 ## Countries and authorities (November 2026) — «تختار الدولة ويعمل على أساسها موديول ١»
 
 A dossier is built for one country. The wizard opens with «where will this dossier be submitted?»; the country gives the

@@ -1,7 +1,7 @@
 """Split and merge pages (updates list, item 12). A file that holds several documents (a licence, a pricing certificate and two
 certificates of analysis scanned into one PDF) is cut where a new document starts; a document scanned as separate files is joined
-into one. The program proposes the cuts — a page that reads as another kind of document, or that says it is «page 1 of …» — and the
-person confirms or moves them; nothing is cut on a guess."""
+into one. The program proposes the cuts — a page that begins another kind of document under its title, or that says it is «page 1
+of …» — and the person confirms or moves them; nothing is cut on a guess."""
 import re
 from io import BytesIO
 from . import extract, search
@@ -20,8 +20,12 @@ def head_line(text):
 
 def propose(data, pack=None):
     """{pages, parts: [{from, to, kind, title, homes}], page_info: [{page, kind, title, starts}]} — a part starts at page 1, at a page
-    that reads as a different kind of document than the part it would join, and at a page that says «page 1 of N»; a page whose kind
-    is not recognised continues the part before it."""
+    that says «page 1 of N», at a page that reads as a different kind of document than the part it would join AND as a first page (a
+    title at its top), and at another batch's certificate of analysis; any other page continues the part before it.
+    The pages of ONE document often read as several kinds — a specification with its test methods, a validation protocol with its
+    section on the stability of the solutions: a change of subject alone starts nothing (it cut two of the owner's real documents,
+    16/11/2026, at pages that begin in the middle of a sentence). What the rule misses the person cuts («تقسيم»); what it cut
+    wrongly had already scattered a document's pages over the dossier."""
     pages = search.pages_of('file.pdf', data)
     info, parts = [], []
     for i, txt in enumerate(pages, 1):
@@ -32,7 +36,8 @@ def propose(data, pack=None):
         elif FIRST_PAGE.search(txt[:3000]):
             starts = True                                  # «page 1 of 3»: a document begins here
         elif kind != 'other' and cur['kind'] != 'other':
-            starts = kind != cur['kind'] or bool(batch_of(txt) and cur.get('batch') and batch_of(txt) != cur['batch'])   # another kind, or another batch's certificate
+            other_batch = kind == cur['kind'] == 'coa' and bool(batch_of(txt) and cur.get('batch') and batch_of(txt) != cur['batch'])
+            starts = (kind != cur['kind'] and _strong(txt)) or other_batch      # another kind under its own title, or another batch's certificate
         else:
             starts = kind != 'other' and _strong(txt)      # after pages that were not recognised: a page titled as a document
         info.append({'page': i, 'kind': kind, 'kind_name': extract.KIND_NAMES.get(kind), 'title': head_line(txt), 'starts': bool(starts)})

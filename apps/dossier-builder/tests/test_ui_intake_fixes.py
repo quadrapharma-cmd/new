@@ -9,6 +9,7 @@ import io, json
 import httpx
 import pytest
 from fixtures_pdf import make_pdf, make_pdf_lines
+from wizard_steps import to_upload, to_card, confirm_card
 from test_ui_e2e import server, browser          # noqa: F401  (the module's live server and Chromium)
 
 CPP = ['Certificate of Pharmaceutical Product', 'Certificate No: CPP-2024-0117', 'Trade name: Cardiolol 10 mg', 'Dosage form: film-coated tablet',
@@ -24,8 +25,17 @@ def _page(browser, server, init=''):
     page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
     page.add_init_script("localStorage.setItem('db.lang','en');" + init)
     page.goto(server + '/#/new')
-    page.wait_for_selector('#intakeBtn')
+    to_upload(page)                                                                     # «ملف جديد» opens on the country: on to the upload station
     return page, errors
+
+
+def _back_to_upload(page):
+    """From the product card (or the reading station) back to the upload station."""
+    for _ in range(3):
+        if page.locator('#intakeBtn').count():
+            return
+        page.click('#wizBack')
+    page.wait_for_selector('#intakeBtn')
 
 
 def _upload(page, sel, paths):
@@ -57,10 +67,9 @@ def test_refresh_keeps_what_the_user_typed_and_chose(server, browser, tmp_path):
     page, errors = _page(browser, server)
     _upload(page, '[data-updoc="registration_licence"]', [cpp])
     page.wait_for_selector('#intakeReview', timeout=120000)
-    page.click('#wizNext')
+    to_card(page)
     assert page.input_value('[data-in=trade]') == 'Cardiolol 10 mg'                     # read from the CPP
     page.fill('[data-in=trade]', 'Cardiolol Plus')                                      # the user corrects it
-    page.click('#wizNext')
     assert page.locator('[data-k=origin][data-v=imported].on').count() == 1
     page.click('[data-k=origin][data-v=local]')                                         # and chooses another origin
     _saved(page)
@@ -68,7 +77,6 @@ def test_refresh_keeps_what_the_user_typed_and_chose(server, browser, tmp_path):
     page.wait_for_selector('[data-k=origin]', timeout=60000)
     page.wait_for_timeout(1500)                                                         # the restored readings are merged again
     assert page.locator('[data-k=origin][data-v=local].on').count() == 1 and page.locator('[data-k=licence][data-v=own].on').count() == 1
-    page.click('#wizBack')
     assert page.input_value('[data-in=trade]') == 'Cardiolol Plus'                      # before the fix: «Cardiolol 10 mg» and «imported» came back
     assert errors == [], errors
     page.click('#wizRestart'); page.click('#wizRestart')                      # «start over» asks once more before it deletes the draft
@@ -107,8 +115,8 @@ def test_another_document_with_the_same_file_name_is_kept(server, browser, tmp_p
     page.wait_for_selector('#intakeReview', timeout=120000)
     _upload(page, '[data-updoc="pricing_certificate"]', [b])                            # a different scanner file, same name
     page.wait_for_selector('[data-docline="scan (2).pdf"]', timeout=120000)
-    page.wait_for_function("() => !document.querySelector('.doccards .c-wait')", timeout=120000)
-    assert 'scan (2).pdf' in page.locator('.doccard').nth(1).inner_text()               # read under the pricing card
+    page.wait_for_function("() => !document.querySelector('#upList .c-wait') && !S.wiz.busyN && document.querySelectorAll('[data-card=\"pricing_certificate\"].ok').length === 1", timeout=120000)   # read under the pricing card (the card is drawn once the reading is in it)
+    assert page.evaluate("() => S.wiz.docs['scan (2).pdf'].kind") == 'pricing_certificate'
     _upload(page, '[data-updoc="registration_licence"]', [a])                            # the very same file again: still «already uploaded»
     page.wait_for_selector('#toast:has-text("already uploaded")')
     assert page.locator('[data-docline]').count() == 2
@@ -147,16 +155,15 @@ def test_a_scan_without_text_is_refused_and_the_others_go_on(server, browser, tm
     page.wait_for_selector('#intakeReview', timeout=120000)
     _upload(page, '[data-updoc="pricing_certificate"]', [price])
     page.wait_for_selector('[data-docline="price.pdf"] .c-ok', timeout=120000)
-    _upload(page, '[data-updoc="other"]', [blank])
+    _upload(page, '#intakeBtn', [blank])
     page.wait_for_selector('[data-docline="scan001.pdf"] [data-notext]', timeout=120000)   # refused on its line …
     why = page.inner_text('[data-docline="scan001.pdf"]')
     assert 'no text' in why and 'searchable PDF' in why and 'NP.CAPP.065' in why            # … with the reason and what to do
-    page.wait_for_function("() => !document.querySelector('.doccards .c-wait')", timeout=120000)
-    page.click('#wizNext'); page.click('#wizNext'); page.click('#wizNext')
+    page.wait_for_function("() => !document.querySelector('#upList .c-wait')", timeout=120000)
+    to_card(page)
     page.fill('[data-api="0"][data-f=manufacturer]', 'Unichem Laboratories')
-    page.click('#wizNext')
     page.fill('[data-in=tracking]', 'P-MAA-0002')
-    page.click('#wizCreate')
+    confirm_card(page, files=2, approve=True, then='board')                               # the two read files wait in the proposed tree; approved, each goes into its item
     page.wait_for_selector('h1:has-text("Dossier tree and what is missing")')
     did = page.url.split('/d/')[1].split('/')[0]
     placed, unplaced = _board_when(server, did, lambda p, u: 'price.pdf' in p and 'cpp.pdf' in p)
@@ -174,9 +181,9 @@ def test_a_refused_scan_is_replaced_by_its_searchable_copy(server, browser, tmp_
     good = make_pdf_lines(tmp_path / 'gmp.pdf', ['Certificate of GMP Compliance of a Manufacturer', 'Medis S.A., Nabeul, Tunisia',
                                                  'The manufacturer complies with Good Manufacturing Practice'], 'GMP')
     page, errors = _page(browser, server)
-    _upload(page, '[data-updoc="other"]', [blank])
+    _upload(page, '#intakeBtn', [blank])
     page.wait_for_selector('[data-docline="gmp.pdf"] [data-notext]', timeout=120000)
-    _upload(page, '[data-updoc="other"]', [good])                                            # the same name, now searchable
+    _upload(page, '#intakeBtn', [good])                                            # the same name, now searchable
     page.wait_for_selector('[data-docline="gmp.pdf"] .c-ok', timeout=120000)
     assert page.locator('[data-docline="gmp.pdf"]').count() == 1 and page.locator('[data-notext]').count() == 0
     assert errors == [], errors
@@ -220,24 +227,27 @@ def test_a_refresh_while_the_documents_are_being_placed_finishes_the_placement(s
     page.wait_for_selector('#intakeReview', timeout=120000)
     _upload(page, '[data-updoc="gmp_certificate"]', [gmp])
     page.wait_for_selector('[data-docline="gmp certificate.pdf"] .c-ok', timeout=120000)
-    page.click('#wizNext'); page.click('#wizNext'); page.click('#wizNext')
+    to_card(page)
     page.fill('[data-api="0"][data-f=manufacturer]', 'Unichem Laboratories')
-    page.click('#wizNext')
     page.fill('[data-in=tracking]', 'P-MAA-0003')
     held = []
-    page.route('**/classify/text', lambda r: held.append(r))                            # the placement hangs here: the user refreshes in the middle of it
+    page.route('**/unplaced', lambda r: held.append(r) if r.request.method == 'POST' else r.continue_())   # the files' way into the dossier hangs here: the user refreshes in the middle of it
     page.click('#wizCreate')
-    page.wait_for_selector('h1:has-text("Dossier tree and what is missing")')
+    page.wait_for_selector('h1:has-text("Proposed tree")')
+    page.wait_for_function("() => /Bringing your documents into the dossier/.test(document.getElementById('view').innerText)", timeout=30000)   # said while they are on their way — never «nothing is waiting»
+    assert 'No document is waiting' not in page.inner_text('#view')
     for _ in range(200):
         if held:
             break
         page.wait_for_timeout(100)
     assert held, 'the placement never started'
     did = page.url.split('/d/')[1].split('/')[0]
-    page.unroute('**/classify/text')
+    page.unroute('**/unplaced')
     page.reload()
-    placed, _ = _board_when(server, did, lambda p, u: len(p) >= 2, timeout=120)          # before the fix: nothing resumed, the files never reached the dossier
-    assert placed.get('cpp.pdf') == 'M1-14' and placed.get('gmp certificate.pdf') in ('M1-37', 'M1-38')
+    placed, waiting = _board_when(server, did, lambda p, u: len(u) >= 2, timeout=120)    # before the fix: nothing resumed, the files never reached the dossier
+    assert placed == {} and sorted(waiting) == ['cpp.pdf', 'gmp certificate.pdf']         # each in the waiting box once, nothing placed before the tree is approved
+    page.wait_for_function("() => location.hash.endsWith('/tree') && document.querySelectorAll('#treeOut [data-pw]').length === 2", timeout=60000)
+    assert page.locator('[data-titem="M1-14"] [data-pw]').count() == 1                   # and the tree proposes each its place
     page.wait_for_timeout(500)
     assert not any((d['state'] or {}).get('created') == did for d in httpx.get(f'{server}/api/intake/drafts').json())   # the draft went at the end
     page.close()
@@ -252,14 +262,13 @@ EDA_LICENCE = ['Arab Republic of Egypt', 'Egyptian Drug Authority', 'Final Regis
 
 
 def _to_create(page, tracking):
-    """From the documents step to «Create» with the two fields the wizard still asks for."""
-    page.click('#wizNext'); page.click('#wizNext'); page.click('#wizNext')
+    """From the upload station to the confirmed card, with the two fields the card still asks for: the proposed tree opens."""
+    to_card(page)
     if not page.input_value('[data-api="0"][data-f=manufacturer]'):
         page.fill('[data-api="0"][data-f=manufacturer]', 'Unichem Laboratories')
-    page.click('#wizNext')
     page.fill('[data-in=tracking]', tracking)
     page.click('#wizCreate')
-    page.wait_for_selector('h1:has-text("Dossier tree and what is missing")')
+    page.wait_for_selector('h1:has-text("Proposed tree")')
     return page.url.split('/d/')[1].split('/')[0]
 
 
@@ -272,10 +281,13 @@ def test_a_file_the_kind_rule_refused_waits_in_the_box_after_create(server, brow
     _upload(page, '[data-updoc="gmp_certificate"]', [wrong])                            # a pricing certificate under the GMP card: «not this document»
     page.wait_for_selector('[data-rmdoc="price letter.pdf"]', timeout=120000)
     did = _to_create(page, 'P-MAA-0004')                                                 # the user creates the dossier without deciding about it
-    placed, unplaced = _board_when(server, did, lambda p, u: 'price letter.pdf' in u)
-    assert placed.get('cpp.pdf') == 'M1-14' and unplaced == ['price letter.pdf']         # before the fix: dropped with the draft, nowhere in the dossier
-    box = httpx.get(f'{server}/api/dossiers/{did}/unplaced').json()
-    assert box[0]['kind'] == 'pricing' and box[0]['auto'] == 'M1-05'                      # and the box knows where it belongs
+    placed, unplaced = _board_when(server, did, lambda p, u: len(u) >= 2)
+    assert placed == {} and sorted(unplaced) == ['cpp.pdf', 'price letter.pdf']           # before the fix: dropped with the draft, nowhere in the dossier
+    box = {x['filename']: x for x in httpx.get(f'{server}/api/dossiers/{did}/unplaced').json()}
+    assert box['price letter.pdf']['kind'] == 'pricing' and box['price letter.pdf']['auto'] == 'M1-05'   # and the box knows where it belongs: by what it is, not by the place it was given
+    assert box['cpp.pdf']['auto'] == 'M1-14'
+    page.wait_for_function("() => document.querySelectorAll('#treeOut [data-pw]').length === 2", timeout=60000)
+    assert page.locator('[data-titem="M1-05"] [data-pw]').count() == 1 and 'price letter.pdf' in page.inner_text('[data-titem="M1-05"]')   # the tree shows it at its own item
     page.wait_for_timeout(500)
     assert not any((d['state'] or {}).get('created') == did for d in httpx.get(f'{server}/api/intake/drafts').json())
     assert errors == [], errors
@@ -288,14 +300,14 @@ def test_a_typed_api_cell_never_stops_later_readings(server, browser, tmp_path):
     page, errors = _page(browser, server)
     _upload(page, '[data-updoc="registration_licence"]', [cpp])
     page.wait_for_selector('#intakeReview', timeout=120000)
-    page.click('#wizNext'); page.click('#wizNext'); page.click('#wizNext')
+    to_card(page)
     assert page.input_value('[data-api="0"][data-f=name]') == 'Bisoprolol fumarate'
     page.fill('[data-api="0"][data-f=manufacturer]', 'Unichem Laboratories')             # the CPP prints no API manufacturer: the user types it
-    page.click('#wizBack'); page.click('#wizBack'); page.click('#wizBack')
+    _back_to_upload(page)
     _upload(page, '[data-updoc="registration_licence"]', [lic])                           # a licence read later lists two more actives with their manufacturers
     page.wait_for_selector('[data-docline="licence.pdf"] .c-ok', timeout=120000)
-    page.wait_for_function("() => !document.querySelector('.doccards .c-wait')", timeout=120000)
-    page.click('#wizNext'); page.click('#wizNext'); page.click('#wizNext')
+    page.wait_for_function("() => !document.querySelector('#upList .c-wait')", timeout=120000)
+    to_card(page)
     rows = page.evaluate("() => [...document.querySelectorAll('[data-api][data-f=name]')].map((i,k) => [i.value, document.querySelector(`[data-api=\"${k}\"][data-f=manufacturer]`).value])")
     assert rows[0] == ['Bisoprolol fumarate', 'Unichem Laboratories']                    # the user's cell stays
     assert [r[0] for r in rows[1:]] == ['Neomycin Sulphate', 'Bacitracin Zinc'] and 'Sichuan' in rows[1][1]   # before the fix: the whole reading was dropped
@@ -305,7 +317,7 @@ def test_a_typed_api_cell_never_stops_later_readings(server, browser, tmp_path):
     page.reload()
     page.wait_for_selector('#wizNext', timeout=60000)
     page.wait_for_timeout(1500)
-    page.click('#wizNext')
+    to_card(page)
     assert page.evaluate("() => [...document.querySelectorAll('[data-api][data-f=name]')].map(i => i.value)") == ['Bisoprolol fumarate', 'Neomycin Sulphate']
     assert page.input_value('[data-api="0"][data-f=manufacturer]') == 'Unichem Laboratories'
     assert errors == [], errors
@@ -345,13 +357,13 @@ def test_a_resumed_placement_runs_once_and_keeps_what_was_edited_on_the_board(se
     a = ctx.new_page(); a.on('pageerror', lambda e: errors.append(str(e)))
     a.route('https://fonts.googleapis.com/**', lambda r: r.abort())
     a.add_init_script("localStorage.setItem('db.lang','en');")
-    a.goto(server + '/#/new'); a.wait_for_selector('#intakeBtn')
+    a.goto(server + '/#/new'); to_upload(a)
     _upload(a, '[data-updoc="registration_licence"]', [cpp])
     a.wait_for_selector('#intakeReview', timeout=120000)
     _upload(a, '[data-updoc="gmp_certificate"]', [gmp])
     a.wait_for_selector('[data-docline="gmp certificate.pdf"] .c-ok', timeout=120000)
     held = []
-    a.route('**/classify/text', lambda r: held.append(r))                               # tab A hangs in the middle of the placement
+    a.route('**/unplaced', lambda r: held.append(r) if r.request.method == 'POST' and not held else r.continue_())   # tab A hangs with its first file on its way into the dossier
     did = _to_create(a, 'P-MAA-0005')
     for _ in range(200):
         if held:
@@ -367,13 +379,40 @@ def test_a_resumed_placement_runs_once_and_keeps_what_was_edited_on_the_board(se
     b.route('https://fonts.googleapis.com/**', lambda r: r.abort())
     b.goto(server + '/#/new')                                                            # tab B opens: the same draft, created already
     b.wait_for_timeout(2000)
-    held[0].continue_()                                                                  # tab A goes on; tab B waited for it and finds nothing left to place
-    placed, _ = _board_when(server, did, lambda p, u: len(p) >= 2, timeout=120)
+    held[0].continue_()                                                                  # tab A goes on; tab B waited for it and finds nothing left to bring
+    placed, _ = _board_when(server, did, lambda p, u: len(u) >= 2, timeout=120)
     b.wait_for_timeout(3000)
     board = httpx.get(f'{server}/api/dossiers/{did}/board').json()
-    names = [d['filename'] for s in board['slots'] for d in s['documents']]
-    assert sorted(names) == ['cpp.pdf', 'gmp certificate.pdf'], names                     # each file once: before the fix tab B placed them again
+    names = [d['filename'] for d in board['unassigned']]
+    assert sorted(names) == ['cpp.pdf', 'gmp certificate.pdf'] and placed == {}, names    # each file in the waiting box once: before the fix tab B brought them again
     assert c.get(f'/api/dossiers/{did}/data').json()['product']['name_ar'] == 'كارديولول'  # before the fix: overwritten by the resumed run's second write
     assert not any((d['state'] or {}).get('created') == did for d in httpx.get(f'{server}/api/intake/drafts').json())
     assert errors == [], errors
     ctx.close()
+
+
+def test_the_card_is_not_confirmed_before_what_was_read_is_in_it(server, browser, tmp_path):
+    """Found running the owner's real files through the wizard with the machine busy (16/11/2026): each file's line says «read» as soon
+    as its own reading ends, and what was read is merged into the card a moment later. In that moment «اعتماد البطاقة» could be
+    pressed — the dossier made from a card not yet filled. The button now waits for the reading to be in the card."""
+    cpp = make_pdf_lines(tmp_path / 'cpp.pdf', CPP, 'WHO Certification Scheme')
+    page, errors = _page(browser, server)
+    held = []
+    page.route('**/api/extract/text?target=dossier', lambda r: held.append(r) if not held else r.continue_())   # the merge into the card takes its time
+    with page.expect_file_chooser() as fc:
+        page.click('#intakeBtn')
+    fc.value.set_files([str(cpp)])
+    for _ in range(300):
+        if held:
+            break
+        page.wait_for_timeout(100)
+    assert held, 'the reading was never merged'
+    assert page.evaluate("() => (S.wiz.prog['cpp.pdf'] || {}).stage") == 'done'          # the file itself is read…
+    to_card(page)
+    assert page.is_disabled('#wizCreate') and page.locator('#cardBusy').count() == 1     # …and the card still waits for what it gave
+    assert page.input_value('[data-in=trade]') == ''
+    held[0].continue_()
+    page.wait_for_function("() => { const b = document.getElementById('wizCreate'); return b && !b.disabled; }", timeout=60000)
+    assert page.input_value('[data-in=trade]') == 'Cardiolol 10 mg' and page.locator('#cardBusy').count() == 0
+    assert not errors, errors
+    page.close()

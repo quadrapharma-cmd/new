@@ -28,15 +28,17 @@ def test_files_are_read_placed_fixed_and_named(server, tmp_path):
         b = p.chromium.launch()
         page = page_of(b, server, 'ar')
         page.on('pageerror', lambda e: errors.append(str(e)))
-        page.goto(f'{server}/#/d/{did}/prepare')
+        page.goto(f'{server}/#/d/{did}/tree')                                                         # files are added on the proposed tree's page (station 5)
         page.wait_for_selector('#prepFiles', state='attached')
         page.wait_for_function("() => document.querySelector('#prepOcr') && document.querySelector('#prepOcr').textContent.trim()")   # the stage says how it reads once it has asked the engine
         assert 'Tesseract' in page.inner_text('#prepOcr')
         page.set_input_files('#prepFiles', [str(scan), str(stab)])
         page.wait_for_function("() => document.querySelectorAll('[data-pw]').length === 2", timeout=120000)
-        assert 'قُرئ بالقراءة الضوئية (OCR)' in page.inner_text('#prepOut')                                      # the scan was read by OCR
+        assert 'قُرئ بالقراءة الضوئية (OCR)' in page.inner_text('#treeOut')                                      # the scan was read by OCR
+        page.click('#treeGo')                                                                           # the tree approved: each file into its item
+        page.wait_for_function("() => location.hash.endsWith('/prepare') && document.querySelectorAll('#prepOut [data-pdoc]').length >= 2", timeout=120000)
         page.click('#prepAll')
-        page.wait_for_function("() => S.prep && S.prep.waiting.length === 0 && S.prep.placed.length >= 2", timeout=300000)
+        page.wait_for_function("() => S.prep && !S.prepBusy && S.prep.waiting.length === 0 && S.prep.placed.length >= 2 && S.prep.placed.every(d => d.prepared)", timeout=300000)
         out = page.inner_text('#prepOut')
         assert 'scan0001.pdf' in out and 'اسمه في الملف' in out
         r = page.evaluate('S.prep')
@@ -58,12 +60,14 @@ def test_each_prepared_document_shows_its_pdfcraft_tools_and_what_it_said_is_kep
         b = p.chromium.launch()
         page = page_of(b, server, 'en')
         page.on('pageerror', lambda e: errors.append(str(e)))
-        page.goto(f'{server}/#/d/{did}/prepare')
+        page.goto(f'{server}/#/d/{did}/tree')
         page.wait_for_selector('#prepFiles', state='attached')
         page.set_input_files('#prepFiles', [str(spec)])
         page.wait_for_function("() => document.querySelectorAll('[data-pw]').length === 1", timeout=120000)
+        page.click('#treeGo')
+        page.wait_for_function("() => location.hash.endsWith('/prepare') && document.querySelectorAll('#prepOut [data-pdoc]').length >= 1", timeout=120000)
         page.click('#prepAll')
-        page.wait_for_function("() => S.prep && S.prep.waiting.length === 0 && S.prep.placed.length >= 1 && document.querySelector('.prep-tools')", timeout=300000)
+        page.wait_for_function("() => S.prep && !S.prepBusy && S.prep.waiting.length === 0 && S.prep.placed.length >= 1 && S.prep.placed.every(d => d.prepared) && document.querySelector('.prep-tools')", timeout=300000)
         tools = page.inner_text('.prep-tools')
         for word in ('PdfCraft tools', 'Pages', 'Split it', 'As Word', 'Redact for real'):
             assert word in tools, (word, tools)

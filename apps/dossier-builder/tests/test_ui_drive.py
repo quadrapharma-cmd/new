@@ -6,6 +6,7 @@ from fixtures_pdf import make_pdf_lines
 from dossier_engine import drive
 
 pw = pytest.importorskip('playwright.sync_api')
+from wizard_steps import to_upload, to_card, confirm_card   # noqa: F401
 OUT = '/tmp/claude-0/-home-user-new/e6d1aa05-9cf9-5988-8d70-5db2feac2515/scratchpad/arabic'
 
 
@@ -47,6 +48,7 @@ def test_wizard_reads_a_drive_folder(server, tmp_path):
             page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
             page.add_init_script("localStorage.setItem('db.lang','ar')")
             page.goto(server + '/#/new')
+            to_upload(page)
             page.wait_for_selector('#intakeDrive')
             page.click('#intakeDrive')
             page.wait_for_selector('#drvLink')
@@ -105,6 +107,7 @@ def test_browser_edition_reads_a_link_through_the_viewers_drive_connector(server
         page.add_init_script("localStorage.setItem('db.lang','ar')")
         page.add_init_script(stub)
         page.goto(server + '/#/new')
+        to_upload(page)
         page.wait_for_selector('#intakeDrive'); page.click('#intakeDrive'); page.wait_for_selector('#drvLink')
         assert 'بلا مفتاح' in page.inner_text('#drawer .chip')                              # connector mode, announced
         assert page.locator('#drvKey').count() == 0                                             # no key form forced
@@ -159,6 +162,8 @@ def open_page(p, server, stub, hash_='#/new'):
     page.add_init_script("localStorage.setItem('db.lang','ar')")
     page.add_init_script(stub)
     page.goto(server + '/' + hash_)
+    if hash_ == '#/new':
+        to_upload(page)                                      # «ملف جديد» opens on the country: on to the upload station
     return b, page, errors
 
 

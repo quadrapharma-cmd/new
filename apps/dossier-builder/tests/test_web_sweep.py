@@ -54,7 +54,7 @@ MARK = """() => { let k = 0; const seen = {};
     e.dataset.sweep = String(k++); });
   return k; }"""
 SKIP = ('delete', 'remove', 'حذف', 'مسح السجل', 'logout', 'sign out', 'تسجيل الخروج', 'reset', 'restore', 'استرجاع')      # what would undo the dossier the sweep works on
-SCREENS = ('guide', 'board', 'prepare', 'office', 'data', 'publisher', 'checks', 'search', 'export', 'audit', 'review', 'review/screening', 'review/workspace',
+SCREENS = ('guide', 'tree', 'board', 'prepare', 'office', 'data', 'publisher', 'checks', 'search', 'export', 'audit', 'review', 'review/screening', 'review/workspace',
            'review/letter', 'review/responses', 'review/verdict', 'review/settings')
 ALERT_BELONGS = ('export', 'checks', 'review', 'board', 'guide', 'prepare')     # screens that say in red what stops the dossier: that is their work
 

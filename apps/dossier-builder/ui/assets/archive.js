@@ -177,9 +177,9 @@
       volume: say('جزء من الأرشيف ناقص', 'a part of the archive is missing'), unsupported: say('نسخة RAR قديمة جدًا', 'a very old RAR version'),
       memory: say('ذاكرة المتصفح لم تكفِ', 'the browser ran out of memory'), method: say('طريقة ضغط لا تقرؤها الصفحة', 'a compression method this page does not read') };
     return notes.map(n => n.error ? `${n.archive}: ${n.error}`
-      : say(`فُكَّ «${n.archive}»: ${n.taken} مستند`, `«${n.archive}» unpacked: ${n.taken} document(s)`)
-        + (n.left ? say(`، وتُرك ${n.left} ملف آخر`, `, ${n.left} other file(s) left out`) : '')
-        + (n.skipped.length ? say(`، و${n.skipped.length} تعذّر فتحه`, `, ${n.skipped.length} not opened`) + ' (' + n.skipped.slice(0, 3).map(s => s.name.split('/').pop() + ': ' + (why[s.why] || s.why)).join('، ') + ')' : '')).join(' · ');
+      : say(`فُكَّ «${n.archive}» — المستندات المأخوذة منه: ${n.taken}`, `«${n.archive}» unpacked — documents taken: ${n.taken}`)
+        + (n.left ? say(`، ملفات أخرى تُركت: ${n.left}`, `, other files left out: ${n.left}`) : '')
+        + (n.skipped.length ? say(`، تعذّر فتحه: ${n.skipped.length}`, `, not opened: ${n.skipped.length}`) + ' (' + n.skipped.slice(0, 3).map(s => s.name.split('/').pop() + ': ' + (why[s.why] || s.why)).join('، ') + ')' : '')).join(' · ');
   }
 
   window.DBARCH = { ARCH_RX, isArchive, kindOf, unpack, unrar, un7z, expand, summary };

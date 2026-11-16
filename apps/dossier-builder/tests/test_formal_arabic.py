@@ -92,3 +92,22 @@ def test_one_name_for_a_module():
         for m in re.finditer(r'موديول|الموديولات|الوحدة [1-5١-٥](?![0-9])', text):
             found.append(f'{path.relative_to(ROOT)}: {text[max(0, m.start() - 30):m.end() + 20]!r}')
     assert not found, '\n'.join(found[:30])
+
+
+COUNTED = 'مستند|ملف|بند|صفحة|إصلاح|جزء|مجلد|نتيجة|سطر|مادة|تشغيلة|مواصفة|حرف|كلمة|نسخة|ثانية|دقيقة|يوم|شهر'
+NUMBER_THEN_NOUN = re.compile(r'(\$\{[^}]{1,80}\}|\{[A-Za-z_][^}]{0,60}\})\s(' + COUNTED + r')(?![ء-يً-ْ])')
+
+
+def test_a_number_is_never_followed_by_a_bare_singular_noun():
+    """«نُسخ {n} مستند» reads «نُسخ 5 مستند»: in formal Arabic 3–10 take the plural («5 مستندات»), 2 the dual, 1 no numeral at all. The
+    page names what is counted and gives the number after it («المستندات المنسوخة: {n}»), or says it through nOf()/arGen(), which
+    know the forms — never a number filled in before a noun that cannot follow it (found on the owner's real files, 16/11/2026:
+    «فُكَّ … : 5 مستند»). The eBOX page, its scripts and the browser edition's start-up."""
+    found = []
+    for path in [ROOT / 'ui' / 'index.html', ROOT / 'web' / 'boot.js'] + sorted((ROOT / 'ui' / 'assets').glob('*.js')):
+        for n, text in page_texts(path):
+            if 'function arGen' in text or 'const COUNT' in text:                 # the two helpers that hold the forms themselves
+                continue
+            for m in NUMBER_THEN_NOUN.finditer(text):
+                found.append(f'{path.relative_to(ROOT)}:{n} «{m.group(0)}»')
+    assert not found, '\n'.join(found)

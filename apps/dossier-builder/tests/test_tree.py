@@ -66,3 +66,29 @@ def test_a_placed_document_shows_in_the_tree_with_its_name_and_counts_as_had(tmp
     assert t['waiting'] == [] and [d['filename'] for d in s['documents']] == ['made-up-spec.pdf'] and s['proposed'] == []
     assert s['documents'][0]['name'] == proposed['name']                         # placed, it carries the name the tree said it would
     assert t['counts']['have'] == 1 and t['counts']['filled'] == 1 and t['counts']['waiting'] == 0
+
+
+def test_the_tree_says_whether_an_earlier_reading_gave_a_waiting_file_its_kind(tmp_path):
+    """`known`: the kind came with the file from a reading of it (the wizard's) — not from a hint in its name, which places nothing.
+    The page reads with Claude the waiting scans that are not `known` (two of the owner's real scans, named «… (Registration License)»
+    and «… Stability Approval», were skipped as «having a kind» and left without a place, 16/11/2026)."""
+    import io, json
+    from fastapi.testclient import TestClient
+    from dossier_engine.app.api import create_app
+    from test_browser_reading import scan
+    from test_priority2 import PROFILE, PRODUCT
+    c = TestClient(create_app(tmp_path / 'ws', auth_enabled=False)); H = {'X-DB': '1'}
+    did = c.post('/api/dossiers', json=dict(name='Dermacure', profile=PROFILE, product=PRODUCT, envelope={}), headers=H).json()['id']
+
+    def stage(name, data, kind=None):
+        r = c.post(f'/api/dossiers/{did}/unplaced', files=[('files', (name, io.BytesIO(data), 'application/pdf'))],
+                   data={'meta': json.dumps({name: {'kind': kind}} if kind else {})}, headers=H)
+        assert r.status_code == 201, r.text
+    stage('made-up Final MA (Registration License).pdf', scan(seed=1))                   # nothing read: only its name hints
+    stage('scan0002.pdf', scan(seed=2), kind='licence')                                # the wizard's reading gave its kind
+    stage('scan0003.pdf', scan(seed=3), kind='other')                                  # read, and not recognised
+    w = {x['filename']: x for x in c.get(f'/api/dossiers/{did}/tree', headers=H).json()['waiting']}
+    hinted, read, unknown = w['made-up Final MA (Registration License).pdf'], w['scan0002.pdf'], w['scan0003.pdf']
+    assert hinted['kind'] == 'licence' and hinted['known'] is False and hinted['place'] is None and hinted['model_wanted']   # a hint: offered, not placed, still to be read
+    assert read['known'] is True and read['place'] == 'M1-04' and read['model_wanted']                                    # (the page does not ask Claude again for this one)
+    assert unknown['known'] is False and unknown['place'] is None

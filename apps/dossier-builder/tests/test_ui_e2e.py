@@ -3,6 +3,7 @@ from dossier_engine.checks.pdf import add_javascript
 import socket, threading, time
 import pytest
 from fixtures_pdf import make_pdf
+from wizard_steps import to_upload, to_card, confirm_card
 
 pw = pytest.importorskip('playwright.sync_api')
 
@@ -43,21 +44,20 @@ def test_journey(server, browser, tmp_path):
     assert page.locator('html').get_attribute('dir') == 'rtl'          # Arabic first
     page.click('#lang-en')
     page.click('#btnNew')
-    page.wait_for_selector('.doccards')                                 # the wizard starts with the documents; nothing to upload here
-    page.click('#wizNext')
+    to_upload(page)                                                     # the country, then the upload station: nothing to upload here
+    page.wait_for_selector('.doccards')
+    to_card(page)                                                       # the product card: everything about the product on one screen
     page.fill('[data-in=name]', 'Examplol 500 mg FCT')
     page.fill('[data-in=trade]', 'Examplol 500 mg')
     page.fill('[data-in=man]', 'Example Pharma')
-    page.click('#wizNext')
     page.click('[data-k=licence][data-v=toll]')
     page.check('[data-spec=coated]')
-    page.click('#wizNext')
     page.fill('[data-api="0"][data-f=name]', 'Paracetamol')
     page.fill('[data-api="0"][data-f=manufacturer]', 'Granules India')
-    page.click('#wizNext')
     page.fill('[data-in=applicant]', 'Example Pharma S.A.E.')
     page.fill('[data-in=tracking]', 'P-MAA-0001')
-    page.click('#wizCreate')
+    assert confirm_card(page, then='tree') == 'tree' and page.inner_text('#view h1') == 'Proposed tree'   # the card confirmed: the proposed tree, nothing waiting
+    page.click('#navBoard')
     page.wait_for_selector('h1:has-text("Dossier tree and what is missing")')
     assert page.locator('tbody tr', has_text='Toll manufacturer licence').count() == 1   # toll -> required
     # upload a conforming document
@@ -326,13 +326,12 @@ def test_guide_and_live_preview(server, browser, tmp_path):
     page.click('#btnNew')
     page.wait_for_selector('#pvBody .n')
     base = int(page.inner_text('#pvBody .n'))
-    page.click('#wizNext'); page.click('#wizNext')                       # documents → product → profile
+    to_card(page)                                                        # the country → the upload → what was read → the product card
+    page.wait_for_selector('.reqlist details[open]')                                        # beside the card: the full list of what the dossier needs
     page.click('[data-k=licence][data-v=toll]')
     page.wait_for_function(f"(n=>n && +n.innerText > {base})(document.querySelector('#pvBody .n'))")   # toll adds requirements
     page.click('[data-k=origin][data-v=imported]')
-    page.click('#wizNext'); page.fill('[data-api="0"][data-f=name]', 'Paracetamol'); page.fill('[data-api="0"][data-f=manufacturer]', 'Granules India')
-    page.click('#wizNext')
-    page.wait_for_selector('.reqlist details[open]')                                        # last step: the full list
+    page.fill('[data-api="0"][data-f=name]', 'Paracetamol'); page.fill('[data-api="0"][data-f=manufacturer]', 'Granules India')
     assert 'Required' in page.inner_text('.reqlist')
     # guide on a seeded dossier: nothing entered -> first step is the product data
     prof = dict(dossier_kind='generic', origin='local', licence='own', activity='new',
@@ -373,15 +372,14 @@ def test_intake_fills_the_wizard_and_places_the_files(server, browser, tmp_path)
     page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
     page.add_init_script("localStorage.setItem('db.lang','en')")
     page.goto(server + '/#/new')
-    page.wait_for_selector('#intakeBtn')
+    to_upload(page)
     with page.expect_file_chooser() as fc:
         page.click('#intakeBtn')
     fc.value.set_files([str(cpp), str(gmp)])
-    page.wait_for_selector('#intakeReview', timeout=120000)              # read and filled; the cards show the files under their kinds
-    cards = page.inner_text('.doccards')
+    page.wait_for_function("() => document.querySelectorAll('#upList [data-docline]').length === 2 && !document.querySelector('#upList .c-wait')", timeout=120000)   # read: each file has its line
+    cards = page.inner_text('#upList')
     assert 'cpp.pdf' in cards and 'gmp certificate.pdf' in cards
     assert 'It gave us' in cards and 'trade name' in cards                 # live per-file lines: what each document yielded
-    assert 'Recognised so far' in page.inner_text('#view')
     reads_before = page.evaluate("() => performance.getEntriesByType('resource').filter(e => e.name.includes('/api/extract?')).length")
     # a pricing certificate uploaded under the GMP card: refused by the kind rule, then moved to its own card
     pricing = make_pdf_lines(tmp_path / 'price letter.pdf', ['Egyptian Drug Authority', 'Pricing Certificate', 'Trade name: Cardiolol 10 mg', 'Public price: 45.00 EGP', 'Pack: 30 tablets'], 'Pricing')
@@ -389,16 +387,24 @@ def test_intake_fills_the_wizard_and_places_the_files(server, browser, tmp_path)
         page.click('[data-updoc="gmp_certificate"]')
     fc2.value.set_files([str(pricing)])
     page.wait_for_selector('[data-mvdoc="price letter.pdf"]', timeout=120000)
-    assert 'not this document' in page.inner_text('.doccards')
+    assert 'not this document' in page.inner_text('#upList')
+    # the next station: what was read, sorted by what each file is — what needs the person first
+    page.click('#wizNext')
+    page.wait_for_selector('#sortSum')
+    assert page.inner_text('#view h1') == 'Reading and sorting' and 'Recognised so far' in page.inner_text('#view')
+    assert 'price letter.pdf' in page.inner_text('#sortBad') and 'Read: 2 · Need you: 1' in page.inner_text('#sortSum')
+    assert [x.get_attribute('data-sortkind') for x in page.query_selector_all('[data-sortkind]')] == ['registration_licence', 'gmp_certificate']
+    assert 'CPP-2024-0117' in page.inner_text('[data-sortinfo="cpp.pdf"]') and '2027-03-11' in page.inner_text('[data-sortinfo="cpp.pdf"]')   # its number and how long it is valid
     page.click('[data-mvdoc="price letter.pdf"]')
     page.wait_for_function("() => !document.querySelector('[data-mvdoc]')")
+    assert 'Read: 3 · Need you: 0' in page.inner_text('#sortSum') and page.locator('[data-sortkind="pricing_certificate"]').count() == 1
     reads_after = page.evaluate("() => performance.getEntriesByType('resource').filter(e => e.name.includes('/api/extract?')).length")
     assert reads_after == reads_before + 1                                 # only the new file was read; the first two were not read again
     # the work survives a reload: the cards, the readings and the filled fields come back from the server
     page.wait_for_function("() => /\\d/.test(document.querySelector('#wizSaved').textContent)")     # written to the server
     page.reload()
-    page.wait_for_selector('#intakeReview', timeout=60000)
-    cards = page.inner_text('.doccards')
+    page.wait_for_selector('#intakeReview', timeout=60000)                # back on the station it was left at, with everything read
+    cards = page.inner_text('#view')
     assert 'cpp.pdf' in cards and 'gmp certificate.pdf' in cards and 'price letter.pdf' in cards and 'Saved' in page.inner_text('#wizSaved')
     page.click('#intakeReview')
     page.wait_for_selector('#intakeApply')
@@ -410,19 +416,25 @@ def test_intake_fills_the_wizard_and_places_the_files(server, browser, tmp_path)
     page.wait_for_selector('#toast:not([hidden])')
     assert page.input_value('[data-in=trade]') == 'Cardiolol 10 mg' and page.input_value('[data-in=form]') == 'tablet-fc'
     assert page.input_value('[data-in=name]') == 'Cardiolol 10 mg film-coated tablet'
-    page.click('#wizNext')
+    assert page.inner_text('#view h1') == 'Product card'                 # what was reviewed is shown on the product card, all of it on one screen
     assert page.locator('[data-k=origin][data-v=imported].on').count() == 1 and page.locator('[data-k=licence][data-v=imported].on').count() == 1
-    page.click('#wizNext')
     assert page.input_value('[data-api="0"][data-f=name]') == 'Bisoprolol fumarate'
-    page.click('#wizNext')
     assert page.input_value('[data-in=applicant]').startswith('Medis')
-    page.click('#wizCreate')
+    # the card confirmed: the three files wait in the proposed tree, each under its item with the name it will carry — nothing is placed yet
+    assert confirm_card(page, files=3, then='tree') == 'tree'
+    did = page.url.split('/d/')[1].split('/')[0]
+    import httpx
+    assert all(not s['documents'] for s in httpx.get(f'{server}/api/dossiers/{did}/board').json()['slots'])
+    tree = page.inner_text('#treeOut')
+    assert '3 documents waiting for your approval' in tree and 'With a proposed place: 3' in tree
+    assert page.locator('[data-titem="M1-14"] [data-pw]').count() == 1 and 'cpp.pdf' in page.inner_text('[data-titem="M1-14"]')
+    assert 'Its name in the dossier' in page.inner_text('[data-titem="M1-14"]') and '1.1.13' in page.inner_text('[data-titem="M1-14"] [data-tname]')
+    page.click('#treeGo')                                                 # approved: each file into its item, and on to preparing them
+    page.wait_for_function("() => location.hash.endsWith('/prepare')", timeout=60000)
+    page.click('#navBoard')
     page.wait_for_selector('h1:has-text("Dossier tree and what is missing")')
-    page.wait_for_selector('#toast:has-text("placed")', timeout=60000)
     page.click('[data-f=all]')
     assert 'cpp.pdf' in page.locator('tr', has_text='CPP / eCPP').first.inner_text()
-    import httpx
-    did = page.url.split('/d/')[1].split('/')[0]
     placed = {d['filename']: s['slot_id'] for s in httpx.get(f'{server}/api/dossiers/{did}/board').json()['slots'] for d in s['documents']}
     assert placed['cpp.pdf'] == 'M1-14' and placed['gmp certificate.pdf'] in ('M1-37', 'M1-38')
     assert errors == [], errors

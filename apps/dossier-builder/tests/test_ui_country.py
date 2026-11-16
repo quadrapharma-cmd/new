@@ -5,6 +5,7 @@ import socket, threading, time, urllib.request, json
 import pytest
 
 pw = pytest.importorskip('playwright.sync_api')
+from wizard_steps import to_card, confirm_card
 OUT = '/tmp/claude-0/-home-user-new/e6d1aa05-9cf9-5988-8d70-5db2feac2515/scratchpad/arabic'
 
 
@@ -44,7 +45,14 @@ def test_the_wizard_starts_with_the_country_and_builds_for_its_authority(server)
         page.wait_for_selector('#auCountry')
         # Egypt first, as it always was: its own documents cards, eCTD among the outputs
         assert page.input_value('#auCountry') == 'EG' and 'هيئة الدواء المصرية' in page.inner_text('#auName')
-        assert 'eCTD 3.2.2' in page.inner_text('#auCard') and page.locator('[data-updoc="analysis_conformity"]').count() == 1
+        assert 'eCTD 3.2.2' in page.inner_text('#auCard')
+        page.wait_for_function("() => document.querySelector('#auM1 summary')")                   # the Module 1 the program lays out for this authority, on the country's own screen
+        assert 'Module 1 لهذه الجهة' in page.inner_text('#auM1 summary') and page.get_attribute('#auLib', 'href').endswith('#r-country-EG')
+        page.click('#wizNext')                                                                  # the upload station: Egypt's own base documents among the typed places
+        page.wait_for_selector('#intakeBtn')
+        assert page.locator('[data-updoc="analysis_conformity"]').count() == 1
+        page.click('#wizBack')
+        page.wait_for_selector('#auCountry')
         first = page.eval_on_selector('#auCountry optgroup', 'g => [...g.querySelectorAll("option")].map(o => o.value)')
         assert first[0] == 'EG' and {'SA', 'AE', 'KW', 'DE', 'US'} <= set(first) and 'JO' not in first
         # Saudi Arabia: the Gulf Module 1, written from the SFDA and GCC texts
@@ -52,24 +60,24 @@ def test_the_wizard_starts_with_the_country_and_builds_for_its_authority(server)
         page.wait_for_function("() => document.querySelector('#auName').textContent.includes('SFDA')")
         card = page.inner_text('#auCard')
         assert 'Module 1 من النص المنشور للجهة الرقابية' in card and 'SFDA' in card and 'v4.0' in card and 'مجلدات CTD' in card and 'eCTD 3.2.2' not in card
-        assert page.locator('[data-updoc="analysis_conformity"]').count() == 0                  # the Egyptian laboratory's certificate is Egypt's card
+        assert page.get_attribute('#auLib', 'href').endswith('#r-country-GCC')
         page.wait_for_function("() => document.querySelector('#pvAu') && document.querySelector('#pvAu').textContent.includes('SFDA')")
         page.click('#wizNext')
+        page.wait_for_selector('#intakeBtn')
         assert 'السعودية' in page.inner_text('#auLine')
+        assert page.locator('[data-updoc="analysis_conformity"]').count() == 0                  # the Egyptian laboratory's certificate is Egypt's card
+        to_card(page)                                                                           # nothing uploaded: the product card is typed
         page.fill('[data-in="name"]', 'Dermacure KSA'); page.fill('[data-in="trade"]', 'Dermacure'); page.fill('[data-in="man"]', 'Example Pharm Co.')
-        page.click('#wizNext')
         body = page.inner_text('#wizBody')
         assert 'هل هو مصنَّع في دولة التسجيل أم مستورد إليها؟' in body and page.locator('[data-k="licence"]').count() == 0 and page.locator('[data-k="activity"]').count() == 0
         assert page.locator('[data-auq="gcc_agency"]').input_value() == 'SA'                    # the receiving authority follows the country
         page.click('[data-k="origin"][data-v="imported"]')
-        page.click('#wizNext')
         page.fill('[data-api="0"][data-f="name"]', 'Neomycin sulphate'); page.fill('[data-api="0"][data-f="manufacturer"]', 'Example API Co.')
         page.select_option('[data-api="0"][data-f="option"]', 'DMF')
-        page.click('#wizNext')
         page.fill('[data-in="applicant"]', 'Example Pharm Co.'); page.fill('[data-in="tracking"]', 'T-0001')
         page.wait_for_function("() => /1\\.7\\.5/.test(document.querySelector('#pvBody').textContent)")           # the alcohol declaration is in the list before anything is created
         assert 'M1-01' not in page.inner_text('#pvBody')
-        page.click('#wizCreate')
+        confirm_card(page, then='board')
         page.wait_for_selector('[data-tpl="GCC-1.7.5"]', timeout=20000)
         did = page.url.split('/d/')[1].split('/')[0]
         d = call(server, f'/api/dossiers/{did}')
@@ -114,7 +122,7 @@ def test_each_authority_asks_its_own_questions_and_a_general_module_1_says_so(se
         # Germany: the EU Module 1, by legal basis and procedure
         page.select_option('#auCountry', 'DE')
         page.wait_for_function("() => document.querySelector('#auName').textContent.includes('EMA')")
-        page.click('#wizNext'); page.click('#wizNext')
+        to_card(page)
         assert page.locator('[data-auq="eu_legal_basis"]').input_value() == 'generic' and page.locator('[data-auq="eu_procedure"]').input_value() == 'dcp'
         page.wait_for_function("() => /1\\.5\\.2/.test(document.querySelector('#pvBody').textContent)")
         assert '1.10' not in [x.strip() for x in page.locator('#pvBody .code').all_inner_texts()]
@@ -126,7 +134,7 @@ def test_each_authority_asks_its_own_questions_and_a_general_module_1_says_so(se
         page.click('#auGo')
         page.select_option('#auCountry', 'US')
         page.wait_for_function("() => document.querySelector('#auName').textContent.includes('FDA')")
-        page.click('#wizNext'); page.click('#wizNext')
+        to_card(page)
         assert page.locator('[data-auq="us_application"]').input_value() == 'anda' and page.locator('[data-auq="eu_legal_basis"]').count() == 0
         page.wait_for_function("() => /356h/.test(document.querySelector('#pvBody').textContent)")
         # any other country: a general Module 1, said plainly
@@ -139,7 +147,7 @@ def test_each_authority_asks_its_own_questions_and_a_general_module_1_says_so(se
         # back to Egypt: its own questions are back
         page.select_option('#auCountry', 'EG')
         page.wait_for_function("() => document.querySelector('#auName').textContent.includes('المصرية')")
-        page.click('#wizNext'); page.click('#wizNext')
+        to_card(page)
         assert page.locator('[data-k="licence"]').count() >= 4 and page.locator('[data-auq]').count() == 0
         page.wait_for_function("() => /1\\.1\\.1|Annex/.test(document.querySelector('#pvBody').textContent)")
         b.close()

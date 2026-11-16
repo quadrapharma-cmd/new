@@ -125,3 +125,60 @@ def test_the_viewer_and_the_item_drawer_work_on_the_current_version_and_keep_the
         b.close()
     assert not errors, errors
     assert not bad, bad
+
+
+def test_the_office_says_why_while_documents_are_being_prepared_and_is_never_silent(server, tmp_path):
+    """Stage 2 (16/11/2026): the documents are in their items before «تجهيز الكل», so «المكتب» lists them while they are being
+    prepared. Its buttons looked each document up in the page's copy of the board — dropped after every document prepared — and,
+    not finding it, did nothing and said nothing. Now: said while the preparation runs (the pages can still be looked at), and
+    afterwards each button asks the file how the document stands before it acts."""
+    did, slots, a, b_ = two_documents(server, tmp_path)
+    errors, bad = [], []
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch()
+        page = open_prepare(b, server, did, errors, bad)
+        held = []
+        page.route('**/api/dossiers/*/prepare/*', lambda r: held.append(r) if r.request.method == 'POST' and not held else r.continue_())   # the first document's preparation takes its time
+        page.click('#prepAll')
+        for _ in range(100):
+            if held:
+                break
+            page.wait_for_timeout(100)
+        assert held and page.evaluate('() => !!S.prepBusy')
+        # its item: not opened under a preparation that may change it — and the reason is said
+        page.click(f'#offList [data-offitem="{slots[0]}"]')
+        page.wait_for_function("() => /جارٍ تجهيز المستندات الآن/.test(document.getElementById('toast').textContent) && !document.getElementById('toast').hidden")
+        assert page.evaluate("() => document.getElementById('drawer').hidden")
+        # its pages: shown, to look at only
+        page.click(f'#offList [data-offpages="{a}"]')
+        page.wait_for_function(SHOWN, timeout=60000)
+        assert 'للعرض فقط' in page.inner_text('#pgLook') and page.locator('#pgTurn').count() == 0 and page.locator('#pgDel').count() == 0
+        page.click('#pgBack')
+        page.wait_for_function("() => document.getElementById('drawer').hidden")
+        held[0].continue_()
+        page.wait_for_function("() => !S.prepBusy && !S.prepDoing", timeout=120000)
+        page.wait_for_function("ids => { const now = [...document.querySelectorAll('#offList [data-offdoc]')].map(x => x.dataset.offdoc).sort(); return now.length === 2 && JSON.stringify(now) === JSON.stringify(ids); }",
+                               arg=current(server, did), timeout=60000)
+        now = current(server, did)
+        first = next(d['id'] for s in call(server, f'/api/dossiers/{did}/board')['slots'] if s['slot_id'] == slots[0] for d in s['documents'])
+        # prepared: the pages can be turned again, and the item opens
+        page.click(f'#offList [data-offpages="{first}"]')
+        page.wait_for_function(SHOWN, timeout=60000)
+        assert page.locator('#pgTurn').count() == 1 and page.locator('#pgLook').count() == 0
+        page.click('#pgBack')
+        page.wait_for_function("() => document.getElementById('drawer').hidden")
+        # the page's copy of the board is away (as it is between a change and the next drawing): the button asks the file, and acts
+        page.evaluate('() => { S.board = null; }')
+        page.click(f'#offList [data-offitem="{slots[0]}"]')
+        page.wait_for_selector('#drawer [data-pgv]', timeout=30000)
+        assert page.get_attribute('#drawer [data-pgv]', 'data-pgv') == first
+        page.evaluate('() => closeDrawer()')
+        # a row whose item is not in the file any more: said, and the list drawn again as the file is
+        page.evaluate("() => { const x = document.querySelector('#offList [data-offitem]'); x.dataset.offitem = 'no-such-item'; x.id = 'gone'; }")
+        page.click('#gone')
+        page.wait_for_function("() => /تغيّر هذا المستند للتو/.test(document.getElementById('toast').textContent)")
+        page.wait_for_function("() => !document.getElementById('gone')", timeout=30000)
+        assert page.evaluate(OFFICE) == now and page.evaluate("() => document.getElementById('drawer').hidden")
+        b.close()
+    assert not errors, errors
+    assert not bad, bad

@@ -4,6 +4,7 @@ import json, socket, threading, time, urllib.request
 import pytest
 
 pw = pytest.importorskip('playwright.sync_api')
+from wizard_steps import to_upload, to_card, confirm_card   # noqa: F401
 
 PROFILE = dict(dossier_kind='generic', origin='local', licence='toll', activity='new', pharmacopoeial=True,
                apis=[dict(name='Neomycin sulphate', manufacturer='Example API Co.', option='DMF')])
@@ -43,6 +44,7 @@ def test_conditions_before_upload(server, lang):
         page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
         page.add_init_script(f"localStorage.setItem('db.lang','{lang}')")
         page.goto(f'{server}/#/new')
+        to_upload(page)
         page.wait_for_selector('.doccard details.cond')
         cards = page.locator('.doccard details.cond').count()
         assert cards >= 10

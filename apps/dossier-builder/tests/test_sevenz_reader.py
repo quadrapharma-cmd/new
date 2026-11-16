@@ -191,7 +191,7 @@ def test_the_page_takes_the_documents_from_a_7z(server, browser, made):
     page.set_input_files('#fxin', [str(made['out'] / 'default.7z')])
     got = page.evaluate(EXPAND)
     assert got['files'] == made['want'], sorted(got['files'])
-    assert '«default.7z» unpacked: 6 document(s)' in got['summary'], got['summary']
+    assert '«default.7z» unpacked — documents taken: 6' in got['summary'], got['summary']
     page.close()
 
 

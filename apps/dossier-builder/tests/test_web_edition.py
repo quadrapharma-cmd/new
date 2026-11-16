@@ -6,6 +6,7 @@ import pytest
 from fixtures_pdf import make_pdf
 
 pw = pytest.importorskip('playwright.sync_api')
+from wizard_steps import to_upload, to_card, confirm_card   # noqa: F401
 DIST = pathlib.Path(__file__).resolve().parents[1] / 'web' / 'dist'
 pytestmark = pytest.mark.skipif(not (DIST / 'index.local.html').exists(), reason='web/dist not built')
 
@@ -40,16 +41,15 @@ def test_in_browser_journey(site, tmp_path):
             raise AssertionError('home did not render; view=' + page.inner_text('#view')[:800] + ' console=' + ' | '.join(console)[:800] + ' errors=' + ' | '.join(errors)[:400])
         assert '101' in page.inner_text('.caps')                                      # capabilities read from the in-browser engine
         page.click('#btnNew')
-        page.wait_for_selector('.doccards'); page.click('#wizNext')                 # the wizard opens with the documents step
+        to_upload(page, 120000); page.wait_for_selector('.doccards')                # the wizard: the country, then the upload station (nothing to upload here)
+        to_card(page)                                                               # and the product card, typed
         page.fill('[data-in=name]', 'Examplol 500 mg FCT')
         page.fill('[data-in=man]', 'Example Pharma')
-        page.click('#wizNext'); page.click('[data-k=licence][data-v=toll]')
+        page.click('[data-k=licence][data-v=toll]')
         page.wait_for_function("(n=>n && +n.innerText > 50)(document.querySelector('#pvBody .n'))", timeout=60000)
-        page.click('#wizNext')
         page.fill('[data-api="0"][data-f=name]', 'Paracetamol'); page.fill('[data-api="0"][data-f=manufacturer]', 'Granules India')
-        page.click('#wizNext')
         page.fill('[data-in=applicant]', 'Example Pharma S.A.E.'); page.fill('[data-in=tracking]', 'P-MAA-0001')
-        page.click('#wizCreate')
+        confirm_card(page, then='board')                                            # the proposed tree (nothing waiting), then the board
         page.wait_for_selector('h1:has-text("Dossier tree and what is missing")', timeout=60000)
         with page.expect_file_chooser() as fc:
             page.locator('tr', has_text='Composition certificate').locator('[data-up]').first.click()
@@ -172,7 +172,7 @@ def test_a_started_project_is_still_there_after_the_page_is_closed(site, tmp_pat
             fc.value.set_files(str(path))
 
         page = open_('#/new')
-        page.wait_for_selector('#intakeBtn', timeout=120000)
+        to_upload(page, 120000)
         give(page, z7)                                                                  # a 7z that is only a signature: said damaged, with what to do
         page.wait_for_function("() => /ZIP/.test(document.querySelector('#toast').textContent)", timeout=60000)
         assert '7z' in page.inner_text('#toast')
@@ -219,7 +219,7 @@ def test_a_7z_is_opened_inside_the_browser(site):
         page.add_init_script("localStorage.setItem('db.lang','en')")
         page.goto(site + '/index.local.html#/new')
         page.wait_for_selector('#boot', state='detached', timeout=180000)
-        page.wait_for_selector('#intakeBtn', timeout=120000)
+        to_upload(page, 120000)
         assert page.evaluate('() => !!window.DBWEB && !!window.DB7Z')                     # the browser edition, with the page's own reader
         with page.expect_file_chooser() as fc:
             page.click('#intakeBtn')
@@ -247,15 +247,13 @@ def test_a_dossier_for_another_country_in_the_browser(site):
         page.select_option('#auCountry', 'SA')
         page.wait_for_function("() => document.querySelector('#auName') && document.querySelector('#auName').textContent.includes('SFDA')", timeout=60000)
         assert "Module 1 from the authority's published text" in page.inner_text('#auCard')
-        page.click('#wizNext')
+        to_card(page)
         page.fill('[data-in=name]', 'Dermacure KSA'); page.fill('[data-in=man]', 'Example Pharm Co.')
-        page.click('#wizNext'); page.click('[data-k=origin][data-v=imported]')
+        page.click('[data-k=origin][data-v=imported]')
         page.wait_for_function("() => /1\\.7\\.5/.test(document.querySelector('#pvBody').textContent)", timeout=60000)
-        page.click('#wizNext')
         page.fill('[data-api="0"][data-f=name]', 'Neomycin sulphate'); page.fill('[data-api="0"][data-f=manufacturer]', 'Example API Co.')
-        page.click('#wizNext')
         page.fill('[data-in=applicant]', 'Example Pharm Co.'); page.fill('[data-in=tracking]', 'T-0001')
-        page.click('#wizCreate')
+        confirm_card(page, then='board')
         page.wait_for_selector('[data-tpl="GCC-1.7.5"]', timeout=60000)
         assert 'Saudi Arabia' in page.inner_text('#crumbAu') and page.locator('#navReview').is_hidden()
         page.click('[data-tpl="GCC-1.7.5"]')
@@ -358,7 +356,7 @@ def test_with_claude_a_scan_goes_as_its_page_pictures_and_no_upload_waits_for_oc
         page.add_init_script(MOCK_SAMPLE)
         page.goto(site + '/index.local.html#/')
         page.wait_for_selector('#boot', state='detached', timeout=180000)
-        page.click('#btnNew'); page.wait_for_selector('.doccards')
+        page.click('#btnNew'); to_upload(page, 120000); page.wait_for_selector('.doccards')
         with page.expect_file_chooser() as fc:
             page.locator('[data-updoc=registration_licence]').first.click()
         fc.value.set_files(str(notice_scan))
@@ -370,6 +368,60 @@ def test_with_claude_a_scan_goes_as_its_page_pictures_and_no_upload_waits_for_oc
         line = page.locator('[data-docline]').first.inner_text()
         assert 'trade name' in line or 'registration no.' in line, line                              # what Claude gave, on the card
         assert 'Examplol' in page.inner_text('#wizLive')
+        assert not errors, errors
+        b.close()
+
+
+def test_a_scan_the_wizard_read_is_not_read_again_on_the_tree(site, notice_scan):
+    """Stage 2 (16/11/2026): the wizard's files arrive on the proposed tree with the kind their reading gave them. The tree read every
+    waiting scan again before «اعتماد الشجرة» could go on — a question to Claude for each, for an item the file already had. Now it
+    reads only the scans that have no kind yet; the others say where their kind comes from. Their preparation is what it was before
+    the tree: the page reads their words, and Claude is asked only for what an item's conditions need eyes for."""
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch()
+        page = b.new_context(viewport={'width': 1280, 'height': 800}).new_page()
+        errors = []
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+        page.add_init_script(MOCK_SAMPLE)
+        page.goto(site + '/index.local.html#/')
+        page.wait_for_selector('#boot', state='detached', timeout=180000)
+        page.click('#btnNew'); to_upload(page, 120000); page.wait_for_selector('.doccards')
+        with page.expect_file_chooser() as fc:
+            page.locator('[data-updoc=registration_licence]').first.click()
+        fc.value.set_files(str(notice_scan))
+        page.wait_for_function("() => { const l = document.querySelector('[data-docline]'); return l && !l.querySelector('.c-wait') && /Claude/.test(l.textContent); }", timeout=120000)
+        assert page.evaluate('window.__calls.length') == 1                               # the wizard's reading
+        to_card(page)
+        page.fill('[data-in=man]', 'Example Pharma')
+        page.fill('[data-api="0"][data-f=name]', 'Paracetamol'); page.fill('[data-api="0"][data-f=manufacturer]', 'Granules India')
+        page.fill('[data-in=applicant]', 'Example Pharma S.A.E.'); page.fill('[data-in=tracking]', 'P-MAA-0002')
+        confirm_card(page, files=1, then='tree')
+        page.wait_for_function("() => !S.prepWaitP && !!document.getElementById('treeGo')", timeout=120000)
+        card = page.locator('#treeOut [data-pw]').first
+        assert card.locator('[data-tknown]').count() == 1 and 'عُرف نوعه من قراءته عند الرفع' in card.inner_text()   # said, not «لم يُقرأ»
+        assert page.locator('[data-titem="M1-04"] [data-pw]').count() == 1               # at the item of the kind the wizard's reading gave it
+        assert page.evaluate('window.__calls.length') == 1                               # …and Claude was not asked again for it
+        # a scan added here, on the tree, that no reading has seen: Claude reads it — also when its NAME hints a kind (a hint places
+        # nothing: two of the owner's real scans, named «… (Registration License)» and «… Stability Approval», were left unread)
+        from PIL import Image, ImageDraw
+        im = Image.new('L', (1240, 1754), 255)
+        ImageDraw.Draw(im).rectangle([120, 160, 1100, 220], fill=0)
+        other = notice_scan.parent / 'made-up Final MA (Registration License).pdf'
+        im.save(other, 'PDF', resolution=150.0)
+        page.set_input_files('#prepFiles', [str(other)])
+        page.wait_for_function("() => document.querySelectorAll('#treeOut [data-pw]').length === 2", timeout=120000)
+        page.wait_for_function("() => !S.prepWaitP && window.__calls.length === 2", timeout=120000)
+        assert 'made-up Final MA (Registration License).pdf' in page.evaluate('window.__calls[1].prompt')
+        mine = page.locator('#treeOut [data-pw]', has_text='made-up Final MA')
+        assert mine.locator('[data-tknown]').count() == 0 and 'قرأه Claude من صور صفحاته' in mine.inner_text()
+        assert page.locator('[data-titem="M1-04"] [data-pw]').count() == 2               # read, so it has its place
+        page.click('#treeGo')
+        page.wait_for_function("() => location.hash.endsWith('/prepare') && document.querySelectorAll('#prepOut [data-pdoc]').length === 2", timeout=120000)
+        page.click('#prepAll')
+        page.wait_for_function("() => !S.prepBusy && !S.prepDoing && S.prep.placed.length === 2 && S.prep.placed.every(d => d.prepared)", timeout=240000)
+        assert page.evaluate('window.__calls.length') == 2                               # prepared from the page's own reading of their words, as before
+        assert page.evaluate("() => S.prep.placed.every(d => (d.conditions || []).length > 0)")
         assert not errors, errors
         b.close()
 

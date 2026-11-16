@@ -136,3 +136,31 @@ def test_bookmarks_added_from_headings(tmp_path):
     assert 'NTA065-BM' not in {f.rule for f in r['report'].findings}
     r2 = fix(p, 'third_party_certificate', tmp_path)               # bookmarks on evidence: allowed, pixels identical
     assert [d['op'] for d in r2['done']] == ['add_bookmarks'] and same_pixels(p, r2['path'])
+
+
+def test_no_headings_is_said_as_it_is_and_a_scans_text_layer_is_not_taken_for_heading_styles(tmp_path):
+    """The owner's real files, 16/11/2026: after «تجهيز» he read «تعذّر التطبيق: bookmark_from_text_styles: step 2
+    (bookmark_from_text_styles): levels[0]: font must be a font name from text_styles» on a scanned licence, and «تعذّر التطبيق:
+    no headings found (tagged, numbered or set in a heading style) — add bookmarks in the source document» on a file of
+    chromatograms. The first was ours — the invisible text written under a scan's pages has a font without a name, and its lines'
+    sizes (the words' boxes) were taken for heading styles; the second is no failure: there are no headings to build bookmarks
+    from, which is said, in both languages."""
+    from dossier_engine import pdfcraft, textlayer
+    if not pdfcraft.available():
+        pytest.skip('needs PdfCraft')
+    import test_textlayer as T
+    words = []                                                   # a scan made searchable: body lines, and two lines read larger
+    for i in range(14):
+        for k, w in enumerate(['made', 'up', 'words', f'line{i}']):
+            words.append([w, 72 + 70 * k, 60 + 40 * i, 60, 24.0 if i in (0, 7) else 12.0, i])
+    p = tmp_path / 'searchable-scan.pdf'
+    p.write_bytes(textlayer.write(T.scan(), {1: {'words': words, 'rotated': 0, 'deskew': 0.0}}))
+    styles = (pdfcraft.query(p.read_bytes(), [('text_styles', {})]) or {}).get('text_styles', {}).get('styles') or []
+    assert len({x['size'] for x in styles}) >= 2 and all(not x['font'] for x in styles)      # two sizes, and no font name: the layer's
+    bm = [{'rule': 'NTA065-BM', 'severity': 'warn', 'action': 'auto_fix', 'en': '', 'ar': '', 'source': '', 'extra': {}}]
+    r = apply(p, bm, 'company_technical')
+    assert r['done'] == [] and [x['op'] for x in r['refused']] == ['add_bookmarks']
+    said = r['refused'][0]
+    assert said['en'].startswith('No headings were found in this document') and said['ar'].startswith('لم يُعثر في المستند على عناوين')
+    for x in (said['en'], said['ar']):
+        assert not any(w in x for w in ('bookmark_from_text_styles', 'RuntimeError', 'Could not apply', 'تعذّر التطبيق', 'levels[0]'))

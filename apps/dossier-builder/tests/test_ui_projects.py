@@ -6,6 +6,7 @@ import io, json, zipfile
 import httpx
 import pytest
 from fixtures_pdf import make_pdf, make_pdf_lines
+from wizard_steps import to_upload, to_card
 from test_ui_e2e import server, browser          # noqa: F401  (the module's live server and Chromium)
 from test_ui_intake_fixes import CPP, _upload
 from test_reading_cases import PROFILE, PRODUCT, ENV
@@ -33,6 +34,8 @@ def _open(browser, server, hash_='#/new', wait='#intakeBtn', width=1440):
     page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
     page.add_init_script("localStorage.setItem('db.lang','en')")
     page.goto(server + '/' + hash_)
+    if hash_ == '#/new' and wait == '#intakeBtn':
+        to_upload(page)                                                                 # «ملف جديد» opens on the country: on to the upload station
     page.wait_for_selector(wait)
     return page
 
@@ -70,7 +73,7 @@ def test_leaving_the_wizard_keeps_a_draft_that_is_continued_from_the_list(clean,
     page.click('#homeDrafts')                                                           # one draft: straight back into it
     page.wait_for_selector('#intakeReview', timeout=60000)
     assert 'cpp.pdf' in page.inner_text('#wizBody')
-    page.click('#wizNext')
+    to_card(page)
     assert page.input_value('[data-in=trade]') == 'Cardiolol 10 mg'                     # what was read came back with it
     assert page.errors == [], page.errors
     page.close()
@@ -103,7 +106,7 @@ def test_a_draft_opened_in_a_fresh_page_names_the_form_in_words(clean, browser, 
 def test_leaving_by_the_menu_keeps_what_was_just_typed(clean, browser):
     server = clean
     page = _open(browser, server)
-    page.click('#wizNext')
+    to_card(page)
     page.fill('[data-in=name]', 'Dermacure 2 % cream')
     page.evaluate("location.hash = '#/dossiers'")                                       # away at once, before the autosave has fired
     page.wait_for_selector('#draftBox')
@@ -121,9 +124,9 @@ def test_new_project_starts_a_new_one_and_the_draft_stays(clean, browser):
     first = httpx.post(f'{server}/api/intake/drafts', json={'state': {'step': 1, 'd': {'name': 'Dermacure first'}, 'typed': {'name': 1}}}, headers=H).json()['id']
     page = _open(browser, server, '#/dossiers', '#draftBox')
     page.click('#btnNew')
-    page.wait_for_selector('#intakeBtn')                                                # a new wizard, at its first step, empty
+    to_upload(page)                                                # a new wizard, at its first step, empty
     assert page.evaluate("() => !S.wiz.draftId && !S.wiz.d.name")
-    page.click('#wizNext')
+    to_card(page)
     page.fill('[data-in=name]', 'Dermacure second')
     page.click('#wizCancel')
     page.wait_for_selector('#draftBox')
@@ -152,9 +155,9 @@ def test_a_draft_is_deleted_in_two_presses_and_start_over_asks_first(clean, brow
     page.wait_for_function("() => !document.querySelector('#draftBox')")
     assert _drafts(server) == []
     page.click('#btnNew')
-    page.wait_for_selector('#intakeBtn')
+    to_upload(page)
     assert _wiz_files(page) == []                                                       # nothing of the deleted draft comes back
-    page.click('#wizNext'); page.fill('[data-in=name]', 'Dermacure'); page.click('#wizBack')
+    to_card(page); page.fill('[data-in=name]', 'Dermacure'); page.click('#wizBack')
     page.wait_for_function("() => S.wiz.draftId")
     page.click('#wizRestart'); page.click('#wizRestart')                                # the second press starts over
     page.wait_for_function("() => !S.wiz || !S.wiz.draftId")
@@ -248,7 +251,7 @@ def test_a_zip_given_to_the_wizard_gives_the_documents_inside_it(clean, browser,
     _upload(page, '#intakeBtn', [z])
     page.wait_for_selector('#intakeReview', timeout=120000)
     assert _wiz_files(page) == ['cpp.pdf', 'ملاحظات.txt']                                 # the documents, not the archive, the system file or the program
-    page.click('#wizNext')
+    to_card(page)
     assert page.input_value('[data-in=trade]') == 'Cardiolol 10 mg'                     # and they were read
     assert _drafts(server)[0]['files'] == 2
     assert page.errors == [], page.errors
@@ -360,7 +363,7 @@ def test_a_reading_that_ends_after_leaving_goes_to_its_draft_and_not_over_the_pa
     page.evaluate("location.hash = '#/dossiers'")                                       # gone before the reading ends
     page.wait_for_selector('#draftBox')
     page.click('#btnNew')                                                               # and a new project is started meanwhile
-    page.wait_for_selector('#intakeBtn')
+    to_upload(page)
     end, state = __import__('time').time() + 60, {}
     while __import__('time').time() < end and 'cpp.pdf' not in (state.get('texts') or {}):
         state = _drafts(server)[0]['state'] if _drafts(server) else {}

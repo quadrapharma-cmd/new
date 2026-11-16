@@ -3,6 +3,7 @@ refused is not lost when the dossier is created, and the page cleans the active 
 import socket, threading, time
 import pytest
 from fixtures_pdf import make_pdf_lines
+from wizard_steps import to_upload, to_card
 
 pw = pytest.importorskip('playwright.sync_api')
 
@@ -45,7 +46,7 @@ def start(server, browser, files):
     page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
     page.add_init_script("localStorage.setItem('db.lang','en')")
     page.goto(server + '/#/new')
-    page.wait_for_selector('#intakeBtn')
+    to_upload(page)                                                       # «ملف جديد» opens on the country: on to the upload station
     with page.expect_file_chooser() as fc:
         page.click('#intakeBtn')
     fc.value.set_files([str(f) for f in files])
@@ -54,8 +55,7 @@ def start(server, browser, files):
 
 
 def trade_value(page):
-    if not page.locator('[data-in=trade]').count():
-        page.click('#wizNext')
+    to_card(page)                                                         # the product card holds it
     page.wait_for_selector('[data-in=trade]', timeout=20000)
     return page.input_value('[data-in=trade]')
 
@@ -69,7 +69,7 @@ def test_typed_value_survives_a_refresh_and_a_new_upload(server, browser, tmp_pa
     page.wait_for_timeout(1500)
     page.wait_for_function("() => /\\d/.test((document.querySelector('#wizSaved') || {}).textContent || '')", timeout=20000)
     page.reload()
-    page.wait_for_selector('#wizNext, #intakeReview', timeout=60000)
+    page.wait_for_selector('#wizNext, #intakeReview, #pcard', timeout=60000)   # the wizard comes back on the station it was left at (here: the product card)
     page.wait_for_timeout(2500)                                           # let any re-reading after the restore finish
     assert trade_value(page) == 'Cardiolol Forte 10 mg', 'the refresh put the reading back over the typed value'
     # a new document after the correction must not undo it either
@@ -85,7 +85,7 @@ def test_typed_value_survives_a_refresh_and_a_new_upload(server, browser, tmp_pa
         with page.expect_file_chooser() as fc:
             page.click('[data-updoc="gmp_certificate"]')
         fc.value.set_files([str(gmp)])
-        page.wait_for_function("() => document.querySelector('.doccards') && document.querySelector('.doccards').innerText.includes('gmp certificate.pdf')", timeout=60000)
+        page.wait_for_function("() => document.querySelector('#upList') && document.querySelector('#upList').innerText.includes('gmp certificate.pdf')", timeout=60000)
         page.wait_for_timeout(2500)
         assert trade_value(page) == 'Cardiolol Forte 10 mg', 'a new upload put the reading back over the typed value'
     page.close()
@@ -104,11 +104,9 @@ def test_refused_file_is_not_lost_at_creation(server, browser, tmp_path):
     page.fill('[data-rva="0"][data-f=manufacturer]', 'Unichem Laboratories')
     page.click('#intakeApply')
     page.wait_for_selector('#toast:not([hidden])')
-    for _ in range(3):
-        page.click('#wizNext')
-        page.wait_for_timeout(300)
+    to_card(page)                                                         # what was reviewed is on the product card
     page.click('#wizCreate')
-    page.wait_for_selector('h1:has-text("Dossier tree and what is missing")', timeout=60000)
+    page.wait_for_selector('h1:has-text("Proposed tree")', timeout=60000)
     did = page.url.split('/d/')[1].split('/')[0]
     where = {}
     for _ in range(60):
@@ -118,9 +116,13 @@ def test_refused_file_is_not_lost_at_creation(server, browser, tmp_path):
         if 'cpp.pdf' in where and 'price letter.pdf' in where:
             break
         time.sleep(1)
-    assert where.get('cpp.pdf') == 'M1-14', where
+    assert where.get('cpp.pdf') == 'unplaced', where                              # nothing is placed before the tree is approved
     assert 'price letter.pdf' in where, f'the refused file vanished: {where}'
-    assert where['price letter.pdf'] in ('M1-05', 'unplaced'), where              # in its own item or waiting in the box, never under GMP
+    assert where['price letter.pdf'] == 'unplaced', where
+    # the proposed tree shows each at its own item: the certificate at 1.1.13, the price letter at its pricing item — never under GMP
+    page.wait_for_function("() => document.querySelectorAll('#treeOut [data-pw]').length === 3", timeout=60000)
+    assert 'cpp.pdf' in page.inner_text('[data-titem="M1-14"]') and 'price letter.pdf' in page.inner_text('[data-titem="M1-05"]')
+    assert all('price letter.pdf' not in page.inner_text(f'[data-titem="{x}"]') for x in ('M1-37', 'M1-38') if page.locator(f'[data-titem="{x}"]').count())
     page.close()
 
 

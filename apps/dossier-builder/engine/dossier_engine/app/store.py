@@ -571,15 +571,7 @@ class Store:
             except Exception:
                 kc = {'ok': True}
             if not kc.get('ok'):
-                home = next((x.slot_id for x in slots.values() if x.req_id in kc['homes'] and x.active), None)
-                home_title = next((x.title for x in slots.values() if x.slot_id == home), None)
-                kn = kc.get('kind_name') or {'en': kc['kind'], 'ar': kc['kind']}
-                rep.findings.insert(0, Finding(
-                    'DOC-KIND', 'block',
-                    f"This file reads as a {kn['en']}, not the document this item needs" + (f"; it belongs in {home_title['en']}." if home_title else '.'),
-                    f"يبدو أن هذا الملف {kn['ar']}، وليس المستند المطلوب في هذا البند" + (f"؛ وموضعه «{home_title['ar']}»." if home_title else '.'),
-                    'move' if home else 'user_fix', 'intake kind rule (classify keywords)',
-                    {'kind': kc['kind'], 'suggested_slot': home, 'suggested_title': home_title}))
+                rep.findings.insert(0, self._kind_finding(slots, kc))
         if txt and txt_kind in VALIDITY_KINDS and not meta.get('valid_until'):
             vu = ((_extract.fields_for(txt_kind, filename, txt).get('document') or {}).get('valid_until'))
             try:
@@ -598,6 +590,18 @@ class Store:
                                             'manufacturing and the expiry dates (NP.CAPP.065 v5 1.2.3.1).',
                                             'لا يظهر في شهادة التحليل: ' + '، '.join(g[1] for g in gaps) + ' — الهيئة تشترط رقم التشغيلة وتاريخ '
                                             'التصنيع والانتهاء (NP.CAPP.065 v5 بند 1.2.3.1).', 'user_fix', 'NP.CAPP.065 v5 1.2.3.1'))
+        # its seat among the documents of its item: a new version, a part cut from a file or several joined into one sit where the document they
+        # come from sat — the others keep their place, and the number in their names (documents()); a document placed, moved or uploaded takes
+        # the last seat
+        meta.pop('seat', None)
+        came_from = supersede or meta.get('split_from') or (meta.get('merged_from') or [None])[0]
+        if came_from:
+            r0 = self.db.execute('select slot_id, created, meta from document where id=? and dossier_id=?', (came_from, did)).fetchone()
+            if r0 and r0['slot_id'] == slot_id:
+                try:
+                    meta['seat'] = json.loads(r0['meta'] or '{}').get('seat') or r0['created']
+                except ValueError:
+                    meta['seat'] = r0['created']
         version = 1 + (self.db.execute('select coalesce(max(version),0) from document where dossier_id=? and slot_id=?',
                                        (did, slot_id)).fetchone()[0])
         doc_id = str(uuid.uuid4())
@@ -615,6 +619,49 @@ class Store:
         self.db.commit()
         self.audit(did, 'document.added', slot=slot_id, doc=doc_id, version=version, sha256=sha, status=rep.status,
                    supersedes=supersede, signed_for=meta.get('signed_for'))
+        return self.document(doc_id)
+
+    @staticmethod
+    def _kind_finding(slots, kc):
+        """The kind rule's objection: what the file reads as, and the item it belongs in when the dossier has one."""
+        home = next((x.slot_id for x in slots.values() if x.req_id in kc['homes'] and x.active), None)
+        home_title = next((x.title for x in slots.values() if x.slot_id == home), None)
+        kn = kc.get('kind_name') or {'en': kc['kind'], 'ar': kc['kind']}
+        return Finding(
+            'DOC-KIND', 'block',
+            f"This file reads as a {kn['en']}, not the document this item needs" + (f"; it belongs in {home_title['en']}." if home_title else '.'),
+            f"يبدو أن هذا الملف {kn['ar']}، وليس المستند المطلوب في هذا البند" + (f"؛ وموضعه «{home_title['ar']}»." if home_title else '.'),
+            'move' if home else 'user_fix', 'intake kind rule (classify keywords)',
+            {'kind': kc['kind'], 'suggested_slot': home, 'suggested_title': home_title})
+
+    def judge_kind(self, did, doc_id):
+        """The kind rule on a document already in its item, now that its words are known. A scan placed from the proposed tree has no
+        words yet (where Claude reads it, the page does not read it first): add_document passed it on what Claude took it for, and it is
+        read when it is prepared — this is the same judgement, made then. Nothing where the rule has spoken already, where the person
+        overruled it («it is in the right place»), or for a document the rule never judges (made here, a signed or amended copy, a
+        repaired copy — that one carries its source's verdict —, a request for renewing the price). → the document."""
+        from .. import extract as _extract
+        d = self.document(doc_id)
+        m = d['meta']
+        if (d['dossier_id'] != did or d['state'] != 'current' or not d.get('slot_id') or not d.get('sha256')
+                or any(m.get(k) for k in ('external', 'generated', 'signed_for', 'amended_from', 'fixed_from', 'renewal_request', 'kind_confirmed'))
+                or any(f.get('rule') == 'DOC-KIND' for f in d['findings'])):
+            return d
+        slots = {x.slot_id: x for x in self.slots(did)}
+        s = slots.get(d['slot_id'])
+        if not s:
+            return d
+        try:
+            kc = _extract.kind_check(s.req_id, d['filename'], self.blob_path(d['sha256']).read_bytes(), known_kind=m.get('kind'),
+                                     pack=self.pack(self.dossier(did)['pack']))
+        except Exception:
+            return d
+        if kc.get('ok'):
+            return d
+        findings = [self._kind_finding(slots, kc).to_dict()] + d['findings']
+        self.db.execute('update document set findings=?, check_status=? where id=?', (json.dumps(findings, ensure_ascii=False), status_of(findings), doc_id))
+        self.db.commit()
+        self.audit(did, 'document.kind_judged', doc=doc_id, slot=d['slot_id'], rule_said=kc['kind'])
         return self.document(doc_id)
 
     def add_reference(self, did, slot_id, title, url, source='drive', note=None, ref_id=None, valid_until=None):
@@ -1404,6 +1451,7 @@ class Store:
             q += " and state='current'"
         ids = [r['id'] for r in self.db.execute(q + ' order by created', args).fetchall()]
         docs = [self.document(i) for i in ids]
+        docs.sort(key=lambda d: d['meta'].get('seat') or d['created'])     # a new version keeps its document's seat in the item (add_document)
         if slot_id is not None and any(d['meta'].get('renewal_request') for d in docs):
             for d in docs:                                # an expired pricing certificate with its request for updating: accepted
                 if any(f.get('rule') == 'DOC-EXPIRED' for f in d['findings']):

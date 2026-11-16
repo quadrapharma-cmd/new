@@ -8,6 +8,7 @@ import hashlib, http.server, pathlib, socket, struct, threading
 import pytest
 
 pw = pytest.importorskip('playwright.sync_api')
+from wizard_steps import to_upload, to_card, confirm_card   # noqa: F401
 DIST = pathlib.Path(__file__).resolve().parents[1] / 'web' / 'dist'
 pytestmark = pytest.mark.skipif(not (DIST / 'index.local.html').exists(), reason='web/dist not built')
 H = "{headers: {'X-DB': '1'}}"
@@ -115,7 +116,7 @@ def test_a_full_browser_storage_is_said_and_the_rest_is_still_saved(site, tmp_pa
         errors = []
         open_ = opener(ctx, site, errors)
         page = open_('#/new')
-        page.wait_for_selector('#intakeBtn', timeout=120000)
+        to_upload(page, 120000)
         with page.expect_file_chooser() as fc:
             page.click('#intakeBtn')
         fc.value.set_files(str(f))

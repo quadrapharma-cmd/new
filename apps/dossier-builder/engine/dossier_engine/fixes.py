@@ -145,10 +145,18 @@ def headings(path):
     return out
 
 
+# no headings to build bookmarks from: not a failure — said as it is, in both languages (it reached the person as «Could not apply:
+# RuntimeError: no headings found…», the Arabic too)
+NO_HEADINGS = ('No headings were found in this document (tagged, numbered or set in a heading style) to build its bookmarks from: '
+               'add the bookmarks in the source document, then upload it again.',
+               'لم يُعثر في المستند على عناوين (موسومة أو مرقّمة أو مكتوبة بنمط عناوين) تُبنى منها الإشارات المرجعية (bookmarks): '
+               'أضِفها في المستند الأصلي ثم ارفعه من جديد.')
+
+
 def _bookmarks(src, dst):
     hs = headings(src)
     if len(hs) < 2:
-        raise RuntimeError('no numbered headings detected — add bookmarks in the source document')
+        raise Refused(*NO_HEADINGS)
     rd = PdfReader(str(src), strict=False)
     if rd.is_encrypted:
         rd.decrypt('')
@@ -255,7 +263,9 @@ def _pc_bookmarks(src, dst):
         _pc_job(src, dst, steps + view)
         return 'numbered headings'
     q = pdfcraft.query(data, [('text_styles', {})]) or {}
-    styles = (q.get('text_styles') or {}).get('styles') or []
+    # a style whose font has no name is the invisible text written under a scan's pages (textlayer): its sizes are the words' boxes,
+    # not heading styles — and PdfCraft refuses an empty font name («levels[0]: font must be a font name from text_styles»)
+    styles = [x for x in (q.get('text_styles') or {}).get('styles') or [] if x.get('font')]
     if styles:
         body = max(styles, key=lambda x: x.get('lines') or 0)
         heads = [x for x in styles if float(x.get('size') or 0) > float(body.get('size') or 0) + 0.5 and (x.get('lines') or 0) <= max(2, (body.get('lines') or 0) // 3)]
@@ -263,7 +273,7 @@ def _pc_bookmarks(src, dst):
         if heads and sum(x.get('lines') or 0 for x in heads) >= 2:
             _pc_job(src, dst, [('bookmark_from_text_styles', {'doc': 1, 'levels': [{'font': x['font'], 'size': x['size'], 'bold': bool(x.get('bold'))} for x in heads]})] + view)
             return 'heading styles'
-    raise RuntimeError('no headings found (tagged, numbered or set in a heading style) — add bookmarks in the source document')
+    raise Refused(*NO_HEADINGS)
 
 
 def _pc_remove_javascript(src, dst):
@@ -360,7 +370,7 @@ def _browser_searchable(cur, nxt, origin):
     n = extract.page_count('scan.pdf', data)
     if len(rec['layout']) < n:
         raise Refused(f'Only {len(rec["layout"])} of its {n} pages were read here; a searchable copy needs every page read.',
-                      f'قُرئت {len(rec["layout"])} صفحة فقط من {n}؛ والنسخة القابلة للبحث تحتاج إلى قراءة كل صفحاته.')
+                      f'عدد الصفحات المقروءة {len(rec["layout"])} من {n} فقط؛ والنسخة القابلة للبحث تحتاج إلى قراءة كل صفحاته.')
     if not any(t.strip() for t in rec['texts']):
         raise Refused('No text could be read on the pages (a blank or unreadable scan): scan it again.',
                       'لم يُقرأ أي نص من الصفحات (المسح فارغ أو غير واضح): أعد مسحه.')
@@ -421,7 +431,8 @@ def apply(path, findings, doc_class, authority=None):
                 refused.append({'op': op, 'en': e.en, 'ar': e.ar})
                 continue
             except Exception as e:                         # not foreseen: what went wrong, as it is, in both languages
-                refused.append({'op': op, 'en': f'Could not apply: {type(e).__name__}: {e}'[:300], 'ar': f'تعذّر التطبيق: {e}'[:300]})
+                refused.append({'op': op, 'en': f'This fix could not be made automatically. Technical detail: {type(e).__name__}: {e}'[:340],
+                                'ar': f'تعذّر تنفيذ هذا الإصلاح تلقائيًا. التفاصيل التقنية: {e}'[:340]})
                 continue
             if layered:                                    # proved by the file's structure, on every kind of document: the pages' own content
                 from . import textlayer                    # byte for byte, nothing added but text drawn invisibly

@@ -151,8 +151,8 @@ def test_a_dead_line_is_said_with_a_way_to_try_again(site):
         page.goto(site.url + '/index.local.html#/', wait_until='commit')
         page.wait_for_selector('#bootHelp:not([hidden])', timeout=120000)
         text = page.inner_text('#boot')
-        assert re.search(r'لم تصل أي بيانات منذ \d+ ثانية: الاتصال بطيء أو منقطع', text) and 'إعادة المحاولة' in text, text
-        assert re.search(r'مضت \d+ ثانية', text) and re.search(r'تحميل مكوّنات البرنامج داخل المتصفح: [\d.]+ من \d+ ميغابايت', text), text      # how long, and how far it got
+        assert re.search(r'لم تصل أي بيانات منذ \d+ ث: الاتصال بطيء أو منقطع', text) and 'إعادة المحاولة' in text, text
+        assert re.search(r'الزمن المنقضي: \d+ ث', text) and re.search(r'تحميل مكوّنات البرنامج داخل المتصفح: [\d.]+ من \d+ ميغابايت', text), text      # how long, and how far it got
         site.hold = None                                                                    # the line comes back
         page.click('#bootHelp button')
         opened(page)

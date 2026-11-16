@@ -8,6 +8,7 @@ import os, functools, http.server, io, pathlib, socket, threading
 import pytest
 
 pw = pytest.importorskip('playwright.sync_api')
+from wizard_steps import to_upload, to_card, confirm_card   # noqa: F401
 docx = pytest.importorskip('docx')
 Image = pytest.importorskip('PIL.Image')
 APP = pathlib.Path(__file__).resolve().parents[1]
@@ -76,7 +77,7 @@ def test_the_new_file_wizard_shows_a_base_document_being_read(site, files):
         page.add_init_script(MOCK)
         page.goto(site + '/index.local.html#/')
         page.wait_for_selector('#boot', state='detached', timeout=180000)
-        page.click('#btnNew'); page.wait_for_selector('.doccards')
+        page.click('#btnNew'); to_upload(page, 120000); page.wait_for_selector('.doccards')
         with page.expect_file_chooser() as fc:
             page.locator('[data-updoc=registration_licence]').first.click()
         fc.value.set_files(str(files[0]))
@@ -101,7 +102,7 @@ def test_files_show_their_pages_and_what_claude_is_given_and_the_office_edits_th
         did = page.evaluate("""async () => (await (await fetch('/api/dossiers', {method: 'POST', headers: {'X-DB': '1', 'Content-Type': 'application/json'},
             body: JSON.stringify({name: 'Dermacure (made up)', profile: {dossier_kind: 'generic', origin: 'local', licence: 'own', activity: 'new', apis: [{name: 'Exampletine', manufacturer: 'Example API Co.', option: 'CEP'}]},
             product: {name: 'Dermacure 20 mg', dosageform: 'cream', manufacturer: 'Example Pharm'}, envelope: {}})})).json()).id""")
-        page.evaluate('id => { location.hash = `#/d/${id}/prepare`; }', did)
+        page.evaluate('id => { location.hash = `#/d/${id}/tree`; }', did)                  # files are added on the proposed tree's page (station 5)
         page.wait_for_selector('#prepFiles', state='attached', timeout=60000)
         page.set_input_files('#prepFiles', [str(f) for f in files])
         # the scan's page beside it, the Word file's kind beside it
@@ -115,9 +116,17 @@ def test_files_show_their_pages_and_what_claude_is_given_and_the_office_edits_th
         page.wait_for_function("() => !document.querySelector('.pv-now')", timeout=60000)           # the reading over: the panel goes
         calls = page.evaluate('window.__calls')
         assert calls and calls[0]['images'] == 2 and set(calls[0]['kinds']) == {'image/jpeg'}, calls
-        # prepared: the office lists both, each with its first page; the scan (an authority's notice) is not offered for editing
+        # the tree approved, then prepared: the office lists both, each with its first page; the scan (an authority's notice) is not offered for editing
+        page.wait_for_function("() => !S.prepWaitP && document.getElementById('treeGo')", timeout=60000)
+        page.click('#treeGo')
+        page.wait_for_function("() => location.hash.endsWith('/prepare') && document.querySelectorAll('#prepOut [data-pdoc]').length === 2", timeout=120000)
         page.click('#prepAll')
-        page.wait_for_function("() => document.querySelectorAll('[data-offdoc]').length === 2 && !document.querySelector('.pv-now')", timeout=240000)
+        # while they are being prepared the office does not open a document for editing — and says why (it did nothing, in silence)
+        page.wait_for_function("() => !!S.prepBusy && document.querySelector('[data-offedit]')", timeout=60000)
+        page.click('[data-offedit]')
+        page.wait_for_function("() => /جارٍ تجهيز المستندات الآن/.test(document.getElementById('toast').textContent)", timeout=30000)
+        assert page.locator('.dbprog').count() == 0
+        page.wait_for_function("() => !S.prepBusy && !S.prepDoing && S.prep.placed.length === 2 && S.prep.placed.every(d => d.prepared) && document.querySelectorAll('[data-offdoc]').length === 2 && !document.querySelector('.pv-now')", timeout=240000)
         page.evaluate("() => document.getElementById('office').scrollIntoView()")
         page.wait_for_function("() => [...document.querySelectorAll('#offList img[data-pvthumb]')].every(i => i.src && i.src.startsWith('blob:'))", timeout=60000)
         rows = page.evaluate("() => [...document.querySelectorAll('[data-offdoc]')].map(r => ({text: r.innerText, edit: !!r.querySelector('[data-offedit]')}))")

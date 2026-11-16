@@ -5,6 +5,7 @@ import io, json, socket, threading, time, urllib.request
 import pytest
 
 pw = pytest.importorskip('playwright.sync_api')
+from wizard_steps import to_upload, to_card, confirm_card   # noqa: F401
 from fixtures_pdf import make_pdf_lines, make_pdf
 from dossier_engine.generate.docx_kit import find_soffice
 
@@ -160,6 +161,7 @@ def test_two_drive_folders_of_one_product_are_listed_each_under_its_name(server,
             errors = []
             page.on('pageerror', lambda e: errors.append(str(e)))
             page.goto(server + '/#/new')
+            to_upload(page)
             page.wait_for_selector('#intakeDrive'); page.click('#intakeDrive'); page.wait_for_selector('#drvLink')
             page.click('#drvGear'); page.wait_for_selector('#drvKey'); page.fill('#drvKey', 'AIzaTESTKEY0000000000'); page.click('#drvSave')
             page.wait_for_selector('#drvKey', state='detached')

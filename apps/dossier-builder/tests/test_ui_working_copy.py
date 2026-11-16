@@ -5,6 +5,7 @@ import pytest
 from fixtures_pdf import make_pdf_lines
 
 pw = pytest.importorskip('playwright.sync_api')
+from wizard_steps import to_upload, to_card, confirm_card   # noqa: F401
 PROFILE = dict(dossier_kind='generic', origin='local', licence='own', activity='new', apis=[dict(name='Neomycin sulphate', manufacturer='Example API Co.', option='FULL')])
 PRODUCT = dict(name='Dermacure', dosageform='Cutaneous powder', manufacturer='Example Pharm Co.', indication='skin-infections')
 ENV = dict(tracking='T-0001', applicant='Example Pharm Co.', invented_name='Dermacure', inn=['neomycin'])
@@ -74,6 +75,7 @@ def test_a_working_copy_from_the_export_page(server, tmp_path):
         assert json.loads(urllib.request.urlopen(urllib.request.Request(f'{server}/api/dossiers/{did}/submissions', headers={'X-DB': '1'}), timeout=30).read()) == {'ectd32': [], 'ectd40': []}
         # the wizard's cards
         page.goto(f'{server}/#/new')
+        to_upload(page)
         page.wait_for_selector('.doccards')
         assert page.locator('[data-updoc="analytical_methods"]').count() == 1 and page.locator('[data-updoc="fees_receipt"]').count() == 1
         assert 'للمادة الفعالة أو لتشغيلة المنتج' in page.inner_text('.doccards')

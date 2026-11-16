@@ -1628,8 +1628,11 @@ def create_app(workspace, auth_enabled=None):
             doc = st.document(u['id'])
             rd = _reading(doc['filename'], st.blob_path(doc['sha256']).read_bytes())
             md = ((doc.get('meta') or {}).get('model') or {}).get('doc') or {}
+            mk = (doc.get('meta') or {}).get('kind')
             out.append({**u, 'reading': {k: v for k, v in rd.items() if k not in ('rules', 'text')}, 'model': md or None,
                         'model_wanted': not md and bool(rd.get('scanned') and not rd.get('chars')),
+                        'known': bool(mk and mk != 'other'),     # an earlier reading gave it its kind (the wizard's) — `kind` alone may be a hint in its name
+
                         'split_from': (doc.get('meta') or {}).get('split_from'), 'pages_of': (doc.get('meta') or {}).get('pages'),
                         'split_title': (doc.get('meta') or {}).get('split_title')})
         return out
@@ -1758,6 +1761,8 @@ def create_app(workspace, auth_enabled=None):
                 'fields': rd['rules'], 'chars': rd['chars'], 'scanned': rd['scanned'], 'arabic': rd['arabic'], 'text': rd['text']}
         doc = st.keep_reading(did, doc['id'], keep)
         steps.append('read_ocr' if rd['reader'] == 'ocr' else 'read')
+        if d0.get('slot_id'):                                # in its item before its words were known (a scan from the proposed tree): the kind rule judges it now
+            doc = st.judge_kind(did, doc['id'])
         if body.get('model', True) and _ai_key() and _wants_model(did, doc, keep):       # Claude looks at its pages (server editions)
             try:
                 doc = _read_by_model(did, doc)
