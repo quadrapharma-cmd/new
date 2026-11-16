@@ -458,6 +458,22 @@ When a part is done or an open item is closed, update «What exists» and «Open
   3 prepare and review → whole tree and what is missing; 4 validate → export → after submission). Said plainly: Claude's reading
   inside claude.ai cannot be measured from here. **Wait for his choice of what goes in now.**
 
+- **16/11/2026, he said go: eBOX in four stages, each delivered by itself** («موافق، وكل مرحلة توصلني لوحدها، ابدأ بالمرحلة الأولى لكن
+  اللغة هتبقي عربيه فصحي مش لهجة عاميه و محتاج كل الاختيارات تبقي تسميه غير محيره لليوزر المهم في الامر اني جربت البرنامج لقيت فيه
+  اخطاء كتير و رسايل اخطاء و البرامج اللي مكمله اللي احنا وضعناها بتقول ان لازم ننزل حجات علشان اشتغل فو انت بتعدل راجع الكود و
+  الاخطاء و صلحها»). Decided: groups (a) and (b) of the second proposal go in with the re-order, (c) later one at a time.
+  **The program's interface is in formal Arabic (فصحى), never Egyptian colloquial** — every user-facing text (the chat with him
+  stays Egyptian Arabic); every choice, button and menu entry has a name that cannot be confused. He tried version 50 and met
+  many errors and error messages, and the editing programs «say things must be downloaded to work»: with every stage, review the
+  code and fix the errors (he was asked for screenshots or the messages' text: his claude.ai cannot be opened from here).
+  **Stage 1** = the name eBOX, the home (library and «ملفاتي» side by side), the path bar and the menu as stations, formal Arabic
+  and clear names, the error sweep and its fixes, the paused tests and steps 5–7; then stages 2 (country → upload → reading →
+  product card → proposed tree), 3 (prepare and review → whole tree and what is missing), 4 (validate → export → after submission).
+  **The vault, for stage 3** («خاجة باكد عليها في مرحله التجهيز عايز خزنة للملفات اللي اتقرت و اتقطعت و اتجهزت اشوفها و اطلع عليها
+  ذاخل البرنامج بدون تنزيل و ابقي شايف قبل ما ندخل علي التكوين اني جاهز»): in the preparation station, every file that was read, cut
+  and prepared is kept in a vault he opens and reads inside the program, with no download, and a plain sign that he is ready
+  before the file is composed (today's «المكتب» and its page viewer are where it starts).
+
 ## Open items (propose when relevant; do when he asks)
 - Old program, claude.ai edition: its fonts never load — `web/build.py` writes the font link's `onload="this.media=\'all\'"` with
   the backslashes kept (a script error on every opening, in the version he has used since 13/11 too), so the page shows the
