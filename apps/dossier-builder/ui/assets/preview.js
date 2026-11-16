@@ -17,6 +17,7 @@
   const urls = new Map();                 // `${doc}:${page}:${width}` → object URL of the drawn page
   const files = new Map();                // doc → Promise<File> (the last 24)
   const given = new Map();                // key → File: files in the page, not stored yet
+  const totals = new Map();               // doc → how many pages it has, as the engine counted them (where the engine draws)
   const jobs = [];
   let running = false, dossier = null, styled = false;
   const ar = () => (document.documentElement.lang || 'ar') !== 'en';
@@ -57,10 +58,20 @@
     if (files.size > 24) files.delete(files.keys().next().value);
     return p;
   }
-  // pages of one document, drawn once and kept as pictures; → [{page, url}] and how many pages it has
-  async function pictures(doc, name, pages, width) {
+  // where the engine draws the pages: how many the document has, asked once — so that no page is asked for that is not there (a
+  // document of one page was asked for four: three refusals, and the whole strip gave way to the file's kind). 0: it cannot say.
+  async function totalOf(doc) {
+    if (totals.has(doc)) return totals.get(doc);
+    let n = 0;
+    try { const r = await fetch(`/api/dossiers/${dossier}/documents/${doc}/pages`, { headers: { 'X-DB': '1' } }); if (r.ok) n = +((await r.json()).pages) || 0; } catch (e) { n = 0; }
+    if (n) { totals.set(doc, n); if (totals.size > 600) totals.delete(totals.keys().next().value); }
+    return n;
+  }
+  // pages of one document, drawn once and kept as pictures; → [{page, url}] and how many pages it has (known: its count, if the page has it)
+  async function pictures(doc, name, pages, width, known) {
     const want = pages.filter(k => !urls.has(`${doc}:${k}:${width}`));
-    let count = null;
+    const engine = !(inPage() && (given.has(doc) || dossier)) && !given.has(doc) && !!dossier;      // the engine draws this one
+    let count = engine ? (known || totals.get(doc) || null) : null;
     if (want.length) {
       if (inPage() && (given.has(doc) || dossier)) {
         const f = await fileOf(doc, name);
@@ -70,8 +81,9 @@
           const blob = await new Promise(res => d.canvas.toBlob(res, 'image/jpeg', 0.82));
           if (blob) urls.set(`${doc}:${d.page}:${width}`, URL.createObjectURL(blob));
         }
-      } else if (!given.has(doc) && dossier) {
-        for (const k of want) urls.set(`${doc}:${k}:${width}`, `/api/dossiers/${dossier}/documents/${doc}/pages/${k}.png?dpi=${Math.max(12, Math.round(width / 8.27))}`);
+      } else if (engine) {
+        count = count || await totalOf(doc);
+        for (const k of want) if (count && k <= count) urls.set(`${doc}:${k}:${width}`, `/api/dossiers/${dossier}/documents/${doc}/pages/${k}.png?dpi=${Math.max(12, Math.round(width / 8.27))}`);
       }
     }
     return { count, got: pages.filter(k => urls.has(`${doc}:${k}:${width}`)).map(k => ({ page: k, url: urls.get(`${doc}:${k}:${width}`) })) };
@@ -100,7 +112,7 @@
     const total = +(el.dataset.pvpages || 0);
     const pages = Array.from({ length: Math.min(STRIP, total || STRIP) }, (_, i) => i + 1);
     try {
-      const r = await queue(() => pictures(doc, name, pages, 128));
+      const r = await queue(() => pictures(doc, name, pages, 128, total));
       if (!r.got.length) { strip.innerHTML = kindTile(name); return; }        // nothing to draw it with here
       const n = r.count || total || r.got.length;
       el.dataset.pvpages = String(n);
@@ -114,7 +126,7 @@
     if (img.dataset.done) return;
     img.dataset.done = '1';
     if (!drawable(name)) { img.outerHTML = kindTile(name); return; }
-    try { const r = await queue(() => pictures(doc, name, [1], 128)); if (r.got[0]) { img.onerror = () => { img.outerHTML = kindTile(name); }; img.src = r.got[0].url; } else img.outerHTML = kindTile(name); }
+    try { const r = await queue(() => pictures(doc, name, [1], 128, 1)); if (r.got[0]) { img.onerror = () => { img.outerHTML = kindTile(name); }; img.src = r.got[0].url; } else img.outerHTML = kindTile(name); }
     catch (e) { img.outerHTML = kindTile(name); }
   }
   let seen = null;

@@ -83,13 +83,17 @@ of the browser edition under a page policy like claude.ai's, clicking what can b
 | The qualification report failed | the browser edition ships pypdf 7 (no `add_js`) | `checks/pdf.add_javascript`; `tests/test_vendored_libs.py` runs the report on the shipped libraries |
 | The editing programs «say things must be downloaded» | the first-time note | reworded («لا يُثبَّت شيء على جهازك»), and the programs a dossier's documents need are fetched in the background from «مراجعة المستندات وتعديلها» (`DBPROG.warm`) |
 | Typed text went into another field now and then | the side panel took the focus 30 ms after opening | not when a field of the panel already has it (`ds.js openDrawer`) |
+| «الصفحات» in «المكتب» showed «تعذّر عرض هذه الصفحة» after «تجهيز الكل» | each preparation writes a new version; an answer for the list asked before it came back later and was kept, so the list's buttons held ids of versions no longer current | the prepare page asks for its documents again at every drawing, and only the newest answer is kept (`paintOffice(true)`); looking at a document by an earlier id (its pages, a search) is shown the current version, which the viewer then works on (`X-Doc-Id`); `tests/test_ui_office_fresh.py` |
+| After a page was turned (or anything done in an item's drawer) from «تجهيز المستندات», the board appeared in the page's place | `refreshCurrent` drew the board on every screen it did not know | each screen draws itself again (`refreshCurrent`) |
+| Desktop and company editions: a document of fewer than four pages showed «PDF» in place of its small pages, with three refusals at every drawing | four pages were asked for whatever the document held | the engine is asked how many pages there are first (`GET …/documents/{id}/pages`, `ui/assets/preview.js`) — the browser edition draws them itself and was not touched |
 
 **«سجل الأعطال»** (`#/faults`, `DS.errlog`): every error the program meets is written down on the device — the time, the screen,
 the kind and the message, never a document's content (ids are replaced) — and can be copied and sent. An error's note is marked
 (`.toast.bad`) and stays longer. What cannot be seen from here (Claude's answers on his account) reaches us through this record.
 
 Tests added: `test_web_sweep.py` (every screen in both languages and at 390 px, and the product-file page; `SWEEP_CLICKS=1` clicks
-every button — run before a publish), `test_web_faults.py`, `test_ui_shell.py`, `test_prepare_office.py`, `test_error_words.py`,
+every button — run before a publish), `test_web_faults.py`, `test_ui_shell.py`, `test_prepare_office.py`,
+`test_ui_office_fresh.py`, `test_error_words.py`,
 `test_formal_arabic.py`, `test_vendored_libs.py`, and in `test_programs_web.py` the programs fetched in the background.
 `DB_DIST=<folder>` points `test_web_sweep`, `test_web_faults`, `test_programs_web` and `test_office_web` at another copy of the
 built page — the files read back from claude.ai after a publish (with `index.local.html` a copy of the served `index.html`).

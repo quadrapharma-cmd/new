@@ -1,0 +1,127 @@
+"""«المكتب» on the prepare page and the page viewer work on the documents as they are now (16/11/2026, found by the click sweep).
+Every change to a document makes a new version, with a new id. Three things went wrong around that:
+  - «المكتب» kept the list it had asked for before the change («تجهيز الكل» on several files: an answer on its way came back after
+    the change and was kept), so its buttons worked on versions no longer current — «الصفحات» answered 422 and showed nothing;
+  - the viewer asked for a page by the id it was opened with, even once that version had been replaced;
+  - after a change made from an item's drawer or from the viewer, opened on the prepare page, the board was drawn in the page's
+    place (under the address of the prepare page).
+In a real browser, on the program served by its own engine, with made-up files."""
+import json
+import urllib.request
+import pytest
+from dossier_engine import pdfcraft
+
+pw = pytest.importorskip('playwright.sync_api')
+pytestmark = pytest.mark.skipif(not pdfcraft.available(), reason='needs PdfCraft')
+from fixtures_pdf import make_pdf_lines
+from test_ui_priority2 import server, dossier, page_of, upload          # noqa: F401 — the shared server fixture
+
+OFFICE = "() => [...document.querySelectorAll('#offList [data-offdoc]')].map(x => x.dataset.offdoc).sort()"
+SHOWN = "() => { const i = document.getElementById('pgImg'); return !!i && i.complete && i.naturalWidth > 0; }"
+
+
+def call(server, path, body=None):
+    req = urllib.request.Request(server + path, data=None if body is None else json.dumps(body).encode(),
+                                 headers={'Content-Type': 'application/json', 'X-DB': '1'}, method='GET' if body is None else 'POST')
+    return json.loads(urllib.request.urlopen(req, timeout=60).read())
+
+
+def current(server, did):
+    return sorted(d['id'] for s in call(server, f'/api/dossiers/{did}/board')['slots'] for d in s['documents'])
+
+
+def two_documents(server, tmp_path):
+    did = dossier(server)
+    slots = [s['slot_id'] for s in call(server, f'/api/dossiers/{did}/board')['slots']
+             if s.get('doc_class') == 'company_technical' and s.get('level') == 'R' and not s['documents']][:2]
+    a = upload(server, did, slots[0], 'made-up-composition.pdf',
+               make_pdf_lines(tmp_path / 'a.pdf', ['Composition certificate', 'Dermacure 20 mg cream (made up)', 'Exampletine 20 mg'], 'Composition').read_bytes())
+    b = upload(server, did, slots[1], 'made-up-coa.pdf',
+               make_pdf_lines(tmp_path / 'b.pdf', ['Certificate of Analysis', 'Dermacure 20 mg cream (made up)', 'Batch No.: 240101'], 'CoA').read_bytes())
+    return did, slots, a['id'], b['id']
+
+
+def open_prepare(b, server, did, errors, bad):
+    page = page_of(b, server, 'ar')
+    page.on('pageerror', lambda e: errors.append(str(e)))
+    page.on('response', lambda r: bad.append(f'{r.status} {r.url}') if r.status >= 400 else None)
+    page.goto(f'{server}/#/d/{did}/prepare')
+    page.wait_for_function("() => document.querySelectorAll('#offList [data-offdoc]').length === 2", timeout=60000)
+    return page
+
+
+def test_the_office_list_is_asked_for_again_after_every_change(server, tmp_path):
+    did, slots, a, b_ = two_documents(server, tmp_path)
+    errors, bad = [], []
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch()
+        page = open_prepare(b, server, did, errors, bad)
+        assert page.evaluate(OFFICE) == sorted([a, b_])
+        # each document's small pages are drawn: one page each, and none asked for that is not there (before: four asked, three
+        # refused, and the file's kind shown in the pages' place)
+        page.wait_for_function("() => { const s = [...document.querySelectorAll('#prepOut .pv-strip')]; return s.length === 2 && s.every(x => x.querySelectorAll('img.pv-th').length === 1 && [...x.querySelectorAll('img.pv-th')].every(i => i.complete && i.naturalWidth > 0)); }", timeout=60000)
+        assert page.locator('#prepOut .pv-kind').count() == 0
+        page.evaluate("() => document.getElementById('office').scrollIntoView()")       # «المكتب» draws each document's first page once it is in sight
+        page.wait_for_function("() => [...document.querySelectorAll('#offList img.pv-th')].length === 2 && [...document.querySelectorAll('#offList img.pv-th')].every(i => i.complete && i.naturalWidth > 0)", timeout=60000)
+        # the list the page holds is not the documents any more (what an answer that came back late left behind): drawing the page
+        # again asks the engine, and does not trust what it holds
+        page.evaluate("async () => { S.board.slots.forEach(s => s.documents.forEach(d => { d.id = 'stale-' + d.id; })); await paintPrepare(true); }")
+        assert page.evaluate(OFFICE) == sorted([a, b_])
+        # a document changed behind the page (another tab, a program): the next drawing shows its new version
+        new = call(server, f'/api/dossiers/{did}/documents/{a}/pages', {'op': 'rotate', 'pages': [1], 'degrees': 90})['document']['id']
+        page.evaluate('() => paintPrepare(true)')
+        assert page.evaluate(OFFICE) == sorted([new, b_]) == current(server, did)
+        # typing in the search box filters the list it holds, without asking again
+        asked = []
+        page.on('request', lambda r: asked.append(r.url) if r.url.endswith('/board') else None)
+        page.fill('#offQ', 'coa')
+        page.wait_for_function("() => document.querySelectorAll('#offList [data-offdoc]').length === 1")
+        assert page.evaluate(OFFICE) == [b_] and not asked
+        b.close()
+    assert not errors, errors
+    assert not bad, bad
+
+
+def test_the_viewer_and_the_item_drawer_work_on_the_current_version_and_keep_the_page(server, tmp_path):
+    did, slots, a, b_ = two_documents(server, tmp_path)
+    errors, bad = [], []
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch()
+        page = open_prepare(b, server, did, errors, bad)
+        v2 = call(server, f'/api/dossiers/{did}/documents/{a}/pages', {'op': 'rotate', 'pages': [1], 'degrees': 90})['document']['id']
+        assert a in page.evaluate(OFFICE) and v2 != a                                    # the page still holds the version before
+        # «الصفحات» on that row: the viewer is shown the document as it is now…
+        page.click(f'#offList [data-offpages="{a}"]')
+        page.wait_for_function(SHOWN, timeout=60000)
+        assert 'تعذّر' not in page.inner_text('#pgNo') and page.inner_text('#pgNo').strip().startswith('1')
+        assert page.get_attribute('#pgNotes', 'href').endswith(f'/documents/{v2}/notes.pdf')   # …and follows it: its links are the current version's
+        # …and what it does next is done to that version (before: «هذه نسخة سابقة من المستند»)
+        page.click('#pgTurn')
+        page.wait_for_function(f"() => !document.querySelector('#offList [data-offdoc=\"{a}\"]') && !document.querySelector('#offList [data-offdoc=\"{v2}\"]')", timeout=60000)
+        v3 = next(d for s in call(server, f'/api/dossiers/{did}/board')['slots'] if s['slot_id'] == slots[0] for d in s['documents'])
+        assert v3['version'] == 3 and page.evaluate(OFFICE) == sorted([v3['id'], b_])
+        page.wait_for_function(SHOWN, timeout=60000)
+        # the page under the viewer is still the prepare page (before: the board was drawn in its place)
+        assert page.evaluate('() => location.hash').endswith('/prepare') and page.locator('#prepOut').count() == 1 and page.locator('#offList').count() == 1
+        assert page.inner_text('#view h1').strip() == 'تجهيز المستندات'
+        page.click('#pgBack')
+        page.wait_for_function("() => document.getElementById('drawer').hidden")
+        # the same from an item's drawer opened on this page: «فتح البند» → «الصفحات» → a page turned → back to the drawer
+        page.click(f'#offList [data-offitem="{slots[0]}"]')
+        page.wait_for_selector('#drawer [data-pgv]', timeout=30000)
+        assert page.get_attribute('#drawer [data-pgv]', 'data-pgv') == v3['id']
+        page.click('#drawer [data-pgv]')
+        page.wait_for_function(SHOWN, timeout=60000)
+        page.click('#pgTurn')
+        page.wait_for_function(f"() => !document.querySelector('#offList [data-offdoc=\"{v3['id']}\"]')", timeout=60000)
+        v4 = next(d for s in call(server, f'/api/dossiers/{did}/board')['slots'] if s['slot_id'] == slots[0] for d in s['documents'])
+        assert v4['version'] == 4 and page.evaluate(OFFICE) == sorted([v4['id'], b_])
+        page.wait_for_function(SHOWN, timeout=60000)
+        page.click('#pgBack')
+        page.wait_for_selector('#drawer [data-pgv]', timeout=30000)                      # the item's drawer again, on the version it has now
+        assert page.get_attribute('#drawer [data-pgv]', 'data-pgv') == v4['id']
+        assert page.evaluate('() => location.hash').endswith('/prepare') and page.locator('#prepOut').count() == 1
+        assert page.inner_text('#view h1').strip() == 'تجهيز المستندات'
+        b.close()
+    assert not errors, errors
+    assert not bad, bad

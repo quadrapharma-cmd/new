@@ -148,6 +148,7 @@ class Store:
         self._migrate()
         self._packs = {}
         self._pack_lock = threading.Lock()
+        self._page_totals = {}                               # SHA-256 → pages: a stored file never changes, so it is counted once
 
     @property
     def db(self):
@@ -1106,6 +1107,22 @@ class Store:
         if not png:
             raise StoreError('E-PAGE', 'The page cannot be drawn.', 'تعذّر رسم الصفحة.')
         return png
+
+    def page_total(self, did, doc_id):
+        """How many pages a PDF document has (PdfCraft). The page asks before it draws a document's small pages, so that it asks
+        for none that is not there (before 16/11/2026 it asked for four: a document of one page answered 422 three times, and its
+        pages were not shown at all)."""
+        pc = self._pdfcraft()
+        d = self._current_pdf(did, doc_id)
+        n = self._page_totals.get(d['sha256'])
+        if n is None:
+            n = pc.page_count(self.blob_path(d['sha256']).read_bytes())
+            if not n:
+                raise StoreError('E-PAGE', 'The pages of this document cannot be counted.', 'تعذّر عدّ صفحات هذا المستند.')
+            if len(self._page_totals) >= 4000:
+                self._page_totals.clear()
+            self._page_totals[d['sha256']] = n
+        return n
 
     def find_in_document(self, did, doc_id, q):
         """Where a phrase is in one document, page by page, with its rectangles (points from the page's top-left) — PdfCraft."""

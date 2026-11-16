@@ -614,13 +614,23 @@ def create_app(workspace, auth_enabled=None):
 
     @app.get('/api/dossiers/{did}/documents/{doc_id}/pages/{page}.png')
     def page_png(did: str, doc_id: str, page: int, dpi: int = 96):
-        """One page of a document drawn as a picture (PdfCraft) — the viewer."""
-        return Response(st.page_image(did, doc_id, page, dpi), media_type='image/png', headers={'Cache-Control': 'private, max-age=3600'})
+        """One page of a document drawn as a picture (PdfCraft) — the viewer. The document as it is now: a page that still holds
+        the id of a version since replaced (a fix, a page turned: each makes a new version) is shown the current one and told its id
+        (X-Doc-Id), so what it does next is done to the version it shows."""
+        cur = st.current_of(did, doc_id) or doc_id
+        return Response(st.page_image(did, cur, page, dpi), media_type='image/png',
+                        headers={'Cache-Control': 'private, max-age=3600' if cur == doc_id else 'no-store', 'X-Doc-Id': cur})
+
+    @app.get('/api/dossiers/{did}/documents/{doc_id}/pages')
+    def page_total(did: str, doc_id: str):
+        """How many pages the document has, as it is now — asked before its small pages are drawn (ui/assets/preview.js)."""
+        cur = st.current_of(did, doc_id) or doc_id
+        return {'id': cur, 'pages': st.page_total(did, cur)}
 
     @app.get('/api/dossiers/{did}/documents/{doc_id}/find')
     def find_in_doc(did: str, doc_id: str, q: str = ''):
         """Where a phrase is in one document: page and rectangles, to light it up on the page (PdfCraft)."""
-        return st.find_in_document(did, doc_id, q)
+        return st.find_in_document(did, st.current_of(did, doc_id) or doc_id, q)
 
     @app.post('/api/dossiers/{did}/documents/{doc_id}/redact', status_code=201)
     def redact_doc(did: str, doc_id: str, body: dict):

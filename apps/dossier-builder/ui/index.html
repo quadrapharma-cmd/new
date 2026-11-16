@@ -1213,7 +1213,9 @@ async function pageViewer(docId, back, own){
   let seq=0, shown=null;
   const paint=async()=>{ const img=$('#pgImg'), my=++seq; if(!img) return; $('#pgNo').textContent=`${page}${pages?' '+t('pcOf')+' '+pages:''}`;
     let blob=null;
-    try{ const r=await fetch(`/api${base}/pages/${page}.png?dpi=${dpi}`,{headers:{'X-DB':'1'}}); if(r.ok) blob=await r.blob(); }catch(e){}
+    try{ const r=await fetch(`/api${base}/pages/${page}.png?dpi=${dpi}`,{headers:{'X-DB':'1'}});
+      if(r.ok){ blob=await r.blob(); const cur=r.headers.get('X-Doc-Id');                 // the engine shows the document as it is now: follow its id
+        if(cur&&cur!==docId){ docId=cur; base=`/dossiers/${S.dossier.id}/documents/${docId}`; const n=$('#pgNotes'); if(n) n.href=`/api${base}/notes.pdf`; } } }catch(e){}
     if(my!==seq||!$('#pgImg')) return;
     if(!blob){ if(page>1){ pages=page-1; page--; return paint(); }                    // past the last page
       $('#pgNo').textContent=L({ar:'تعذّر عرض هذه الصفحة.',en:'This page could not be shown.'}); return; }
@@ -2398,7 +2400,7 @@ async function bulk(files){
     closeDrawer(); toast(`${n} ${t('added')}${skipped.length?' · '+skipped.join(', ')+': '+t('needsDetails'):''}`); await refreshCurrent();
   };
 }
-function slotById(id){ return S.board.slots.find(s=>s.slot_id===id); }
+function slotById(id){ return ((S.board&&S.board.slots)||[]).find(s=>s.slot_id===id); }      // the board may be on its way (asked again after a change)
 const whyText = arr => (arr||[]).map(w=>typeof w==='string'?w:L(w)).join(' · ');
 const itemLabel = x => x&&x.item ? ' · '+esc(x.item.name||'')+(x.item.manufacturer?' — '+esc(x.item.manufacturer):'') : '';
 function needsMeta(s){ return (s.req_id==='M1-09'||s.req_id==='EU-1.3.1') ? 'pi' : s.req_id==='EU-ADD' ? 'country' : (s.module===5 ? 'study' : null); }
@@ -2451,6 +2453,7 @@ function pick(slotId, meta, replaces, from){
 }
 function openWhy(slotId, focusTemplate){
   const s=slotById(slotId);
+  if(!s){ closeDrawer(); return; }                                                 // no such item on the board as it is now
   const locked = LOCKED.includes(s.doc_class);
   const reasons = s.reasons.map(r=>r.note?`<div class="alert" data-levelnote>${icon('info')}<p class="small">${esc(r[S.lang]||r.en)}</p></div>`:`<div class="finding"><div>${esc(r[S.lang]||r.en)}</div><div class="code small muted">${esc(r.source||'')}</div></div>`).join('');
   const docs = s.documents.map(d=>`<div class="finding ${d.check_status==='non_conforming'?'block':''}">
@@ -2649,12 +2652,16 @@ function newDesign(slotId){
       const doc=await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(slotId)}/documents`,{method:'POST',body:fd}); cur=doc.id; S.board=null; },
     onClose:()=>openWhy(slotId)});
 }
+/* after a change: the screen the person is on draws itself again. An item's drawer and the page viewer open from several screens
+   («المكتب» on the prepare page among them): each gets its own screen back, never the board drawn in its place. */
 async function refreshCurrent(selSlot){
   const h=location.hash;
   if(h.endsWith('/publisher')){ if(selSlot) S.sel=selSlot; await publisherView(); }
   else if(h.endsWith('/guide')) await guideView();
   else if(h.endsWith('/checks')) await checksView();
-  else await board();
+  else if(h.endsWith('/prepare')||h.endsWith('/office')) await paintPrepare(true);
+  else if(h.endsWith('/board')) await board();
+  else await route();
 }
 function requestForm(s){
   openDrawer(t('reqIssuer'), `<p class="small muted">${esc(L(s.title))}</p><div class="gform">
@@ -3113,7 +3120,7 @@ function prepCard(d){
     ${form.length?`<div class="small muted" style="margin-top:6px"><b>${esc(t('prepForm'))}</b></div>${form.map(x=>prepCond(d,x)).join('')}`:''}
     ${content.length?`<div class="small muted" style="margin-top:6px"><b>${esc(t('prepContent'))}</b></div>${content.map(x=>prepCond(d,x)).join('')}`:''}
     ${!d.prepared||(d.state||{}).fix||d.model_wanted?`<div class="row gap-s" style="margin-top:6px"><button class="btn sm pri" data-pgo="${esc(d.id)}">${icon('zap',14)} ${esc(t('prepGo'))}</button></div>`:''}${prepTools(d)}</div>`; }
-async function paintPrepare(){
+async function paintPrepare(wait){                                                      // wait: until «المكتب» has its documents too (what comes next reads them)
   const out=$('#prepOut'); if(!out) return; let r;
   const capsP=S.caps?null:caps().catch(()=>null);                                     // opened straight from a link: PdfCraft's tools need to know it is here (asked alongside, not before)
   try{ r=await api(`/dossiers/${S.dossier.id}/prepare`); }catch(e){ out.innerHTML=`<div class="alert bad"><p class="small">${esc(e.message)}</p></div>`; return; }
@@ -3139,13 +3146,21 @@ async function paintPrepare(){
     <section class="card pad"><div class="hd"><h3>${esc(t('prepAsked'))} <span class="tag">${r.requested.length}</span></h3></div><div class="row gap-s" style="flex-wrap:wrap">${asked}</div></section>`;
   prepWire(out);
   if(window.DBPV){ DBPV.mount(out, S.dossier.id); DBPV.restore(out); }
-  paintOffice();
+  const office=paintOffice(true);
+  if(wait) await office;
 }
 /* «المكتب»: every current document of the file, its first page, opened in its program where there is one (ui/assets/programs.js) */
-async function paintOffice(){
-  const box=$('#offList'); if(!box||!S.dossier) return; const did=S.dossier.id;
-  let b; try{ b=(S.board&&S.board.__did===did)?S.board:await api(`/dossiers/${did}/board`); b.__did=did; S.board=b; }catch(e){ box.innerHTML=`<div class="alert bad"><p class="small">${esc(e.message)}</p></div>`; return; }
-  if(!$('#offList')||!S.dossier||S.dossier.id!==did) return;
+/* fresh: the documents as they are now. This page is drawn again after every change made on it (a file improved, made smaller,
+   placed, edited in its program: each makes a new version), and the list must not keep the version before — its buttons would then
+   work on a document that is no longer the current one. Typing in the search box filters the list it already holds. */
+let offSeq=0;
+async function paintOffice(fresh){
+  let box=$('#offList'); if(!box||!S.dossier) return; const did=S.dossier.id;
+  let b=(!fresh&&S.board&&S.board.__did===did)?S.board:null;
+  if(!b){ const my=++offSeq;
+    try{ b=await api(`/dossiers/${did}/board`); b.__did=did; }catch(e){ if(my===offSeq&&$('#offList')) $('#offList').innerHTML=`<div class="alert bad"><p class="small">${esc(e.message)}</p></div>`; return; }
+    box=$('#offList'); if(my!==offSeq||!box||!S.dossier||S.dossier.id!==did) return;     // asked again since: that answer is the newer one
+    S.board=b; }
   const rows=[]; for(const s of b.slots) for(const d of (s.documents||[])) rows.push({s,d});
   $('#offN').textContent=rows.length;
   const q=(($('#offQ')||{}).value||'').trim().toLowerCase();

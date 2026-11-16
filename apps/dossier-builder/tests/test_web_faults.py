@@ -189,4 +189,24 @@ def test_a_page_picture_is_shown_where_there_is_no_server(site, tmp_path):
         page.wait_for_function("() => { const i = document.getElementById('pgImg'); return i && i.src.startsWith('blob:') && i.naturalWidth > 100; }", timeout=60000)
         assert page.inner_text('#pgNo').strip().startswith('1')
         assert asked == [] and errors == [], (asked, errors)             # version 50: an <img> asked the network for /api/…/pages/1.png and the viewer stayed empty
+        # the document gets a new version behind the list (as «تجهيز الكل» does): the list still holds the id before it. The viewer is
+        # shown the document as it is now, works on that version, and the page under it stays the one it was opened from (the click
+        # sweep of 16/11/2026: «تعذّر عرض هذه الصفحة», and the board drawn in the page's place after a page was turned)
+        old = ids[pdf.name]
+        page.click('#pgBack')
+        page.wait_for_function("() => document.getElementById('drawer').hidden")
+        st, v2 = page.evaluate("""async ([did, id]) => { const r = await fetch(`/api/dossiers/${did}/documents/${id}/pages`, {method: 'POST', headers: {'X-DB': '1', 'Content-Type': 'application/json'},
+            body: JSON.stringify({op: 'rotate', pages: [1], degrees: 90})}); return [r.status, ((await r.json()).document || {}).id]; }""", [did, old])
+        assert st == 201 and v2 and v2 != old
+        page.click(f'[data-offpages="{old}"]')
+        page.wait_for_function("() => { const i = document.getElementById('pgImg'); return i && i.src.startsWith('blob:') && i.complete && i.naturalWidth > 100; }", timeout=60000)
+        assert page.inner_text('#pgNo').strip().startswith('1')
+        page.wait_for_function(f"() => document.getElementById('pgNotes').getAttribute('href').endsWith('/documents/{v2}/notes.pdf')", timeout=30000)
+        page.click('#pgTurn')
+        page.wait_for_function(f"() => {{ const r = [...document.querySelectorAll('#offList [data-offdoc]')].map(x => x.dataset.offdoc); return r.length === 1 && r[0] !== '{old}' && r[0] !== '{v2}'; }}", timeout=60000)
+        v3 = page.evaluate("async id => (await (await fetch(`/api/dossiers/${id}/board`)).json()).slots.flatMap(s => s.documents).map(d => [d.id, d.version])", did)
+        assert len(v3) == 1 and v3[0][1] == 3 and page.get_attribute('#offList [data-offdoc]', 'data-offdoc') == v3[0][0]
+        assert page.evaluate('() => location.hash').endswith('/office') and page.locator('#prepOut').count() == 1
+        assert page.inner_text('#view h1').strip() == 'تجهيز المستندات'
+        assert asked == [] and errors == [], (asked, errors)
         b.close()
