@@ -438,6 +438,26 @@ When a part is done or an open item is closed, update «What exists» and «Open
   boot.js ends the photo check with «الصورة معدولة ✓» so the «getting the reader ready» note never stays. The browser edition was
   not rebuilt after that. Before any publish: rebuild, the whole suite clean, opening time, read back.
 
+- **16/11/2026, he agreed, and asked for more before any start** («موافق على الترتيب، والمكتبة وملفاتي جنب بعض، وغيّر الاسم eBOX لكن
+  قبل ما نبدا محتاج منك تفكير عميق في اي اقتراحات تانيه»). Decided: the order of the stations with its two changes (the place before
+  the preparation; validated before it is downloaded); the home shows the library and «ملفاتي» side by side; the name is eBOX
+  (interface, reports, the published page's title). **Still nothing started.** The second proposal, given in the chat:
+  (a) in the path itself — the product card confirmed once after the reading (today's «راجع اللي اتقرا»; it decides which items
+  are required), the box always open (a file dropped at any time walks the path alone; a newer copy of a certificate offered as a
+  new version), «سيبها عليّ» (the program walks stations 4–6 by itself, takes only what it is sure of, never touches content or a
+  third party's document, and comes back with one list), every problem said at the first station that can know it (his Wouncure
+  files: the protected CoA and the scans without text were said at the end), the library beside every station (the condition and
+  its source in a side panel; «ابدأ ملف للدولة دي» from a country's page), two names (a readable one in the tree, the format's own
+  at the build); (b) what is missing and the validation — what is missing grouped by who issues it (one request per party, followed
+  up), the validation station with two doors (the technical validator, saying whether its rules are official or a draft; the
+  review as the authority's assessor does it — the Regulatory Reviewer that exists), a target submission date (a certificate that
+  will have expired by then); (c) around the path, later, one at a time — «ملفاتي» by product (countries and sequences; «نفس المنتج
+  لدولة تانية» exists and shows there), the company's details once, a one-by-one review queue, the source's quality on each
+  document, a made-up trial file. Proposed way of working: four stages, each tried on his real files and published by itself
+  (1 name, home, path bar — with the paused tests and steps 5–7; 2 country → upload → reading → product card → proposed tree;
+  3 prepare and review → whole tree and what is missing; 4 validate → export → after submission). Said plainly: Claude's reading
+  inside claude.ai cannot be measured from here. **Wait for his choice of what goes in now.**
+
 ## Open items (propose when relevant; do when he asks)
 - Old program, claude.ai edition: its fonts never load — `web/build.py` writes the font link's `onload="this.media=\'all\'"` with
   the backslashes kept (a script error on every opening, in the version he has used since 13/11 too), so the page shows the
