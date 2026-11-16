@@ -191,6 +191,42 @@ through both doors against version 51 (above), the opening time against version 
 4.57 s → 4.59 s), the four republished files read back byte for byte, and the browser edition's tests on the page as served
 (21 passed, 2 skipped).
 
+**Version 53 (16/11/2026) — a TIFF of several pages, and a test that had not been running.** The whole suite had said «3
+skipped» for many versions. Read instead of counted: two are the click sweep (run by itself); the third was the browser
+edition's test of an image put in an item — skipped since the image decoders moved to `assets/ocr/img` (the path in the test
+was never changed), and asking the page for a function that went when the engine began making the PDF itself. Written again
+on the present path, it failed, and on every edition: a three-page TIFF (a fax, a scanner's file) put in an item came out as
+**five pages — 1, 3, 1, 2, 3** — and nothing said so. `pdfcraft.image_to_pdf` gives PdfCraft the image twice (`doc_combine`
+takes two inputs or more) and took «page 2» off, which is right only for an image of one page. It now takes the second copy
+off whole (pages n+1 … 2n), and where PdfCraft finds another number of pages than the file's header says, PdfCraft's own
+count is used; an image of one page goes through the very steps it did. Tests: `tests/test_image_files.py` (as many pages;
+their order; a header that says more or fewer; one page stays one — two tests that fail on the code before),
+`tests/test_web_edition.py` (the same inside the browser, where it fails on version 52's build; and the page's own decoder
+draws the three pages), and `tests/test_web_sweep.py` now waits for the first screen to be drawn, not for a second on the
+clock (it failed once, on a busy machine).
+- *His files.* Neither real set holds an image (PDF, Word, one RAR): nothing of theirs reaches this function. His 21 real
+  photos made into PDFs by the engine before and after: the same pages, page sizes, turns and pixels (PdfCraft's bytes
+  differ from one run to the next by themselves — the engine before, run twice, does not give the same bytes either). Both
+  sets through both doors on the new build against version 52: the same questions with the same pictures (through «ملف جديد»
+  the order among files read at once varies), the same items, names, findings and data for every document; of the 152-page
+  file's contact sheets one to four pictures differ, as they do from any run to the next.
+- *A correction to the comparison above.* Version 52's Dramrin run through «ملف جديد» had been made two minutes before the
+  last fix of that very path (`w.busyN`), by a harness that typed the product's name before the reading had filled the card,
+  and was not made again after the fix. Made again on version 52 as published — the card filled by the reading (the name,
+  two active substances), as in version 51's run: the same four readings in the wizard, three combined-file questions more
+  on the tree, the same item for all 13, the same data, the kind rule's objection on the stability approval — and four of
+  the five documents taken from the RAR carry another number inside 3.2.P.5.2–5.3 (the same documents, placed in another
+  order). Against the new build: the same. The comparison scripts now write into each result which page it was made on
+  (`made_on`: the site, a digest of its page and of its engine, the time).
+
+Delivered as **version 53** of the artifact (16/11/2026, `9beca59`; version id `1794839548-8e0e`): the whole suite (874
+passed, 2 skipped — 873 in the run and the screen sweep's first look, which failed on the busy machine and passed by itself;
+the two skipped are the click sweep, run by itself: both languages, the same eight refusals with their reason as on version
+52), his real files as above, the four republished files read back byte for byte, the browser edition's tests on the page as
+served (21 passed, 2 skipped), and the three-page TIFF put in an item on the page as served: three pages, in their order
+(the same check fails on version 52 as served). The opening time was not measured again: the page differs from version 52's
+in one line (the engine's size and digest in its manifest) and the engine's archive is 516 bytes longer.
+
 ## Countries and authorities (November 2026) — «تختار الدولة ويعمل على أساسها موديول ١»
 
 A dossier is built for one country. The wizard opens with «where will this dossier be submitted?»; the country gives the

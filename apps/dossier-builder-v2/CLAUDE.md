@@ -601,6 +601,34 @@ When a part is done or an open item is closed, update «What exists» and «Open
   Claude reads the document there); the prepare cards' own buttons act while «تجهيز الكل» runs; `ui/suite/index.html` still
   has counted nouns («بقي {n} يوم»).
   **Next: stage 3** (التجهيز والمراجعة مع «الخزنة» → شجرة الملف والنواقص) — only when he says go.
+- **16/11/2026, version 53: a TIFF of several pages; a test that had not run; one comparison made again** (`9beca59`;
+  version id `1794839548-8e0e`; the same four files republished). Before the stage 2 report was written, the suite's «3
+  skipped» was read instead of counted: two are the click sweep; the third was `test_web_edition.py`'s image test, skipped
+  by a stale path since the decoders moved to `assets/ocr/img` and calling a page function that no longer exists. Written
+  again, it failed on every edition: a three-page TIFF put in an item became five pages (1, 3, 1, 2, 3) —
+  `pdfcraft.image_to_pdf` took «page 2» off the doubled image whatever its page count. Fixed (the second copy off whole;
+  PdfCraft's own count where the header says otherwise; one page: the same steps as before); two engine tests and the
+  browser test fail on the code before. What it was tested with: the whole suite (874 passed, 2 skipped: 873 in the run, and
+  the screen sweep's first look — a second on the clock, on a busy machine — which passed by itself and now waits for the
+  screen), the click sweep by itself (both languages; the same eight refusals as version 52), his 21 real photos through the
+  engine before and after (the same pages, sizes, turns, pixels), his two real sets through both doors against version 52
+  (the same; the wizard's order among files read at once and one to four contact-sheet pictures of the 152-page file vary by
+  themselves), the read-back (4 files, byte for byte), the served page (21 passed, 2 skipped; and the TIFF put in an item
+  there: three pages in order — the same check fails on version 52 as served: `scratchpad/s2/served_tiff_check.py`). The
+  opening time was not measured again (one line of the page's manifest changed).
+  · **A hole in version 52's own record, found here and closed.** `wiz-s2-dramrin-g.json` — Dramrin through «ملف جديد» — was
+  made at 11:26, two minutes BEFORE `w.busyN` and with the harness that typed the product's name before the card was filled;
+  it was never made again on the page that was published. Made again (`wiz-52-dramrin-h.json`, version 52 as served;
+  `wiz-v53-dramrin.json`): what the README said of it holds like for like (the same four readings, three combined-file
+  questions more, the same item for all 13, the same data, DOC-KIND on the stability approval), and one thing it had not
+  said: four of the RAR's five documents carry another number inside 3.2.P.5.2–5.3 than in version 51. Results of version
+  53: `wiz-v53-*.json`, `same-v53-*.json`.
+  · **Rules that came out of it.** A skipped test is READ, not counted: the whole suite runs with `-rs`, and every skip must
+  have a reason that is true of this build (today: only the click sweep, which is then run by itself) — a skip nobody reads
+  is a test that does not exist. A comparison run belongs to the page it was made on: after the last change to a path, its
+  runs are made again, all of them — the scripts now write `made_on` (site, digests of the page and the engine, time) into
+  each result, and a result older than the page is not quoted.
+  **Next is unchanged: stage 3** — only when he says go.
 
 ## Open items (propose when relevant; do when he asks)
 - Old program, next pieces (one at a time, each on his real files first): the 14/11 update and measuring Claude's reading (need
