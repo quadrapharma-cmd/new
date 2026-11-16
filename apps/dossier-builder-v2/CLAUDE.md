@@ -556,7 +556,7 @@ When a part is done or an open item is closed, update «What exists» and «Open
   Before a publish: his real files through the new way against version 51 — the reading must be the same, and every
   difference in where a file lands must be explained (the cut of combined files is one that is expected).
 - **16/11/2026, eBOX stage 2 delivered: version 52** (`eb3de33`; version id `1794834124-ec9a`; the page, `suite.html`,
-  `assets/engine.worker.js` and `assets/engine.zip.b64.txt` republished, the other 137 files carried forward). What it is:
+  `assets/engine.worker.js` and `assets/engine.zip.b64.txt` republished, the other 136 files carried forward). What it is:
   the README's section «eBOX, stage 2». What it was tested with: the whole suite (871 passed, 3 skipped: 870 in the run, and
   the one whose expected wording had been reworded, run again), every button of every screen clicked in both languages (only
   refusals that give their reason), his real files through BOTH doors against version 51 (below), the opening time (first
