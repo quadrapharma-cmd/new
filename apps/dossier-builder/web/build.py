@@ -75,7 +75,7 @@ def pdfcraft_parts(gz, out, part=12 * 1000 * 1000):
 
 
 CRAFT = REPO / 'apps' / 'dossier-builder-v2' / 'vendor' / 'craft'   # the editing programs as built from their source (dossier-builder-v2/tools/craft/build.mjs)
-PROGRAM_APPS = ('wordcraft', 'pdfcraft')                            # the ones the page opens (ui/assets/programs.js PROGRAMS)
+PROGRAM_APPS = ('wordcraft', 'pdfcraft', 'photocraft', 'designcraft')                          # the ones the page opens (ui/assets/programs.js PROGRAMS)
 SEARCH = 'const ret = arg1.search;'
 
 

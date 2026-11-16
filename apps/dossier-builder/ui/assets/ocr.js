@@ -556,5 +556,87 @@
     } finally { try { doc.destroy(); } catch (e) {} }
   }
 
-  window.DBOCR = { available, read, pageImages: counted(pageImages), contactSheets: counted(contactSheets), drawPages, busy, sha256, _toLogical: toLogical, _vote: vote, _spans: spans, _resize: resize, _pyRound: pyRound };
+  /* ---- which way up a photo is. A phone lying flat on a desk does not know how it is held, so a photo of a sheet often comes
+     sideways (5 of the owner's 21 WhatsApp photos of documents, 15/11/2026, all with the top of the sheet at the right edge). The
+     reader's own test (step 3 above), at 150 dpi: the photo as it is first; then, where its words clearly lie flat, only upside
+     down; where they clearly stand, the two sideways turns; else all three (read at once). A turn is taken only when it is clearly
+     the one — better than the photo as it is by step 3's measure, and at least twice every other turn read: a photo read poorly
+     every way (a screen, a sheet lost in a dark background) stays as it came (pdfcraft.upright_turn decides the same way). On his
+     21 photos as they came and turned the three other ways (84): 71 turned right, 13 left as they were, none turned wrong. Photos
+     only — JPEG: a PNG is a screenshot or a drawing, whose turn is its maker's. The photo then goes on upright everywhere: to the
+     engine (boot.js, the upload's form) and as the pictures the model is given. → turnOf: 0 | 90 | 180 | 270 (clockwise) */
+  const isPhoto = f => !!f && (/\.jpe?g$/i.test(f.name || '') || (!/\.[a-z0-9]{2,5}$/i.test(f.name || '') && f.type === 'image/jpeg'));
+  const LYING = 0.8, STANDING = 0.2, CLEAR = 15, MANY = 30;
+  async function turnOf(file, opts) {
+    opts = opts || {};
+    const tell = (stage, p) => { try { if (opts.onProgress) opts.onProgress({ stage, page: 1, pages: 1, part: p || 0 }); } catch (e) {} };
+    tessTell = p => tell('load', p);
+    try { await tesseract(); } finally { tessTell = null; }
+    const doc = await open(file, 1);
+    try {
+      const look = async rot => { const { ws } = await tess(await doc.draw(1, PROBE, rot), false); return Object.assign(quality(ws), { flat: flat(ws) }); };
+      const q = { 0: await look(0) };
+      const rots = q[0].flat >= LYING && upright(q[0]) >= CLEAR ? [180] : q[0].words >= MANY && q[0].flat <= STANDING ? [90, 270] : [90, 270, 180];
+      (await Promise.all(rots.map(look))).forEach((qq, i) => { q[rots[i]] = qq; });
+      let best = null;
+      for (const rot of rots) {                                   // step 3's order and choice
+        const qq = q[rot];
+        if (qq.words && (!best || upright(qq) > upright(best.q) || (upright(qq) === upright(best.q) && qq.mean > best.q.mean + 1))) best = { rot, q: qq };
+      }
+      const clear = !!best && upright(best.q) > 1.5 * upright(q[0]) + 3 && [0, ...rots].every(r => r === best.rot || upright(best.q) >= 2 * upright(q[r]));
+      const turn = clear ? best.rot : 0;
+      return opts.all ? { turn, q } : turn;
+    } finally { doc.close(); }
+  }
+  async function turnedPhoto(file, rot) {                         // the photo as shown (its own EXIF turn applied), turned, JPEG
+    const bmp = await createImageBitmap(file), side = rot % 180 !== 0, c = document.createElement('canvas');
+    c.width = side ? bmp.height : bmp.width; c.height = side ? bmp.width : bmp.height;
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+    g.translate(c.width / 2, c.height / 2); g.rotate(rot * Math.PI / 180); g.drawImage(bmp, -bmp.width / 2, -bmp.height / 2);
+    try { bmp.close(); } catch (e) {}
+    const blob = await new Promise(res => c.toBlob(res, 'image/jpeg', 0.95));
+    if (!blob) throw new Error('the photo could not be written turned');
+    return new File([blob], file.name, { type: 'image/jpeg', lastModified: file.lastModified || Date.now() });
+  }
+  const turns = new Map();                                        // sha-256 of a photo → its upright File (the upright one → itself)
+  async function uprightNow(file, opts) {
+    const key = await sha256(file);
+    if (!turns.has(key)) turns.set(key, (async () => {
+      const t = await turnOf(file, opts);
+      if (!t) return file;
+      const up = await turnedPhoto(file, t);
+      turns.set(await sha256(up), Promise.resolve(up));
+      try { if (opts && opts.onProgress) opts.onProgress({ stage: 'turned', turn: t, page: 1, pages: 1 }); } catch (e) {}
+      return up;
+    })().catch(e => { console.warn('which way up', file.name, e); turns.delete(key); return file; }));
+    return turns.get(key);
+  }
+  /* the photo upright: the same File when it is upright already (or is not a photo, or the reader is not here), else the photo
+     turned (JPEG at quality 0.95, its name kept) — the same File for the same bytes, however often it is asked */
+  function uprightPhoto(file, opts) {
+    if (!(file instanceof Blob) || !isPhoto(file) || !available()) return Promise.resolve(file);
+    return counted(uprightNow)(file, opts);
+  }
+
+  /* one page as the person sees it (its /Rotate turned in), drawn at dpi, as a PNG — for the photo program (ui/index.html pageInPhoto)
+     → {blob, page, pages} */
+  async function pagePicture(file, n, dpi) {
+    const doc = await open(file);
+    try {
+      const k = Math.min(Math.max(1, Math.round(Number(n) || 1)), doc.count), c = await doc.draw(k, dpi || 200, 0);
+      const blob = await new Promise(r => c.toBlob(r, 'image/png'));
+      if (!blob) throw new Error('the page could not be drawn');
+      return { blob, page: k, pages: doc.count };
+    } finally { doc.close(); }
+  }
+
+  /* the first page's size as it is shown (its /Rotate turned in), in points → {width, height} */
+  async function pageSize(file) {
+    const lib = await pdfjs();
+    const doc = await lib.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false }).promise;
+    try { const v = (await doc.getPage(1)).getViewport({ scale: 1 }); return { width: v.width, height: v.height }; }
+    finally { try { doc.destroy(); } catch (e) {} }
+  }
+
+  window.DBOCR = { available, read, pageImages: counted(pageImages), contactSheets: counted(contactSheets), drawPages, pagePicture: counted(pagePicture), pageSize, busy, sha256, isPhoto, upright: uprightPhoto, turnOf: counted(turnOf), _toLogical: toLogical, _vote: vote, _spans: spans, _resize: resize, _pyRound: pyRound };
 })();

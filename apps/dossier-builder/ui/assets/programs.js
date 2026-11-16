@@ -29,10 +29,18 @@
     // PdfCraft's own scan reader is not started (no <meta name="pdfcraft-ocr-worker">): English-only models; the page has its own.
     pdfcraft: { ar: 'برنامج الـ PDF', en: 'the PDF program', canvas: 'pdfcraft', loading: 'pdfcraft_loading', host: 'page',
                 query: '?webgl&control', files: /\.pdf$/i },
+    // the page opens these two itself (no file kind of the dossier is theirs): a PDF page drawn as a picture for the photo program,
+    // an artwork PDF placed into a design in the design program (ui/index.html pageInPhoto, docInDesign)
+    photocraft: { ar: 'برنامج الصور', en: 'the photo program', canvas: 'photocraft_canvas', loading: 'photocraft_loading', host: 'drop', query: '', files: null,
+                  hint: { ar: 'نضّف الصفحة (قص، عدل، فتّح، امسح) واحفظ بـ Ctrl+S: الصفحة دي بتتبدّل في الملف كنسخة جديدة، والباقي زي ما هو.',
+                          en: 'Clean the page (crop, straighten, lighten, erase) and save with Ctrl+S: this page is replaced in the file as a new version; the others stay as they are.' } },
+    designcraft: { ar: 'برنامج التصميم', en: 'the design program', canvas: 'designcraft_canvas', loading: 'designcraft_loading', host: 'drop', query: '', files: null,
+                   hint: { ar: 'اعمل مستند (Ctrl+N)، وبعدين «حط الملف في التصميم». لما تخلص: File ← Export PDF… والـ PDF بيرجع للبند كنسخة جديدة. (Ctrl+S بيحفظ التصميم نفسه، ومش بيتحط في الملف.)',
+                           en: 'Make a document (Ctrl+N), then «Place the file in the design». When done: File ▸ Export PDF… and the PDF comes back to the item as a new version. (Ctrl+S saves the design itself; it does not go into the dossier.)' } },
   };
   const list = () => (root.DB_PROGRAMS && root.DB_PROGRAMS.apps) || {};
   const available = app => !!(PROGRAMS[app] && list()[app] && typeof WebAssembly === 'object' && typeof DecompressionStream === 'function');
-  const forFile = name => Object.keys(PROGRAMS).find(a => available(a) && PROGRAMS[a].files.test(String(name || ''))) || null;
+  const forFile = name => Object.keys(PROGRAMS).find(a => available(a) && PROGRAMS[a].files && PROGRAMS[a].files.test(String(name || ''))) || null;
   const title = (app, lang) => (PROGRAMS[app] ? PROGRAMS[app][lang === 'en' ? 'en' : 'ar'] : app);
   const abs = rel => new URL(rel, document.baseURI).href;
 
@@ -54,6 +62,8 @@
     unsaved: { ar: 'فيه تعديلات ماتحفظتش. تقفل من غير ما تحفظها؟', en: 'There are changes that were not saved. Close without saving them?' },
     discard: { ar: 'اقفل من غير حفظ', en: 'Close without saving' },
     back: { ar: 'ارجع للملف', en: 'Back to the file' },
+    place: { ar: 'حط الملف في التصميم', en: 'Place the file in the design' },
+    placed: { ar: 'الملف اتحط في الصفحة المفتوحة في البرنامج.', en: 'The file was placed on the page open in the program.' },
   };
 
   // ── what runs inside the frame: the relay between the program and the page, and the program's loader ──────────────────────
@@ -96,6 +106,8 @@
         if (!el) { done = true; started = true; up('ready'); }
         else if (el.textContent !== first) { done = true; fail(el.textContent.trim().slice(0, 300)); }
       }).observe(document.body, { childList: true, subtree: true, characterData: true });
+      var touched = false;                                          // no «dirty» of its own: the first key or click in it is work to keep
+      ['keydown', 'pointerdown'].forEach(function (t) { addEventListener(t, function () { if (!touched && started) { touched = true; up('touched'); } }, true); });
     }
     var wasmGiven = false;
     addEventListener('message', function (e) {
@@ -110,6 +122,11 @@
           dt.items.add(new File([m.bytes], m.name));
           canvas.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true, clientX: 1, clientY: 1 }));
         }
+      }
+      if (m.type === 'place') {                                     // into what the design program has open: dropped in the middle of it
+        var dp = new DataTransfer();
+        dp.items.add(new File([m.bytes], m.name));
+        canvas.dispatchEvent(new DragEvent('drop', { dataTransfer: dp, bubbles: true, cancelable: true, clientX: Math.round(innerWidth / 2), clientY: Math.round(innerHeight / 2) }));
       }
       if (m.type === 'execute' || m.type === 'inspect') {
         var api = window[app], kind = m.type === 'execute' ? 'executed' : 'inspected';
@@ -224,7 +241,7 @@
     layer.className = 'dbprog'; layer.setAttribute('role', 'dialog'); layer.setAttribute('aria-modal', 'true'); layer.setAttribute('aria-label', p[lang]);
     layer.dir = lang === 'ar' ? 'rtl' : 'ltr';
     layer.innerHTML = `<div class="dbprog-bar"><span class="dbprog-name">${esc(p[lang])}</span><bdi class="dbprog-file" dir="auto">${esc(opts.name)}</bdi>
-      <span class="dbprog-acts"><button class="btn sm pri" data-act="save" disabled>${esc(say('save'))}</button>
+      <span class="dbprog-acts">${opts.place ? `<button class="btn sm pri" data-act="place" disabled>${esc(say('place'))}</button>` : ''}${p.host === 'page' ? `<button class="btn sm pri" data-act="save" disabled>${esc(say('save'))}</button>` : ''}
       <button class="btn sm ghost" data-act="close">${esc(say('close'))}</button></span><div class="dbprog-status" role="status" aria-live="polite"></div></div>
       <div class="dbprog-body"><div class="dbprog-wait"><b>${esc(say('loading'))}</b><div class="dbprog-meter"><i></i></div><span class="small muted"></span></div></div>`;
     document.body.appendChild(layer);
@@ -236,7 +253,7 @@
     $('.dbprog-body').insertBefore(frame, $('.dbprog-wait'));
     // unsaved: the program said the document changed since it was opened or last kept here (its «dirty» event)
     let ready = false, closed = false, unsaved = false, pending = new Map(), ids = 0, saving = null;
-    const saveBtn = () => $('[data-act="save"]');
+    const saveBtn = () => $('[data-act="save"]') || { disabled: true };
     const wait = (text, note) => { const w = $('.dbprog-wait'); if (!w) return; w.querySelector('b').textContent = text; if (note !== undefined) w.querySelector('span').textContent = note; };
     const post = (msg, transfer) => frame.contentWindow && frame.contentWindow.postMessage(Object.assign({ dbprog: key }, msg), '*', transfer || []);
     const call = (type, extra, ms) => new Promise((ok, no) => {
@@ -262,23 +279,24 @@
         ready = true; clearTimeout(timer);
         const w = $('.dbprog-wait'); if (w) w.remove();
         status(say('opening'));
-        const copy = opts.bytes.slice().buffer;
-        post({ type: 'open', name: opts.name, bytes: copy }, [copy]);
+        if (opts.bytes) { const copy = opts.bytes.slice().buffer; post({ type: 'open', name: opts.name, bytes: copy }, [copy]); }
+        const pb = $('[data-act="place"]'); if (pb) pb.disabled = false;
 
         // the hint, once the document is open — unless something was said meanwhile (a save done within these 1.5 s kept «saved»
         // only until this fired: seen when the program opens from the device and the save is quick)
-        setTimeout(() => { if (!closed && !saving && $('.dbprog-status').textContent === say('opening')) status(say('ready')); }, 1500);
+        setTimeout(() => { if (!closed && !saving && $('.dbprog-status').textContent === say('opening')) status((opts.hint || (p.hint ? p.hint[lang] : say('ready'))) + (opts.note ? ' ' + opts.note : '')); }, opts.bytes ? 1500 : 0);
         try { frame.focus(); } catch (err) { /* the frame takes focus on its first click */ }
       } else if (msg.type === 'dirty') { if (msg.dirty !== false) { unsaved = true; saveBtn().disabled = false; } }
+      else if (msg.type === 'touched') unsaved = true;
       else if (msg.type === 'failed') failed(msg.error || 'unknown');
       else if (msg.type === 'executed' || msg.type === 'inspected') {
         const q = pending.get(msg.id);
         if (q) { pending.delete(msg.id); msg.error ? q.no(new Error(msg.error)) : q.ok(msg.result); }
       } else if (msg.type === 'save' && msg.bytes) {
-        if (!unsaved) { status(say('nothing')); return; }               // Ctrl+S with nothing changed: the file as it is stays
+        if (!unsaved && p.host === 'page') { status(say('nothing')); return; }   // Ctrl+S with nothing changed: the file as it is stays
         status(say('saving')); saveBtn().disabled = true;
         saving = Promise.resolve().then(() => opts.onSave({ name: msg.name || opts.name, bytes: new Uint8Array(msg.bytes) }))
-          .then(() => { unsaved = false; status(say('saved', { n: msg.name || opts.name }) + (p.afterSave ? ' ' + p.afterSave[lang] : ''), 'good'); },
+          .then(said => { unsaved = false; status(typeof said === 'string' ? said : say('saved', { n: msg.name || opts.name }) + (p.afterSave ? ' ' + p.afterSave[lang] : ''), 'good'); },
                 e => { saveBtn().disabled = false; status(say('saveFail', { e: (e && e.message) || e }), 'bad'); })
           .finally(() => { saving = null; });
       }
@@ -314,13 +332,87 @@
       if (saving) await saving;
       else if (unsaved && !closed) { saveBtn().disabled = false; status(say('noFile'), 'bad'); }    // no file in 30 s: never a silent wait
     }
-    saveBtn().onclick = () => save();
+    if ($('[data-act="save"]')) saveBtn().onclick = () => save();
+    // a question asked in the program's own layer (the page's drawer is under it): → true (yes) | false (no)
+    // pictures: [{src, caption}] shown side by side above the buttons (the file before and after)
+    function ask(text, yes, no, pictures) {
+      return new Promise(done => {
+        const a = document.createElement('div');
+        a.className = 'dbprog-ask';
+        const pics = (pictures || []).map(x => `<figure style="margin:0;display:flex;flex-direction:column;gap:4px;align-items:center;min-width:0;flex:1"><img alt="" src="${esc(x.src)}" style="max-width:100%;max-height:42vh;border:1px solid var(--line,#1c2838);background:#fff"><figcaption class="small" style="text-align:center">${esc(x.caption || '')}</figcaption></figure>`).join('');
+        a.innerHTML = `<div style="max-width:min(820px,94vw)"><b>${esc(text)}</b>${pics ? `<div class="row" style="flex-wrap:nowrap;gap:10px;align-items:flex-start">${pics}</div>` : ''}<div class="row"><button class="btn sm pri" data-a="yes">${esc(yes)}</button><button class="btn sm ghost" data-a="no">${esc(no)}</button></div></div>`;
+        $('.dbprog-body').appendChild(a);
+        a.querySelector('[data-a="yes"]').onclick = () => { a.remove(); done(true); };
+        a.querySelector('[data-a="no"]').onclick = () => { a.remove(); done(false); };
+      });
+    }
+    if ($('[data-act="place"]')) $('[data-act="place"]').onclick = () => { if (!ready) return; const copy = opts.place.bytes.slice().buffer;
+      post({ type: 'place', name: opts.place.name, bytes: copy }, [copy]); unsaved = true; status(say('placed'), 'good'); };
     layer.querySelector('[data-act="close"]').onclick = () => close(false);
-    const handle = { app, close, save, execute: (command, params) => call('execute', { command, params: params || {} }), inspect: () => call('inspect', {}, 20000),
+    const handle = { app, close, save, ask, execute: (command, params) => call('execute', { command, params: params || {} }), inspect: () => call('inspect', {}, 20000),
                      get ready() { return ready; }, get unsaved() { return unsaved; } };
     current = handle;
     return handle;
   }
 
-  root.DBPROG = { PROGRAMS, available, forFile, title, open, frameDoc };
+  /* ── what the photo program saves, as a picture a PDF page can carry: its Ctrl+S gives a Photoshop file — the picture it shows is the
+     merged image every PSD/PSB carries after its layers (Adobe Photoshop File Formats Specification: the header, three sections
+     skipped by their lengths, then the image data, raw or PackBits per row, one plane per channel; from the v2 workshop's psd.js);
+     PNG and JPEG as they are; anything else the browser can draw, as PNG. → {bytes: Uint8Array, kind: 'png' | 'jpeg'} */
+  function psdComposite(b) {
+    const v = new DataView(b.buffer, b.byteOffset, b.byteLength), fail = why => { throw new Error('the photo program\'s file: ' + why); };
+    if (b.length < 26 || String.fromCharCode(b[0], b[1], b[2], b[3]) !== '8BPS') fail('not a PSD');
+    const version = v.getUint16(4), channels = v.getUint16(12), height = v.getUint32(14), width = v.getUint32(18), depth = v.getUint16(22);
+    const mode = { 1: 'gray', 3: 'rgb', 4: 'cmyk' }[v.getUint16(24)];
+    if ((version !== 1 && version !== 2) || !mode || (depth !== 8 && depth !== 16) || !width || !height || width * height > 200e6) fail('a kind of PSD not read here');
+    let o = 26;
+    const need = n => { if (o + n > b.length) fail('cut short'); };
+    const skip32 = () => { need(4); o += 4 + v.getUint32(o); };
+    skip32(); skip32();                                               // colour mode data, image resources
+    if (version === 2) { need(8); o += 8 + v.getUint32(o) * 2 ** 32 + v.getUint32(o + 4); } else skip32();   // layers and masks
+    need(2);
+    const comp = v.getUint16(o); o += 2;
+    const colour = mode === 'gray' ? 1 : mode === 'rgb' ? 3 : 4, planes = Math.min(channels, colour + 1), rowBytes = width * depth / 8, plane = [];
+    if (comp === 0) for (let c = 0; c < planes; c++) { need(rowBytes * height); plane[c] = b.subarray(o, o + rowBytes * height); o += rowBytes * height; }
+    else if (comp === 1) {
+      const cb = version === 2 ? 4 : 2, counts = [];
+      need(channels * height * cb);
+      for (let i = 0; i < channels * height; i++) counts.push(cb === 4 ? v.getUint32(o + i * 4) : v.getUint16(o + i * 2));
+      o += channels * height * cb;
+      for (let c = 0; c < planes; c++) {
+        const out = new Uint8Array(rowBytes * height);
+        for (let y = 0; y < height; y++) {
+          const n = counts[c * height + y]; need(n);
+          let i = o, j = y * rowBytes; const end = j + rowBytes, to = o + n;      // PackBits
+          while (i < to && j < end) { const k = b[i++] << 24 >> 24; if (k >= 0) { for (let q = 0; q <= k && j < end; q++) out[j++] = b[i++]; } else if (k !== -128) { const x = b[i++]; for (let q = 0; q < 1 - k && j < end; q++) out[j++] = x; } }
+          o += n;
+        }
+        plane[c] = out;
+      }
+    } else fail('compression ' + comp);
+    const rgba = new Uint8ClampedArray(width * height * 4), at = depth === 8 ? (q, i) => q[i] : (q, i) => q[i * 2];
+    for (let i = 0, n = width * height; i < n; i++) {
+      let r, g, bl;
+      if (mode === 'gray') r = g = bl = at(plane[0], i);
+      else if (mode === 'rgb') { r = at(plane[0], i); g = at(plane[1], i); bl = at(plane[2], i); }
+      else { const k = at(plane[3], i) / 255; r = at(plane[0], i) * k; g = at(plane[1], i) * k; bl = at(plane[2], i) * k; }
+      rgba[i * 4] = r; rgba[i * 4 + 1] = g; rgba[i * 4 + 2] = bl; rgba[i * 4 + 3] = planes > colour ? at(plane[colour], i) : 255;
+    }
+    return { width, height, rgba };
+  }
+  async function picture(bytes) {
+    const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+    if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return { bytes: b, kind: 'png' };
+    if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return { bytes: b, kind: 'jpeg' };
+    let bmp;
+    if (b[0] === 0x38 && b[1] === 0x42 && b[2] === 0x50 && b[3] === 0x53) { const im = psdComposite(b); bmp = await createImageBitmap(new ImageData(im.rgba, im.width, im.height)); }
+    else bmp = await createImageBitmap(new Blob([b]));
+    const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(bmp, 0, 0);
+    const blob = await new Promise(r => c.toBlob(r, 'image/png'));
+    if (!blob) throw new Error('the picture could not be written');
+    return { bytes: new Uint8Array(await blob.arrayBuffer()), kind: 'png' };
+  }
+
+  root.DBPROG = { PROGRAMS, available, forFile, title, open, frameDoc, picture };
 })(window);

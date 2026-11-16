@@ -735,6 +735,162 @@ def ocr(data, pages=None, timeout=None):
     return made, texts or [], rep
 
 
+PROBE_DPI = 150
+LYING, STANDING, CLEAR, MANY = 0.8, 0.2, 15, 30
+
+
+def _flat(words):
+    """The share of a reading's longer words (three characters or more) that lie flat — wider than tall: Tesseract also reads
+    text lying on its side, almost as well, so the turn that is upright is the one whose words lie flat (ocr.js flat)."""
+    long = [w for w in words if len(w.get('text') or '') >= 3]
+    return sum(1 for w in long if (w.get('box') or [0, 0, 0, 0])[2] >= (w.get('box') or [0, 0, 0, 0])[3]) / len(long) if long else 0.0
+
+
+def _upright(q):
+    """ocr.js upright(): the words read surely (rounded as JavaScript rounds) times the share lying flat."""
+    good = q['words'] - int(q['words'] * q['low'] / 100.0 + 0.5)
+    return good * q['flat']
+
+
+def _probe_dpi(data, pixels):
+    """The dpi at which the page is drawn as large as the page reader draws the photo for its test: the photo brought to 2000–4200
+    pixels on its long side as «300 dpi» (ocr.js images()), at 150 dpi half that — so both editions decide on the same picture."""
+    try:
+        import io
+        from pypdf import PdfReader
+        box = PdfReader(io.BytesIO(data)).pages[0].mediabox
+        pts = max(float(box.width), float(box.height))
+        long = max(pixels)
+        fit = long * min(3.0, 2000.0 / long) if long < 2000 else 4200.0 if long > 4200 else float(long)
+        return max(72.0, min(600.0, 72.0 * (fit * PROBE_DPI / 300.0) / pts))
+    except Exception:                                          # noqa: BLE001 — the reader's own dpi, as a page of a scan
+        return float(PROBE_DPI)
+
+
+def upright_turn(data, pixels=None):
+    """Which way up the first page of a photo made a PDF is: a phone lying flat on a desk does not know how it is held, so a photo
+    of a sheet often comes sideways (5 of his 21 WhatsApp photos of documents). The page reader's own test and decision
+    (ui/assets/ocr.js turnOf — the browser edition turns the photo there, before it leaves the page): read at 150 dpi as it is;
+    then, where its words clearly lie flat, upside down only; where they clearly stand, the two sideways turns; else all three; a
+    turn taken only when it is better than the page as it is by the reader's measure (1.5 × + 3) and at least twice every other
+    turn read. pixels: the photo's (width, height), to draw it as large as the page reader does. → 0, 90, 180 or 270
+    (clockwise); 0 when recognition is not here or nothing is clear."""
+    info = ocr_info()
+    if not info:
+        return 0
+    base = {'doc': 1, 'engine': 'tesseract', 'language': info['language'], 'dpi': _probe_dpi(data, pixels) if pixels else PROBE_DPI,
+            'pages': [1], 'force_ocr': True}
+
+    def look(rots):                                            # the page read in each turn asked: {turn: quality with flat}
+        steps, at, now = [('doc_open', {'path': 'in.pdf'})], {}, 0
+        for r in rots:
+            if r != now:
+                steps.append(('page_rotate', {'doc': 1, 'degrees': (r - now) % 360, 'pages': [1]}))
+                now = r
+            at[r] = len(steps)
+            steps.append(('ocr_words', base))
+        res, _ = run(steps, {'in.pdf': data}, timeout=min(1800, 60 + 30 * len(rots)))
+        out = {}
+        for r, i in at.items():
+            words = (first(res[i]) or {}).get('pages') or [{}]
+            q = _quality(first(res[i])).get(1) or {'words': 0, 'low': 0.0, 'mean': 0.0}
+            out[r] = {**q, 'flat': _flat(words[0].get('words') or [])}
+        return out
+    try:
+        q = look([0])
+        q0 = q[0]
+        rots = ([180] if q0['flat'] >= LYING and _upright(q0) >= CLEAR else
+                [90, 270] if q0['words'] >= MANY and q0['flat'] <= STANDING else [90, 270, 180])
+        q.update(look(rots))
+    except (PdfCraftError, OSError, subprocess.SubprocessError, ValueError, KeyError, IndexError):
+        return 0
+    best = None
+    for r in rots:                                             # the reader's order and choice
+        qq = q[r]
+        if qq['words'] and (best is None or _upright(qq) > _upright(q[best]) or
+                            (_upright(qq) == _upright(q[best]) and qq['mean'] > q[best]['mean'] + 1)):
+            best = r
+    if best is None or not _upright(q[best]) > 1.5 * _upright(q0) + 3:
+        return 0
+    return best if all(r == best or _upright(q[best]) >= 2 * _upright(q[r]) for r in [0, *rots]) else 0
+
+
+def turn_page(data, degrees, page=1):
+    """The page turned by degrees (clockwise) — its /Rotate only: the picture itself is not written again. None when it cannot be."""
+    try:
+        _, out = run([('doc_open', {'path': 'in.pdf'}), ('page_rotate', {'doc': 1, 'degrees': int(degrees) % 360, 'pages': [page]}),
+                      ('doc_save', {'doc': 1, 'path': 'out.pdf', 'full': True})], {'in.pdf': data}, read=('out.pdf',))
+        return out.get('out.pdf')
+    except (PdfCraftError, OSError):
+        return None
+
+
+_TURNS = {}
+
+
+def photo_page(data, name='image'):
+    """An image made a PDF page (image_to_pdf), and a photo (JPEG) taken sideways or upside down turned upright (upright_turn,
+    where recognition is here) → (PDF bytes or None, the turn made: 0/90/180/270)."""
+    pdf = image_to_pdf(data, name)
+    if not pdf or data[:3] != b'\xff\xd8\xff':
+        return pdf, 0
+    import hashlib
+    from . import imagefiles
+    key = hashlib.sha256(data).hexdigest()                     # the wizard reads a photo, then the item takes it: one test
+    if key not in _TURNS:
+        if len(_TURNS) > 256:
+            _TURNS.clear()
+        _TURNS[key] = upright_turn(pdf, imagefiles.jpeg_size(data))
+    turn = _TURNS[key]
+    turned = turn_page(pdf, turn) if turn else None
+    return (turned, turn) if turned else (pdf, 0)
+
+
+def picture_size(data):
+    """(width, height) in pixels of a PNG or a JPEG; None for anything else."""
+    if data[:8] == b'\x89PNG\r\n\x1a\n' and len(data) >= 24:
+        return int.from_bytes(data[16:20], 'big'), int.from_bytes(data[20:24], 'big')
+    from . import imagefiles
+    return imagefiles.jpeg_size(data)
+
+
+def page_picture(data, page, picture):
+    """Page `page` of a PDF made a picture — a page cleaned in the photo program: the picture laid on a page the size the page is
+    shown at (its crop box, its /Rotate turned in), centred and as large as fits, and that page put in the old one's place
+    (page_replace: its links, comments and bookmarks stay; the other pages are not touched). → the PDF, or None when it cannot be."""
+    import io
+    try:
+        from pypdf import PdfReader
+        pages = PdfReader(io.BytesIO(data)).pages
+        if not 1 <= int(page) <= len(pages):
+            return None
+        pg = pages[int(page) - 1]
+        box = pg.cropbox
+        w, h = abs(float(box.width)), abs(float(box.height))
+        if int(pg.get('/Rotate') or 0) % 180:
+            w, h = h, w
+    except Exception:                                          # noqa: BLE001 — a PDF pypdf cannot read: not changed
+        return None
+    px = picture_size(picture)
+    if not px or not all(px) or w <= 0 or h <= 0:
+        return None
+    k = min(w / px[0], h / px[1])
+    rw, rh = px[0] * k, px[1] * k
+    x0, y0 = (w - rw) / 2, (h - rh) / 2
+    ext = 'png' if picture[:4] == b'\x89PNG' else 'jpg'
+    try:
+        _, out = run([('doc_create', {'from': 'blank', 'width': w, 'height': h, 'pages': 1}),
+                      ('page_add_image', {'doc': 1, 'page': 1, 'path': f'pic.{ext}', 'rect': [x0, y0, x0 + rw, y0 + rh]}),
+                      ('doc_save', {'doc': 1, 'path': 'pic.pdf', 'full': True}),
+                      ('doc_open', {'path': 'in.pdf'}),
+                      ('page_replace', {'doc': 2, 'pages': [int(page)], 'path': 'pic.pdf', 'from_pages': [1]}),
+                      ('doc_save', {'doc': 2, 'path': 'out.pdf', 'full': True})],
+                     {'in.pdf': data, f'pic.{ext}': picture}, read=('out.pdf',))
+        return out.get('out.pdf')
+    except (PdfCraftError, OSError):
+        return None
+
+
 def image_to_pdf(data, name='image'):
     """An image (PNG, JPEG, TIFF, GIF, BMP, JPEG 2000) made into a PDF page by PdfCraft. None when it cannot be."""
     if not available():

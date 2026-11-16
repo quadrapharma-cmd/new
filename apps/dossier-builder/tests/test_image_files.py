@@ -88,3 +88,31 @@ def test_an_image_is_kept_aside_too(dossier):
     assert r.status_code == 201, r.text
     assert c.get(f'/api/dossiers/{did}/board').json()['unassigned']
     assert c.post('/api/images/pdf', files=[('files', ('p1.jpg', fx('page.jpg'), 'image/jpeg'))]).status_code in (404, 405)        # no picture-to-PDF service any more
+
+
+@pytest.mark.skipif(not OCR, reason='needs recognition (PdfCraft OCR)')
+def test_a_phone_photo_taken_sideways_is_turned_upright():
+    """A phone lying flat on a desk does not know how it is held, so a photo of a sheet often comes sideways (5 of the owner's 21
+    WhatsApp photos of documents, 15/11/2026). The page reader's own test (pdfcraft.upright_turn, as ocr.js turnOf) turns it upright —
+    the page's /Rotate only, the picture is not written again — and the page is then read upright. An upright photo, a photo upright
+    by its EXIF turn and a PNG (a screenshot or a drawing, whose turn is its maker's) stay as they are. Fixture: a made-up supply
+    order turned a quarter clockwise (the top of the sheet at the right edge, as his photos came), no EXIF."""
+    from pypdf import PdfReader
+    pdf, turn = pdfcraft.photo_page(fx('phone-sideways.jpg'), 'IMG-20250318.jpg')
+    assert turn == 270 and PdfReader(io.BytesIO(pdf)).pages[0].get('/Rotate') == 270
+    assert 'supply order 40417' in pdfcraft.page_texts(pdfcraft.ocr(pdf)[0])[0].lower()
+    assert pdfcraft.photo_page(fx('page.jpg'), 'page.jpg')[1] == 0 and pdfcraft.photo_page(fx('phone-rotated.jpg'), 'p.jpg')[1] == 0
+    Image = pytest.importorskip('PIL.Image')
+    buf = io.BytesIO(); Image.open(io.BytesIO(fx('phone-sideways.jpg'))).save(buf, 'PNG')
+    assert pdfcraft.photo_page(buf.getvalue(), 'screen.png')[1] == 0
+
+
+@pytest.mark.skipif(not OCR, reason='needs recognition (PdfCraft OCR)')
+def test_a_sideways_photo_put_in_an_item_is_kept_upright(dossier):
+    c, did = dossier
+    d = c.post(f'/api/dossiers/{did}/slots/M1-05/documents', files={'file': ('IMG-20250318.jpg', fx('phone-sideways.jpg'), 'image/jpeg')}).json()
+    assert d['meta']['converted'] == ['image_to_pdf', 'turned_upright_270'] and d['meta']['original_name'] == 'IMG-20250318.jpg'
+    from pypdf import PdfReader
+    assert PdfReader(io.BytesIO(c.get(f"/api/dossiers/{did}/documents/{d['id']}/file").content)).pages[0].get('/Rotate') == 270
+    d2 = c.post(f'/api/dossiers/{did}/slots/M1-05/documents', files={'file': ('page.jpg', fx('page.jpg'), 'image/jpeg')}).json()
+    assert d2['meta']['converted'] == ['image_to_pdf']

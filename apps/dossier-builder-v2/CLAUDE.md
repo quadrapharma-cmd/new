@@ -391,16 +391,60 @@ When a part is done or an open item is closed, update «What exists» and «Open
   the «تصدير المخرجات المختارة» button, once the gate is open — for Egypt `ctd.zip` is what EDA receives today (NP.CAPP.065 v5);
   `ectd32.zip` and `ectd40.zip` follow the provisional EG profiles (EDA drafts), ready for when EDA takes eCTD, not «EDA-valid».
 
+- **15/11/2026, «نفذ كل المطلوب و متسيبش اي مرحلة لم تنفذ»: steps 5–7 done, the indication asked first** (README «The photo and
+  design programs, a phone photo upright, the indication asked first»).
+  · Step 7, a phone photo upright: his whole folder «Wouncure_Inspection_Appeal» fetched (21 distinct WhatsApp photos, 5 sideways,
+  `scratchpad/photos-all`, local only). The page reader's own «which way up» test, made strict (a turn only when better than the
+  photo as it is and at least twice every other turn read; fewer readings when the words clearly lie flat or stand): 84 cases (each
+  photo in four turns) — 71 right, 13 left as they were, none turned wrong; his 21 as they came, 21 right. Reading his 5 photos with
+  facts: Tesseract 30 → 35, the engine's reader 28 → 32, the page's reader 42 → 43 of 62. JPEG only. Browser: the photo is written
+  again upright (JPEG 0.95) before it leaves the page, and Claude is shown it upright (about 4 s a photo here, 7 s when it turns);
+  desktop: the PDF page's /Rotate. PdfCraft already honours a camera's EXIF turn (checked).
+  · Step 5, the photo program in «المكتب»: a page of a PDF drawn at 200 dpi, cleaned, saved (Ctrl+S: a PSD — its picture read in the
+  page) and put in that page's place (PdfCraft `page_replace`: size as shown, links and bookmarks kept, other pages untouched), a
+  new version. His real 12-page scan: page 3 replaced, the other 11 the same content, 3.3 → 4.3 MB, the same findings.
+  · Step 6, the design program for the artwork items: his real sticker placed in a design came back scaled and moved even on a page
+  of its own size (39 % of pixels different) — so an exported PDF is kept only after the person sees before and after side by side
+  with their sizes and says yes; the hint gives the file's size in mm; a new artwork can be made from scratch for an empty item.
+  · The indication: the gate lists the 2.7.3 / 5.3.5 items an eCTD export needs it for, the export page asks for it with a field,
+  and an eCTD export without it stops at once (`E-GATE-INDICATION`); the CTD folders go without it.
+  · Claude's reading (of photos and cleaned pages) not measured: the key form refuses Anthropic's host («authenticated by the session
+  itself»), and a call from here without a key is refused (401). He can add `ANTHROPIC_API_KEY` as a variable in the environment's
+  settings himself (a new session reads it); never in the chat.
+
+- **16/11/2026, he stopped the work, named the program and gave its order** («وقف حاليا اللي انت بتعمله هنعدل بعض المواضيع و بعدها
+  هنكمل اختبارات»). The name: **eBOX** («برنامج مبتكر لتجهيز ملفات التسجيل الموحد يعتمد علي العمل مع الملفات بذكاء و توفير الوقت و
+  المجهود»). His order: the library first (every decision and guideline, worldwide); «ملف جديد» → the country (the program lays out
+  Module 1) → upload anything, any size or kind → read, show the information, cut, sort, searchable PDF, a new name that fits its
+  place → shown as tree points before the file is made → view and review with a toolbar (by hand, or «the program prepares it»),
+  the closed and the open points said throughout → the documents placed → the whole tree with help for what is missing → export in
+  the formats he chooses → validated after it is built with a validator like the authorities' («مع ان تم التحقق من كل مستند في مرحله
+  التجهيز»). He asked for his points in a strong logical order (ease of building first, then validation) and, **before any
+  re-ordering is started, a proposal of what else could be done** — given in the chat on 16/11: the stations (home · library ·
+  country · upload · read and sort · proposed tree · prepare and review · whole tree and what is missing · validate · export, then
+  after submission), «the place before the preparation» (a document's conditions come from its place), «validated before it is
+  downloaded», one path bar, three states everywhere, one «what is left» list. **Wait for his answer; change nothing in the
+  program's order or name before it.**
+  **Version 51 is not published** (the artifact is still version 50). The tree as committed with this entry holds steps 5–7 and the
+  indication, with their tests. Whole suite, three runs: 829 passed once; twice one UI test timed out —
+  `test_ui_reading_cases.py::test_refused_file_is_not_lost_at_creation` (caught again three times in short loops: the active
+  substance's manufacturer typed in «راجع اللي اتقرا» is gone when «أنشئ» is clicked, `typed.apis` is not set, the wizard says «At
+  least one API…»; about 1 run in 8 of that file, 2 in 4 after `test_ui_e2e.py`, never in 8 runs alone) and once
+  `test_ui_e2e.py::test_generate_from_ui` (its state not caught). Not known yet whether version 50 does it too: run the same loops
+  on `dbad9c0` first, then find what re-draws the review drawer or re-fills the wizard between the typing and «املا الخانات». The
+  recorder: `scratchpad/flaky/pagedump.py` (`-p pagedump`, `PAGEDUMP=<file>`: the page's address, toast, alerts and the wizard's
+  state at a failure). After the last whole run two things were added and only `tests/test_page_picture.py` (4) was run:
+  `store.replace_page` asks the guard (a third party's or EDA's page is never replaced: E-LOCKED) and writes its audit line, and
+  boot.js ends the photo check with «الصورة معدولة ✓» so the «getting the reader ready» note never stays. The browser edition was
+  not rebuilt after that. Before any publish: rebuild, the whole suite clean, opening time, read back.
+
 ## Open items (propose when relevant; do when he asks)
-- Old program: a dossier whose product has no indication passes the gate, and its real export then stops late with «5.3.5.4 needs
-  an indication (ICH DTD #REQUIRED)» (the ICH DTD asks it of the Module 5 efficacy and safety studies). The gate could ask for it
-  first; found 15/11/2026 on a made-up Gulf dossier, not yet changed.
 - Old program, claude.ai edition: its fonts never load — `web/build.py` writes the font link's `onload="this.media=\'all\'"` with
   the backslashes kept (a script error on every opening, in the version he has used since 13/11 too), so the page shows the
   system's fonts. Left as it is (the look he knows); fix only if he asks.
-- Old program, next pieces (one at a time, each on his real files first): the photo and design programs (steps 5–6 of
-  «رتبهم خطوة بخطوة»), a phone photo as a document (step 7: needs real photos from him), the 14/11 update (needs the API key),
-  «شروط الشكل لكل دولة», the Assistant on his account and «المشغّل» (cannot be tested inside claude.ai from here).
+- Old program, next pieces (one at a time, each on his real files first): the 14/11 update and measuring Claude's reading (need
+  the API key: `ANTHROPIC_API_KEY` in the environment's settings, added by him), «شروط الشكل لكل دولة», the Assistant on his
+  account and «المشغّل» (cannot be tested inside claude.ai from here).
 - Online version check of the ICH, EMA, FDA, WHO and GCC sources. Unreachable from this environment: admin.ich.org (ICH's content
   service), esubmission.ema.europa.eu, sfda.gov.sa — they would need his approval to add.
 - 64 sources have no copy kept.

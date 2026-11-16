@@ -522,3 +522,58 @@ def test_the_working_copy_gives_its_ectd_xml_inside_the_browser(site, tmp_path):
         assert subs == {'ectd32': [], 'ectd40': []}
         assert not errors, errors
         b.close()
+
+
+MOCK_SIZES = """window.__pics = []; window.claude = { use: async n => { if (n !== 'sample') return null;
+  const s = async () => ({ text: '{}' });
+  s.limits = async () => ({ maxPromptBytes: 262144, images: { maxCount: 8, maxInputBytes: 20000000, mediaTypes: ['image/jpeg', 'image/png'] } });
+  s.json = async (prompt, o) => { for (const b of (o && o.images) || []) { const m = await createImageBitmap(b); window.__pics.push([m.width, m.height]); } return {}; };
+  return s; } };"""
+
+
+def test_a_photo_taken_sideways_goes_upright_inside_the_browser(site):
+    """A phone photo of a sheet taken sideways (made-up supply order, the top of the sheet at the right edge, no EXIF — as 5 of the
+    owner's 21 WhatsApp photos came) is turned upright in the page before it leaves it (ocr.js upright, boot.js): the engine keeps an
+    upright page — portrait, as the sheet — and claude.ai's model is shown it upright; the person is told. An upright photo goes as
+    it is, byte for byte."""
+    photo = pathlib.Path(__file__).parent / 'data' / 'images' / 'phone-sideways.jpg'
+    upright = pathlib.Path(__file__).parent / 'data' / 'images' / 'page.jpg'
+    if not (DIST / 'assets' / 'ocr').exists():
+        pytest.skip('the page reader is not built (web/ocr_assets.py)')
+    import base64
+    from pypdf import PdfReader
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch()
+        page = b.new_context(viewport={'width': 1280, 'height': 800}).new_page()
+        errors = []
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+        page.add_init_script("localStorage.setItem('db.lang','en')")
+        page.add_init_script(MOCK_SIZES)
+        page.goto(site + '/index.local.html#/')
+        page.wait_for_selector('#boot', state='detached', timeout=180000)
+        page.wait_for_selector('.caps .cap', timeout=120000)
+        r = page.evaluate("""async ([side, up]) => {
+            const file = (b64, name) => { const bin = atob(b64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return new File([u], name, {type: 'image/jpeg'}); };
+            const j = (u, o) => fetch(u, Object.assign({headers: {'X-DB': '1', 'content-type': 'application/json'}}, o)).then(r => r.json());
+            const d = await j('/api/dossiers', {method: 'POST', body: JSON.stringify({name: 'Dermacure', product: {name: 'Dermacure', dosageform: 'tablet', manufacturer: 'Example Pharma'},
+                profile: {dossier_kind: 'generic', origin: 'local', licence: 'own', activity: 'new', apis: [{name: 'Paracetamol', manufacturer: 'Granules', option: 'CEP'}]}})});
+            const put = async f => { const fd = new FormData(); fd.append('file', f); fd.append('meta', '{}');
+              const doc = await fetch('/api/dossiers/' + d.id + '/slots/M1-05/documents', {method: 'POST', body: fd, headers: {'X-DB': '1'}}).then(r => r.json());
+              const pdf = new Uint8Array(await (await fetch('/api/dossiers/' + d.id + '/documents/' + doc.id + '/file', {headers: {'X-DB': '1'}})).arrayBuffer());
+              let s = ''; for (let i = 0; i < pdf.length; i++) s += String.fromCharCode(pdf[i]);
+              return {converted: doc.meta.converted, original: doc.meta.original_name, pdf: btoa(s)}; };
+            const sideways = file(side, 'IMG-20250318.jpg'), a = await put(sideways);
+            const told = document.body.innerText.includes('taken sideways or upside down: turned upright');
+            const b = await put(file(up, 'page.jpg'));
+            const same = await DBOCR.upright(file(up, 'page.jpg'));
+            await DBAI.extract('Read this document.', [sideways], [{scanned: true}], 'document');
+            return {a, b, told, sameSize: same.size, pics: window.__pics}; }""", [base64.b64encode(photo.read_bytes()).decode(), base64.b64encode(upright.read_bytes()).decode()])
+        box = PdfReader(io.BytesIO(base64.b64decode(r['a']['pdf']))).pages[0].mediabox
+        assert float(box.width) < float(box.height), box                     # the sheet stands: portrait, as written (the photo was 1270 × 900)
+        assert r['a']['converted'] == ['image_to_pdf'] and r['a']['original'] == 'IMG-20250318.jpg' and r['told'], r['a']['converted']
+        box2 = PdfReader(io.BytesIO(base64.b64decode(r['b']['pdf']))).pages[0].mediabox
+        assert float(box2.width) > float(box2.height) and r['sameSize'] == upright.stat().st_size     # an upright photo goes as it is
+        assert r['pics'] and all(w / h < 1.6 for w, h in r['pics']), r['pics']                         # the model sees the halves of a standing page
+        assert not errors, errors
+        b.close()

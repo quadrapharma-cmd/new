@@ -264,7 +264,7 @@ def _read_text(name, data, max_pages=12):
         fmt = imagefiles.image_format(data)
         out.update(pages=imagefiles.tiff_pages(data) if fmt == 'tiff' else 1, scanned=True, kind_of_file='image')
         from . import pdfcraft
-        page = pdfcraft.image_to_pdf(data, name or 'image.png') if pdfcraft.ocr_info() else None
+        page = pdfcraft.photo_page(data, name or 'image.png')[0] if pdfcraft.ocr_info() else None   # a photo taken sideways: read upright
         if page:
             _ocr_into(out, page, max_pages)
         if not out.get('ocr'):

@@ -94,6 +94,34 @@ def tiff_pages(data):
         return 1
 
 
+def jpeg_size(data):
+    """(width, height) in pixels of a JPEG as stored (its frame header); None when the file does not say."""
+    try:
+        if data[:2] != b'\xff\xd8':
+            return None
+        pos = 2
+        while pos + 9 <= len(data):
+            if data[pos] != 0xFF:
+                return None
+            marker = data[pos + 1]
+            if marker == 0xFF:                                  # fill bytes
+                pos += 1
+                continue
+            if marker in (0xD8, 0x01) or 0xD0 <= marker <= 0xD7:
+                pos += 2
+                continue
+            size = struct.unpack_from('>H', data, pos + 2)[0]
+            if 0xC0 <= marker <= 0xCF and marker not in (0xC4, 0xC8, 0xCC):
+                h, w = struct.unpack_from('>HH', data, pos + 5)
+                return (w, h) if w and h else None
+            if marker in (0xDA, 0xD9):
+                return None
+            pos += 2 + size
+    except (struct.error, IndexError):
+        pass
+    return None
+
+
 def exif_orientation(data):
     """The EXIF orientation of a JPEG (1 = as stored, 3/6/8 = turned, 2/4/5/7 = mirrored); None when the file does not say."""
     try:

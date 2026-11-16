@@ -150,6 +150,29 @@
       await readAndKeep(new File([blob], c.filename, { type: blob.type || 'application/pdf' }), c.sha256, c.pages, true);
     } catch (e) { console.warn('browser OCR', e); }
   }
+  // a phone photo taken sideways or upside down goes to the engine upright (ocr.js upright: the reader's own test, the photo
+  // written again turned) — and is shown to the model upright (pictures below); one test per photo, however often it goes
+  const PAGE_BACK = /^\/api\/dossiers\/[^/]+\/documents\/[^/]+\/page$/;
+  // one photo: what the check does is said where the file is, and a «getting the reader ready» note never stays after it
+  async function uprightOne(f) {
+    let said = false, turned = false;
+    const u = await window.DBOCR.upright(f, { onProgress: d => { if (d.stage === 'load') said = true; if (d.stage === 'turned') turned = true; ocrSay(f.name, '', d); } });
+    if (said && !turned) ocrSay(f.name, '', { stage: 'upright' });
+    return u;
+  }
+  async function uprightForm(fd) {
+    const O = window.DBOCR;
+    if (!O || !O.upright || !O.available()) return fd;
+    const all = [...fd.entries()];
+    if (!all.some(([, v]) => v instanceof File && O.isPhoto(v))) return fd;
+    const out = new FormData();
+    for (const [k, v] of all) {
+      if (!(v instanceof File)) { out.append(k, v); continue; }
+      const u = await uprightOne(v);
+      out.append(k, u, u.name);
+    }
+    return out;
+  }
   function ocrSay(name, sha, d) {
     const ev = new CustomEvent('db-ocr', { cancelable: true, detail: Object.assign({ name, sha256: sha }, d) });
     if (!window.dispatchEvent(ev)) return;                             // the page shows it where the file is
@@ -160,8 +183,11 @@
       load: ar ? 'بيجهّز قارئ الممسوح (أول مرة بس، وبعدها بيفضل على الجهاز)…' : 'Getting the scan reader ready (the first time only; then it stays on this device)…',
       read: ar ? 'بيقرا الممسوح' : 'Reading the scan', check: ar ? 'بيراجع الكلمات المش أكيدة' : 'Checking the doubtful words',
       straighten: ar ? 'بيعدّل صفحة مايلة أو مقلوبة' : 'Turning a skewed or sideways page upright',
+      turned: ar ? 'الصورة كانت متصوّرة بالعرض أو مقلوبة: اتعدلت' : 'The photo was taken sideways or upside down: turned upright',
+      upright: ar ? 'الصورة معدولة ✓' : 'The photo is upright ✓',
       done: ar ? 'اتقرا ✓' : 'Read ✓', error: (ar ? 'ما اتقراش: ' : 'Not read: ') + (d.message || '') }[d.stage] || '';
-    T(`${name}: ${msg}${d.stage === 'load' || d.stage === 'done' || d.stage === 'error' ? '' : pg}`, d.stage === 'error' ? 9000 : d.stage === 'done' ? 4000 : 60000);
+    const last = ['done', 'error', 'turned', 'upright'].includes(d.stage);
+    T(`${name}: ${msg}${d.stage === 'load' || last ? '' : pg}`, d.stage === 'error' ? 9000 : d.stage === 'upright' ? 2500 : last ? 5000 : 60000);
   }
   window.fetch = async function (input, init) {
     init = init || {};
@@ -171,7 +197,10 @@
     const method = (init.method || (input && input.method) || 'GET').toUpperCase();
     const q = url.indexOf('?');
     const path = q < 0 ? url : url.slice(0, q), query = q < 0 ? '' : url.slice(q + 1);
-    if (init.body instanceof FormData && method !== 'GET') await readScansFirst(path, init.body);
+    if (init.body instanceof FormData && method !== 'GET') {                // a page the photo program gave back is upright already
+      if (!PAGE_BACK.test(path)) init = Object.assign({}, init, { body: await uprightForm(init.body) });
+      await readScansFirst(path, init.body);
+    }
     else if (method === 'POST') await readWholeScan(path);
     const headers = {};
     new Headers(init.headers || {}).forEach((v, k) => { headers[k] = v; });
@@ -293,8 +322,9 @@
     const images = [], notes = [];
     if (!window.DBOCR || !window.DBOCR.pageImages || budget < 1) return { images, notes };
     for (let i = 0; i < files.length && images.length < budget; i++) {
-      const f = files[i], m = meta && meta[i];
-      if (!f || !m || !(m.scanned || (all && DRAWN.test(f.name || '')))) continue;
+      const m = meta && meta[i];
+      if (!files[i] || !m || !(m.scanned || (all && DRAWN.test(files[i].name || '')))) continue;
+      const f = window.DBOCR.upright ? await uprightOne(files[i]) : files[i];   // a photo taken sideways: shown upright
       say(f.name, 'pictures');
       let got = [];
       // a scan: its first pages, where its information is; a document whose signature and stamp are looked for: its first pages and its last

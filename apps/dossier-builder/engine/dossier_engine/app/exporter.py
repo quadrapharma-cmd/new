@@ -517,6 +517,11 @@ def export(st, did, outputs, ack, sub, p40, ig_zip, working=False, replace_last=
                           'Fix them (auto-fix for company documents, a new copy from the issuer otherwise), or export the CTD folders only.',
                           'جاهزية الـ eCTD: فيه مستندات عليها قيود أو Portfolio أو JavaScript (قواعد الـ eCTD). صلّحها (إصلاح تلقائي لمستندات الشركة، '
                           'ونسخة جديدة من الجهة لغيرها)، أو صدّر مجلدات CTD بس.', gate=g)
+    if {'ectd32', 'ectd40'} & set(outputs) and g.get('ectd_indication'):    # ICH eCTD DTD 3.2: m2-7-3 and m5-3-5 «indication #REQUIRED»
+        raise ExportError(409, 'E-GATE-INDICATION', "The eCTD needs the product's indication: the clinical summary (2.7.3) and the efficacy and "
+                          'safety studies (5.3.5) carry it (ICH eCTD DTD, required). Write it on this page, or export the CTD folders only.',
+                          'الـ eCTD محتاج دواعي استعمال المستحضر: ملخص الفعالية (2.7.3) ودراسات الفعالية والأمان (5.3.5) بيحملوها (مطلوبة في '
+                          'الـ DTD بتاع ICH). اكتبها في الصفحة دي، أو صدّر مجلدات الـ CTD بس.', gate=g)
     if {'ectd32', 'ectd40'} & set(outputs) and not ack and egypt:            # the EG profiles are provisional; the EU's is the EMA's own
         raise ExportError(409, 'E-PROVISIONAL-ACK', 'eCTD outputs use the provisional EG profiles; acknowledge before export.',
                           'مخرجات eCTD مبنية على ملف تعريف مصري مؤقت؛ لازم توافق قبل التصدير.', gate=g)

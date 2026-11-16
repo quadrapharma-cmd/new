@@ -112,3 +112,40 @@ def test_the_export_button_gives_every_format_of_the_authority(server, tmp_path,
     subs = call(server, f'/api/dossiers/{did}/submissions')
     for o in ('ectd32', 'ectd40'):
         assert [str(h['seq']) for h in subs[o]] == ([('0000' if o == 'ectd32' else '1')] if o in outputs else []), subs   # recorded: for submission
+
+
+def test_the_export_page_asks_for_the_indication_and_the_export_then_goes(server, tmp_path):
+    """A complete Egyptian dossier made without the product's indication: the export page asks for it (2.7.3 / 5.3.5 carry it in the
+    eCTD, ICH DTD «#REQUIRED») with a field, before any export; once written, the three formats go (found 15/11/2026: the real
+    export stopped late with «5.3.5.4 needs an indication»)."""
+    global PRODUCT
+    keep = PRODUCT
+    PRODUCT = {k: v for k, v in keep.items() if k != 'indication'}
+    try:
+        d = complete(server, tmp_path, None)
+    finally:
+        PRODUCT = keep
+    did = d['id']
+    errors = []
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch()
+        page = b.new_context(viewport={'width': 1440, 'height': 1000}).new_page()
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+        page.add_init_script("localStorage.setItem('db.lang','ar')")
+        page.goto(f'{server}/#/d/{did}/export')
+        page.wait_for_selector('#indCard')
+        assert 'دواعي استعمال' in page.inner_text('#indCard') and '5.3.5' in page.inner_text('#indCard')
+        page.fill('#indText', 'الألم الخفيف والمتوسط')
+        page.click('#indSave')
+        page.wait_for_selector('#indCard', state='detached')
+        page.wait_for_selector('#go')
+        if page.locator('#ack').is_visible():
+            page.check('#ack')
+        page.click('#go')
+        page.wait_for_selector('#res .dl a', timeout=240000)
+        links = page.eval_on_selector_all('#res .dl a[download]', 'xs => xs.map(x => x.getAttribute("href"))')
+        assert sorted(u.rsplit('/', 1)[-1] for u in links) == ['ctd.zip', 'ectd32.zip', 'ectd40.zip'], links
+        b.close()
+    assert not errors, errors
+    assert call(server, f'/api/dossiers/{did}')['product']['indication'] == 'الألم الخفيف والمتوسط'

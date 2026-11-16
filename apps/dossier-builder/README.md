@@ -195,6 +195,59 @@ The hint «عدّل في الملف، وبعدين احفظه…» comes 1.5 s a
 within those 1.5 s (the program opened from the device) showed «اتحفظ» and then the hint over it — the Word test failed twice in
 the whole suite that way (15/11/2026).
 
+## The photo and design programs, a phone photo upright, the indication asked first (15/11/2026) — «نفذ كل المطلوب»
+
+**A phone photo upright.** A phone lying flat on a desk does not know how it is held, so a photo of a sheet often comes sideways:
+5 of the owner's 21 WhatsApp photos of documents (his Drive folder «Wouncure_Inspection_Appeal», kept on this machine only), all
+with the top of the sheet at the right edge; WhatsApp keeps no EXIF turn. The page reader's own test decides (`ocr.js turnOf`, the
+same as its step 3 for a sideways page): the photo read at 150 dpi as it is; where its words clearly lie flat only upside down is
+read, where they clearly stand the two sideways turns, else all three, at once; a turn is taken only when it is better than the
+photo as it is by the reader's measure and at least twice every other turn read. On his 21 photos as they came and turned the
+three other ways (84 cases): 71 turned right, 13 left as they were (a photo of a screen and three sheets lost in a dark background
+read poorly every way), **none turned wrong**; his 21 as they came: 21 right. JPEG only (a PNG is a screenshot or a drawing, whose
+turn is its maker's). In the browser edition the page turns the photo before it leaves it (`ocr.js upright`, written again as JPEG
+at quality 0.95; `boot.js` puts it in the upload's form and in the pictures claude.ai's model is shown) and says «الصورة كانت
+متصوّرة بالعرض أو مقلوبة: اتعدلت»; the desktop and server editions turn the PDF page instead (`pdfcraft.photo_page`: its /Rotate,
+the picture not written again; `meta.converted` says `turned_upright_270`). Reading his 5 photos with 62 facts read by eye: Tesseract
+«best» 30 → 35, the engine's reader 28 → 32 (one photo 7 → 4, another 5 → 9: a poor reading either way), the page's own reader
+42 → 43 (it already read a sideways page turned); the page is stored upright either way. Cost: once per photo, in headless
+Chromium here about 4 s for an upright one and 7 s for a sideways one (the reader is loaded the first time). Claude's reading of
+the photos was not measured (no API key).
+
+**The photo program** (PhotoCraft, built from its source like the others) in «المكتب»: «صفحة في برنامج الصور» with a page number
+on a PDF of an item (not a third party's or EDA's: locked). The page is drawn as it is shown at 200 dpi (`ocr.js pagePicture`) and
+opened in the program; what he saves (Ctrl+S gives a Photoshop file: `programs.js picture()` reads the picture it shows, from the
+v2 workshop's reader) **takes that page's place** as a new version: `POST /api/dossiers/{did}/documents/{doc}/page`,
+`pdfcraft.page_picture` — the picture laid on a page the size the page was shown at (its /Rotate turned in), centred and as large
+as fits, put in with PdfCraft's `page_replace` (the page's links, comments and bookmarks stay; the other pages are not touched).
+On his real 12-page scan «Working Standards»: page 3 replaced, the 11 others byte for byte the same content, the same page size,
+3.3 → 4.3 MB, the same findings before and after.
+
+**The design program** (DesignCraft) for the artwork items (Egypt M1-11 «Layout», EU 1.3.2, the Gulf's 1.3.4, the others' 1.3.4,
+the US carton labels): «في برنامج التصميم» on the artwork's PDF — the program opens, he makes a document (Ctrl+N), «حط الملف في
+التصميم» places the PDF in it (whole, as vectors), and File ▸ Export PDF… gives the PDF back. On his real sticker: placed in the
+default document it came back on a Letter page, scaled and cut; even in a document of its own size (150 × 100 mm, margins 0) it
+came back scaled and moved (39 % of its pixels different). So **an artwork is never replaced silently**: the program says the
+file's size in mm to make the document at, and before keeping an exported PDF shows the artwork before and after side by side with
+their sizes and asks («احفظه نسخة جديدة» / «لأ، ماتحفظوش»; the question is in the program's own layer). The program's own design
+file (Ctrl+S) is not put in the dossier (the bar says so). On an empty artwork item, «اعمله في برنامج التصميم» makes a new artwork
+from scratch: its first exported PDF is the item's document.
+
+**The indication, asked before the export.** The eCTD carries the product's indication on the clinical summary (2.7.3) and the
+efficacy and safety studies (5.3.5) — ICH eCTD DTD 3.2, «indication CDATA #REQUIRED» — and a dossier made without it went through
+the gate and the real export then stopped with «5.3.5.4 needs an indication». The gate now lists those items
+(`gate()['ectd_indication']`, a document's own indication counts), the export page asks for it with a field
+(`PUT /api/dossiers/{did}/indication`, kept in the audit), and an eCTD export without it stops at once with `E-GATE-INDICATION`;
+the CTD folders go without it.
+
+Sizes: the browser edition grows from 150 to 205 MB (140 files) with the two programs (18.1 MB and 36.0 MB of parts, fetched only
+when one is first opened); the page's own opening is unchanged. Tests: `tests/test_image_files.py` (a made-up sideways photo turned,
+an upright one, an EXIF-turned one and a PNG left), `tests/test_web_edition.py` (the photo upright inside the browser: stored as a
+portrait page, the model shown standing halves, an upright photo byte for byte), `tests/test_page_picture.py`,
+`tests/test_programs_web.py` (a page cleaned in the photo program; an artwork placed, exported and kept after the question; a new
+artwork), `tests/test_indication_gate.py`, `tests/test_ui_export_all.py` (the export page asks for the indication, then the three
+formats go).
+
 ## The library inside the program, and 7z in every edition (15/11/2026) — «نحطها في البرنامج القديم»
 
 The owner, 15/11/2026, after the new workshop read his real files badly: this program («منشئ ملفات التسجيل») is the program again,
@@ -452,9 +505,11 @@ An image is told by its bytes (`imagefiles.image_format`), whatever the file is 
 TIFF (multi-page, BigTIFF), WebP, HEIC/HEIF (iPhone photos), AVIF, JPEG 2000, PNM, PSD, ICO, PCX. Two letters are never enough: a
 text that starts with «BM» or «P5» is not a picture.
 
-**An image is not a document.** The program does no OCR and wraps no picture in a PDF: an image of any kind put in an item, the
-box, the wizard or Drive is refused at the upload gate with its reason (`E-NOTEXT`, `why: image`) — scan the paper to a searchable
-PDF, or photograph it with an app that saves searchable PDFs, and add the PDF. Tests: `tests/test_image_files.py`.
+**An image becomes a PDF page** (since 13/11/2026, the owner: an image is kept, never refused): where PdfCraft is, a PNG, JPEG,
+TIFF, GIF or BMP put in an item is made a PDF page (`store.as_pdf`, `pdfcraft.image_to_pdf`, which honours a camera's EXIF turn),
+read like any scan, and the «make searchable» fix gives it its text layer; an image PdfCraft cannot take is kept with the finding that
+says what to do (NP.CAPP.065 v5 general note 4). A phone photo taken sideways is turned upright first (below, «A phone photo
+upright»). Tests: `tests/test_image_files.py`.
 
 ### Compressed files
 

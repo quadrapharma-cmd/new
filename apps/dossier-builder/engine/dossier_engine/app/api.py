@@ -401,6 +401,16 @@ def create_app(workspace, auth_enabled=None):
     def board(did: str):
         return st.board(did)
 
+    @app.post('/api/dossiers/{did}/documents/{doc_id}/page', status_code=201)
+    async def put_page(did: str, doc_id: str, page: int = Form(...), file: UploadFile = File(...)):
+        """A page cleaned in the photo program: page `page` becomes the picture, as a new version of the document."""
+        return st.replace_page(did, doc_id, page, await file.read())
+
+    @app.put('/api/dossiers/{did}/indication')
+    def put_indication(did: str, body: dict):
+        """The product's indication, asked by the export gate for the eCTD (2.7.3 and 5.3.5 carry it)."""
+        return {'product': st.set_indication(did, body.get('indication'))}
+
     @app.put('/api/dossiers/{did}/profile')
     def put_profile(did: str, profile: dict):
         return st.update_profile(did, profile)

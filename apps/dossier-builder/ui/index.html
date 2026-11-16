@@ -505,7 +505,22 @@ const T = {
   stDone:{en:'read',ar:'اتقرا'}, gotFrom:{en:'It gave us',ar:'خدنا منه'}, gotNothing:{en:'no data came out of it',ar:'ما طلعش منه بيانات'}, moveToIts:{en:'Move it to',ar:'انقله لخانة'}, removeFile:{en:'Remove it',ar:'شيله'},
   dupFile:{en:'already uploaded',ar:'مرفوع قبل كده'}, wizSaved:{en:'Saved as a draft ✓',ar:'محفوظ كمسودة ✓'}, wizAutosave:{en:'Saved automatically as a draft as you go',ar:'بيتحفظ تلقائيًا كمسودة أول بأول'}, wizRestart:{en:'Start over',ar:'ابدأ من الأول'},
   wizRestored:{en:'Your saved work was restored.',ar:'رجّعنا شغلك المحفوظ.'}, wizResume:{en:'Finishing putting your documents into the dossier…',ar:'بنكمّل وضع مستنداتك في الملف…'}, liveT:{en:'Recognised so far',ar:'اللي اتعرفنا عليه لحد دلوقتي'}, act_move:{en:'Move it to its own item.',ar:'انقله لبنده الصح.'}, attestQ:{en:'Before submission',ar:'قبل التقديم'}, ectdReady:{en:'eCTD readiness — the draft eCTD rules; not required for the One Submission in force',ar:'جاهزية الـ eCTD — قواعد مسودة الـ eCTD؛ مش مطلوبة في الـ One Submission الساري'},
-  ectdBlockL:{en:'eCTD readiness (stops only an eCTD export)',ar:'جاهزية الـ eCTD (بتوقف تصدير الـ eCTD بس)'}, attestYes:{en:'Yes',ar:'أيوه'}, attestNo:{en:'Not yet',ar:'لسه'},
+  ectdBlockL:{en:'eCTD readiness (stops only an eCTD export)',ar:'جاهزية الـ eCTD (بتوقف تصدير الـ eCTD بس)'},
+  indT:{en:"The eCTD needs the product's indication",ar:'الـ eCTD محتاج دواعي استعمال المستحضر'},
+  offPhoto:{en:'Page in the photo program',ar:'صفحة في برنامج الصور'}, offPage:{en:'Page',ar:'صفحة'}, offDesign:{en:'In the design program',ar:'في برنامج التصميم'},
+  photoSaved:{en:'Page {n} replaced: saved as a new version (the old one is kept).',ar:'صفحة {n} اتبدّلت: اتحفظت نسخة جديدة (القديمة محفوظة).'},
+  designOwn:{en:'The design itself was saved by the program; export its PDF (File ▸ Export PDF…) for the dossier.',ar:'التصميم نفسه اتحفظ في البرنامج؛ صدّر الـ PDF بتاعه (File ← Export PDF…) علشان يدخل الملف.'},
+  designNote:{en:'This file is {w} × {h} mm: make the new document that size (Width and Height in mm) with margins 0, so it stays as it is.',ar:'مقاس الملف ده {w} × {h} مم: اعمل المستند الجديد بنفس المقاس (Width و Height بالمم) والهوامش 0، علشان يفضل زي ما هو.'},
+  designAsk:{en:'The PDF that came back is {w2} × {h2} mm; the file was {w} × {h} mm. Keep it as a new version anyway?',ar:'الـ PDF اللي رجع مقاسه {w2} × {h2} مم، والملف الأصلي {w} × {h} مم. تحفظه نسخة جديدة كده؟'},
+  designKeep:{en:'Keep it as a new version',ar:'احفظه نسخة جديدة'}, designSkip:{en:'No, do not keep it',ar:'لأ، ماتحفظوش'},
+  designNotKept:{en:'Not kept. Make the document {w} × {h} mm and export again.',ar:'ماتحفظش. اعمل المستند بمقاس {w} × {h} مم وصدّر تاني.'},
+  designCheck:{en:'The artwork before and after the design program. Keep the new one as a new version in its place? (The old version is kept.)',ar:'التصميم قبل وبعد برنامج التصميم. تحفظ الجديد نسخة جديدة مكانه؟ (القديمة بتفضل محفوظة.)'},
+  designBefore:{en:'Before — {w} × {h} mm',ar:'قبل — {w} × {h} مم'}, designAfter:{en:'After — {w} × {h} mm',ar:'بعد — {w} × {h} مم'},
+  designNotKept2:{en:'Not kept: the artwork stays as it was.',ar:'ماتحفظش: التصميم فضل زي ما هو.'},
+  designNew:{en:'Make it in the design program',ar:'اعمله في برنامج التصميم'},
+  designNewNote:{en:'A new artwork for this item: make the document at the pack\'s size (Ctrl+N), design it, then File ▸ Export PDF… — the PDF is the item\'s document.',ar:'تصميم جديد للبند ده: اعمل المستند بمقاس العبوة (Ctrl+N)، صمّم، وبعدين File ← Export PDF… — الـ PDF هو مستند البند.'}, indSave:{en:'Save',ar:'احفظ'}, indSaved:{en:'Indication saved',ar:'دواعي الاستعمال اتحفظت'},
+  indSub:{en:'The clinical summary (2.7.3) and the efficacy and safety studies (5.3.5) carry it (ICH eCTD DTD, required) — {n} item(s) in this dossier. It stops only an eCTD export; the CTD folders go without it.',ar:'ملخص الفعالية (2.7.3) ودراسات الفعالية والأمان (5.3.5) بيحملوها (مطلوبة في الـ DTD بتاع ICH) — {n} بند في الملف ده. بتوقف تصدير الـ eCTD بس؛ مجلدات الـ CTD بتطلع من غيرها.'},
+  indPh:{en:'A few words: what the product treats (e.g. mild to moderate pain)',ar:'كلمتين: المستحضر بيعالج إيه (مثلاً: الألم الخفيف والمتوسط)'}, attestYes:{en:'Yes',ar:'أيوه'}, attestNo:{en:'Not yet',ar:'لسه'},
   att_signed:{en:'signed',ar:'موقّعة'}, att_stamped:{en:'stamped by the company',ar:'مختومة بختم الشركة'}, att_legalized:{en:'legalised (Egyptian embassy; an electronic CPP is exempt)',ar:'موثّقة (السفارة المصرية؛ الـ CPP الإلكتروني معفي)'},
   attestAsk:{en:'Are the documents in this item {what}?',ar:'المستندات اللي في البند ده {what}؟'}, attestSaved:{en:'Answer saved.',ar:'الإجابة اتسجلت.'},
   attestNoNote:{en:'«Not yet» stops the export until it is done.',ar:'«لسه» بيوقف التصدير لحد ما يتعمل.'}, toConfirm:{en:'To confirm (signature, stamp, legalisation)',ar:'محتاج تأكيد (توقيع وختم وتوثيق)'}, rightPlace:{en:'It is in the right place',ar:'ده مكانه الصح'}, rightKept:{en:'Kept here — the kind rule\'s objection is set aside and recorded.',ar:'اتساب هنا — اعتراض قاعدة النوع اتشال واتسجّل.'},
@@ -2328,7 +2343,7 @@ function openWhy(slotId, focusTemplate){
     ${(s.level==='R'||s.level==='O')&&!['generated','company_letter'].includes(s.doc_class)&&(s.documents.some(d=>d.check_status==='non_conforming')||s.cross.length||!s.documents.length||s.documents.every(d=>d.meta&&d.meta.external))&&!s.request?
       `<div class="row"><button class="btn" data-req="1">${icon('mail')} ${esc(t('reqIssuer'))}</button></div>`:''}
     <div id="tplPanel" data-tpl-slot="${esc(s.slot_id)}"><h3>${esc(t('tplT'))}</h3><div class="small muted">…</div></div>
-    ${(s.level==='R'||s.level==='O')?`<div class="row">${(s.level==='R'||s.level==='O')?`<button class="btn" data-upw="${esc(s.slot_id)}">${icon('upload')} ${esc(t('upload'))}</button>`:''}${genFor(s)?`<button class="btn pri" data-gen="${genFor(s)}">${icon('sparkles')} ${esc(t('generate'))}: ${esc(L(S.gens[genFor(s)].title))}</button>`:''}${draftable(s)?`<button class="btn pri" data-draft="${esc(s.slot_id)}">${icon('sparkles')} ${esc(t('draftBtn'))}</button>`:''}
+    ${(s.level==='R'||s.level==='O')?`<div class="row">${(s.level==='R'||s.level==='O')?`<button class="btn" data-upw="${esc(s.slot_id)}">${icon('upload')} ${esc(t('upload'))}</button>`:''}${genFor(s)?`<button class="btn pri" data-gen="${genFor(s)}">${icon('sparkles')} ${esc(t('generate'))}: ${esc(L(S.gens[genFor(s)].title))}</button>`:''}${draftable(s)?`<button class="btn pri" data-draft="${esc(s.slot_id)}">${icon('sparkles')} ${esc(t('draftBtn'))}</button>`:''}${DESIGN_ITEMS.includes(s.req_id)&&progOn('designcraft')?`<button class="btn" data-designnew="${esc(s.slot_id)}">${icon('pen')} ${esc(t('designNew'))}</button>`:''}
       <button class="btn" data-gen="justification">${esc(t('justify'))}</button></div>`:''}`);
   const body=$('#dBody');
   loadDocReviews(s, body);
@@ -2338,6 +2353,7 @@ function openWhy(slotId, focusTemplate){
   body.querySelectorAll('.row > [data-draft]').forEach(b=>b.onclick=()=>draftIt(s.slot_id));
   $$('[data-gen]', body).forEach(b=>b.onclick=()=>S.gens[b.dataset.gen].source==='data'? genDirect(b.dataset.gen, s) : genForm(b.dataset.gen, s));
   $$('[data-upw]', body).forEach(b=>b.onclick=()=>{ closeDrawer(); startUpload(b.dataset.upw); });
+  $$('[data-designnew]', body).forEach(b=>b.onclick=()=>newDesign(b.dataset.designnew));
   $$('[data-fix]', body).forEach(b=>b.onclick=async()=>{ if(await fixDoc(b)){ await refreshCurrent(); openWhy(slotId); } });
   $$('[data-signed]', body).forEach(b=>b.onclick=()=>{ closeDrawer(); pick(slotId, {signed_for:b.dataset.signed}); });
   $$('[data-vusave]', body).forEach(b=>b.onclick=async()=>{ const v=body.querySelector(`[data-vu="${b.dataset.vusave}"]`).value;
@@ -2416,6 +2432,69 @@ async function openInProgram(docId, slotId, opt){
       const doc=await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(slotId)}/documents`,{method:'POST',body:fd}); cur=doc.id;
       if(location.hash.endsWith('/prepare')||location.hash.endsWith('/office')){ S.board=null; await paintPrepare(); } else await refreshCurrent(slotId); },
     onClose: opt.onClose||(()=>openWhy(slotId))});
+}
+const progOn=app=>!!(window.DBPROG&&DBPROG.available(app));
+/* the artwork items of each authority (the pack's layout / mock-up / artwork places): their PDF can be opened in the design program */
+const DESIGN_ITEMS=['M1-11','EU-1.3.2','GCC-1.3.4','X-1.3.4','US-1.14.1.1','US-1.14.2.1'];
+/* A page of a PDF in the photo program (a scan to crop, straighten, lighten or clean): drawn as it is shown at 200 dpi; the picture the
+   program saves (Ctrl+S: a Photoshop file — DBPROG.picture reads the picture it shows) takes that page's place, as a new version
+   (POST …/documents/{id}/page: the page's size, links and bookmarks kept, the other pages as they were). */
+async function pageInPhoto(docId, slotId, n, opt){
+  opt=opt||{};
+  const sl=slotById(slotId), d=sl&&sl.documents.find(x=>x.id===docId);
+  if(!d||!progOn('photocraft')||!window.DBOCR||!DBOCR.pagePicture) return;
+  let pic;
+  try{ const r=await fetch(`/api/dossiers/${S.dossier.id}/documents/${d.id}/file`); if(!r.ok) throw new Error('HTTP '+r.status);
+    pic=await DBOCR.pagePicture(new File([await r.blob()], d.filename, {type:'application/pdf'}), n, 200); }
+  catch(e){ toast(t('progNoFile')+' '+(e.message||e)); return; }
+  let cur=d.id; const page=pic.page, stem=d.filename.replace(/\.pdf$/i,'');
+  closeDrawer();
+  DBPROG.open('photocraft', {name:`${stem} - page ${page}.png`, bytes:new Uint8Array(await pic.blob.arrayBuffer()), lang:S.lang,
+    onSave: async f=>{ const p=await DBPROG.picture(f.bytes); const fd=new FormData(); fd.append('page', String(page));
+      fd.append('file', new File([p.bytes], `${stem} - page ${page}.${p.kind==='jpeg'?'jpg':'png'}`));
+      const doc=await api(`/dossiers/${S.dossier.id}/documents/${cur}/page`,{method:'POST',body:fd}); cur=doc.id;
+      if(location.hash.endsWith('/prepare')||location.hash.endsWith('/office')){ S.board=null; await paintPrepare(); } else await refreshCurrent(slotId);
+      return t('photoSaved').replace('{n}', page); },
+    onClose: opt.onClose||(()=>openWhy(slotId))});
+}
+/* An artwork PDF in the design program: the person makes a document there (Ctrl+N) and places the file in it; the PDF the program
+   exports (File ▸ Export PDF…) is a new version of the document. Its own design file (Ctrl+S) is the program's, not the dossier's. */
+async function docInDesign(docId, slotId, opt){
+  opt=opt||{};
+  const sl=slotById(slotId), d=sl&&sl.documents.find(x=>x.id===docId);
+  if(!d||!progOn('designcraft')) return;
+  let bytes;
+  try{ const r=await fetch(`/api/dossiers/${S.dossier.id}/documents/${d.id}/file`); if(!r.ok) throw new Error('HTTP '+r.status); bytes=new Uint8Array(await r.arrayBuffer()); }
+  catch(e){ toast(t('progNoFile')+' '+(e.message||e)); return; }
+  let cur=d.id, size=null;
+  const mm=pt=>Math.round(pt*25.4/72), sizeOf=async b=>{ try{ return await DBOCR.pageSize(new File([b], 'x.pdf', {type:'application/pdf'})); }catch(e){ return null; } };
+  if(window.DBOCR&&DBOCR.pageSize) size=await sizeOf(bytes);
+  const say=(k,s2)=>t(k).replace('{w}', mm(size.width)).replace('{h}', mm(size.height)).replace('{w2}', s2?mm(s2.width):'').replace('{h2}', s2?mm(s2.height):'');
+  closeDrawer();
+  const h=DBPROG.open('designcraft', {name:d.filename, place:{name:d.filename, bytes}, lang:S.lang, note:size?say('designNote'):'',
+    onSave: async f=>{ if(!(f.bytes[0]===0x25&&f.bytes[1]===0x50&&f.bytes[2]===0x44&&f.bytes[3]===0x46)) return t('designOwn');
+      // never in its place silently: the artwork before and after, side by side with their sizes, and the person says yes
+      const got=size?await sizeOf(f.bytes):null, differs=size&&got&&(Math.abs(got.width-size.width)>1||Math.abs(got.height-size.height)>1);
+      const pic=async b=>{ try{ const r=await DBOCR.drawPages(new File([b], 'x.pdf', {type:'application/pdf'}), [1], 360); return r.drawn[0].canvas.toDataURL('image/png'); }catch(e){ return ''; } };
+      const sz=(k,v)=>v?t(k).replace('{w}', mm(v.width)).replace('{h}', mm(v.height)):t(k).replace(/ — .*$/, '');
+      const pics=window.DBOCR&&DBOCR.drawPages?[{src:await pic(bytes), caption:sz('designBefore', size)}, {src:await pic(f.bytes), caption:sz('designAfter', got)}].filter(x=>x.src):[];
+      if(!await h.ask(differs?say('designAsk', got):t('designCheck'), t('designKeep'), t('designSkip'), pics)) return differs?say('designNotKept'):t('designNotKept2');
+      const fd=new FormData(); fd.append('file', new File([f.bytes], d.filename)); fd.append('meta','{}'); fd.append('replaces', cur);
+      const doc=await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(slotId)}/documents`,{method:'POST',body:fd}); cur=doc.id;
+      if(location.hash.endsWith('/prepare')||location.hash.endsWith('/office')){ S.board=null; await paintPrepare(); } else await refreshCurrent(slotId); },
+    onClose: opt.onClose||(()=>openWhy(slotId))});
+}
+/* A new artwork for an item, made in the design program from scratch: the first PDF it exports is the item's document, the next ones
+   new versions of it. */
+function newDesign(slotId){
+  const s=slotById(slotId); if(!s||!progOn('designcraft')) return;
+  let cur=null;
+  closeDrawer();
+  DBPROG.open('designcraft', {name:L(s.title), lang:S.lang, hint:t('designNewNote'),
+    onSave: async f=>{ if(!(f.bytes[0]===0x25&&f.bytes[1]===0x50&&f.bytes[2]===0x44&&f.bytes[3]===0x46)) return t('designOwn');
+      const fd=new FormData(); fd.append('file', new File([f.bytes], (f.name||'artwork.pdf').replace(/\.[a-z0-9]+$/i, '')+'.pdf')); fd.append('meta','{}'); if(cur) fd.append('replaces', cur);
+      const doc=await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(slotId)}/documents`,{method:'POST',body:fd}); cur=doc.id; S.board=null; },
+    onClose:()=>openWhy(slotId)});
 }
 async function refreshCurrent(selSlot){
   const h=location.hash;
@@ -2923,10 +3002,14 @@ async function paintOffice(){
       <div class="grow" style="min-width:0"><div class="small"><span class="code">${esc(s.ctd||'')}</span> ${esc(L(s.title)).slice(0,90)}${itemLabel(s)}</div><div><bdi>${esc(d.filename)}</bdi> <span class="small muted">· ${esc(t('offVer'))} ${d.version}</span> ${chip(d.check_status)}</div>
       <div class="row gap-s" style="margin-top:4px;flex-wrap:wrap">${app?`<button class="btn sm pri" data-offedit="${esc(d.id)}" data-slot="${esc(s.slot_id)}">${icon('pen',14)} ${esc(t('progOpen').replace('{p}',DBPROG.title(app,S.lang)))}</button>`
         :`<span class="small muted">${esc(t(locked?'offLocked':ext?'extRef':'offNoProg'))}</span>`}${pdf&&!ext?`<button class="btn sm ghost" data-offpages="${esc(d.id)}" data-slot="${esc(s.slot_id)}">${icon('eye',14)} ${esc(t('offPages'))}</button>`:''}
+        ${pdf&&!ext&&!locked&&progOn('photocraft')?`<span class="row gap-s" style="align-items:center"><label class="small muted">${esc(t('offPage'))} <input type="number" min="1" value="1" data-offpg="${esc(d.id)}" style="width:58px"></label><button class="btn sm ghost" data-offphoto="${esc(d.id)}" data-slot="${esc(s.slot_id)}">${icon('scan',14)} ${esc(t('offPhoto'))}</button></span>`:''}
+        ${pdf&&!ext&&DESIGN_ITEMS.includes(s.req_id)&&progOn('designcraft')?`<button class="btn sm ghost" data-offdesign="${esc(d.id)}" data-slot="${esc(s.slot_id)}">${icon('pen',14)} ${esc(t('offDesign'))}</button>`:''}
         <button class="btn sm ghost" data-offitem="${esc(s.slot_id)}">${icon('arrow',14)} ${esc(t('offItem'))}</button></div></div></div>`; };
   box.innerHTML=rows.length?mods.map(m=>`<div class="small muted" style="margin-top:6px"><b>Module ${m}</b></div>`+shown.filter(x=>x.s.module===m).map(row).join('')).join(''):`<p class="small muted">${esc(t('offEmpty'))}</p>`;
   $$('[data-offedit]',box).forEach(x=>x.onclick=()=>openInProgram(x.dataset.offedit, x.dataset.slot, {onClose:()=>paintPrepare()}));
   $$('[data-offpages]',box).forEach(x=>x.onclick=()=>{ const s=slotById(x.dataset.slot); pageViewer(x.dataset.offpages, ()=>closeDrawer(), !(s&&LOCKED.includes(s.doc_class))); });
+  $$('[data-offphoto]',box).forEach(x=>x.onclick=()=>pageInPhoto(x.dataset.offphoto, x.dataset.slot, +(($(`[data-offpg="${CSS.escape(x.dataset.offphoto)}"]`,box)||{}).value||1), {onClose:()=>paintPrepare()}));
+  $$('[data-offdesign]',box).forEach(x=>x.onclick=()=>docInDesign(x.dataset.offdesign, x.dataset.slot, {onClose:()=>paintPrepare()}));
   $$('[data-offitem]',box).forEach(x=>x.onclick=()=>openWhy(x.dataset.offitem));
   const f=$('#offQ'); if(f&&!f.dataset.w){ f.dataset.w='1'; f.oninput=()=>paintOffice(); }
   if(window.DBPV) DBPV.mount(box, did);
@@ -2953,7 +3036,7 @@ window.addEventListener('db-pictures', e=>{ const d=e.detail||{}; if(!window.DBP
   DBPV.now(now, d.part?{picture:d.blob, page:d.page, pages:d.pages, caption:t('pvHalf').replace('{p}',d.page).replace('{n}',d.pages).replace('{part}',t(d.part==='top'?'pvTop':'pvBottom'))}
     :{picture:d.blob, page:d.from, pages:d.pages, caption:t('pvSheet').replace('{a}',d.from).replace('{b}',d.to).replace('{n}',d.pages)}); });
 /* the page's own reading of a scan for its text layer (boot.js): pages counted on the document being prepared */
-function prepOcr(d){ const now=S.prepDoing; if(!now||(d.name!==now.name&&d.sha256!==now.sha256)) return false;
+function prepOcr(d){ const now=S.prepDoing; if(!now||d.stage==='turned'||(d.name!==now.name&&d.sha256!==now.sha256)) return false;
   if(d.stage==='load') prepNow(now.id, t('prepStepLoad'));
   else if(d.stage==='read'||d.stage==='straighten'||d.stage==='check'){ prepNow(now.id, t('prepStepOcr').replace('{a}', d.page||0).replace('{b}', d.pages||'?'));
     if(window.DBPV&&d.page) DBPV.now(now.id, Object.assign({page:d.page, pages:d.pages}, d.picture?{picture:d.picture, caption:t('pvOcr').replace('{p}', d.picture_page).replace('{n}', d.pages)}:{})); }
@@ -3258,6 +3341,7 @@ async function exportView(tok){
   $('#view').innerHTML=`${stripHtml(J)}<div class="head"><div class="title"><h1>${esc(t('export'))}</h1><p class="sub">${esc(t(eg?'exportSub':eu?'euExportSub':'auExportSub'))}</p></div><a class="btn" href="#/d/${id}/guide">${icon('compass')} ${esc(t('guide'))}</a></div>
    ${g.ok?`<div class="alert ok">${icon('check')}<p>✓ ${esc(t('gateOk'))}</p></div>`:`<div class="alert bad">${icon('alert')}<p>${esc(t('gateBad'))}</p></div><div class="card pad stack gap-s" id="gateCard">${list('missingReq',g.missing_required)}${list('nonconf',g.non_conforming)}${list('unsignedL',g.unsigned||[])}${list('extL',g.external_only||[])}${list('toConfirm',g.to_confirm||[])}${list('ectdBlockL',g.ectd_blocking||[])}${list('notesOpenL',g.notes_open||[])}${(g.cross_blocking||[]).length?`<div><b>${esc(t('crossT'))} (${g.cross_blocking.length})</b>${g.cross_blocking.map(f=>`<div class="small">● ${esc(f[S.lang])}</div>`).join('')}</div>`:''}
      <div class="row"><a class="btn sm" href="#/d/${id}/board">${esc(t('navBoard'))}</a><a class="btn sm" href="#/d/${id}/checks">${esc(t('navChecks'))}</a></div></div>`}
+   ${(g.ectd_indication||[]).length?`<div class="alert warn" id="indCard">${icon('alert')}<div class="grow stack gap-s"><p class="small"><b>${esc(t('indT'))}</b> — ${esc(t('indSub').replace('{n}', g.ectd_indication.length))}</p><div class="small">${g.ectd_indication.map(sid=>`<div>${gateName(sid)}</div>`).join('')}</div><div class="row gap-s" style="flex-wrap:wrap"><input type="text" dir="auto" id="indText" placeholder="${esc(t('indPh'))}" style="flex:1;min-width:200px"><button class="btn sm pri" id="indSave">${esc(t('indSave'))}</button></div></div></div>`:''}
    <div class="card glow pad stack gap-s" id="wkCard"><div class="row gap-s"><span class="ic-tile accent">${icon('package',16)}</span><div class="grow"><b>${esc(t('wkBtn'))}</b><div class="small muted">${esc(t('wkSub'))}</div></div>
      <button class="btn ${g.ok?'':'pri'}" id="wkGo">${icon('download')} ${esc(t('wkBtn'))}</button></div><div id="wkRes"></div>
      <div class="row gap-s small" style="flex-wrap:wrap" id="onePdf"><span class="muted">${esc(t('onePdf'))}:</span><a class="btn sm" href="/api/dossiers/${id}/single.pdf" download>${esc(t('onePdfAll'))}</a>${[1,2,3,4,5].map(m=>`<a class="btn sm ghost" href="/api/dossiers/${id}/single.pdf?module=${m}" download>${esc(t('module'))} ${m}</a>`).join('')}${pcOn()?`<a class="btn sm ghost" href="/api/dossiers/${id}/single.pdf?watermark=${encodeURIComponent('Reading copy - not for submission')}" download>${esc(t('pcWm'))}</a>`:''}</div></div>
@@ -3284,6 +3368,8 @@ async function exportView(tok){
      <div class="card pad stack">
      <label class="alert" style="cursor:pointer" ${eg?'':'hidden'}><input type="checkbox" id="ack" style="margin-top:3px"> <p class="small">${esc(t('ack'))}</p></label>
      <div><button class="btn pri lg" id="go" ${g.ok?'':'disabled'}>${icon('package')} ${esc(t('doExport'))}</button></div></div><div id="res"></div>`;
+  if($('#indSave')) $('#indSave').onclick=async()=>{ const v=$('#indText').value.trim(); if(!v){ $('#indText').focus(); return; }
+    try{ await api(`/dossiers/${id}/indication`,{method:'PUT',json:{indication:v}}); S.dossier.product=Object.assign({}, S.dossier.product||{}, {indication:v}); toast(t('indSaved')); route(); }catch(e){ toast(e.message); } };
   $('#wkGo').onclick=async()=>{ const b=$('#wkGo'); b.disabled=true; b.textContent=t('exporting');
     const sub = follow? {type:$('#sqType').value, unit:$('#sqUnit').value, mode:$('#sqMode').value, tracking:$('#sqTrack').value.trim()||null, description:$('#sqDesc').value.trim()||null} : {};
     if(eu){ const cs=$$('#euCs input:checked').map(i=>i.value); if(cs.length) sub.countries=cs;      /* the working eCTD takes what the real one would */

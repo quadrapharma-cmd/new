@@ -110,6 +110,8 @@ def _line_with(pages, page, text):
     return None
 
 
+IND_NODES = ('2.7.3', '5.3.5')     # where the eCTD carries the indication (ICH eCTD DTD 3.2: m2-7-3, m5-3-5 «indication #REQUIRED»)
+
 class StoreError(ValueError):
     def __init__(self, code, en, ar, **extra):
         self.code, self.en, self.ar, self.extra = code, en, ar, extra
@@ -358,6 +360,45 @@ class Store:
         self.audit(did, 'profile.changed', diff=change, moved_to_unassigned=moved)
         return {**change, 'moved_to_unassigned': moved}
 
+    def replace_page(self, did, doc_id, page, picture):
+        """Page `page` of a current PDF made the picture the photo program gave back (pdfcraft.page_picture: the size it was shown at,
+        its links and bookmarks kept, the other pages as they were), as a new version of the document — the old one is kept."""
+        from ..guard import assert_allowed, LockedError
+        pc = self._pdfcraft()
+        d = self._current_pdf(did, doc_id)
+        if not d.get('slot_id'):
+            raise StoreError('E-PAGE', 'Only a document of an item has its pages replaced.', 'بنبدّل صفحات مستند في بند بس.')
+        try:                                             # a page's content: the company's own documents only
+            assert_allowed(d['doc_class'], 'replace_page')
+        except LockedError:
+            raise StoreError('E-LOCKED', 'Only its issuer may change this document (third-party, EDA or executed) — re-obtain it.',
+                             'المستند ده من حق الجهة اللي أصدرته بس تعدّله (جهة خارجية أو الهيئة أو سجل تشغيل) — اطلبه منها.')
+        if not pc.picture_size(picture or b''):
+            raise StoreError('E-PAGE', 'The page comes back as a PNG or JPEG picture.', 'الصفحة بترجع صورة PNG أو JPEG.')
+        out = pc.page_picture(self.blob_path(d['sha256']).read_bytes(), page, picture)
+        if not out:
+            raise StoreError('E-PAGE', f'Page {page} could not be replaced (no such page, or a PDF PdfCraft cannot change).',
+                             f'ماقدرتش أبدّل صفحة {page} (مفيش صفحة بالرقم ده، أو PDF مش بيتعدّل).')
+        new = self.add_document(did, d['slot_id'], d['filename'], out, d['title'],
+                                {**d['meta'], 'pdfcraft': 'page.picture', 'from': doc_id, 'page_picture': int(page)},
+                                supersede=doc_id, doc_class=d['doc_class'])
+        self.audit(did, 'document.page.picture', doc=doc_id, new=new['id'], page=int(page))
+        return new
+
+    def set_indication(self, did, text):
+        """The product's indication, written once the dossier exists: the eCTD's clinical summary (2.7.3) and efficacy and safety
+        studies (5.3.5) carry it (ICH eCTD DTD 3.2, #REQUIRED), and the export gate asks for it (gate()['ectd_indication'])."""
+        d = self.dossier(did)
+        text = ' '.join(str(text or '').split())[:300]
+        if not text:
+            raise StoreError('E-INDICATION', 'Write the indication (a few words: what the product treats).',
+                             'اكتب دواعي الاستعمال (كلمتين: المستحضر بيعالج إيه).')
+        pr = dict(d['product'] or {}, indication=text)
+        self.db.execute('update dossier set product=? where id=?', (json.dumps(pr, ensure_ascii=False), did))
+        self.db.commit()
+        self.audit(did, 'product.indication', indication=text)
+        return pr
+
     def attest(self, did, slot_id, answer):
         """The answer to the item's one question (signed and stamped / legalised): 'yes', or 'no' — «not yet», which blocks the export."""
         if answer not in ('yes', 'no'):
@@ -434,15 +475,16 @@ class Store:
 
     def as_pdf(self, filename, data):
         """An image uploaded as a document becomes a PDF page here (PdfCraft), so the checks, the reading and the fixes take it like
-        any scan: (filename, data, converted?)."""
+        any scan; a phone photo taken sideways or upside down is turned upright where recognition is here (pdfcraft.photo_page —
+        the browser edition turns it in the page, before it leaves): (filename, data, conversions made — [] when none)."""
         from .. import extract as _extract, pdfcraft as _pc
         if data[:5] == b'%PDF-' or _extract.has_text(filename, data) != 'image' or not _pc.available():
-            return filename, data, False
-        pdf = _pc.image_to_pdf(data, filename)
+            return filename, data, []
+        pdf, turn = _pc.photo_page(data, filename)
         if not pdf:
-            return filename, data, False
+            return filename, data, []
         stem = filename.rsplit('.', 1)[0] if '.' in filename else filename
-        return f'{stem}.pdf', pdf, True
+        return f'{stem}.pdf', pdf, ['image_to_pdf'] + ([f'turned_upright_{turn}'] if turn else [])
 
     def add_document(self, did, slot_id, filename, data, title=None, meta=None, supersede=None, doc_class=None, kind=None):
         """kind: the kind an earlier reading gave this file (the wizard's) — the kind rule uses it when the file's own words say nothing.
@@ -469,7 +511,7 @@ class Store:
             given = filename
             filename, data, made = self.as_pdf(filename, data)              # a photo or an image file: a PDF page (PdfCraft)
             if made:
-                meta['converted'] = list(meta.get('converted') or []) + ['image_to_pdf']
+                meta['converted'] = list(meta.get('converted') or []) + made
                 meta.setdefault('original_name', given)
         v17 = _fixes.set_version_17(data) if data[:1024].find(b'%PDF-1.') >= 0 else None
         if v17:                                       # PDF 1.0–1.3: only the version line changes (eCTD takes 1.4–1.7)
@@ -1730,8 +1772,13 @@ class Store:
         notes_open = [s['slot_id'] for s in b['slots'] if s.get('notes_open')]
         ectd_blocking = [s['slot_id'] for s in b['slots'] if any(f.get('scope') == 'ectd' and f.get('severity') == 'block'
                                                                 for d in s['documents'] for f in d['findings'])]
+        # the clinical summary (2.7.3) and the efficacy and safety studies (5.3.5) carry the product's indication in the eCTD (ICH eCTD
+        # DTD 3.2: «indication CDATA #REQUIRED»); a dossier made without it is asked for it here, not by a failed export
+        no_ind = [] if (self.dossier(did).get('product') or {}).get('indication') else [
+            s['slot_id'] for s in b['slots'] if any(str((x.get('meta') or {}).get('node') or (s.get('ectd') or [''])[0]).startswith(IND_NODES)
+                                                   and not (x.get('meta') or {}).get('indication') for x in s['documents'])]
         return {'ok': not missing and not blocking and not xb and not unsigned and not external, 'unsigned': unsigned, 'to_confirm': to_confirm,
-                'ectd_blocking': ectd_blocking, 'notes_open': notes_open,
+                'ectd_blocking': ectd_blocking, 'ectd_indication': no_ind, 'notes_open': notes_open,
                 'external_only': external, 'missing_required': missing, 'non_conforming': blocking,
                 'cross_blocking': [{'id': f['id'], 'en': f['en'], 'ar': f['ar']} for f in xb],
                 'provisional_profiles': ['EG eCTD 3.2.2 provisional v0', 'EG eCTD 4.0 provisional v0']}
