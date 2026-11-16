@@ -29,10 +29,10 @@ def m1_complete(ctx):
           _ev('board.waiting', ', '.join(s['slot_id'] for s in waiting) or 'none')]
     if missing:
         return 'deficient', ev, _d(f"{len(missing)} required Module 1 item(s) have no document: " + ', '.join(f"{s['ctd']} {s['title']['en']}" for s in missing[:8]),
-                                   f"{len(missing)} بند(اً) مطلوباً في الوحدة 1 بلا مستند: " + '، '.join(f"{s['ctd']} {s['title']['ar']}" for s in missing[:8]))
+                                   f"{len(missing)} بند(اً) مطلوباً في Module 1 بلا مستند: " + '، '.join(f"{s['ctd']} {s['title']['ar']}" for s in missing[:8]))
     if waiting:
         return 'not_assessable', ev, _d(f"{len(waiting)} item(s) requested from their issuer and not yet received.", f"{len(waiting)} بند(اً) مطلوب من جهته ولم يصل بعد.")
-    return 'adequate', ev, _d('Every required Module 1 item has a document.', 'كل بند مطلوب في الوحدة 1 له مستند.')
+    return 'adequate', ev, _d('Every required Module 1 item has a document.', 'لكل بند مطلوب في Module 1 مستند.')
 
 
 def pdfs_searchable(ctx):

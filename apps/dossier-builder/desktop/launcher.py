@@ -15,7 +15,7 @@ APP = BASE / 'apps' / 'dossier-builder'
 sys.path.insert(0, str(APP / 'engine'))
 os.environ.setdefault('DB_HOME', 'suite')
 
-TITLE = 'Dossier Builder — منشئ الملفات'
+TITLE = 'eBOX'
 
 
 def workspace():
@@ -92,14 +92,14 @@ def gui(url, ws):
     root = tk.Tk()
     root.title(TITLE)
     root.geometry('460x210')
-    tk.Label(root, text='البرنامج شغال على الجهاز ده', font=('Arial', 15, 'bold')).pack(pady=(18, 4))
+    tk.Label(root, text='البرنامج يعمل على هذا الجهاز', font=('Arial', 15, 'bold')).pack(pady=(18, 4))
     tk.Label(root, text=url, fg='#0E7C86').pack()
     tk.Label(root, text=f'الملفات محفوظة في: {ws}', wraplength=430, fg='#5B6B7C').pack(pady=4)
     row = tk.Frame(root)
     row.pack(pady=12)
-    tk.Button(row, text='افتح البرنامج  Open', width=18, command=lambda: webbrowser.open(url)).pack(side='left', padx=6)
+    tk.Button(row, text='فتح البرنامج  Open', width=18, command=lambda: webbrowser.open(url)).pack(side='left', padx=6)
     tk.Button(row, text='إيقاف  Stop', width=12, command=root.destroy).pack(side='left', padx=6)
-    tk.Label(root, text='قفل النافذة دي = إيقاف البرنامج', fg='#8A97A6').pack()
+    tk.Label(root, text='إغلاق هذه النافذة = إيقاف البرنامج', fg='#8A97A6').pack()
     root.after(400, lambda: webbrowser.open(url))
     root.mainloop()
 

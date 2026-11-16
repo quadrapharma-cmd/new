@@ -32,7 +32,7 @@ def install(app, st):
 
     def _admin_only(request):
         if app.state.auth.enabled and getattr(request.state, 'role', None) != 'admin':
-            err(403, 'E-ROLE', 'Only an administrator can change the Assistant settings.', 'إعدادات المساعد للمدير بس.')
+            err(403, 'E-ROLE', 'Only an administrator can change the Assistant settings.', 'إعدادات المساعد للمدير فقط.')
 
     @app.get('/api/assistant/settings')
     def get_settings():
@@ -43,7 +43,7 @@ def install(app, st):
         _admin_only(request)
         if asettings.status(st.root)['browser']:
             err(501, 'E-BROWSER', 'The Assistant runs in the desktop and cloud editions, not in the browser edition.',
-                'المساعد بيشتغل في نسخة سطح المكتب والسحابة، مش في نسخة المتصفح.')
+                'يعمل المساعد في نسخة سطح المكتب ونسخة السحابة، لا في نسخة المتصفح.')
         out = asettings.save(st.root, **body.model_dump())
         st.audit(None, 'assistant.settings', keys=[k for k, v in body.model_dump().items() if v is not None], by=_user(request))
         return out
@@ -53,7 +53,7 @@ def install(app, st):
         """One cheap call to the API with the stored key: tells the user whether the key works before any dossier work."""
         _admin_only(request)
         if not asettings.api_key(st.root):
-            err(501, 'E-NO-AI', 'No Anthropic API key is set.', 'مفيش مفتاح Anthropic متسجّل.')
+            err(501, 'E-NO-AI', 'No Anthropic API key is set.', 'لا يوجد مفتاح Anthropic مسجَّل.')
         try:
             client = runner.client_for(st.root)
             m = client.models.retrieve(asettings.load(st.root)['model'])
@@ -81,38 +81,38 @@ def install(app, st):
         st.dossier(did)
         status = asettings.status(st.root)
         if status['browser']:
-            err(501, 'E-BROWSER', 'The Assistant runs in the desktop and cloud editions.', 'المساعد بيشتغل في نسخة سطح المكتب والسحابة.')
+            err(501, 'E-BROWSER', 'The Assistant runs in the desktop and cloud editions.', 'يعمل المساعد في نسخة سطح المكتب ونسخة السحابة.')
         if not status['configured']:
-            err(501, 'E-NO-AI', 'Set the Anthropic API key in the Assistant settings first.', 'سجّل مفتاح Anthropic في إعدادات المساعد الأول.')
+            err(501, 'E-NO-AI', 'Set the Anthropic API key in the Assistant settings first.', 'سجِّل مفتاح Anthropic في إعدادات المساعد أولًا.')
         if storage.active_run(st, did):
-            err(409, 'E-ASSISTANT-BUSY', 'The Assistant is still working on the previous message.', 'المساعد لسه شغّال على الرسالة اللي فاتت.')
+            err(409, 'E-ASSISTANT-BUSY', 'The Assistant is still working on the previous message.', 'المساعد ما زال يعمل على الرسالة السابقة.')
         staged = []
         for f in files or []:
             data = await f.read()
             if not data:
                 continue
             if _sniff(f.filename, data) in ('other', 'archive'):
-                err(422, 'E-FILE', f'{f.filename}: PDF, Office (Word, Excel, PowerPoint), text or image files only.', f'{f.filename}: ملفات PDF أو Office (Word، Excel، PowerPoint) أو نصوص أو صور بس.')
+                err(422, 'E-FILE', f'{f.filename}: PDF, Office (Word, Excel, PowerPoint), text or image files only.', f'{f.filename}: المقبول ملفات PDF أو Office (Word، Excel، PowerPoint) أو نصوص أو صور فقط.')
             staged.append(storage.stage_document(st, did, f.filename, data))
         if not (text or '').strip() and not staged:
             err(422, 'E-EMPTY', 'Write a message or attach files.', 'اكتب رسالة أو أرفق ملفات.')
         try:
             rid = runner.send(app, st, did, _user(request), text, staged)
         except RuntimeError:
-            err(409, 'E-ASSISTANT-BUSY', 'The Assistant is still working.', 'المساعد لسه شغّال.')
+            err(409, 'E-ASSISTANT-BUSY', 'The Assistant is still working.', 'المساعد ما زال يعمل.')
         return {'run_id': rid, 'staged': [{'id': d['id'], 'filename': d['filename']} for d in staged], **_state(did)}
 
     @app.post('/api/dossiers/{did}/assistant/approvals/{aid}')
     def approve(did: str, aid: str, body: Decision, request: Request):
         st.dossier(did)
         if body.decision not in ('approve', 'deny'):
-            err(422, 'E-DECISION', 'decision must be approve or deny.', 'القرار لازم يكون approve أو deny.')
+            err(422, 'E-DECISION', 'decision must be approve or deny.', 'يجب أن يكون القرار approve أو deny.')
         try:
             res = runner.decide(app, st, did, aid, body.decision, _user(request), body.note)
         except KeyError:
             err(404, 'E-NOT-FOUND', 'Approval not found.', 'طلب الموافقة غير موجود.')
         except ValueError:
-            err(409, 'E-DECIDED', 'Already decided.', 'اتقرر فيه قبل كده.')
+            err(409, 'E-DECIDED', 'Already decided.', 'سبق البتّ فيه.')
         return {'result': res, **_state(did)}
 
     @app.post('/api/dossiers/{did}/assistant/stop')
@@ -124,7 +124,7 @@ def install(app, st):
     def clear(did: str, request: Request):
         st.dossier(did)
         if storage.active_run(st, did):
-            err(409, 'E-ASSISTANT-BUSY', 'Stop the Assistant first.', 'وقّف المساعد الأول.')
+            err(409, 'E-ASSISTANT-BUSY', 'Stop the Assistant first.', 'أوقف المساعد أولًا.')
         storage.clear(st, did)
         st.audit(did, 'assistant.cleared', by=_user(request))
         return _state(did)

@@ -108,7 +108,7 @@ def test_refused_file_is_not_lost_at_creation(server, browser, tmp_path):
         page.click('#wizNext')
         page.wait_for_timeout(300)
     page.click('#wizCreate')
-    page.wait_for_selector('text=Requirements board', timeout=60000)
+    page.wait_for_selector('h1:has-text("Dossier tree and what is missing")', timeout=60000)
     did = page.url.split('/d/')[1].split('/')[0]
     where = {}
     for _ in range(60):
@@ -143,4 +143,25 @@ def test_the_page_cleans_active_substances_as_the_engine_does(server, browser):
     assert [n for n, _ in want] == ['Neomycin Sulphate', 'Bacitracin Zinc', 'threonine', 'Glycine', 'Iron (III) hydroxide polymaltose complex', 'Paracetamol granules',
                                     'Amoxicillin', 'Sodium chloride', 'Potassium chloride', 'Vitamin B1', 'Vitamin B12', 'Salicylic acid', 'Acetylsalicylic acid',
                                     'Metformin Hydrochloride', 'Diclofenac sodium', 'Zinc', 'باراسيتامول']
+    page.close()
+
+
+def test_the_side_panel_does_not_take_the_focus_from_a_field_in_use(server, browser):
+    """The panel focuses its first field 30 ms after it opens. When the person (or a test) was already in another field by then,
+    the timer took the focus away and what was typed next went into the first field: a typed value «lost» — the manufacturer typed
+    in «review what was read» landed in the product's name about once in eight runs under load."""
+    page = browser.new_page()
+    page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+    page.goto(server + '/#/')
+    page.wait_for_selector('#btnNew')
+    got = page.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+        DS.openDrawer('made up', '<input id="fa"><input id="fb">');
+        document.getElementById('fb').focus();                      // in the second field before the timer fires
+        await wait(150);
+        const kept = document.activeElement.id;
+        DS.closeDrawer();
+        DS.openDrawer('made up', '<input id="fa"><input id="fb">');   // nobody in a field: the first one is offered, as before
+        await wait(150);
+        return [kept, document.activeElement.id]; }""")
+    assert got == ['fb', 'fa'], got
     page.close()

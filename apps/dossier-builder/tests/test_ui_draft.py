@@ -57,20 +57,20 @@ def test_templates_and_make_it_for_me(server):
         page.click(f'[data-tpl="{p01["slot_id"]}"]')
         page.wait_for_selector('#tplPanel .docprev')
         panel = page.inner_text('#tplPanel')
-        assert 'البرنامج بيكتب مسودة المستند ده' in panel and 'راجعها قبل' in panel and 'التركيب (تركيبة الوحدة)' in panel and 'مفيش موديل هنا' in panel
+        assert 'يكتب البرنامج مسودة هذا المستند' in panel and 'راجعها قبل' in panel and 'التركيب (تركيبة الوحدة)' in panel and 'لا يوجد نموذج ذكاء اصطناعي هنا' in panel
         assert 'Neomycin sulphate' in panel and 'Ph. Eur.' in panel                         # the live page already carries the product's own data
         assert page.locator('#tplPanel .docprev .ex').count() >= 1                           # and grey examples where nothing is known yet
         page.locator('#drawer').screenshot(path=f'{OUT}/template_live_ar.png')
         page.click('#dpFill')                                                                # «make it for me»: fills the page (no model here: from the data)
-        page.wait_for_function("() => document.querySelector('#toast').textContent.includes('الصفحة اتملت')")
+        page.wait_for_function("() => document.querySelector('#toast').textContent.includes('مُلئت الصفحة')")
         page.click('#tplPanel .docprev .dp-sec[data-sec=\"removed\"] .dp-p')                 # the user types the part the documents lack
         page.keyboard.type('None removed during manufacture.')
         page.click('#dpSave')
-        page.wait_for_function("() => document.querySelector('#toast').textContent.includes('المسودة اتضافت')")
+        page.wait_for_function("() => document.querySelector('#toast').textContent.includes('أُضيفت المسودة')")
         page.wait_for_function("() => document.querySelector('#dBody') && document.querySelector('#dBody').textContent.includes('P-01-draft.docx')")
-        page.wait_for_function("() => /اللي لسه ناقص|احفظ مسودة Word/.test(document.querySelector('#dBody').textContent)", timeout=20000)      # the item's panel is drawn after the list (it comes back faster since the rule packs are read faster)
+        page.wait_for_function("() => /ما زال ناقصًا|حفظ مسودة Word/.test(document.querySelector('#dBody').textContent)", timeout=20000)      # the item's panel is drawn after the list (it comes back faster since the rule packs are read faster)
         body = page.inner_text('#dBody')
-        assert 'اللي لسه ناقص' in body or 'احفظ مسودة Word' in body
+        assert 'ما زال ناقصًا' in body or 'حفظ مسودة Word' in body
         docs = call(server, f'/api/dossiers/{did}/board')
         d = next(s for s in docs['slots'] if s['req_id'] == 'P-01')['documents'][0]
         assert d['meta']['generated'] == 'draft' and d['meta']['draft_how'] == 'answers'     # saved from the page the user edited
@@ -95,7 +95,7 @@ def test_make_it_for_me_with_the_pages_model(server):
         page.goto(f'{server}/#/d/{did}/board')
         page.wait_for_selector(f'[data-draft="{m136["slot_id"]}"]')
         page.click(f'[data-draft="{m136["slot_id"]}"]')                                          # straight from the row
-        page.wait_for_function("() => document.querySelector('#toast').textContent.includes('اتملت بموديل claude.ai')")
+        page.wait_for_function("() => document.querySelector('#toast').textContent.includes('مُلئت بنموذج claude.ai')")
         asked = page.evaluate("() => window.__asked")
         assert len(asked) == 1 and 'M1-36' in asked[0] and 'JSON' in asked[0]                     # the engine's prompt went to the page's model
         docs = call(server, f'/api/dossiers/{did}/board')

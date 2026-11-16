@@ -256,7 +256,7 @@ def test_expired_evidence_blocks_item(c, pdf):
     past = (date.today() - timedelta(days=10)).isoformat()
     r = c.put(f"/api/dossiers/{did}/documents/{d['id']}/validity", json={'valid_until': past})
     assert r.status_code == 200 and r.json()['check_status'] == 'non_conforming'
-    assert r.json()['findings'][-1]['rule'] == 'DOC-EXPIRED' and 'منتهي' in r.json()['findings'][-1]['ar']
+    assert r.json()['findings'][-1]['rule'] == 'DOC-EXPIRED' and 'منتهٍ منذ' in r.json()['findings'][-1]['ar']
     s = next(x for x in c.get(f'/api/dossiers/{did}/board').json()['slots'] if x['slot_id'] == 'M1-31')
     assert s['status'] == 'non_conforming'
     assert 'M1-31' in c.get(f'/api/dossiers/{did}/gate').json()['non_conforming']

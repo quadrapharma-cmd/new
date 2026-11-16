@@ -1,4 +1,5 @@
 """Each PDF rule fires on its fixture and not on clean files (01-PLAN §3 «Checks»)."""
+from dossier_engine.checks.pdf import add_javascript
 import pytest
 from pypdf import PdfWriter, PdfReader
 from pypdf.generic import NameObject, DictionaryObject
@@ -92,7 +93,7 @@ def test_portfolio(tmp_path, clean):
 
 
 def test_javascript(tmp_path, clean):
-    p = _rewrite(clean, tmp_path / 'js.pdf', lambda w: w.add_js('app.alert(1);'))
+    p = _rewrite(clean, tmp_path / 'js.pdf', lambda w: add_javascript(w, 'app.alert(1);'))
     assert 'PDF-JS' in rules(check(str(p)))
 
 

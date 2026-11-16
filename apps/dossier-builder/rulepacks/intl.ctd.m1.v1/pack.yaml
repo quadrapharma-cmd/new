@@ -9,17 +9,17 @@ authority:
   - '*'
   name:
     en: Any other country — the ICH CTD with a general Module 1
-    ar: أي دولة تانية — الـ CTD المشترك مع موديول ١ عام
+    ar: أي دولة أخرى — الـ CTD المشترك مع Module 1 عام
 title:
   en: CTD dossier for any other country — general Module 1
-  ar: ملف CTD لأي دولة تانية — موديول ١ عام
+  ar: ملف CTD لأي دولة أخرى — Module 1 عام
 status: general
 valid_from: null
 valid_to: null
 verified: false
 matrix:
   en: General Module 1 layout
-  ar: هيكل عام لموديول ١
+  ar: هيكل عام لـ Module 1
 columns:
   I:
     en: New active substance
@@ -37,5 +37,4 @@ sources:
 note:
   en: This country's own Module 1 has not been written into the program yet. Modules 2 to 5 are the ICH CTD as everywhere; Module 1 here is a general layout
     — match it to the authority's checklist, and tell us the country so its own Module 1 is added.
-  ar: موديول ١ الخاص بالدولة دي لسه ما اتكتبش في البرنامج. الموديولات ٢–٥ هي الـ CTD المشترك زي أي مكان؛ وموديول ١ هنا هيكل عام — طابقه على قائمة الهيئة،
-    وقولّنا الدولة عشان موديول ١ بتاعها يتضاف.
+  ar: Module 1 الخاص بهذه الدولة لم يُكتب في البرنامج بعد. أما Modules 2–5 فهي الـ CTD المشترك كما في كل مكان؛ و Module 1 هنا هيكل عام — طابقه على قائمة الهيئة، وأبلغنا باسم الدولة ليُضاف Module 1 الخاص بها.

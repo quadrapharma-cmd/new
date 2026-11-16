@@ -60,7 +60,7 @@ def test_party_document_serves_every_product_using_that_party(c, pdf):
     dash = c.get('/api/suite/dashboard').json()
     row = next(i for i in dash['issues'] if i.get('doc_id') == d['id'])
     assert row['severity'] == 'expired' and {x['name'] for x in row['products']} == {'Prod A', 'Prod B'}
-    assert 'منتهي' in row['ar'] and 'EudraGMDP' in row['source']
+    assert 'منتهٍ منذ' in row['ar'] and 'EudraGMDP' in row['source']
 
 
 def test_printed_end_date_wins_and_expiring_warns(c, pdf):

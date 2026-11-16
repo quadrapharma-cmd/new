@@ -413,7 +413,7 @@
     ar: العقد الأصلي (تصنيع / تخزين / تعبئة / توكيل) موثَّق أو مصدَّق كما ينص المتطلب (بنك، الشؤون القانونية بالهيئة، الغرفة + السفارة للمستورد).
   note:
     en: An unsigned draft for negotiation only; the signed agreement must be authenticated again.
-    ar: مسودة غير موقَّعة للتفاوض فقط؛ العقد الموقَّع لازم يتوثَّق من جديد.
+    ar: مسودة غير موقَّعة للتفاوض فقط؛ والعقد الموقَّع يجب توثيقه من جديد.
 - id: M1-25
   kind: declaration
   draft: full

@@ -52,7 +52,7 @@ def test_a_working_copy_from_the_export_page(server, tmp_path):
         assert '1.1.1' in gate and 'نموذج الطلب' in gate and 'Neomycin sulphate' in gate and 'M1-01' not in gate and '@' not in gate
         page.click('#wkGo')
         page.wait_for_selector('#wkDl', timeout=60000)
-        assert '1 مستند في مكانه' in page.inner_text('#wkRes')
+        assert '1 مستند في موضعه' in page.inner_text('#wkRes')
         with page.expect_download(timeout=60000) as dl:
             page.click('#wkDl')
         out = tmp_path / 'w.zip'

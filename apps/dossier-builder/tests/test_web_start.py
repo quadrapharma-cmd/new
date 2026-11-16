@@ -91,15 +91,15 @@ def test_the_runtime_is_downloaded_once_and_then_read_from_the_device(site):
         page.goto(site.url + '/index.local.html#/')
         opened(page)
         first = site.binaries()
-        said = [s for s in page.evaluate("() => window.__boot") if 'بينزّل ملفات التشغيل' in s]       # (the loading screen speaks the page's first language: Arabic)
+        said = [s for s in page.evaluate("() => window.__boot") if 'تحميل مكوّنات البرنامج داخل المتصفح' in s]       # (the loading screen speaks the page's first language: Arabic)
         assert len(first) >= 20 and said, said                                              # the first time: fetched, and the screen said how far
-        assert re.search(r'[\d.]+ من \d+ ميجا — أول مرة بس، بعدها بتتفتح من جهازك', said[-1]), said[-1]
+        assert re.search(r'[\d.]+ من \d+ ميغابايت — في المرة الأولى فقط، ولا يُثبَّت شيء على جهازك', said[-1]), said[-1]
         page.wait_for_timeout(1500)                                                         # the files reach the browser's storage
         site.seen.clear()
         page.reload()
         opened(page)
         assert site.binaries() == [], site.binaries()                                       # the second time: not one of them is fetched…
-        assert any('المحفوظة على جهازك — مفيش تنزيل' in s for s in page.evaluate("() => window.__boot"))      # …and the screen says where they came from
+        assert any('المحفوظة في المتصفح — دون تحميل' in s for s in page.evaluate("() => window.__boot"))      # …and the screen says where they came from
         assert page.evaluate("async () => (await (await fetch('/api/health', {headers: {'X-DB': '1'}})).json()).ok") is True
         # a new version changed one file: only that one is fetched (here: what is stored for it no longer matches)
         page.evaluate("""() => new Promise((ok, bad) => { const q = indexedDB.open('db-runtime'); q.onerror = () => bad(q.error);
@@ -151,8 +151,8 @@ def test_a_dead_line_is_said_with_a_way_to_try_again(site):
         page.goto(site.url + '/index.local.html#/', wait_until='commit')
         page.wait_for_selector('#bootHelp:not([hidden])', timeout=120000)
         text = page.inner_text('#boot')
-        assert re.search(r'مفيش بيانات وصلت من \d+ ثانية: الاتصال بطيء أو مقطوع', text) and 'حاول تاني' in text, text
-        assert re.search(r'بقاله \d+ ثانية', text) and re.search(r'بينزّل ملفات التشغيل: [\d.]+ من \d+ ميجا', text), text      # how long, and how far it got
+        assert re.search(r'لم تصل أي بيانات منذ \d+ ثانية: الاتصال بطيء أو منقطع', text) and 'إعادة المحاولة' in text, text
+        assert re.search(r'مضت \d+ ثانية', text) and re.search(r'تحميل مكوّنات البرنامج داخل المتصفح: [\d.]+ من \d+ ميغابايت', text), text      # how long, and how far it got
         site.hold = None                                                                    # the line comes back
         page.click('#bootHelp button')
         opened(page)
@@ -171,7 +171,7 @@ def test_the_first_moment_already_says_what_is_happening(site):
         page.goto(site.url + '/index.local.html#/', wait_until='commit')
         page.wait_for_selector('#boot0', state='visible', timeout=20000)
         first = page.inner_text('#boot0')
-        assert 'بيفتح منشئ ملفات التسجيل' in first and 'Opening Dossier Builder' in first and not page.locator('#boot').count()
+        assert 'جارٍ فتح eBOX' in first and 'Opening eBOX' in first and 'لا يُثبَّت شيء على جهازك' in first and not page.locator('#boot').count()
         site.block = None
         page.wait_for_selector('#boot', timeout=60000)
         assert page.locator('#boot0').count() == 0                                          # the progress screen replaced it

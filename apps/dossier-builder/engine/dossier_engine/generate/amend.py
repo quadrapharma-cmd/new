@@ -18,7 +18,7 @@ from docx.oxml.ns import qn
 
 from . import docx_kit
 
-AUTHOR = 'Dossier Builder Assistant'
+AUTHOR = 'eBOX Assistant'
 
 
 class AmendError(ValueError):

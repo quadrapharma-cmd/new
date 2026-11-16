@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>ملف المنتجات — Regulatory Suite</title>
+<title>eBOX — ملف المنتجات</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/ds.css">
@@ -16,7 +16,7 @@
 <body>
 <div class="app">
   <aside class="rail">
-    <a class="logo" href="#/"><span class="tile">RS</span><span><span class="name" data-t="appName"></span><span class="tag">Regulatory Suite · EDA</span></span></a>
+    <a class="logo" href="#/"><span class="tile">eB</span><span><span class="name" data-t="appName"></span><span class="tag">eBOX</span></span></a>
     <nav class="nav" aria-label="main" id="nav"></nav>
     <div class="foot"><span class="led" data-t="foot"></span></div>
   </aside>
@@ -47,66 +47,66 @@ const T={
  appName:{ar:'ملف المنتجات',en:'Product file'}, navHome:{ar:'لوحة القيادة',en:'Dashboard'}, navProducts:{ar:'المنتجات',en:'Products'},
  navDocs:{ar:'مكتبة المستندات',en:'Document library'}, navParties:{ar:'الأطراف',en:'Parties'},
  navLetters:{ar:'مراسلات الهيئة',en:'Authority letters'}, navCommit:{ar:'الالتزامات',en:'Commitments'},
- lettersSub:{ar:'كل خطاب من الهيئة وليها: الأسئلة اللي فيه وردودها ومواعيدها. الخطاب الوارد بيتقري: أسئلته المترقّمة والمدة اللي بيديها بيبقوا أسئلة بميعاد تراجعها.',en:'Every letter from and to the authority: its questions, their answers and deadlines. A letter received is read: its numbered questions and the time it gives become questions with a due date for you to review.'},
+ lettersSub:{ar:'كل خطاب من الهيئة وإليها: الأسئلة الواردة فيه وردودها ومواعيدها. يُقرأ الخطاب الوارد: فتصبح أسئلته المرقَّمة والمهلة التي يحددها أسئلةً بموعد تراجعها.',en:'Every letter from and to the authority: its questions, their answers and deadlines. A letter received is read: its numbered questions and the time it gives become questions with a due date for you to review.'},
  addLetter:{ar:'خطاب جديد',en:'New letter'}, dirIn:{ar:'وارد من الهيئة',en:'From the authority'}, dirOut:{ar:'صادر للهيئة',en:'To the authority'},
  subject:{ar:'الموضوع',en:'Subject'}, refNo:{ar:'رقم الخطاب',en:'Reference'}, dated:{ar:'تاريخ الخطاب',en:'Dated'}, received:{ar:'تاريخ الاستلام',en:'Received'},
  due:{ar:'آخر ميعاد',en:'Due'}, letterFile:{ar:'ملف الخطاب (PDF)',en:'The letter (PDF)'}, questions:{ar:'الأسئلة',en:'Questions'}, answer:{ar:'الرد',en:'Answer'},
- qOpen:{ar:'مفتوح',en:'open'}, qDrafted:{ar:'متكتب له رد',en:'drafted'}, qAnswered:{ar:'اتردّ',en:'answered'}, markAnswered:{ar:'اتردّ',en:'Answered'},
- addQ:{ar:'سؤال جديد',en:'Add a question'}, replyDoc:{ar:'خطاب الرد (Word)',en:'Reply letter (Word)'}, readGot:{ar:'اتقرا من الخطاب: {q} سؤال{due}',en:'Read from the letter: {q} question(s){due}'},
- noLetters:{ar:'مفيش مراسلات لسه.',en:'No letters yet.'}, deadlines:{ar:'المواعيد',en:'Deadlines'}, deadlinesSub:{ar:'أسئلة الهيئة والخطابات والالتزامات اللي ليها ميعاد — المتأخر الأول.',en:'Authority questions, letters and commitments with a due date — the overdue first.'},
- noDeadlines:{ar:'مفيش مواعيد مفتوحة.',en:'No open deadlines.'}, overdue:{ar:'متأخر',en:'overdue'}, soon:{ar:'قريب',en:'soon'}, later:{ar:'بعدين',en:'later'},
- daysLeft:{ar:'باقي {n} يوم',en:'{n} days left'}, daysLate:{ar:'متأخر {n} يوم',en:'{n} days late'},
- commitSub:{ar:'التزامات الشركة قدام الهيئة (بيانات ثبات، إبلاغ بتجديد، تشغيلات أولى…) ومواعيدها.',en:'The company\'s commitments to the authority (stability data, renewals to report, first batches…) and their deadlines.'},
- addCommit:{ar:'التزام جديد',en:'New commitment'}, commitText:{ar:'الالتزام',en:'Commitment'}, done:{ar:'اتنفّذ',en:'Done'}, evidence:{ar:'الدليل',en:'Evidence'},
- noCommit:{ar:'مفيش التزامات لسه.',en:'No commitments yet.'}, product:{ar:'المنتج',en:'Product'}, navRef:{ar:'مرجع',en:'Reference'},
+ qOpen:{ar:'مفتوح',en:'open'}, qDrafted:{ar:'كُتب له رد',en:'drafted'}, qAnswered:{ar:'تم الرد',en:'answered'}, markAnswered:{ar:'تم الرد',en:'Answered'},
+ addQ:{ar:'سؤال جديد',en:'Add a question'}, replyDoc:{ar:'خطاب الرد (Word)',en:'Reply letter (Word)'}, readGot:{ar:'قُرئ من الخطاب: {q} سؤال{due}',en:'Read from the letter: {q} question(s){due}'},
+ noLetters:{ar:'لا توجد مراسلات بعد.',en:'No letters yet.'}, deadlines:{ar:'المواعيد',en:'Deadlines'}, deadlinesSub:{ar:'أسئلة الهيئة والخطابات والالتزامات التي لها موعد — المتأخر أولًا.',en:'Authority questions, letters and commitments with a due date — the overdue first.'},
+ noDeadlines:{ar:'لا توجد مواعيد مفتوحة.',en:'No open deadlines.'}, overdue:{ar:'متأخر',en:'overdue'}, soon:{ar:'قريب',en:'soon'}, later:{ar:'لاحقًا',en:'later'},
+ daysLeft:{ar:'بقي {n} يوم',en:'{n} days left'}, daysLate:{ar:'متأخر {n} يوم',en:'{n} days late'},
+ commitSub:{ar:'التزامات الشركة أمام الهيئة (بيانات ثبات، إبلاغ بتجديد، تشغيلات أولى…) ومواعيدها.',en:'The company\'s commitments to the authority (stability data, renewals to report, first batches…) and their deadlines.'},
+ addCommit:{ar:'التزام جديد',en:'New commitment'}, commitText:{ar:'الالتزام',en:'Commitment'}, done:{ar:'نُفِّذ',en:'Done'}, evidence:{ar:'الدليل',en:'Evidence'},
+ noCommit:{ar:'لا توجد التزامات بعد.',en:'No commitments yet.'}, product:{ar:'المنتج',en:'Product'}, navRef:{ar:'مرجع',en:'Reference'},
  navRules:{ar:'أنواع المستندات والصلاحية',en:'Document types & validity'},
- navActivity:{ar:'سجل النشاط',en:'Activity log'}, navUsers:{ar:'المستخدمون',en:'Users'}, logout:{ar:'خروج',en:'Sign out'}, chpw:{ar:'كلمة السر',en:'Password'},
+ navActivity:{ar:'سجل النشاط',en:'Activity record'}, navUsers:{ar:'المستخدمون',en:'Users'}, logout:{ar:'تسجيل الخروج',en:'Sign out'}, chpw:{ar:'كلمة المرور',en:'Password'},
  role_admin:{ar:'مدير',en:'Administrator'}, role_editor:{ar:'محرّر',en:'Editor'}, role_viewer:{ar:'مشاهد',en:'Viewer'}, role_disabled:{ar:'موقوف',en:'Disabled'},
- actor:{ar:'مين',en:'Who'}, when:{ar:'إمتى',en:'When'}, event:{ar:'عمل إيه',en:'What'}, details:{ar:'التفاصيل',en:'Details'},
- chainOk:{ar:'السجل سليم: كل سطر مربوط باللي قبله ببصمة، ومفيش سطر اتعدّل أو اتمسح.',en:'Log intact: every row is hash-linked to the previous one; nothing was altered or removed.'},
- chainBad:{ar:'السجل فيه تلاعب ابتداءً من السطر رقم',en:'The log was tampered with starting at row'},
- addUser:{ar:'مستخدم جديد',en:'New user'}, username:{ar:'اسم المستخدم',en:'Username'}, password:{ar:'كلمة السر (10 حروف على الأقل)',en:'Password (10+ characters)'},
- oldPw:{ar:'كلمة السر الحالية',en:'Current password'}, newPw:{ar:'كلمة السر الجديدة',en:'New password'}, resetPw:{ar:'كلمة سر جديدة',en:'Reset password'},
- roleHelp:{ar:'المدير: كل حاجة + المستخدمين · المحرّر: يضيف ويعدّل · المشاهد: يشوف بس · الموقوف: ما يدخلش.',en:'Admin: everything + users · Editor: add and edit · Viewer: read only · Disabled: cannot sign in.'},
+ actor:{ar:'من',en:'Who'}, when:{ar:'متى',en:'When'}, event:{ar:'الإجراء',en:'What'}, details:{ar:'التفاصيل',en:'Details'},
+ chainOk:{ar:'السجل سليم: كل سطر مرتبط بما قبله ببصمة رقمية، ولم يُعدَّل أي سطر أو يُحذف.',en:'Log intact: every row is hash-linked to the previous one; nothing was altered or removed.'},
+ chainBad:{ar:'في السجل تلاعب ابتداءً من السطر رقم',en:'The log was tampered with starting at row'},
+ addUser:{ar:'مستخدم جديد',en:'New user'}, username:{ar:'اسم المستخدم',en:'Username'}, password:{ar:'كلمة المرور (10 أحرف على الأقل)',en:'Password (10+ characters)'},
+ oldPw:{ar:'كلمة المرور الحالية',en:'Current password'}, newPw:{ar:'كلمة المرور الجديدة',en:'New password'}, resetPw:{ar:'كلمة مرور جديدة',en:'Reset password'},
+ roleHelp:{ar:'المدير: كل شيء + المستخدمون · المحرّر: يضيف ويعدّل · المشاهد: يطّلع فقط · الموقوف: لا يدخل.',en:'Admin: everything + users · Editor: add and edit · Viewer: read only · Disabled: cannot sign in.'},
  navDossiers:{ar:'ملفات التقديم (CTD / eCTD)',en:'Submission dossiers (CTD / eCTD)'},
  foot:{ar:'كل حالة محسوبة من التواريخ والقواعد، ولكل قاعدة مصدر.',en:'Every status is computed from dates and rules; every rule has a source.'},
- todo:{ar:'اعمل إيه النهارده',en:'What to do today'}, todoSub:{ar:'مرتّب حسب الخطورة: المنتهي، ثم الناقص، ثم اللي محتاج تاريخ، ثم اللي هينتهي قريب، ثم التجديد.',en:'Ordered by severity: expired, missing, no date, expiring soon, renewal.'},
- k_products:{ar:'منتجات',en:'Products'}, k_expired:{ar:'منتهي',en:'Expired'}, k_missing:{ar:'ناقص',en:'Missing'}, k_needs_date:{ar:'محتاج تاريخ',en:'Needs a date'},
- k_expiring:{ar:'هينتهي قريب',en:'Expiring soon'}, k_renewal:{ar:'تجديد خلال سنة',en:'Renewal within a year'},
- s_expired:{ar:'منتهي',en:'Expired'}, s_missing:{ar:'ناقص',en:'Missing'}, s_needs_date:{ar:'محتاج تاريخ',en:'Needs a date'}, s_expiring:{ar:'هينتهي قريب',en:'Expiring'},
- s_renewal:{ar:'تجديد',en:'Renewal'}, s_valid:{ar:'ساري',en:'Valid'}, s_no_expiry:{ar:'بدون انتهاء',en:'No expiry'},
- allClear:{ar:'مفيش حاجة مستنياك. كل المستندات سارية.',en:'Nothing waiting. All documents are valid.'},
+ todo:{ar:'المطلوب اليوم',en:'What to do today'}, todoSub:{ar:'مرتَّب بحسب الخطورة: المنتهي، ثم الناقص، ثم ما يحتاج إلى تاريخ، ثم ما ينتهي قريبًا، ثم التجديد.',en:'Ordered by severity: expired, missing, no date, expiring soon, renewal.'},
+ k_products:{ar:'منتجات',en:'Products'}, k_expired:{ar:'منتهي',en:'Expired'}, k_missing:{ar:'ناقص',en:'Missing'}, k_needs_date:{ar:'يحتاج إلى تاريخ',en:'Needs a date'},
+ k_expiring:{ar:'ينتهي قريبًا',en:'Expiring soon'}, k_renewal:{ar:'تجديد خلال سنة',en:'Renewal within a year'},
+ s_expired:{ar:'منتهي',en:'Expired'}, s_missing:{ar:'ناقص',en:'Missing'}, s_needs_date:{ar:'يحتاج إلى تاريخ',en:'Needs a date'}, s_expiring:{ar:'ينتهي قريبًا',en:'Expiring'},
+ s_renewal:{ar:'تجديد',en:'Renewal'}, s_valid:{ar:'سارٍ',en:'Valid'}, s_no_expiry:{ar:'بدون انتهاء',en:'No expiry'},
+ allClear:{ar:'لا يوجد ما ينتظرك. كل المستندات سارية.',en:'Nothing waiting. All documents are valid.'},
  products:{ar:'المنتجات',en:'Products'}, readiness:{ar:'اكتمال الملف',en:'File completeness'}, renewalDue:{ar:'ميعاد التجديد',en:'Renewal due'},
- newProduct:{ar:'منتج جديد',en:'New product'}, addDoc:{ar:'سجّل مستند',en:'Add document'}, addParty:{ar:'طرف جديد',en:'New party'},
- open:{ar:'افتح',en:'Open'}, save:{ar:'احفظ',en:'Save'}, cancel:{ar:'إلغاء',en:'Cancel'}, saved:{ar:'اتحفظ',en:'Saved'},
+ newProduct:{ar:'منتج جديد',en:'New product'}, addDoc:{ar:'تسجيل مستند',en:'Add document'}, addParty:{ar:'طرف جديد',en:'New party'},
+ open:{ar:'فتح',en:'Open'}, save:{ar:'حفظ',en:'Save'}, cancel:{ar:'إلغاء',en:'Cancel'}, saved:{ar:'تم الحفظ',en:'Saved'},
  regNo:{ar:'رقم التسجيل',en:'Reg. no.'}, regDate:{ar:'تاريخ التسجيل',en:'Registration date'}, licence:{ar:'نوع الترخيص',en:'Licence'},
- form:{ar:'الشكل الصيدلي',en:'Dosage form'}, route:{ar:'طريق الإعطاء',en:'Route'}, strength:{ar:'التركيز',en:'Strength'}, nameAr:{ar:'الاسم بالعربي',en:'Arabic name'},
- name:{ar:'الاسم',en:'Name'}, shelf:{ar:'الصلاحية',en:'Shelf life'}, storage:{ar:'التخزين',en:'Storage'}, packs:{ar:'العبوات (افصل بفاصلة)',en:'Packs (comma-separated)'},
+ form:{ar:'الشكل الصيدلي',en:'Dosage form'}, route:{ar:'طريق الإعطاء',en:'Route'}, strength:{ar:'التركيز',en:'Strength'}, nameAr:{ar:'الاسم بالعربية',en:'Arabic name'},
+ name:{ar:'الاسم',en:'Name'}, shelf:{ar:'مدة الصلاحية',en:'Shelf life'}, storage:{ar:'التخزين',en:'Storage'}, packs:{ar:'العبوات (افصل بفاصلة)',en:'Packs (comma-separated)'},
  price:{ar:'السعر',en:'Price'}, notes:{ar:'ملاحظات',en:'Notes'},
  tabNeed:{ar:'الملف المطلوب',en:'Required file'}, tabParties:{ar:'الأطراف',en:'Parties'}, tabDocs:{ar:'كل المستندات',en:'All documents'}, tabData:{ar:'البيانات',en:'Data'},
  r_product:{ar:'المنتج نفسه',en:'The product'}, r_holder:{ar:'صاحب الترخيص',en:'Licence holder'}, r_manufacturer:{ar:'المصنّع',en:'Manufacturer'},
  r_api_supplier:{ar:'مورد مادة فعالة',en:'API supplier'}, r_storage:{ar:'التخزين',en:'Storage'}, r_lab:{ar:'معمل',en:'Laboratory'}, r_other:{ar:'أخرى',en:'Other'},
- register:{ar:'سجّل',en:'Add'}, replace:{ar:'استبدل بنسخة أحدث',en:'Replace with newer'}, setDate:{ar:'اكتب التاريخ',en:'Enter date'},
- docType:{ar:'نوع المستند',en:'Document type'}, title:{ar:'العنوان',en:'Title'}, number:{ar:'الرقم',en:'Number'}, issuer:{ar:'الجهة المصدِرة',en:'Issued by'},
- issued:{ar:'تاريخ الإصدار',en:'Issued on'}, validUntil:{ar:'صالح لحد (لو مكتوب على المستند)',en:'Valid until (if printed)'}, file:{ar:'الملف',en:'File'},
- orLink:{ar:'أو رابط (درايف…)',en:'or link (Drive…)'}, forProducts:{ar:'يخص المنتجات',en:'For products'}, forParties:{ar:'يخص الأطراف',en:'About parties'},
- validityRule:{ar:'قاعدة الصلاحية',en:'Validity rule'}, months:{ar:'شهر',en:'months'}, noTerm:{ar:'من غير مدة ثابتة — التاريخ من المستند نفسه',en:'No fixed term — date from the document'},
+ register:{ar:'تسجيل',en:'Add'}, replace:{ar:'استبدال بنسخة أحدث',en:'Replace with newer'}, setDate:{ar:'إدخال التاريخ',en:'Enter date'},
+ docType:{ar:'نوع المستند',en:'Document type'}, title:{ar:'العنوان',en:'Title'}, number:{ar:'الرقم',en:'Number'}, issuer:{ar:'الجهة المُصدِرة',en:'Issued by'},
+ issued:{ar:'تاريخ الإصدار',en:'Issued on'}, validUntil:{ar:'صالح حتى (إن كان مكتوبًا على المستند)',en:'Valid until (if printed)'}, file:{ar:'الملف',en:'File'},
+ orLink:{ar:'أو رابط (Google Drive…)',en:'or link (Drive…)'}, forProducts:{ar:'يخص المنتجات',en:'For products'}, forParties:{ar:'يخص الأطراف',en:'About parties'},
+ validityRule:{ar:'قاعدة الصلاحية',en:'Validity rule'}, months:{ar:'شهر',en:'months'}, noTerm:{ar:'بلا مدة ثابتة — التاريخ من المستند نفسه',en:'No fixed term — date from the document'},
  warnBefore:{ar:'تنبيه قبل',en:'Warn'}, days:{ar:'يوم',en:'days'}, source:{ar:'المصدر',en:'Source'},
  p_EG_IN_FORCE:{ar:'قاعدة سارية من الهيئة',en:'EDA rule in force'}, p_EU_DERIVED:{ar:'مكمّل من قواعد أوروبية',en:'From EU rules'}, p_ICH:{ar:'ICH',en:'ICH'},
- p_ASSUMPTION:{ar:'افتراض — محتاج تأكيدك',en:'Assumption — confirm'}, p_EG_DRAFT:{ar:'مسودة الهيئة',en:'EDA draft'},
- ends:{ar:'ينتهي',en:'Ends'}, basis:{ar:'محسوب من',en:'Computed from'}, affects:{ar:'بيأثر على',en:'Affects'},
- partyKind:{ar:'نوع الطرف',en:'Kind'}, country:{ar:'البلد',en:'Country'}, address:{ar:'العنوان (زي ما على شهادة GMP)',en:'Address (as on the GMP certificate)'},
+ p_ASSUMPTION:{ar:'افتراض — يحتاج إلى تأكيدك',en:'Assumption — confirm'}, p_EG_DRAFT:{ar:'مسودة الهيئة',en:'EDA draft'},
+ ends:{ar:'ينتهي',en:'Ends'}, basis:{ar:'محسوب من',en:'Computed from'}, affects:{ar:'يؤثر في',en:'Affects'},
+ partyKind:{ar:'نوع الطرف',en:'Kind'}, country:{ar:'الدولة',en:'Country'}, address:{ar:'العنوان (كما في شهادة GMP)',en:'Address (as on the GMP certificate)'},
  k_company:{ar:'شركة',en:'Company'}, k_manufacturer:{ar:'مصنع',en:'Manufacturer'}, k_supplier:{ar:'مورد',en:'Supplier'}, k_lab:{ar:'معمل',en:'Lab'}, k_authority:{ar:'جهة رقابية',en:'Authority'}, k_other:{ar:'أخرى',en:'Other'},
- linkParty:{ar:'اربط طرف بالمنتج',en:'Link a party'}, roleL:{ar:'الدور',en:'Role'}, apiName:{ar:'المادة الفعالة',en:'Active substance'}, unlink:{ar:'فك الربط',en:'Unlink'},
- docs:{ar:'المستندات',en:'Documents'}, usedBy:{ar:'بيستخدمه',en:'Used by'}, withdraw:{ar:'سحب',en:'Withdraw'},
- filterAll:{ar:'الكل',en:'All'}, search:{ar:'دوّر بالعنوان أو الرقم أو الجهة…',en:'Search title, number, issuer…'},
- noProducts:{ar:'مفيش منتجات لسه. ابدأ بأول منتج.',en:'No products yet. Start with the first one.'},
- noDocs:{ar:'مفيش مستندات هنا.',en:'No documents here.'}, why:{ar:'ليه؟',en:'Why?'},
- needFile:{ar:'المطلوب على الملف حسب دور كل طرف. الحالة بتتحسب من تاريخ كل مستند وقاعدة صلاحيته.',en:'What must be on file per role. Status is computed from each document date and its validity rule.'},
- err:{ar:'حصل خطأ',en:'Error'}, assumptionNote:{ar:'القيم المعلّمة «افتراض» محتاجة تأكيدك؛ غيّرها في ملف القواعد.',en:'Values marked «assumption» need your confirmation.'},
- homeSub:{ar:'كل شهادة ورخصة وعقد على ملف منتجاتك — صلاحيته محسوبة، وتنبيه قبل ما ينتهي.',en:'Every certificate, licence and contract on your products — validity computed, warned before it expires.'},
- buildDossier:{ar:'ابنِ ملف تقديم',en:'Build a dossier'}, validity:{ar:'الصلاحية',en:'Validity'},
- prefilled:{ar:'اتقرا من المستند — راجع الخانات',en:'Read from the document — check the fields'}, thinking:{ar:'Claude بيقرأ المستند…',en:'Claude is reading the document…'},
+ linkParty:{ar:'ربط طرف بالمنتج',en:'Link a party'}, roleL:{ar:'الدور',en:'Role'}, apiName:{ar:'المادة الفعالة',en:'Active substance'}, unlink:{ar:'إلغاء الربط',en:'Unlink'},
+ docs:{ar:'المستندات',en:'Documents'}, usedBy:{ar:'يستخدمه',en:'Used by'}, withdraw:{ar:'سحب',en:'Withdraw'},
+ filterAll:{ar:'الكل',en:'All'}, search:{ar:'ابحث بالعنوان أو الرقم أو الجهة…',en:'Search title, number, issuer…'},
+ noProducts:{ar:'لا توجد منتجات بعد. ابدأ بأول منتج.',en:'No products yet. Start with the first one.'},
+ noDocs:{ar:'لا توجد مستندات هنا.',en:'No documents here.'}, why:{ar:'السبب والمصدر',en:'Why?'},
+ needFile:{ar:'المطلوب في الملف بحسب دور كل طرف. تُحسب الحالة من تاريخ كل مستند وقاعدة صلاحيته.',en:'What must be on file per role. Status is computed from each document date and its validity rule.'},
+ err:{ar:'حدث خطأ',en:'Error'}, assumptionNote:{ar:'القيم المعلَّمة «افتراض» تحتاج إلى تأكيدك؛ غيِّرها في ملف القواعد.',en:'Values marked «assumption» need your confirmation.'},
+ homeSub:{ar:'كل شهادة ورخصة وعقد في ملف منتجاتك — صلاحيتها محسوبة، مع تنبيه قبل انتهائها.',en:'Every certificate, licence and contract on your products — validity computed, warned before it expires.'},
+ buildDossier:{ar:'إنشاء ملف تسجيل',en:'Build a dossier'}, validity:{ar:'الصلاحية',en:'Validity'},
+ prefilled:{ar:'قُرئ من المستند — راجع الخانات',en:'Read from the document — check the fields'}, thinking:{ar:'Claude يقرأ المستند…',en:'Claude is reading the document…'},
 };
 const t=k=>(T[k]&&T[k][S.lang])||k;
 const L=x=>typeof x==='string'?t(x):(x&&(x[S.lang]||x.en))||'';            // a text given in both languages on the spot
@@ -244,7 +244,7 @@ async function productView(id,tab){
   if(tab==='data') body=`<div class="card pad"><div class="form">${[['dosage_form','form'],['admin_route','route'],['strength','strength'],['reg_no','regNo'],['reg_date','regDate'],['licence_type','licence'],['shelf_life','shelf'],['storage','storage'],['price','price']]
       .map(([k,l])=>`<div class="f"><span>${esc(t(l))}</span><div dir="auto" style="color:var(--ink)">${esc(k==='reg_date'?fmt(p[k]):p[k]||'—')}</div></div>`).join('')}
       <div class="f"><span>${esc(t('packs'))}</span><div style="color:var(--ink)">${esc((p.packs||[]).join(' · ')||'—')}</div></div></div>
-      ${p.notes?`<p class="small" dir="auto" style="margin-top:12px">${esc(p.notes)}</p>`:''}<div class="row" style="margin-top:12px"><button class="btn" id="editP">${icon('pen',14)} ${esc(t('tabData'))}</button><span class="grow"></span><button class="btn ghost" id="delP">${icon('trash',14)} ${esc(L({ar:'احذف المنتج',en:'Delete the product'}))}</button></div></div>`;
+      ${p.notes?`<p class="small" dir="auto" style="margin-top:12px">${esc(p.notes)}</p>`:''}<div class="row" style="margin-top:12px"><button class="btn" id="editP">${icon('pen',14)} ${esc(t('tabData'))}</button><span class="grow"></span><button class="btn ghost" id="delP">${icon('trash',14)} ${esc(L({ar:'حذف المنتج',en:'Delete the product'}))}</button></div></div>`;
   $('#view').innerHTML=`<div class="head"><div class="prodhead">${ring(p.readiness,'lg')}
       <div class="title"><h1>${bdi(p.name)}${p.name_ar?` <span class="muted" style="font-weight:500">· ${bdi(p.name_ar)}</span>`:''}</h1>
       <p class="sub">${[p.dosage_form,p.reg_no&&('#'+p.reg_no),p.licence_type].filter(Boolean).map(esc).join(' · ')}${p.renewal?` · ${esc(t('renewalDue'))}: <b>${fmt(p.renewal.due)}</b>`:''}</p>
@@ -255,9 +255,9 @@ async function productView(id,tab){
   $('#pd').onclick=()=>docForm({products:[id]});
   if($('#editP')) $('#editP').onclick=()=>productForm(p);
   if($('#delP')) $('#delP').onclick=async()=>{                                        // a product nobody wants any more: gone for good, with the documents that are only its own
-    const ok=await DS.confirmBox(L({ar:'احذف المنتج',en:'Delete the product'}), `<p>${L({ar:`المنتج «${esc(p.name)}» هيتحذف نهائيًا مع ربطه بالأطراف ومع مستنداته الخاصة بيه بس. المستندات المشتركة مع منتجات أو أطراف تانية بتفضل في المكتبة، وملف التسجيل المبني منه ما بيتأثرش. الحذف ده مالوش رجوع.`,en:`The product «${esc(p.name)}» will be deleted for good, with its links to parties and the documents that are only its own. Documents shared with other products or parties stay in the library, and a dossier built from it is not touched. This cannot be undone.`})}</p>`,
-      L({ar:'احذف نهائيًا',en:'Delete for good'}), {danger:true, cancel:L({ar:'إلغاء',en:'Cancel'}), typed:p.name, typedLabel:L({ar:'اكتب اسم المنتج للتأكيد',en:'Type the product\'s name to confirm'})});
-    if(!ok) return; try{ const r=await api(`/products/${id}`,{method:'DELETE'}); toast(L({ar:`اتحذف المنتج (${r.documents} مستند)`,en:`Product deleted (${r.documents} document(s))`})); location.hash='#/products'; route(); }catch(e){ toast(e.message); } };
+    const ok=await DS.confirmBox(L({ar:'حذف المنتج',en:'Delete the product'}), `<p>${L({ar:`يُحذف المنتج «${esc(p.name)}» نهائيًا مع ربطه بالأطراف ومع مستنداته الخاصة به فقط. المستندات المشتركة مع منتجات أو أطراف أخرى تبقى في المكتبة، وملف التسجيل المبني منه لا يتأثر. هذا الحذف لا رجعة فيه.`,en:`The product «${esc(p.name)}» will be deleted for good, with its links to parties and the documents that are only its own. Documents shared with other products or parties stay in the library, and a dossier built from it is not touched. This cannot be undone.`})}</p>`,
+      L({ar:'حذف نهائي',en:'Delete for good'}), {danger:true, cancel:L({ar:'إلغاء',en:'Cancel'}), typed:p.name, typedLabel:L({ar:'اكتب اسم المنتج للتأكيد',en:'Type the product\'s name to confirm'})});
+    if(!ok) return; try{ const r=await api(`/products/${id}`,{method:'DELETE'}); toast(L({ar:`حُذف المنتج (${r.documents} مستند)`,en:`Product deleted (${r.documents} document(s))`})); location.hash='#/products'; route(); }catch(e){ toast(e.message); } };
   $$('[data-unlink]').forEach(b=>b.onclick=async()=>{ await api(`/products/${id}/parties/${b.dataset.unlink}`,{method:'DELETE'}); route(); });
   if($('#lpGo')) $('#lpGo').onclick=async()=>{ try{ await api(`/products/${id}/parties`,{method:'POST',json:{party_id:$('#lp-party').value,role:$('#lp-role').value,api_name:$('#lp-api').value||null}}); toast(t('saved')); route(); }catch(e){ toast(e.message); } };
   if($('#lpNew')) $('#lpNew').onclick=()=>partyForm();
@@ -332,10 +332,10 @@ async function editDates(id){
     <label class="f"><span>${esc(t('issued'))}</span><input type="date" id="ed-issued" value="${esc(d.issued||'')}"></label>
     <label class="f"><span>${esc(t('validUntil'))}</span><input type="date" id="ed-valid" value="${esc(d.valid_until||'')}"></label></div>
    <label class="f"><span>${esc(t('notes'))}</span><textarea id="ed-notes" rows="3" dir="auto">${esc(d.notes||'')}</textarea></label>
-   <div class="row"><button class="btn pri" id="edSave">${icon('check')} ${esc(t('save'))}</button><button class="btn ghost" id="edWd">${esc(t('withdraw'))}</button><span class="grow"></span><button class="btn ghost" id="edDel">${icon('trash',14)} ${esc(L({ar:'احذف نهائيًا',en:'Delete for good'}))}</button></div>`);
+   <div class="row"><button class="btn pri" id="edSave">${icon('check')} ${esc(t('save'))}</button><button class="btn ghost" id="edWd">${esc(t('withdraw'))}</button><span class="grow"></span><button class="btn ghost" id="edDel">${icon('trash',14)} ${esc(L({ar:'حذف نهائي',en:'Delete for good'}))}</button></div>`);
   $('#edSave').onclick=async()=>{ try{ await api('/documents/'+id,{method:'PUT',json:{number:$('#ed-number').value,issuer:$('#ed-issuer').value,issued:$('#ed-issued').value||null,valid_until:$('#ed-valid').value||null,notes:$('#ed-notes').value}}); closeDrawer(); toast(t('saved')); route(); }catch(e){ toast(e.message); } };
   $('#edWd').onclick=async()=>{ await api(`/documents/${id}/withdraw`,{method:'POST'}); closeDrawer(); route(); };
-  DS.twoStep($('#edDel'), L({ar:'متأكد؟ دوس تاني: المستند وملفه هيتحذفوا',en:'Sure? Press again: the document and its file are deleted'}), async()=>{ try{ await api(`/documents/${id}`,{method:'DELETE'}); closeDrawer(); toast(L({ar:'اتحذف المستند',en:'Document deleted'})); route(); }catch(e){ toast(e.message); } });
+  DS.twoStep($('#edDel'), L({ar:'متأكد؟ اضغط مرة أخرى: سيُحذف المستند وملفه',en:'Sure? Press again: the document and its file are deleted'}), async()=>{ try{ await api(`/documents/${id}`,{method:'DELETE'}); closeDrawer(); toast(L({ar:'حُذف المستند',en:'Document deleted'})); route(); }catch(e){ toast(e.message); } });
 }
 
 /* ---------- parties */

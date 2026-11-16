@@ -1,6 +1,7 @@
 """PdfCraft as the program's PDF engine (updates list, item 49; docs/ctd/PDFCRAFT-INTEGRATION.md): each stage on it — reading, checks,
 fixes, pages, comparison, viewer, redaction, smaller files, EU signing — and the program still working where it is not (the browser
 edition reads with pypdf). Fictional files only."""
+from dossier_engine.checks.pdf import add_javascript
 import io, json, shutil
 import pytest
 from pathlib import Path
@@ -99,7 +100,7 @@ def test_attachments_comments_and_javascript_are_found_and_removed(tmp_path):
     from pypdf.annotations import FreeText
     w = PdfWriter(clone_from=PdfReader(io.BytesIO(raw_pdf(BODY))))
     w.add_attachment('notes.txt', b'internal notes')
-    w.add_js('app.alert(1);')
+    add_javascript(w, 'app.alert(1);')
     w.add_annotation(0, FreeText(text='check this', rect=(50, 550, 200, 650)))
     b = io.BytesIO()
     w.write(b)

@@ -49,7 +49,7 @@ def _date(s, field):
     try:
         return date.fromisoformat(s)
     except (TypeError, ValueError):
-        raise SuiteError('E-DATE', f'{field}: use a date like 2027-03-31.', f'{field}: اكتب التاريخ بالشكل 2027-03-31.')
+        raise SuiteError('E-DATE', f'{field}: use a date like 2027-03-31.', f'{field}: اكتب التاريخ بالصيغة 2027-03-31.')
 
 
 def _add_months(d, m):
@@ -159,12 +159,12 @@ class Suite:
         if role not in ROLES:
             raise SuiteError('E-ROLE', f'Role must be one of {ROLES}.', 'الدور غير معروف.')
         if role == 'api_supplier' and not api_name:
-            raise SuiteError('E-API', 'Name the active substance this supplier provides.', 'اكتب اسم المادة الفعالة اللي المورد ده بيوردها.')
+            raise SuiteError('E-API', 'Name the active substance this supplier provides.', 'اكتب اسم المادة الفعالة التي يورّدها هذا المورد.')
         lid = str(uuid.uuid4())
         try:
             self.db.execute('insert into product_party values (?,?,?,?,?)', (lid, product_id, party_id, role, api_name))
         except Exception:
-            raise SuiteError('E-DUP', 'This party already has that role on the product.', 'الطرف ده متسجّل بنفس الدور على المنتج.')
+            raise SuiteError('E-DUP', 'This party already has that role on the product.', 'هذا الطرف مسجَّل بالدور نفسه على المنتج.')
         self.db.commit()
         self._audit('product.party_linked', product=product_id, party=party_id, role=role, api=api_name)
         return lid
@@ -185,9 +185,9 @@ class Suite:
             raise SuiteError('E-TYPE', 'Unknown document type.', 'نوع المستند غير معروف.')
         _date(issued, 'issued'), _date(valid_until, 'valid_until')
         if not data and not url:
-            raise SuiteError('E-FILE', 'Attach the file or give its link.', 'ارفع الملف أو اكتب الرابط بتاعه.')
+            raise SuiteError('E-FILE', 'Attach the file or give its link.', 'ارفع الملف أو اكتب رابطه.')
         if url and not str(url).startswith('https://'):
-            raise SuiteError('E-URL', 'The link must start with https://', 'الرابط لازم يبدأ بـ https://')
+            raise SuiteError('E-URL', 'The link must start with https://', 'يجب أن يبدأ الرابط بـ https://')
         if not products and not parties:
             raise SuiteError('E-LINK', 'Link the document to at least one product or party.', 'اربط المستند بمنتج أو طرف واحد على الأقل.')
         for p in products:
@@ -431,13 +431,13 @@ class Suite:
                     ar = f"ناقص: {it['type_ar']}{who}."
                 elif it['status'] == 'expired':
                     en = f"Expired {dmy(d['end'])}: {it['type_en']}{who}."
-                    ar = f"منتهي من {dmy(d['end'])}: {it['type_ar']}{who}."
+                    ar = f"منتهٍ منذ {dmy(d['end'])}: {it['type_ar']}{who}."
                 elif it['status'] == 'expiring':
                     en = f"Expires in {d['days_left']} days ({dmy(d['end'])}): {it['type_en']}{who}."
-                    ar = f"هينتهي بعد {d['days_left']} يوم ({dmy(d['end'])}): {it['type_ar']}{who}."
+                    ar = f"ينتهي بعد {d['days_left']} يوم ({dmy(d['end'])}): {it['type_ar']}{who}."
                 else:
                     en = f"No expiry date recorded: {it['type_en']}{who}."
-                    ar = f"مفيش تاريخ انتهاء متسجّل: {it['type_ar']}{who}."
+                    ar = f"لا يوجد تاريخ انتهاء مسجَّل: {it['type_ar']}{who}."
                 affected = d['affected'] if d else [(p['id'], p['name'])]
                 issues.append({'severity': it['status'], 'en': en, 'ar': ar, 'doc_id': d and d['id'],
                                'doc_type': it['doc_type'], 'party_id': it['party_id'],
@@ -448,7 +448,7 @@ class Suite:
                 days = (date.fromisoformat(r['due']) - today).days
                 issues.append({'severity': 'renewal' if days >= 0 else 'expired', 'doc_type': 'registration_licence',
                                'en': f"{p['name']}: registration renewal due {date.fromisoformat(r['due']).strftime('%d/%m/%Y')} ({days} days).",
-                               'ar': f"{p['name']}: ميعاد إعادة التسجيل {date.fromisoformat(r['due']).strftime('%d/%m/%Y')} (بعد {days} يوم).",
+                               'ar': f"{p['name']}: موعد إعادة التسجيل {date.fromisoformat(r['due']).strftime('%d/%m/%Y')} (بعد {days} يوم).",
                                'products': [{'id': p['id'], 'name': p['name']}], 'source': r['source'], 'due': r['due']})
         # one row per (problem, document/party): merge the products it affects
         merged = {}
@@ -550,7 +550,7 @@ def install(app, st, err):
     def _person(request, admin=False):
         role = getattr(request.state, 'role', None)
         if role == 'assistant' or (admin and role not in (None, 'admin')):
-            raise HTTPException(403, detail={'code': 'E-ROLE', 'en': 'Only an administrator deletes for good.', 'ar': 'الحذف النهائي للمدير بس.'})
+            raise HTTPException(403, detail={'code': 'E-ROLE', 'en': 'Only an administrator deletes for good.', 'ar': 'الحذف النهائي للمدير فقط.'})
 
     @app.delete('/api/suite/products/{pid}')
     def delete_product(pid: str, request: Request, documents: int = 1):
@@ -572,7 +572,7 @@ def install(app, st, err):
     def doc_file(did: str):
         d = suite._doc_row(did)
         if not d['sha256']:
-            err(404, 'E-EXTERNAL', 'This document is a link; open it from the link.', 'المستند ده رابط؛ افتحه من الرابط.')
+            err(404, 'E-EXTERNAL', 'This document is a link; open it from the link.', 'هذا المستند رابط؛ افتحه من الرابط.')
         name = d['filename'] or 'document.pdf'
         return FileResponse(st.blob_path(d['sha256']), filename=name,
                             media_type='application/pdf' if name.lower().endswith('.pdf') else None)

@@ -1,5 +1,5 @@
 """HTTP API on localhost (D1). Errors always carry code + en + ar (+ action)."""
-import errno, json, re, shutil, sys, tempfile, time, uuid, zipfile
+import errno, json, os, re, shutil, sys, tempfile, time, traceback, uuid, zipfile
 from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, Response
@@ -44,6 +44,17 @@ def _cd(name, inline=False):
     from urllib.parse import quote
     ascii_name = ''.join(ch if 32 <= ord(ch) < 127 and ch not in '"\\' else '_' for ch in name) or 'file'
     return f"{'inline' if inline else 'attachment'}; filename=\"{ascii_name}\"; filename*=UTF-8''{quote(name)}"
+
+def internal_error(exc):
+    """The answer for a failure nobody expected (a fault of the program). `where` is for the page's faults record («سجل الأعطال»):
+    the kind of error and the engine's own lines it passed — never the error's message, which may quote a document."""
+    tb = traceback.extract_tb(exc.__traceback__)
+    own = [f for f in tb if 'dossier_engine' in f.filename.replace('\\', '/')][-3:] or tb[-2:]
+    where = type(exc).__name__ + ' @ ' + ' < '.join(f'{os.path.basename(f.filename)}:{f.lineno} {f.name}' for f in reversed(own))
+    return {'code': 'E-INTERNAL', 'where': where[:300],
+            'en': 'The program failed while doing this. What failed is written in the faults record: copy it from there and send it.',
+            'ar': 'حدث خطأ داخلي في البرنامج. ما تعطّل مكتوب في «سجل الأعطال»: انسخه من هناك وأرسله.'}
+
 
 def err(status, code, en, ar, **extra):
     raise HTTPException(status, detail={'code': code, 'en': en, 'ar': ar, **extra})
@@ -118,7 +129,7 @@ def create_app(workspace, auth_enabled=None):
     import os
     from .auth import Auth, install
     st = Store(workspace)
-    app = FastAPI(title='Dossier Builder', version='0.2', docs_url=None, redoc_url=None, openapi_url=None)
+    app = FastAPI(title='eBOX', version='0.2', docs_url=None, redoc_url=None, openapi_url=None)
     app.add_middleware(_ReadingsOfThisWorkspace, store=st)
     app.router.route_class = _OpenRoute                     # before any route is added
     if auth_enabled is None and (os.environ.get('DB_MODE') == 'cloud' or os.environ.get('DB_AUTH') == '1'):
@@ -142,7 +153,7 @@ def create_app(workspace, auth_enabled=None):
                     return pack
             except (FileNotFoundError, NotADirectoryError, OSError):
                 pass
-            err(422, 'E-PACK', f'Unknown authority pack {pack}.', 'الهيئة دي مش موجودة في البرنامج.')
+            err(422, 'E-PACK', f'Unknown authority pack {pack}.', 'هذه الجهة الرقابية غير موجودة في البرنامج.')
         if country:
             m = _packs.for_country(country)
             if m:
@@ -183,10 +194,10 @@ def create_app(workspace, auth_enabled=None):
     def _memory_answer():
         if sys.platform == 'emscripten':                    # the browser edition: the page's memory, not the machine's
             return JSONResponse(status_code=507, content={'detail': {'code': 'E-MEMORY', 'en': 'A file this large does not fit in the memory the browser gives the page. Close other tabs and try again, split the file, or use the desktop program, which takes it whole.',
-                                                                     'ar': 'ملف بالحجم ده أكبر من الذاكرة اللي المتصفح بيديها للصفحة. اقفل تبويبات تانية وجرّب تاني، أو قسّم الملف، أو استخدم برنامج سطح المكتب — بياخده كامل.'}})
+                                                                     'ar': 'ملف بهذا الحجم أكبر من الذاكرة التي يتيحها المتصفح للصفحة. أغلق تبويبات أخرى وأعد المحاولة، أو قسِّم الملف، أو استخدم برنامج سطح المكتب — فهو يستوعبه كاملًا.'}})
         return JSONResponse(status_code=507, content={'detail': {
             'code': 'E-MEMORY', 'en': 'This machine does not have the memory for a file this large. Close other programs or tabs and try again, or split the file.',
-            'ar': 'ذاكرة الجهاز ما كفتش لملف بالحجم ده. اقفل برامج أو تبويبات تانية وجرّب تاني، أو قسّم الملف.'}})
+            'ar': 'لم تكفِ ذاكرة الجهاز لملف بهذا الحجم. أغلق برامج أو تبويبات أخرى وأعد المحاولة، أو قسِّم الملف.'}})
 
     @app.exception_handler(MemoryError)
     async def _no_memory(request, exc):                     # a file larger than what this machine can hold at once: said, not a crash
@@ -198,7 +209,7 @@ def create_app(workspace, auth_enabled=None):
             raise exc                                       # anything else missing is a fault of the program: as it always was
         return JSONResponse(status_code=410, content={'detail': {
             'code': 'E-FILE-GONE', 'en': 'The file itself is no longer in the storage (it was not saved completely, or was removed from the disk). Upload it again.',
-            'ar': 'الملف نفسه مش موجود في التخزين (ما اتحفظش كامل، أو اتشال من القرص). ارفعه تاني.'}})
+            'ar': 'الملف نفسه غير موجود في التخزين (لم يُحفظ كاملًا، أو أُزيل من القرص). ارفعه من جديد.'}})
 
     def _no_room(exc):
         """The answer for a write the machine refused for lack of room — memory, or the disk — else None."""
@@ -207,7 +218,7 @@ def create_app(workspace, auth_enabled=None):
         if isinstance(exc, OSError) and exc.errno == errno.ENOSPC:
             return JSONResponse(status_code=507, content={'detail': {
                 'code': 'E-DISK-FULL', 'en': 'The disk has no room left for this file. Free some space and try again.',
-                'ar': 'القرص مفيهوش مساحة للملف ده. فضّي مساحة وجرّب تاني.'}})
+                'ar': 'لا توجد على القرص مساحة لهذا الملف. أفرغ مساحة وأعد المحاولة.'}})
         return None
 
     @app.exception_handler(OSError)
@@ -221,6 +232,10 @@ def create_app(workspace, auth_enabled=None):
     async def _http_err(request, exc):                      # the same when the room ran out while the upload's body was being read
         return _no_room(exc.__cause__) or await _default_http_error(request, exc)
 
+    @app.exception_handler(Exception)
+    async def _internal(request, exc):                      # a fault of the program: said plainly, never a bare «Internal Server Error»
+        return JSONResponse(status_code=500, content={'detail': internal_error(exc)})
+
     @app.exception_handler(ProfileError)
     def _prof_err(_, e):
         return JSONResponse(status_code=422, content={'detail': {'code': 'E-PROFILE', 'problems': e.problems,
@@ -233,12 +248,12 @@ def create_app(workspace, auth_enabled=None):
 
     def _backups_admin(request):
         if getattr(request.state, 'role', None) not in (None, 'admin'):
-            err(403, 'E-ROLE', 'Backups are for an administrator.', 'النسخ الاحتياطية للمدير بس.')
+            err(403, 'E-ROLE', 'Backups are for an administrator.', 'النسخ الاحتياطية للمدير فقط.')
 
     def _backup_named(name):
         p = _backup.path_of(st.root, name)
         if not p:
-            err(404, 'E-NOT-FOUND', 'No backup with this name.', 'مفيش نسخة احتياطية بالاسم ده.')
+            err(404, 'E-NOT-FOUND', 'No backup with this name.', 'لا توجد نسخة احتياطية بهذا الاسم.')
         return p
 
     @app.get('/api/backups')
@@ -285,7 +300,7 @@ def create_app(workspace, auth_enabled=None):
         _backups_admin(request)
         p = st.root / 'qualification' / name
         if not QUAL.match(name) or not p.is_file():
-            err(404, 'E-NOT-FOUND', 'No qualification package with this name.', 'مفيش حزمة تأهيل بالاسم ده.')
+            err(404, 'E-NOT-FOUND', 'No qualification package with this name.', 'لا توجد حزمة تأهيل بهذا الاسم.')
         return FileResponse(p, filename=name)
 
     @app.get('/api/health')
@@ -317,9 +332,9 @@ def create_app(workspace, auth_enabled=None):
         """The Assistant never deletes a project or a product; with sign-in on, deleting for good is for administrators."""
         role = getattr(request.state, 'role', None)
         if role == 'assistant':
-            err(403, 'E-ROLE', 'Deleting a project is for a person, not the Assistant.', 'حذف المشروع لشخص، مش للمساعد.')
+            err(403, 'E-ROLE', 'Deleting a project is for a person, not the Assistant.', 'حذف الملف يقوم به شخص، لا المساعد.')
         if for_good and role not in (None, 'admin'):
-            err(403, 'E-ROLE', 'Only an administrator deletes for good.', 'الحذف النهائي للمدير بس.')
+            err(403, 'E-ROLE', 'Only an administrator deletes for good.', 'الحذف النهائي للمدير فقط.')
 
     @app.delete('/api/dossiers/{did}')
     def delete_dossier(did: str, request: Request, permanent: int = 0, confirm: str = ''):
@@ -330,7 +345,7 @@ def create_app(workspace, auth_enabled=None):
             return st.trash_dossier(did)
         d = st.dossier(did)
         if not d.get('deleted') and confirm.strip() != d['name'].strip():
-            err(422, 'E-CONFIRM', 'Type the project\'s name to delete it for good.', 'اكتب اسم المشروع عشان يتحذف نهائيًا.')
+            err(422, 'E-CONFIRM', 'Type the project\'s name to delete it for good.', 'اكتب اسم الملف ليُحذف نهائيًا.')
         return st.purge_dossier(did)
 
     @app.post('/api/dossiers/{did}/restore')
@@ -424,7 +439,7 @@ def create_app(workspace, auth_enabled=None):
             old = st.document(replaces)
             if old['dossier_id'] != did or old['slot_id'] != slot_id or old['state'] != 'current':
                 err(422, 'E-REPLACES', 'The replaced document must be a current document of the same section.',
-                    'المستند المستبدَل لازم يكون مستند حالي في نفس القسم.')
+                    'المستند المستبدَل يجب أن يكون مستندًا حاليًا في القسم نفسه.')
         m = json.loads(meta or '{}')
         if isinstance(m, dict):
             m.pop('text', None)                         # an older page sent its reading along: the file's own text is what counts
@@ -459,7 +474,7 @@ def create_app(workspace, auth_enabled=None):
     def get_file(did: str, doc_id: str):
         d = st.document(doc_id)
         if d['meta'].get('external'):
-            err(404, 'E-EXTERNAL', 'This is an external reference; open its link.', 'ده مرجع خارجي؛ افتح الرابط بتاعه.')
+            err(404, 'E-EXTERNAL', 'This is an external reference; open its link.', 'هذا مرجع خارجي؛ افتح رابطه.')
         path = st.blob_path(d['sha256'])
         with open(path, 'rb') as fh:
             head = fh.read(8)
@@ -471,7 +486,7 @@ def create_app(workspace, auth_enabled=None):
         """A misfiled document goes to the item it belongs to (new version there, old one withdrawn)."""
         slot_id = (body or {}).get('slot_id')
         if not slot_id:
-            err(422, 'E-SLOT', 'slot_id is required.', 'لازم تحدد البند.')
+            err(422, 'E-SLOT', 'slot_id is required.', 'يجب تحديد البند.')
         return st.move_document(did, doc_id, slot_id, (body or {}).get('meta'))
 
     @app.post('/api/dossiers/{did}/slots/{slot_id}/attest')
@@ -539,7 +554,7 @@ def create_app(workspace, auth_enabled=None):
         key = _ai_key()
         if not key:
             err(501, 'E-NO-AI', "Save the Anthropic API key (the Assistant's settings) to let Claude read the documents.",
-                'سجّل مفتاح Anthropic (من إعدادات المساعد) عشان Claude يقرأ المستندات.')
+                'سجِّل مفتاح Anthropic (من إعدادات المساعد) ليقرأ Claude المستندات.')
         doc = st.document(doc_id)
         if doc['dossier_id'] != did:
             err(404, 'E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
@@ -551,7 +566,7 @@ def create_app(workspace, auth_enabled=None):
         n = _pages.count(data)
         pdf = data if len(data) <= 24_000_000 else None
         if pdf is None:
-            err(413, 'E-TOO-BIG', 'Too large to send whole to the model: cut it by hand.', 'كبير قوي إنه يتبعت كله للموديل: قسّمه بإيدك.')
+            err(413, 'E-TOO-BIG', 'Too large to send whole to the model: cut it by hand.', 'أكبر من أن يُرسَل كله إلى النموذج: قسِّمه يدويًا.')
         client = anthropic.Anthropic(api_key=key)
         with client.beta.messages.stream(model=_aset.load(st.root).get('model') or 'claude-opus-5-5', max_tokens=8000, output_config={'effort': 'medium'},
                                          betas=['server-side-fallback-2026-07-01'], fallbacks='default',
@@ -561,12 +576,12 @@ def create_app(workspace, auth_enabled=None):
                                              {'type': 'text', 'text': _extract.split_prompt(n)}]}]) as stream:
             msg = stream.get_final_message()
         if msg.stop_reason == 'refusal':
-            err(422, 'E-AI-REFUSED', 'Claude declined to read this file.', 'Claude اعتذر عن قراءة الملف ده.')
+            err(422, 'E-AI-REFUSED', 'Claude declined to read this file.', 'اعتذر Claude عن قراءة هذا الملف.')
         text = ''.join(b.text for b in msg.content if b.type == 'text')
         try:
             parts = _extract.parse_split(json.loads(text[text.index('{'):text.rindex('}') + 1]), n)
         except ValueError:
-            err(502, 'E-AI-JSON', 'Claude did not return the expected JSON.', 'Claude ما رجّعش البيانات بالشكل المتوقع.')
+            err(502, 'E-AI-JSON', 'Claude did not return the expected JSON.', 'لم يُرجع Claude البيانات بالشكل المتوقع.')
         return {'pages': n, 'parts': parts, 'by': 'model'}
 
     @app.post('/api/dossiers/{did}/slots/{slot_id:path}/merge', status_code=201)
@@ -653,7 +668,7 @@ def create_app(workspace, auth_enabled=None):
                     continue
                 parts.append((f'Module {s.module}', f"{s.ctd} {s.title['en']}"[:120], doc['title'] or doc['filename'], data))
         if not parts:
-            err(404, 'E-EMPTY', 'No PDF documents there yet.', 'مفيش مستندات PDF هنا لسه.')
+            err(404, 'E-EMPTY', 'No PDF documents there yet.', 'لا توجد هنا مستندات PDF بعد.')
         title = f"{d['name']} — " + (f'Module {module}' if module else 'the whole dossier')
         out = _pages.bound(parts, title, left)
         if watermark:                                    # a reading copy that says so on every page (PdfCraft)
@@ -716,16 +731,16 @@ def create_app(workspace, auth_enabled=None):
         if d['dossier_id'] != did or d['meta'].get('external'):
             err(404, 'E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
         if not _pc.available():
-            err(409, 'E-PDFCRAFT', 'This needs PdfCraft, which is not ready here yet.', 'ده محتاج PdfCraft، ولسه مش جاهز هنا.')
+            err(409, 'E-PDFCRAFT', 'This needs PdfCraft, which is not ready here yet.', 'أدوات PDF لم تجهز في هذه الصفحة بعد: انتظر لحظات ثم أعد المحاولة.')
         data = st.blob_path(d['sha256']).read_bytes()
         if data[:5] != b'%PDF-':
-            err(422, 'E-NOT-PDF', 'Only a PDF is turned into Word.', 'الـ PDF بس هو اللي بيتحوّل لـ Word.')
+            err(422, 'E-NOT-PDF', 'Only a PDF is turned into Word.', 'ملفات PDF فقط هي التي تُحوَّل إلى Word.')
         try:
             docx = _pc.to_word(data)
         except _pc.PdfCraftError as e:
-            err(422, 'E-WORD', f'It could not be turned into Word: {e}'[:300], 'ما اتحوّلش لـ Word.')
+            err(422, 'E-WORD', f'It could not be turned into Word: {e}'[:300], 'تعذّر تحويله إلى Word.')
         if not docx:
-            err(422, 'E-WORD', 'It could not be turned into Word.', 'ما اتحوّلش لـ Word.')
+            err(422, 'E-WORD', 'It could not be turned into Word.', 'تعذّر تحويله إلى Word.')
         stem = d['filename'].rsplit('.', 1)[0] if '.' in d['filename'] else d['filename']
         from urllib.parse import quote
         return Response(docx, media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -747,7 +762,7 @@ def create_app(workspace, auth_enabled=None):
         d = st.dossier(did)
         s = next((x for x in st.board(did)['slots'] if x['slot_id'] == slot_id), None)
         if not s or s['level'] not in ('R', 'O'):
-            err(422, 'E-SLOT-INACTIVE', 'This item is not required for this product.', 'البند ده مش مطلوب للمنتج ده.')
+            err(422, 'E-SLOT-INACTIVE', 'This item is not required for this product.', 'هذا البند غير مطلوب لهذا المنتج.')
         req = next(r for r in st.pack(d['pack']).requirements if r['id'] == s['req_id'])
         problems = []
         for doc in s['documents']:
@@ -767,7 +782,7 @@ def create_app(workspace, auth_enabled=None):
             try:
                 letters.reobtain_request(data, tmp / 'request.docx')
             except MissingData as e:
-                err(422, 'E-MISSING-DATA', 'Some data is missing: ' + ', '.join(e.fields), 'فيه بيانات ناقصة: ' + '، '.join(e.fields),
+                err(422, 'E-MISSING-DATA', 'Some data is missing: ' + ', '.join(e.fields), 'توجد بيانات ناقصة: ' + '، '.join(e.fields),
                     request_data=e.fields)
             sha = st.put_blob(to_pdf(tmp / 'request.docx').read_bytes() if find_soffice() else (tmp / 'request.docx').read_bytes())
             st.put_blob((tmp / 'request.docx').read_bytes())
@@ -800,7 +815,7 @@ def create_app(workspace, auth_enabled=None):
         except LockedError as e:
             for a in audit:
                 st.audit(did, a['event'], doc=doc_id, op=body.op, doc_class=d['doc_class'])
-            err(403, 'E-LOCKED', str(e), 'المستند ده دليل من جهة خارجية ومينفعش يتعدّل محتواه؛ اطلبه من مصدره.',
+            err(403, 'E-LOCKED', str(e), 'هذا المستند دليل صادر من جهة خارجية ولا يجوز تعديل محتواه؛ اطلبه من مصدره.',
                 action='re_obtain')
         except ValueError as e:
             err(422, 'E-OP', str(e), 'عملية غير معروفة.')
@@ -816,7 +831,7 @@ def create_app(workspace, auth_enabled=None):
                  and s.active]
         slot = next((s for s in slots if s.slot_id == (body.slot_id or s.slot_id)), None)
         if not slot:
-            err(422, 'E-SLOT-INACTIVE', f'{req_id} is not required for this product.', 'البند ده مش مطلوب للمنتج ده.')
+            err(422, 'E-SLOT-INACTIVE', f'{req_id} is not required for this product.', 'هذا البند غير مطلوب لهذا المنتج.')
         d = st.dossier(did)
         tmp = Path(tempfile.mkdtemp())
         try:
@@ -830,7 +845,7 @@ def create_app(workspace, auth_enabled=None):
                     getattr(letters, fn_name)(body.data, out)
             except MissingData as e:
                 err(422, 'E-MISSING-DATA', 'Some data is missing: ' + ', '.join(e.fields),
-                    'فيه بيانات ناقصة: ' + '، '.join(e.fields), request_data=e.fields)
+                    'توجد بيانات ناقصة: ' + '، '.join(e.fields), request_data=e.fields)
             from .store import SIGN_KINDS
             if find_soffice():
                 fname, blob = f'{kind}.pdf', to_pdf(out).read_bytes()
@@ -854,7 +869,7 @@ def create_app(workspace, auth_enabled=None):
         if output not in pk.outputs:
             err(422, 'E-OUTPUT-AUTHORITY', "The eCTD package is written for Egypt's and the EU's Module 1 (eCTD 4.0 for Egypt only); "
                 "this dossier exports as " + ' and '.join(pk.outputs) + '.',
-                'حزمة الـ eCTD مكتوبة لموديول ١ المصري والأوروبي بس (والـ 4.0 لمصر بس)؛ الملف ده بيتصدّر كـ ' + ' و'.join(pk.outputs) + '.')
+                'حزمة eCTD معدّة لـ Module 1 المصري والأوروبي فقط (والإصدار 4.0 لمصر فقط)؛ يُصدَّر هذا الملف على هيئة ' + ' و'.join(pk.outputs) + '.')
         slots = st.slots(did)
         by_slot = {s.slot_id: s for s in slots}
         files, docmeta = {}, {}
@@ -1011,13 +1026,13 @@ def create_app(workspace, auth_enabled=None):
         SHA-256: {sha256, texts: [one per page], rep: as pdfcraft.ocr's report, tag}. Refused where this engine reads scans itself."""
         from .. import pdfcraft as _pc
         if _pc.ocr_info():
-            err(409, 'E-OCR-HERE', 'This program reads scans itself.', 'البرنامج ده بيقرا الملفات الممسوحة بنفسه.')
+            err(409, 'E-OCR-HERE', 'This program reads scans itself.', 'هذا البرنامج يقرأ المستندات الممسوحة ضوئيًا بنفسه.')
         body = body or {}
         try:
             rec = _extract.keep_browser_reading(str(body.get('sha256') or '').lower(), body.get('texts'), body.get('rep'), body.get('tag'),
                                                 body.get('layout'))
         except ValueError as e:
-            err(422, 'E-OCR-READING', f'Not a reading of a scan: {e}.', f'دي مش قراية ملف ممسوح: {e}.')
+            err(422, 'E-OCR-READING', f'Not a reading of a scan: {e}.', f'هذه ليست قراءة مستند ممسوح ضوئيًا: {e}.')
         return {'kept': True, 'pages': len(rec['texts']), 'tag': rec['tag']}
 
     @app.get('/api/ocr/document/{did}/{doc_id}')
@@ -1076,7 +1091,7 @@ def create_app(workspace, auth_enabled=None):
         key = _ai_key()
         if not key:
             err(501, 'E-NO-AI', "Save the Anthropic API key (the Assistant's settings) to let Claude read the documents.",
-                'سجّل مفتاح Anthropic (من إعدادات المساعد) عشان Claude يقرأ المستندات.')
+                'سجِّل مفتاح Anthropic (من إعدادات المساعد) ليقرأ Claude المستندات.')
         import base64
         import anthropic
         from ..assistant import settings as _aset
@@ -1100,12 +1115,12 @@ def create_app(workspace, auth_enabled=None):
                                          messages=[{'role': 'user', 'content': content}]) as stream:
             msg = stream.get_final_message()
         if msg.stop_reason == 'refusal':
-            err(422, 'E-AI-REFUSED', 'Claude declined to read these documents.', 'Claude اعتذر عن قراءة المستندات دي.')
+            err(422, 'E-AI-REFUSED', 'Claude declined to read these documents.', 'اعتذر Claude عن قراءة هذه المستندات.')
         text = ''.join(b.text for b in msg.content if b.type == 'text')
         try:
             ai = json.loads(text[text.index('{'):text.rindex('}') + 1])
         except ValueError:
-            err(502, 'E-AI-JSON', 'Claude did not return the expected JSON.', 'Claude ما رجّعش البيانات بالشكل المتوقع.')
+            err(502, 'E-AI-JSON', 'Claude did not return the expected JSON.', 'لم يُرجع Claude البيانات بالشكل المتوقع.')
         return {'ai': ai, 'rules': r['rules'], 'files': [dict(f) for f in r['files']]}
 
     @app.get('/api/vocab')
@@ -1130,7 +1145,7 @@ def create_app(workspace, auth_enabled=None):
         again): same shape as /api/extract."""
         files = body.get('files') or []
         if not isinstance(files, list) or len(files) > 300:
-            err(422, 'E-FILES', 'files must be a list of at most 300 items.', 'files لازم تكون قائمة بحد أقصى 300 عنصر.')
+            err(422, 'E-FILES', 'files must be a list of at most 300 items.', 'يجب أن تكون files قائمة لا تزيد على 300 عنصر.')
         r = _extract.read_texts([f for f in files if isinstance(f, dict)])
         return {'files': [{k: v for k, v in f.items() if k != 'text'} | {'text': f['text']} for f in r['files']], 'rules': r['rules'],
                 'prompt': _extract.ai_prompt(r['files'], target), 'ai_server': bool(_ai_key())}
@@ -1210,7 +1225,7 @@ def create_app(workspace, auth_enabled=None):
         rows = _sheet.parse(file.filename, await file.read())
         if not rows:
             err(422, 'E-SHEET', 'The sheet has no rows under its header (file, item, title, pi_type, lang, study, doc_type, eu_country).',
-                'الشيت مفيهوش صفوف تحت العناوين (file، item، title، pi_type، lang، study، doc_type، eu_country).')
+                'لا توجد في الجدول صفوف تحت العناوين (file، item، title، pi_type، lang، study، doc_type، eu_country).')
         steps = _sheet.plan(st, did, rows)
         out = {'plan': steps, 'counts': {a: sum(1 for p in steps if p['action'] == a) for a in ('place', 'move', 'update', 'none', 'error')}}
         if apply:
@@ -1341,7 +1356,7 @@ def create_app(workspace, auth_enabled=None):
         homes = _extract.kind_homes(kind, clf.pack, text, product,      # the likeliest first: by what the document is about, not only its kind
                                     substances=[_extract.api_key(s.item.get('name') or '') for s in slots if s.item], fpp=fpp, makers=makers)
         kn = _extract.KIND_NAMES.get(kind) or {'en': kind, 'ar': kind}
-        said = {'en': f"it reads as a {kn['en']}", 'ar': f"شكله {kn['ar']}"}
+        said = {'en': f"it reads as a {kn['en']}", 'ar': f"يبدو أنه {kn['ar']}"}
         by_id = {s.slot_id: s for s in slots}
         if kind in _extract.KIND_HOME and not any(s.active and s.req_id in homes for s in slots):
             return kind, [], None          # recognised, and this dossier has no item for it (a sampling form; a variation approval in a new
@@ -1443,12 +1458,12 @@ def create_app(workspace, auth_enabled=None):
         """An unplaced (or misplaced) document into an item: a new checked version there, the old row withdrawn."""
         slot_id = (body or {}).get('slot_id')
         if not slot_id:
-            err(422, 'E-SLOT', 'slot_id is required.', 'لازم تحدد البند.')
+            err(422, 'E-SLOT', 'slot_id is required.', 'يجب تحديد البند.')
         d0 = st.document(doc_id)
         if d0['dossier_id'] != did:
             err(404, 'E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
         if d0['meta'].get('external'):
-            err(422, 'E-EXTERNAL', 'An external reference cannot be placed; upload its file.', 'المرجع الخارجي ما ينفعش يتحط؛ ارفع ملفه.')
+            err(422, 'E-EXTERNAL', 'An external reference cannot be placed; upload its file.', 'المرجع الخارجي لا يوضع في بند؛ ارفع ملفه.')
         data = st.blob_path(d0['sha256']).read_bytes()
         meta = {k: v for k, v in d0['meta'].items() if k not in ('placed_from', 'text')} | {'placed_by': 'user', 'placed_from': d0.get('slot_id')}
         meta |= {k: v for k, v in ((body or {}).get('meta') or {}).items() if k in st.ITEM_META and v}       # the leaflet's type + language, the study
@@ -1558,7 +1573,7 @@ def create_app(workspace, auth_enabled=None):
         """What claude.ai's model read on this document's pages in the browser edition (DBAI.extract, target «document»), kept with it."""
         ai = (body or {}).get('ai')
         if not isinstance(ai, dict):
-            err(422, 'E-AI', 'The reading must be a JSON object.', 'القراءة لازم تكون JSON.')
+            err(422, 'E-AI', 'The reading must be a JSON object.', 'يجب أن تكون القراءة بصيغة JSON.')
         try:
             doc = st.keep_model_reading(did, doc_id, ai, (body or {}).get('by') or 'claude.ai')
         except StoreError as e:
@@ -1643,6 +1658,7 @@ def create_app(workspace, auth_enabled=None):
         read and kept with it (a scan read by OCR), checked, fixed where the program can (a new version; evidence only where its pages
         stay the same), and named as the dossier names it. → {document, steps, reading, names, needs_you}."""
         body = body or {}
+        doc_id = st.current_of(did, doc_id) or doc_id        # a page that still shows the version before a fix: the document it means is the current one
         d0 = st.document(doc_id)
         if d0['dossier_id'] != did or d0['state'] != 'current':
             err(404, 'E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
@@ -1751,7 +1767,7 @@ def create_app(workspace, auth_enabled=None):
     def receipt(did: str, output: str, seq: str):
         h = next((x for x in st.history(did, output) if str(x['seq']) == seq), None)
         if not h or not h['receipt'].get('receipt_sha'):
-            err(404, 'E-NO-FILE', 'No receipt file for this sequence.', 'مفيش ملف إيصال للتسلسل ده.')
+            err(404, 'E-NO-FILE', 'No receipt file for this sequence.', 'لا يوجد ملف إيصال لهذا التسلسل.')
         return FileResponse(st.blob_path(h['receipt']['receipt_sha']), filename=h['receipt'].get('receipt_name') or 'receipt.pdf')
 
     @app.get('/api/dossiers/{did}/exports/{exp_id}/{name}')
@@ -1772,12 +1788,12 @@ def create_app(workspace, auth_enabled=None):
         ours = _cr.ours_of(row['path'], output)
         if not ours:
             err(422, 'E-NO-REPORT', 'This export has no validation report of its own (CTD folders only): export the eCTD first.',
-                'التصدير ده مفيهوش تقرير تحقق خاص بيه (مجلدات CTD بس): صدّر الـ eCTD الأول.')
+                'هذا التصدير ليس له تقرير تحقق خاص به (مجلدات CTD فقط): صدِّر eCTD أولًا.')
         theirs = _cr.read(file.filename, await file.read())
         if not theirs:
             err(422, 'E-REPORT-UNREAD', 'No validation criterion with a result was found in this report (a line naming a criterion such as 14.5 '
                 'and saying failed / passed). Export their report as PDF, Excel, CSV or HTML.',
-                'ملقيناش في التقرير ده قاعدة تحقق ومعاها نتيجتها (سطر فيه رقم القاعدة زي 14.5 وجنبه failed أو passed). صدّر تقريرهم PDF أو Excel أو CSV أو HTML.')
+                'لم نجد في هذا التقرير قاعدة تحقق ومعها نتيجتها (سطر فيه رقم القاعدة مثل 14.5 وبجانبه failed أو passed). صدِّر تقريرهم بصيغة PDF أو Excel أو CSV أو HTML.')
         return _cr.compare(theirs, ours, _cr.eg_refs(DEFAULT_PROFILE))
 
     @app.get('/api/dossiers/{did}/audit')

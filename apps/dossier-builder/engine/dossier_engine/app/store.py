@@ -55,12 +55,12 @@ def _validity(d, today):
     if end < today:
         d['findings'] = d['findings'] + [{'rule': 'DOC-EXPIRED', 'severity': 'block', 'action': 're_obtain',
             'en': f'Expired on {shown} ({(today - end).days} days ago). Obtain a current certificate from the issuer.',
-            'ar': f'منتهي من {shown} (من {(today - end).days} يوم). لازم نسخة سارية من الجهة اللي أصدرته.'}]
+            'ar': f'منتهٍ منذ {shown} (منذ {(today - end).days} يوم). يجب تقديم نسخة سارية من الجهة التي أصدرته.'}]
         d['check_status'] = 'non_conforming'
     elif end <= today + timedelta(days=EXPIRY_WARN_DAYS):
         d['findings'] = d['findings'] + [{'rule': 'DOC-EXPIRING', 'severity': 'warn', 'action': 're_obtain',
             'en': f'Expires on {shown} (in {(end - today).days} days). Start renewal now.',
-            'ar': f'هينتهي {shown} (بعد {(end - today).days} يوم). ابدأ التجديد من دلوقتي.'}]
+            'ar': f'ينتهي في {shown} (بعد {(end - today).days} يوم). ابدأ التجديد من الآن.'}]
         if d['check_status'] in ('conforming', 'received'):
             d['check_status'] = 'needs_attention'
 
@@ -121,15 +121,15 @@ class StoreError(ValueError):
 WORD_ITEMS = {'M1-09'}        # NP.CAPP.065 v5 1.1.9: the proposed SmPC and PIL, Arabic and English, in Word
 SOURCE_DRAFT = {
     'word': ('Word draft. Print it on letterhead, sign, stamp, scan and upload the PDF (or export it to PDF): the PDF replaces this draft.',
-             'مسودة Word. اطبعها على ورق الشركة ووقّعها واختمها وامسحها ضوئياً وارفع الـ PDF (أو صدّرها PDF): نسخة الـ PDF بتحل محل المسودة.'),
+             'مسودة Word. اطبعها على ورق الشركة ووقِّعها واختمها وامسحها ضوئيًا وارفع ملف PDF (أو صدِّرها بصيغة PDF): فتحل نسخة PDF محل المسودة.'),
     'excel': ('An Excel file. The dossier takes PDF: export the sheet to PDF (signed and stamped where the document needs it) and upload it; the PDF replaces this file.',
-              'ملف Excel. الملف التسجيلي بياخد PDF: صدّر الشيت PDF (موقّع ومختوم لو المستند محتاج) وارفعه؛ الـ PDF بيحل محل الملف ده.'),
+              'ملف Excel. ملف التسجيل يأخذ PDF: صدِّر الجدول بصيغة PDF (موقَّعًا ومختومًا إن كان المستند يتطلب ذلك) وارفعه؛ فيحل ملف PDF محل هذا الملف.'),
     'powerpoint': ('A PowerPoint file. The dossier takes PDF: export it to PDF and upload it; the PDF replaces this file.',
-                   'ملف PowerPoint. الملف التسجيلي بياخد PDF: صدّره PDF وارفعه؛ الـ PDF بيحل محل الملف ده.'),
+                   'ملف PowerPoint. ملف التسجيل يأخذ PDF: صدِّره بصيغة PDF وارفعه؛ فيحل ملف PDF محل هذا الملف.'),
     'image': ('An image this machine could not turn into a PDF. The dossier takes PDF: save or scan it as PDF and upload it; the PDF replaces this file.',
-              'صورة الجهاز ده ما قدرش يحوّلها PDF. الملف التسجيلي بياخد PDF: احفظها أو امسحها PDF وارفعها؛ الـ PDF بيحل محل الملف ده.'),
+              'صورة تعذّر تحويلها إلى PDF هنا. ملف التسجيل يأخذ PDF: احفظها أو امسحها ضوئيًا بصيغة PDF وارفعها؛ فيحل ملف PDF محل هذا الملف.'),
     'text': ('A text or web file, not a PDF. The dossier takes PDF: save it as PDF (signed and stamped where the document needs it) and upload it; the PDF replaces this file.',
-             'ملف نصي أو صفحة ويب، مش PDF. الملف التسجيلي بياخد PDF: احفظه PDF (موقّع ومختوم لو المستند محتاج) وارفعه؛ الـ PDF بيحل محل الملف ده.')}
+             'ملف نصي أو صفحة ويب، لا PDF. ملف التسجيل يأخذ PDF: احفظه بصيغة PDF (موقَّعًا ومختومًا إن كان المستند يتطلب ذلك) وارفعه؛ فيحل ملف PDF محل هذا الملف.')}
 
 
 class Store:
@@ -230,9 +230,9 @@ class Store:
         try:
             pk = self.pack(pack)
         except (FileNotFoundError, NotADirectoryError):
-            raise StoreError('E-PACK', f'Unknown authority pack {pack}.', 'الهيئة دي مش موجودة في البرنامج.')
+            raise StoreError('E-PACK', f'Unknown authority pack {pack}.', 'هذه الجهة الرقابية غير موجودة في البرنامج.')
         if pk.meta.get('kind') == 'base':
-            raise StoreError('E-PACK', 'A dossier is built for an authority, not on the common CTD alone.', 'الملف بيتعمل لهيئة، مش على الـ CTD المشترك لوحده.')
+            raise StoreError('E-PACK', 'A dossier is built for an authority, not on the common CTD alone.', 'يُعدّ الملف لجهة رقابية، لا على الـ CTD المشترك وحده.')
         prof = Profile.from_dict(profile)
         prof.validate(pack=pk)
         did = str(uuid.uuid4())
@@ -367,18 +367,18 @@ class Store:
         pc = self._pdfcraft()
         d = self._current_pdf(did, doc_id)
         if not d.get('slot_id'):
-            raise StoreError('E-PAGE', 'Only a document of an item has its pages replaced.', 'بنبدّل صفحات مستند في بند بس.')
+            raise StoreError('E-PAGE', 'Only a document of an item has its pages replaced.', 'تُستبدل صفحات مستند موضوع في بند فقط.')
         try:                                             # a page's content: the company's own documents only
             assert_allowed(d['doc_class'], 'replace_page')
         except LockedError:
             raise StoreError('E-LOCKED', 'Only its issuer may change this document (third-party, EDA or executed) — re-obtain it.',
-                             'المستند ده من حق الجهة اللي أصدرته بس تعدّله (جهة خارجية أو الهيئة أو سجل تشغيل) — اطلبه منها.')
+                             'هذا المستند لا يحق تعديله إلا للجهة التي أصدرته (جهة خارجية أو الهيئة أو سجل تشغيل) — اطلبه منها.')
         if not pc.picture_size(picture or b''):
-            raise StoreError('E-PAGE', 'The page comes back as a PNG or JPEG picture.', 'الصفحة بترجع صورة PNG أو JPEG.')
+            raise StoreError('E-PAGE', 'The page comes back as a PNG or JPEG picture.', 'يجب أن تعود الصفحة صورة بصيغة PNG أو JPEG.')
         out = pc.page_picture(self.blob_path(d['sha256']).read_bytes(), page, picture)
         if not out:
             raise StoreError('E-PAGE', f'Page {page} could not be replaced (no such page, or a PDF PdfCraft cannot change).',
-                             f'ماقدرتش أبدّل صفحة {page} (مفيش صفحة بالرقم ده، أو PDF مش بيتعدّل).')
+                             f'تعذّر استبدال الصفحة {page} (لا توجد صفحة بهذا الرقم، أو ملف PDF لا يقبل التعديل).')
         new = self.add_document(did, d['slot_id'], d['filename'], out, d['title'],
                                 {**d['meta'], 'pdfcraft': 'page.picture', 'from': doc_id, 'page_picture': int(page)},
                                 supersede=doc_id, doc_class=d['doc_class'])
@@ -392,7 +392,7 @@ class Store:
         text = ' '.join(str(text or '').split())[:300]
         if not text:
             raise StoreError('E-INDICATION', 'Write the indication (a few words: what the product treats).',
-                             'اكتب دواعي الاستعمال (كلمتين: المستحضر بيعالج إيه).')
+                             'اكتب دواعي الاستعمال (كلمات قليلة: ما الذي يعالجه المستحضر).')
         pr = dict(d['product'] or {}, indication=text)
         self.db.execute('update dossier set product=? where id=?', (json.dumps(pr, ensure_ascii=False), did))
         self.db.commit()
@@ -402,7 +402,7 @@ class Store:
     def attest(self, did, slot_id, answer):
         """The answer to the item's one question (signed and stamped / legalised): 'yes', or 'no' — «not yet», which blocks the export."""
         if answer not in ('yes', 'no'):
-            raise StoreError('E-ATTEST', 'The answer is yes or no.', 'الإجابة نعم أو لأ.')
+            raise StoreError('E-ATTEST', 'The answer is yes or no.', 'الإجابة نعم أو لا.')
         if slot_id not in {s.slot_id for s in self.slots(did)}:
             raise StoreError('E-SLOT', f'Unknown requirement slot {slot_id}.', 'بند غير معروف.')
         d = self.dossier(did)
@@ -459,9 +459,9 @@ class Store:
                         'en': f'The same file («{name}») is in {len(sids)} items: {where}.' + (
                             ' An imported product does not submit a document already given in another module: keep it in one item and withdraw it from the others.'
                             if block else ' Fine if it serves each of them; otherwise keep it in one.'),
-                        'ar': f'نفس الملف («{name}») موجود في {len(sids)} بنود: {where}.' + (
-                            ' المنتج المستورد ما يقدّمش مستند متقدّم في موديول تاني: سيبه في بند واحد واسحبه من الباقي.'
-                            if block else ' مفيش مشكلة لو بيخدم كل بند فيهم؛ وإلا سيبه في بند واحد.'),
+                        'ar': f'الملف نفسه («{name}») موجود في {len(sids)} بنود: {where}.' + (
+                            ' المنتج المستورد لا يقدّم مستندًا مقدَّمًا في Module آخر: أبقه في بند واحد واسحبه من البقية.'
+                            if block else ' لا إشكال إن كان يخدم كل بند منها؛ وإلا فأبقه في بند واحد.'),
                         'source': 'NP.CAPP.065 v5 general note 3' if egypt else 'Consistency across the dossier (general practice)'})
         return out
 
@@ -496,13 +496,13 @@ class Store:
         s = slots[slot_id]
         if not s.active:
             raise StoreError('E-SLOT-INACTIVE', f'{slot_id} is not required for this product ({s.level}).',
-                             'البند ده مش مطلوب للمنتج ده.', reason=s.reasons[-1])
+                             'هذا البند غير مطلوب لهذا المنتج.', reason=s.reasons[-1])
         meta = dict(meta or {})
         if meta.get('signed_for'):                    # signed scan of a generated draft (02-LOGIC §6 «signed_scan»)
             draft = self.document(meta['signed_for'])
             if draft['dossier_id'] != did or draft['slot_id'] != slot_id or not draft['meta'].get('draft_unsigned'):
                 raise StoreError('E-SIGNED-FOR', 'The signed copy must belong to an unsigned draft of the same section.',
-                                 'النسخة الموقّعة لازم تخص مسودة غير موقّعة في نفس القسم.')
+                                 'النسخة الموقّعة يجب أن تخص مسودة غير موقّعة في القسم نفسه.')
             doc_class, supersede = 'signed_scan', draft['id']
         from .. import extract as _extract, fixes as _fixes
         self.claim_readings()
@@ -525,8 +525,8 @@ class Store:
             rep = Report(str(self.blob_path(sha)), [Finding(
                 'ECTD-WORD', 'warn', 'The One Submission takes the proposed leaflet in Word (NP.CAPP.065 v5 1.1.9); an eCTD takes it as PDF — '
                 'the export converts it, or add its PDF to this item.',
-                'الـ One Submission بياخد النشرة المقترحة Word (NP.CAPP.065 v5 بند 1.1.9)؛ الـ eCTD بياخدها PDF — التصدير بيحوّلها، أو ضيف الـ PDF '
-                'بتاعها في البند ده.', 'none', 'NP.CAPP.065 v5 1.1.9; EG eCTD TG draft')])
+                'الـ One Submission يأخذ النشرة المقترحة بصيغة Word (NP.CAPP.065 v5 بند 1.1.9)؛ و eCTD يأخذها بصيغة PDF — يحوّلها التصدير، أو أضف نسخة PDF '
+                'منها في هذا البند.', 'none', 'NP.CAPP.065 v5 1.1.9; EG eCTD TG draft')])
         elif family:                                      # a source file (Word, Excel, PowerPoint, text — old format or new): the PDF the user uploads replaces it
             en, ar = SOURCE_DRAFT[family]
             rep = Report(str(self.blob_path(sha)), [Finding('DOCX-DRAFT', 'warn', en, ar, 'user_fix', 'NP.CAPP.065 v5 general note 4 (PDF)')])
@@ -576,7 +576,7 @@ class Store:
                 rep.findings.insert(0, Finding(
                     'DOC-KIND', 'block',
                     f"This file reads as a {kn['en']}, not the document this item needs" + (f"; it belongs in {home_title['en']}." if home_title else '.'),
-                    f"الملف ده شكله {kn['ar']}، مش المستند المطلوب في البند ده" + (f"؛ مكانه «{home_title['ar']}»." if home_title else '.'),
+                    f"يبدو أن هذا الملف {kn['ar']}، وليس المستند المطلوب في هذا البند" + (f"؛ وموضعه «{home_title['ar']}»." if home_title else '.'),
                     'move' if home else 'user_fix', 'intake kind rule (classify keywords)',
                     {'kind': kc['kind'], 'suggested_slot': home, 'suggested_title': home_title}))
         if txt and txt_kind in VALIDITY_KINDS and not meta.get('valid_until'):
@@ -595,7 +595,7 @@ class Store:
                 rep.findings.append(Finding('COA-DATA', 'warn',
                                             'This CoA does not show: ' + ', '.join(g[0] for g in gaps) + ' — EDA asks for the batch number, the '
                                             'manufacturing and the expiry dates (NP.CAPP.065 v5 1.2.3.1).',
-                                            'شهادة التحليل مش ظاهر فيها: ' + '، '.join(g[1] for g in gaps) + ' — الهيئة طالبة رقم التشغيلة وتاريخ '
+                                            'لا يظهر في شهادة التحليل: ' + '، '.join(g[1] for g in gaps) + ' — الهيئة تشترط رقم التشغيلة وتاريخ '
                                             'التصنيع والانتهاء (NP.CAPP.065 v5 بند 1.2.3.1).', 'user_fix', 'NP.CAPP.065 v5 1.2.3.1'))
         version = 1 + (self.db.execute('select coalesce(max(version),0) from document where dossier_id=? and slot_id=?',
                                        (did, slot_id)).fetchone()[0])
@@ -626,9 +626,9 @@ class Store:
         s = slots[slot_id]
         if not s.active:
             raise StoreError('E-SLOT-INACTIVE', f'{slot_id} is not required for this product ({s.level}).',
-                             'البند ده مش مطلوب للمنتج ده.', reason=s.reasons[-1])
+                             'هذا البند غير مطلوب لهذا المنتج.', reason=s.reasons[-1])
         if not title or not url:
-            raise StoreError('E-REFERENCE', 'A reference needs a title and a link.', 'المرجع محتاج عنوان ورابط.')
+            raise StoreError('E-REFERENCE', 'A reference needs a title and a link.', 'يحتاج المرجع إلى عنوان ورابط.')
         version = 1 + (self.db.execute('select coalesce(max(version),0) from document where dossier_id=? and slot_id=?',
                                        (did, slot_id)).fetchone()[0])
         doc_id = str(uuid.uuid4())
@@ -650,7 +650,7 @@ class Store:
             raise StoreError('E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
         if d['meta'].get('external'):
             raise StoreError('E-EXTERNAL', 'Upload the file first: an external reference has nothing to fix.',
-                             'ارفع الملف الأول: المرجع الخارجي مفيهوش ملف يتصلّح.')
+                             'ارفع الملف أولًا: المرجع الخارجي ليس له ملف يُصلَح.')
         s = next((x for x in self.slots(did) if x.slot_id == d['slot_id']), None)
         dz = self.dossier(did)
         fixes.DOC_INFO = {'/Title': d['title'] or (s.title['en'] if s else d['filename']), '/Subject': f"{s.ctd} {s.title['en']}" if s else '',
@@ -704,9 +704,9 @@ class Store:
         'api' (only the active substances' own sections, 3.2.S, matched by substance and manufacturer). Module 1 is never copied: it
         belongs to its authority. An item that has a document already keeps it (nothing is overwritten); each copy is checked again."""
         if scope not in ('m2-5', 'api'):
-            raise StoreError('E-SCOPE', 'Copy Modules 2–5, or the active substances\' sections.', 'انسخ موديول 2–5، أو أقسام المواد الفعالة.')
+            raise StoreError('E-SCOPE', 'Copy Modules 2–5, or the active substances\' sections.', 'انسخ Module 2–5، أو أقسام المواد الفعالة.')
         if src == did:
-            raise StoreError('E-SAME', 'Choose another dossier to copy from.', 'اختار ملف تاني تنسخ منه.')
+            raise StoreError('E-SAME', 'Choose another dossier to copy from.', 'اختر ملفًا آخر للنسخ منه.')
         self.dossier(src)
         mine = {s.slot_id: s for s in self.slots(did) if s.active}
         theirs = [s for s in self.slots(src) if s.active and s.module != 1]
@@ -750,11 +750,11 @@ class Store:
             seqs = sequences(tmp)
             if not seqs:
                 raise StoreError('E-NO-SEQUENCE', 'No eCTD sequence in the file: a four-digit folder holding its index.xml.',
-                                 'مفيش تسلسل eCTD في الملف: فولدر من 4 أرقام جواه index.xml.')
+                                 'لا يوجد تسلسل eCTD في الملف: مجلد من 4 أرقام بداخله index.xml.')
             hist = self.history(did, 'ectd32')
             clash = sorted({s.name for s in seqs} & {str(h['seq']) for h in hist})
             if clash:
-                raise StoreError('E-SEQ-EXISTS', f'This dossier has sequence(s) {", ".join(clash)} already.', f'الملف ده فيه التسلسل {"، ".join(clash)} أصلًا.')
+                raise StoreError('E-SEQ-EXISTS', f'This dossier has sequence(s) {", ".join(clash)} already.', f'في هذا الملف التسلسل {"، ".join(clash)} بالفعل.')
             maps = importer.Maps()
             slots = [s for s in self.slots(did) if s.active]
             leafdoc = {(str(h['seq']), lf['leaf_id']): lf['doc_id'] for h in hist for lf in h['leaves']}
@@ -764,7 +764,7 @@ class Store:
             mine = (self.dossier(did).get('envelope') or {}).get('application_uuid')
             if len(ids) > 1 or (hist and ids and mine not in ids):
                 raise StoreError('E-UUID', f'These sequences belong to another application (UUID {", ".join(sorted(ids))}); this dossier\'s is {mine}.',
-                                 f'التسلسلات دي لطلب تاني (UUID {"، ".join(sorted(ids))})، والملف ده رقمه {mine}.')
+                                 f'هذه التسلسلات تخص طلبًا آخر (UUID {"، ".join(sorted(ids))})، أما هذا الملف فرقمه {mine}.')
             if ids and mine not in ids:                  # the application's own UUID from now on: the next sequence carries it, character for character
                 env0 = dict(self.dossier(did).get('envelope') or {}, application_uuid=ids.pop())
                 self.db.execute('update dossier set envelope=? where id=?', (json.dumps(env0, ensure_ascii=False), did))
@@ -854,15 +854,15 @@ class Store:
         the search, and the next sequence refers to it there instead of sending it again."""
         h = next((x for x in self.history(did, output) if str(x['seq']) == str(seq)), None)
         if not h or not h['frozen']:
-            raise StoreError('E-REF', 'Refer only to a sequence that was submitted.', 'الإحالة بتبقى لتسلسل اتقدّم بس.')
+            raise StoreError('E-REF', 'Refer only to a sequence that was submitted.', 'الإحالة تكون إلى تسلسل مقدَّم فقط.')
         if not any(lf.get('href') == href for lf in h['leaves']):
-            raise StoreError('E-REF', 'That file is not a leaf of that sequence.', 'الملف ده مش من مستندات التسلسل ده.')
+            raise StoreError('E-REF', 'That file is not a leaf of that sequence.', 'هذا الملف ليس من مستندات هذا التسلسل.')
         f = Path(h['path']) / href
         if not f.is_file():
-            raise StoreError('E-REF', 'The sequence\'s file is not in this workspace.', 'ملف التسلسل مش موجود في مساحة العمل دي.')
+            raise StoreError('E-REF', 'The sequence\'s file is not in this workspace.', 'ملف التسلسل غير موجود في مساحة العمل هذه.')
         slot = next((s for s in self.slots(did) if s.slot_id == slot_id), None)
         if not slot or not slot.active:
-            raise StoreError('E-SLOT-INACTIVE', 'This item is not required for this product.', 'البند ده مش مطلوب للمنتج ده.')
+            raise StoreError('E-SLOT-INACTIVE', 'This item is not required for this product.', 'هذا البند غير مطلوب لهذا المنتج.')
         old = next((lf for lf in h['leaves'] if lf.get('href') == href), {})
         title = None
         try:
@@ -929,7 +929,7 @@ class Store:
     def resolve_comment(self, did, cid, resolved=True):
         r = self.db.execute('select * from doc_comment where id=? and dossier_id=?', (cid, did)).fetchone()
         if not r:
-            raise StoreError('E-NOT-FOUND', 'Note not found.', 'الملاحظة مش موجودة.')
+            raise StoreError('E-NOT-FOUND', 'Note not found.', 'الملاحظة غير موجودة.')
         self.db.execute('update doc_comment set resolved=?, resolved_by=? where id=?',
                         (time.time() if resolved else None, ACTOR.get() if resolved else None, cid))
         self.db.commit()
@@ -962,7 +962,7 @@ class Store:
             r = self.db.execute("select id from document where dossier_id=? and slot_id=? and version<? and state='superseded' "
                                 'order by version desc limit 1', (did, new['slot_id'], new['version'])).fetchone()
             if not r:
-                raise StoreError('E-NO-VERSION', 'This document replaced no earlier version.', 'المستند ده ما حلّش محل نسخة قبله.')
+                raise StoreError('E-NO-VERSION', 'This document replaced no earlier version.', 'هذا المستند لم يحل محل نسخة سابقة.')
             old = self.document(r['id'])
         brief = lambda d: {k: d[k] for k in ('id', 'filename', 'version', 'created')}
         a, b = self._blob_or_none(old), self._blob_or_none(new)
@@ -998,7 +998,7 @@ class Store:
         from .. import pdfcraft
         info = self.compare_versions(did, doc_id, against)
         if not info.get('marked'):
-            raise StoreError('E-PDFCRAFT', 'A marked copy needs PdfCraft and two PDF versions.', 'النسخة المتعلّم عليها محتاجة PdfCraft ونسختين PDF.')
+            raise StoreError('E-PDFCRAFT', 'A marked copy needs PdfCraft and two PDF versions.', 'النسخة المبرَزة تغييراتها تحتاج إلى أدوات PDF وإلى نسختين PDF.')
         old, new = self.document(info['old']['id']), self.document(info['new']['id'])
         return pdfcraft.compare(self._blob_or_none(old), self._blob_or_none(new), marked=True)['marked'], new['filename']
 
@@ -1019,7 +1019,7 @@ class Store:
         n = _pages.count(data)
         ranges = _pages.ranges_from_starts(starts or [], n)
         if len(ranges) < 2:
-            raise StoreError('E-SPLIT', 'Choose where at least one more document starts.', 'اختار صفحة واحدة على الأقل بيبدأ عندها مستند تاني.')
+            raise StoreError('E-SPLIT', 'Choose where at least one more document starts.', 'اختر صفحة واحدة على الأقل يبدأ عندها مستند آخر.')
         stem = d['filename'].rsplit('.', 1)[0] if '.' in d['filename'] else d['filename']
         parts = []
         kinds, titles = list(kinds or []), list(titles or [])
@@ -1040,10 +1040,10 @@ class Store:
         """One document of the item's PDFs, in the order given (a document scanned as separate files); the merged ones are withdrawn."""
         from .. import pages as _pages
         if len(doc_ids) < 2 or len(set(doc_ids)) != len(doc_ids):
-            raise StoreError('E-MERGE', 'Choose two documents or more of this item.', 'اختار مستندين أو أكتر من البند ده.')
+            raise StoreError('E-MERGE', 'Choose two documents or more of this item.', 'اختر مستندين أو أكثر من هذا البند.')
         docs = [self._current_pdf(did, x) for x in doc_ids]
         if any(x['slot_id'] != slot_id for x in docs):
-            raise StoreError('E-MERGE', 'The documents to join must all be in this item.', 'المستندات اللي هتتدمج لازم تكون كلها في البند ده.')
+            raise StoreError('E-MERGE', 'The documents to join must all be in this item.', 'المستندات المراد دمجها يجب أن تكون كلها في هذا البند.')
         blob = _pages.merge([self.blob_path(x['sha256']).read_bytes() for x in docs])
         first = docs[0]
         new = self.add_document(did, slot_id, first['filename'], blob, first['title'],
@@ -1053,19 +1053,46 @@ class Store:
         self.audit(did, 'document.merged', docs=doc_ids, new=new['id'])
         return {'document': new}
 
+    def current_of(self, did, doc_id):
+        """The current version of the document this id belonged to: the id itself while it is current, else the version that took
+        its place (a fix, an improvement, a page turned — each makes a new version). None when it has none (withdrawn, another dossier)."""
+        seen = set()
+        while doc_id and doc_id not in seen:
+            seen.add(doc_id)
+            r = self.db.execute('select id, state, dossier_id from document where id=?', (doc_id,)).fetchone()
+            if not r or r['dossier_id'] != did:
+                return None
+            if r['state'] == 'current':
+                return r['id']
+            nxt = None                                                   # the activity record says which document took its place
+            for row in self.db.execute("select detail from audit where dossier_id=? and event='document.added' and detail like ? order by id desc",
+                                       (did, f'%{doc_id}%')).fetchall():
+                try:
+                    det = json.loads(row['detail'])
+                except ValueError:
+                    continue
+                if det.get('supersedes') == doc_id and det.get('doc'):
+                    nxt = det['doc']
+                    break
+            doc_id = nxt
+        return None
+
     def _current_pdf(self, did, doc_id):
         d = self.document(doc_id)
         if d['dossier_id'] != did or d['state'] != 'current':
+            if d['dossier_id'] == did and self.current_of(did, doc_id):      # the page still shows a version that has since been replaced
+                raise StoreError('E-NOT-CURRENT', 'This is an earlier version of the document: refresh the page to work on the current one.',
+                                 'هذه نسخة سابقة من المستند: حدِّث الصفحة للعمل على النسخة الحالية.')
             raise StoreError('E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
         if self.blob_path(d['sha256']).read_bytes()[:5] != b'%PDF-':
-            raise StoreError('E-NOT-PDF', 'Pages are split and joined in PDF files only.', 'التقسيم والدمج بيتعملوا في ملفات PDF بس.')
+            raise StoreError('E-NOT-PDF', 'This is done on PDF files only.', 'هذه العملية تُجرى على ملفات PDF فقط.')
         return d
 
     def _pdfcraft(self):
         from .. import pdfcraft
         if not pdfcraft.available():
             raise StoreError('E-PDFCRAFT', 'This needs PdfCraft, the PDF engine of the desktop and company editions (not in the browser edition).',
-                             'دي محتاجة PdfCraft، محرك الـ PDF في نسخة الكمبيوتر ونسخة الشركة (مش موجود في نسخة المتصفح).')
+                             'أدوات PDF لم تجهز في هذه الصفحة بعد: انتظر لحظات ثم أعد المحاولة.')
         return pdfcraft
 
     def page_image(self, did, doc_id, page, dpi=96):
@@ -1075,9 +1102,9 @@ class Store:
         try:
             png = pc.page_png(self.blob_path(d['sha256']).read_bytes(), int(page), max(24, min(int(dpi), 200)))
         except pc.PdfCraftError as e:
-            raise StoreError('E-PAGE', f'The page cannot be drawn: {e}'[:300], 'الصفحة ما ينفعش تترسم.')
+            raise StoreError('E-PAGE', f'The page cannot be drawn: {e}'[:300], 'تعذّر رسم الصفحة.')
         if not png:
-            raise StoreError('E-PAGE', 'The page cannot be drawn.', 'الصفحة ما ينفعش تترسم.')
+            raise StoreError('E-PAGE', 'The page cannot be drawn.', 'تعذّر رسم الصفحة.')
         return png
 
     def find_in_document(self, did, doc_id, q):
@@ -1099,31 +1126,31 @@ class Store:
             assert_allowed(d['doc_class'], {'redact': 'redact', 'reduce_size': 'reduce_size', 'sign': 'edit_text'}[op])
         except LockedError:
             raise StoreError('E-LOCKED', 'Only its issuer may change this document (third-party, EDA or executed) — re-obtain it.',
-                             'المستند ده من حق الجهة اللي أصدرته بس تعدّله (جهة خارجية أو الهيئة أو سجل تشغيل) — اطلبه منها.')
+                             'هذا المستند لا يحق تعديله إلا للجهة التي أصدرته (جهة خارجية أو الهيئة أو سجل تشغيل) — اطلبه منها.')
         data = self.blob_path(d['sha256']).read_bytes()
         try:
             if op == 'redact':
                 words = [w.strip() for w in (kw.get('words') or []) if w and w.strip()]
                 if not words:
-                    raise StoreError('E-REDACT', 'Give the words or phrases to remove.', 'اكتب الكلمات أو العبارات اللي هتتشال.')
+                    raise StoreError('E-REDACT', 'Give the words or phrases to remove.', 'اكتب الكلمات أو العبارات المراد إزالتها.')
                 out, rep = pc.redact(data, words=words)
                 note = {'redacted': len(words)}
             elif op == 'reduce_size':
                 out, rep = pc.reduce(data)
                 if not pc.smaller_enough(data, out):
                     raise StoreError('E-REDUCE', 'The file cannot be made smaller (its images are already at 150 ppi or below).',
-                                     'الملف ما ينفعش يصغر أكتر (صوره 150 نقطة/بوصة أو أقل).')
+                                     'لا يمكن تصغير الملف أكثر (صوره 150 نقطة/بوصة أو أقل).')
                 note = {'reduced': [len(data), len(out)]}
             elif op == 'sign':
                 if (self.pack(self.dossier(did)['pack']).ectd_region or '') != 'eu':
                     raise StoreError('E-SIGN-REGION', 'Electronic signatures are not used in the EDA eCTD (draft guidance 2.10.3); signing is offered for the EU, where eIDAS signatures are accepted.',
-                                     'التوقيع الإلكتروني مش بيُستخدم في الـ eCTD بتاع الهيئة (المسودة 2.10.3)؛ التوقيع متاح لأوروبا بس، اللي بتقبل توقيعات eIDAS.')
+                                     'التوقيع الإلكتروني لا يُستخدم في eCTD الخاص بالهيئة (المسودة 2.10.3)؛ التوقيع متاح لأوروبا فقط، وهي تقبل توقيعات eIDAS.')
                 out = self._sign(pc, data, kw)
                 note = {'signed': True}
             else:
-                raise StoreError('E-OP', 'Unknown operation.', 'عملية مش معروفة.')
+                raise StoreError('E-OP', 'Unknown operation.', 'عملية غير معروفة.')
         except pc.PdfCraftError as e:
-            raise StoreError('E-PDFCRAFT-OP', f'PdfCraft could not do it: {e}'[:400], 'PdfCraft ما قدرش يعملها.')
+            raise StoreError('E-PDFCRAFT-OP', f'PdfCraft could not do it: {e}'[:400], 'تعذّر على أدوات PDF تنفيذ العملية.')
         new = self.add_document(did, d['slot_id'], d['filename'], out, d['title'], {**d['meta'], 'pdfcraft': op, 'from': doc_id, **note},
                                 supersede=doc_id, doc_class=d['doc_class'])
         self.audit(did, f'document.{op}', doc=doc_id, new=new['id'], **note)
@@ -1139,18 +1166,18 @@ class Store:
         n = pc.page_count(data) or 0
         pages = sorted({int(x) for x in (pages or []) if 1 <= int(x) <= n})
         if not pages:
-            raise StoreError('E-PAGES', f'Choose pages between 1 and {n}.', f'اختار صفحات من 1 لـ {n}.')
+            raise StoreError('E-PAGES', f'Choose pages between 1 and {n}.', f'اختر صفحات من 1 إلى {n}.')
         try:
             assert_allowed(d['doc_class'], {'rotate': 'rotate_pages', 'delete': 'remove_pages', 'move': 'move_pages'}[op])
         except KeyError:
-            raise StoreError('E-OP', 'Unknown operation.', 'عملية مش معروفة.')
+            raise StoreError('E-OP', 'Unknown operation.', 'عملية غير معروفة.')
         except LockedError:
             raise StoreError('E-LOCKED', 'Only its issuer may change this document (third-party, EDA or executed) — re-obtain it.',
-                             'المستند ده من حق الجهة اللي أصدرته بس تعدّله (جهة خارجية أو الهيئة أو سجل تشغيل) — اطلبه منها.')
+                             'هذا المستند لا يحق تعديله إلا للجهة التي أصدرته (جهة خارجية أو الهيئة أو سجل تشغيل) — اطلبه منها.')
         if op == 'delete' and len(pages) >= n:
-            raise StoreError('E-PAGES', 'A document keeps at least one page — withdraw it instead.', 'المستند لازم يفضل فيه صفحة على الأقل — اسحبه بدل كده.')
+            raise StoreError('E-PAGES', 'A document keeps at least one page — withdraw it instead.', 'يجب أن تبقى في المستند صفحة واحدة على الأقل — اسحبه بدلًا من ذلك.')
         if op == 'rotate' and int(degrees) % 90:
-            raise StoreError('E-PAGES', 'Pages turn by 90, 180 or 270 degrees.', 'الصفحات بتلف 90 أو 180 أو 270 درجة.')
+            raise StoreError('E-PAGES', 'Pages turn by 90, 180 or 270 degrees.', 'تُدار الصفحات 90 أو 180 أو 270 درجة.')
         step = {'rotate': ('page_rotate', {'doc': 1, 'pages': pages, 'degrees': int(degrees)}),
                 'delete': ('page_delete', {'doc': 1, 'pages': pages}),
                 'move': ('page_move', {'doc': 1, 'pages': pages, 'to': max(1, min(int(to or 1), n))})}[op]
@@ -1158,7 +1185,7 @@ class Store:
             _res, out = pc.run([('doc_open', {'path': 'in.pdf'}), step, ('doc_save', {'doc': 1, 'path': 'out.pdf', 'full': True})],
                                {'in.pdf': data}, read=('out.pdf',))
         except pc.PdfCraftError as e:
-            raise StoreError('E-PDFCRAFT-OP', f'PdfCraft could not do it: {e}'[:400], 'PdfCraft ما قدرش يعملها.')
+            raise StoreError('E-PDFCRAFT-OP', f'PdfCraft could not do it: {e}'[:400], 'تعذّر على أدوات PDF تنفيذ العملية.')
         note = {'pages_op': op, 'pages': pages, **({'degrees': int(degrees)} if op == 'rotate' else {}), **({'to': int(to or 1)} if op == 'move' else {})}
         new = self.add_document(did, d['slot_id'], d['filename'], out['out.pdf'], d['title'], {**d['meta'], 'pdfcraft': f'pages.{op}', 'from': doc_id},
                                 supersede=doc_id, doc_class=d['doc_class'])
@@ -1177,28 +1204,28 @@ class Store:
             p = max(1, min(int(c.get('page') or 1), n))
             k = per[p] = per.get(p, 0) + 1
             steps.append(('comment_add', {'doc': 1, 'page': p, 'type': 'note', 'at': [18.0, 18.0 + 26 * (k - 1)],
-                                          'contents': c['text'] + (' (resolved)' if c.get('resolved') else ''), 'author': c.get('author') or 'Dossier Builder',
+                                          'contents': c['text'] + (' (resolved)' if c.get('resolved') else ''), 'author': c.get('author') or 'eBOX',
                                           'color': 'green' if c.get('resolved') else 'yellow'}))
         if len(steps) == 1:
-            raise StoreError('E-NO-NOTES', 'This document has no notes yet.', 'المستند ده لسه مالوش ملاحظات.')
+            raise StoreError('E-NO-NOTES', 'This document has no notes yet.', 'هذا المستند ليست له ملاحظات بعد.')
         steps.append(('doc_save', {'doc': 1, 'path': 'out.pdf', 'full': True}))
         try:
             _res, out = pc.run(steps, {'in.pdf': data}, read=('out.pdf',))
         except pc.PdfCraftError as e:
-            raise StoreError('E-PDFCRAFT-OP', f'PdfCraft could not do it: {e}'[:400], 'PdfCraft ما قدرش يعملها.')
+            raise StoreError('E-PDFCRAFT-OP', f'PdfCraft could not do it: {e}'[:400], 'تعذّر على أدوات PDF تنفيذ العملية.')
         return out['out.pdf'], d['filename']
 
     def _sign(self, pc, data, kw):
         """Sign with the person's own digital ID (a .p12/.pfx and its password), used for this one call and never kept."""
         p12, password = kw.get('p12'), kw.get('password') or ''
         if not p12:
-            raise StoreError('E-SIGN', 'Choose your digital ID (.p12 or .pfx).', 'اختار التوقيع الرقمي بتاعك (.p12 أو .pfx).')
+            raise StoreError('E-SIGN', 'Choose your digital ID (.p12 or .pfx).', 'اختر توقيعك الرقمي (.p12 أو .pfx).')
         args = {'doc': 1, 'id': 'id.p12', 'password': password, 'out': 'signed.pdf', 'reason': kw.get('reason') or None,
                 'location': kw.get('location') or None}
         _res, out = pc.run([('doc_open', {'path': 'in.pdf'}), ('sign_document', {k: v for k, v in args.items() if v is not None})],
                            {'in.pdf': data, 'id.p12': p12}, read=('signed.pdf',))
         if not out.get('signed.pdf'):
-            raise StoreError('E-SIGN', 'The document could not be signed.', 'المستند ما اتوقّعش.')
+            raise StoreError('E-SIGN', 'The document could not be signed.', 'لم يُوقَّع المستند.')
         return out['signed.pdf']
 
     def pdf_of_document(self, did, doc_id):
@@ -1213,12 +1240,12 @@ class Store:
         ext = d['filename'].rsplit('.', 1)[-1].lower() if '.' in d['filename'] else ''
         family = _extract.source_family(d['filename'], self.blob_path(d['sha256']).read_bytes()[:8192]) or ('word' if ext == 'docx' else None)
         if d['meta'].get('external') or family not in ('word', 'excel', 'powerpoint', 'text'):
-            raise StoreError('E-NOT-SOURCE', 'This document is not a Word, Excel, PowerPoint or text file.', 'المستند ده مش ملف Word أو Excel أو PowerPoint أو نص.')
+            raise StoreError('E-NOT-SOURCE', 'This document is not a Word, Excel, PowerPoint or text file.', 'هذا المستند ليس ملف Word أو Excel أو PowerPoint أو نصًا.')
         if not find_soffice():
             raise StoreError('E-NO-OFFICE', 'This computer has no LibreOffice to turn it into a PDF. In Word: File → Save As → PDF (tick «Create bookmarks '
                              'using headings»), then upload the PDF to this item: it replaces this file.',
-                             'الجهاز ده مفيهوش LibreOffice يحوّله PDF. من Word: ملف ← حفظ باسم ← PDF (علّم «إنشاء إشارات مرجعية باستخدام العناوين»)، '
-                             'وبعدين ارفع الـ PDF في البند ده: هيحل محل الملف ده.')
+                             'التحويل إلى PDF غير متاح هنا. من Word: ملف ← حفظ باسم ← PDF (مع اختيار «إنشاء إشارات مرجعية باستخدام العناوين»)، '
+                             'ثم ارفع ملف PDF في هذا البند: فيحل محل هذا الملف.')
         tmp = Path(tempfile.mkdtemp())
         try:
             src = tmp / ('source.' + (ext or 'docx'))
@@ -1227,7 +1254,7 @@ class Store:
                 pdf = to_pdf(src).read_bytes()
             except Exception:
                 raise StoreError('E-PDF-FAILED', 'LibreOffice could not turn this file into a PDF. Save it as PDF from its own program and upload it.',
-                                 'LibreOffice ما قدرش يحوّل الملف ده PDF. احفظه PDF من البرنامج بتاعه وارفعه.')
+                                 'تعذّر تحويل هذا الملف إلى PDF. احفظه بصيغة PDF من برنامجه وارفعه.')
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
         beside = next((s.req_id for s in self.slots(did) if s.slot_id == d['slot_id']), '') in WORD_ITEMS                 # 1.1.9 keeps its Word: the PDF goes in next to it
@@ -1260,7 +1287,7 @@ class Store:
     def _seq_row(self, did, output, seq):
         r = self.db.execute('select * from submission where dossier_id=? and output=? and seq=?', (did, output, str(seq))).fetchone()
         if not r:
-            raise StoreError('E-NOT-FOUND', 'Sequence not found.', 'التسلسل مش موجود.')
+            raise StoreError('E-NOT-FOUND', 'Sequence not found.', 'التسلسل غير موجود.')
         return r
 
     def mark_submitted(self, did, output, seq, info, receipt=None, filename=None):
@@ -1275,7 +1302,7 @@ class Store:
                 try:
                     _d.fromisoformat(v)
                 except ValueError:
-                    raise StoreError('E-DATE', f'{k}: use a date like 2026-11-13.', f'{k}: اكتب التاريخ بالشكل 2026-11-13.')
+                    raise StoreError('E-DATE', f'{k}: use a date like 2026-11-13.', f'{k}: اكتب التاريخ بالصيغة 2026-11-13.')
         rc.update({k: v for k, v in info.items() if k in ('tracking', 'ack', 'decision', 'decided', 'note') and v not in (None, '')}, submitted=day)
         if receipt:
             rc.update(receipt_sha=self.put_blob(receipt), receipt_name=filename or 'receipt.pdf')
@@ -1289,10 +1316,10 @@ class Store:
         r = self._seq_row(did, output, seq)
         if json.loads(r['receipt'] or '{}').get('submitted'):
             raise StoreError('E-FROZEN', 'This sequence was submitted: it is frozen. A change goes in a new sequence.',
-                             'التسلسل ده اتقدّم: متجمّد. أي تعديل بيبقى في تسلسل جديد.')
+                             'هذا التسلسل قُدِّم: وهو مجمَّد. أي تعديل يكون في تسلسل جديد.')
         last = self.db.execute('select seq from submission where dossier_id=? and output=? order by created desc limit 1', (did, output)).fetchone()
         if last['seq'] != r['seq']:
-            raise StoreError('E-NOT-LAST', 'Only the last sequence can be discarded.', 'التسلسل الأخير بس هو اللي ينفع يتشال.')
+            raise StoreError('E-NOT-LAST', 'Only the last sequence can be discarded.', 'التسلسل الأخير فقط هو الذي يمكن إزالته.')
         self.db.execute('delete from submission where id=?', (r['id'],))
         self.db.commit()
         folder = Path(r['path'] or '')                  # its folder in the dossier's lifecycle store goes too: the number is free again
@@ -1339,7 +1366,7 @@ class Store:
         try:
             date.fromisoformat(valid_until)
         except (TypeError, ValueError):
-            raise StoreError('E-DATE', 'Use a date like 2027-03-31.', 'اكتب التاريخ بالشكل 2027-03-31.')
+            raise StoreError('E-DATE', 'Use a date like 2027-03-31.', 'اكتب التاريخ بالصيغة 2027-03-31.')
         meta = {**d['meta'], 'valid_until': valid_until}
         if issued:
             meta['issued'] = issued
@@ -1365,7 +1392,7 @@ class Store:
                 if any(f.get('rule') == 'DOC-EXPIRED' for f in d['findings']):
                     d['findings'] = [dict(f, rule='DOC-EXPIRED-RENEWAL', severity='warn', action='none',
                                           en=f['en'].split(' Obtain')[0] + ' Accepted with the request for updating in this item (NP.CAPP.065 v5 1.1.5).',
-                                          ar=f['ar'].split(' لازم')[0] + ' مقبول ومعاه طلب التحديث في نفس البند (NP.CAPP.065 v5 بند 1.1.5).')
+                                          ar=f['ar'].split(' يجب')[0] + ' مقبول ومعه طلب التحديث في البند نفسه (NP.CAPP.065 v5 بند 1.1.5).')
                                      if f.get('rule') == 'DOC-EXPIRED' else f for f in d['findings']]
                     d['check_status'] = status_of(d['findings']) if d['findings'] else 'conforming'
         return docs
@@ -1390,14 +1417,14 @@ class Store:
         missing = [k for k in need if not (meta or {}).get(k)]
         if missing:
             raise StoreError('E-META', f"This item needs the document's details first: {', '.join(missing)}.",
-                             'البند ده محتاج تفاصيل المستند الأول: ' + ('نوع النشرة ولغتها' if s.req_id in self.PI_ITEMS else 'اسم الدراسة ونوع المستند') + '.',
+                             'هذا البند يحتاج إلى تفاصيل المستند أولًا: ' + ('نوع النشرة ولغتها' if s.req_id in self.PI_ITEMS else 'اسم الدراسة ونوع المستند') + '.',
                              missing=missing)
         if s and s.req_id == 'EU-1.3.1':
             from ..writers.ectd32_eu import default_profile
             v = default_profile().values
             if meta['pi_type'] not in v['pi_types'] or meta['lang'] not in v['languages']:
                 raise StoreError('E-META', f"EU 1.3.1: the PI type is one of {', '.join(v['pi_types'])} and the language an EU code (en, de, fr…).",
-                                 'بند 1.3.1 الأوروبي: نوع النشرة من ' + '، '.join(v['pi_types']) + ' واللغة كود أوروبي (en، de، fr…).',
+                                 'البند 1.3.1 الأوروبي: نوع النشرة من ' + '، '.join(v['pi_types']) + ' واللغة برمز أوروبي (en، de، fr…).',
                                  missing=['pi_type', 'lang'])
 
     def split_large(self, did, doc_id):
@@ -1408,8 +1435,12 @@ class Store:
         from .. import pdfcraft
         from ..checks.pdf import size_limit
         SIZE_LIMIT = size_limit(self.authority_id(did))                 # the dossier's authority: 100 MB, the EU 500, the FDA 400
-        d = self._current_pdf(did, doc_id)
+        d = self.document(doc_id)
+        if d['dossier_id'] != did or d['state'] != 'current':
+            raise StoreError('E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
         data = self.blob_path(d['sha256']).read_bytes()
+        if data[:5] != b'%PDF-':                                          # a Word or Excel document of an item is prepared too: it is only never cut
+            return {'parts': [], 'why': 'not a PDF'}
         if len(data) <= SIZE_LIMIT or not pdfcraft.available() or not d.get('slot_id'):
             return {'parts': [], 'why': 'fits'}
         try:
@@ -1499,7 +1530,7 @@ class Store:
     def choose_value(self, did, field, value, doc_id=None):
         """The person's choice where a document says something else than the data (data «conflicts»): the value kept, the difference closed."""
         if not isinstance(field, str) or '.' not in field or field.split('.', 1)[0] not in ('registration', 'product'):
-            raise StoreError('E-FIELD', 'Not a field of the product or registration data.', 'ده مش حقل من بيانات المنتج أو التسجيل.')
+            raise StoreError('E-FIELD', 'Not a field of the product or registration data.', 'هذا ليس حقلًا من بيانات المنتج أو التسجيل.')
         data = dict(self.dossier(did)['data'] or {})
         sec, key = field.split('.', 1)
         data.setdefault(sec, {})[key] = value

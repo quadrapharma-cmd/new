@@ -7,27 +7,27 @@ from . import extract
 
 N4 = 'NP.CAPP.065 v5, general note 4'
 FORM_PDF = {'en': 'A searchable PDF — its own text layer, made when it is scanned (not a picture); one document per file.',
-            'ar': 'PDF قابل للبحث — عليه طبقة نص بتتعمل وقت المسح (مش صورة)، ومستند واحد في كل ملف.'}
+            'ar': 'PDF قابل للبحث — له طبقة نص تُنشأ عند المسح (لا صورة)، ومستند واحد في كل ملف.'}
 FORM_WORD = {'en': 'Word (.docx): the proposed SmPC and PIL, in Arabic and in English. For an eCTD the program converts it to PDF.',
-             'ar': 'Word (.docx): النشرة المقترحة (SmPC وPIL) عربي وإنجليزي. في الـ eCTD البرنامج بيحوّلها PDF.'}
+             'ar': 'Word (.docx): النشرة المقترحة (SmPC و PIL) بالعربية والإنجليزية. في eCTD يحوّلها البرنامج إلى PDF.'}
 FORM_ART = {'en': 'A PDF of the coloured artwork, stamped — an editable PDF is preferred.',
-            'ar': 'PDF للتصميم الملوّن مختوم — والأفضل PDF قابل للتعديل.'}
+            'ar': 'PDF للتصميم الملوَّن مختوم — والأفضل PDF قابل للتعديل.'}
 LETTERHEAD = {'en': "On the company's letterhead, signed by the responsible person and stamped.",
-              'ar': 'على ورق الشركة، موقّع من المسؤول ومختوم.'}
-DATED = {'en': 'Dated.', 'ar': 'عليه تاريخ.'}
+              'ar': 'على ورق الشركة، موقَّع من المسؤول ومختوم.'}
+DATED = {'en': 'Dated.', 'ar': 'مؤرَّخ.'}
 VALID = {'en': 'Valid on the day of submission (the program reads its date and warns 90 days before it ends).',
-         'ar': 'ساري يوم التقديم (البرنامج بيقرا تاريخه وبينبّه قبل ما ينتهي بـ 90 يوم).'}
+         'ar': 'سارٍ يوم التقديم (يقرأ البرنامج تاريخه وينبّه قبل انتهائه بـ 90 يومًا).'}
 PRICE_EXC = {'en': 'If it has expired: add the request for updating the price to this item — EDA accepts the two together.',
-             'ar': 'لو منتهي: ضيف طلب تحديث السعر في نفس البند — الهيئة بتقبل الاتنين مع بعض.'}
-LINES = {'en': 'It names the production lines of this dosage form.', 'ar': 'محدد فيه خطوط الإنتاج للشكل الصيدلي ده.'}
+             'ar': 'إن كان منتهيًا: أضف طلب تحديث السعر في البند نفسه — الهيئة تقبل الاثنين معًا.'}
+LINES = {'en': 'It names the production lines of this dosage form.', 'ar': 'محدَّدة فيه خطوط الإنتاج لهذا الشكل الصيدلي.'}
 COA = {'en': "On the supplier's letterhead, signed and stamped, with the batch number, the manufacturing date and the expiry (or retest) date.",
-       'ar': 'على ورق المورّد، موقّع ومختوم، وفيه رقم التشغيلة وتاريخ التصنيع والانتهاء (أو إعادة التحليل).'}
+       'ar': 'على ورق المورّد، موقَّع ومختوم، وفيه رقم التشغيلة وتاريخ التصنيع وتاريخ الانتهاء (أو إعادة التحليل).'}
 TRANSLATION = {'en': 'In a language other than Arabic or English: with a certified, searchable English translation.',
-               'ar': 'لو بلغة غير العربي والإنجليزي: ومعاه ترجمة إنجليزي معتمدة وقابلة للبحث.'}
-LEGALIZE = {'M1-14': {'en': 'Legalised by the Egyptian embassy (an electronic CPP is exempt).', 'ar': 'موثّق من السفارة المصرية (الـ CPP الإلكتروني معفي).'},
-            'M1-26': {'en': "The licence holder's declaration, legalised.", 'ar': 'إقرار صاحب الترخيص، موثّق.'},
-            'M1-27': {'en': "The licence holder's declaration, legalised.", 'ar': 'إقرار صاحب الترخيص، موثّق.'},
-            'M1-24': {'en': 'The storage contract and the agency authorisation, legalised.', 'ar': 'عقد التخزين والتوكيل، موثّقين.'}}
+               'ar': 'إن كان بلغة غير العربية والإنجليزية: فمعه ترجمة إنجليزية معتمدة وقابلة للبحث.'}
+LEGALIZE = {'M1-14': {'en': 'Legalised by the Egyptian embassy (an electronic CPP is exempt).', 'ar': 'موثَّق من السفارة المصرية (والـ CPP الإلكتروني معفى).'},
+            'M1-26': {'en': "The licence holder's declaration, legalised.", 'ar': 'إقرار صاحب الترخيص، موثَّق.'},
+            'M1-27': {'en': "The licence holder's declaration, legalised.", 'ar': 'إقرار صاحب الترخيص، موثَّق.'},
+            'M1-24': {'en': 'The storage contract and the agency authorisation, legalised.', 'ar': 'عقد التخزين والتوكيل، موثَّقان.'}}
 DATED_ITEMS = {'M1-01', 'M1-43'}              # the application form and the cover letter carry their date, as the declarations do
 DATED_WORDS = ('declaration', 'commitment', 'undertaking')
 AUTO_ITEMS = {'M1-44'}                         # the tracking table: rebuilt by the program at every eCTD export

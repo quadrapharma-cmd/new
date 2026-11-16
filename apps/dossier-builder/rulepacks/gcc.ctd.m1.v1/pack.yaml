@@ -18,14 +18,14 @@ authority:
     ar: الخليج — السعودية (SFDA)، الإمارات، الكويت، البحرين، عُمان، قطر، اليمن؛ التسجيل الوطني والمركزي
 title:
   en: GCC CTD dossier — GCC Module 1 (specification v1.5) with the SFDA data requirements v4.0
-  ar: ملف CTD لدول الخليج — موديول ١ الخليجي (مواصفة 1.5) مع متطلبات SFDA الإصدار 4.0
+  ar: ملف CTD لدول الخليج — Module 1 الخليجي (المواصفة 1.5) مع متطلبات SFDA الإصدار 4.0
 status: in-force
 valid_from: '2025-08-03'
 valid_to: null
 verified: true
 matrix:
   en: SFDA data requirements v4.0 / GCC Module 1
-  ar: متطلبات SFDA الإصدار 4.0 / موديول ١ الخليجي
+  ar: متطلبات SFDA الإصدار 4.0 / Module 1 الخليجي
 columns:
   I:
     en: New chemical entity / biological
@@ -40,7 +40,7 @@ questions:
 - id: gcc_agency
   title:
     en: The authority that receives the dossier
-    ar: الهيئة اللي هتستلم الملف
+    ar: الهيئة التي تستلم الملف
   options:
   - id: SA
     en: Saudi Arabia — SFDA
@@ -72,7 +72,7 @@ module1_note:
   when: gcc_agency != 'SA'
   en: What this section must hold is written from the Saudi (SFDA) text; the structure is common to the Gulf. For this authority check its own guidance
     — its forms, the certificates it asks for and their legalisation, its pricing documents.
-  ar: محتوى البند مكتوب من نص SFDA السعودي؛ والهيكل مشترك في الخليج. للهيئة دي راجع دليلها — نماذجها، الشهادات اللي بتطلبها وتوثيقها، مستندات التسعير.
+  ar: محتوى البند مكتوب من نص SFDA السعودي؛ والهيكل مشترك في الخليج. لهذه الهيئة راجع دليلها — نماذجها، والشهادات التي تطلبها وتوثيقها، ومستندات التسعير.
 overrides:
   M2-TOC:
     sources:
@@ -165,4 +165,4 @@ sources:
 note:
   en: 'The structure is the GCC specification, common to the seven authorities. What each section must hold is written from the SFDA document: for another
     GCC authority, check its own guidance for forms, pricing and certificates.'
-  ar: 'الهيكل من المواصفة الخليجية المشتركة بين السبع هيئات. محتوى كل بند مكتوب من مستند SFDA: لأي هيئة خليجية تانية راجع دليلها في النماذج والتسعير والشهادات.'
+  ar: 'الهيكل من المواصفة الخليجية المشتركة بين الهيئات السبع. محتوى كل بند مكتوب من مستند SFDA: لأي هيئة خليجية أخرى راجع دليلها في النماذج والتسعير والشهادات.'

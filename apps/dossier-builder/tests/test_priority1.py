@@ -96,7 +96,7 @@ def test_the_reasons_speak_the_users_language_and_the_name_is_never_evidence(c, 
     receipt = classify(c, did, tmp_path, 'Registration License renewal.pdf', ['إيصال سداد رسوم', 'متابعة طلب التجديد'])
     assert receipt['kind'] == 'receipt' and all(not s['req_id'].startswith('M1-04') for s in receipt['suggestions'][:1])
     why = receipt['suggestions'][0]['why'][0]
-    assert isinstance(why, dict) and why['ar'].startswith('شكله') and 'document kind' not in json.dumps(receipt)
+    assert isinstance(why, dict) and why['ar'].startswith('يبدو أنه') and 'document kind' not in json.dumps(receipt)
 
 
 def test_it_is_in_the_right_place_and_move_to_any_item(c, did, tmp_path):

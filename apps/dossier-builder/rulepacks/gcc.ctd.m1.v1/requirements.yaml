@@ -35,7 +35,7 @@
     provenance: GCC-IN-FORCE
   title:
     en: Module 1 table of contents
-    ar: فهرس الموديول ١
+    ar: فهرس Module 1
   applies: 'true'
   required:
     I: O
@@ -277,7 +277,7 @@
   provenance: GCC-IN-FORCE
   level_note: &id001
     en: 'The source names this section without saying which kinds of application need it: the level here is the general practice — confirm it with the authority.'
-    ar: 'المصدر بيسمّي البند من غير ما يقول أنهي نوع طلب محتاجه: المستوى هنا من الممارسة العامة — راجعه مع الهيئة.'
+    ar: 'المصدر يسمّي البند دون أن يحدد أنواع الطلبات التي تحتاج إليه: المستوى هنا من الممارسة العامة — راجعه مع الهيئة.'
 - id: GCC-1.4.3
   module: 1
   group: MODULE 1 — Regional administrative information (GCC)
@@ -458,14 +458,14 @@
         reason:
           en: 'SFDA: the CPP / free-sales certificate is optional and no longer required for new marketing authorization applications in any pathway; SFDA
             may still ask for it at any time.'
-          ar: 'السعودية: شهادة الـ CPP / البيع الحر اختيارية ومش مطلوبة لطلبات التسجيل الجديدة في أي مسار؛ والهيئة ممكن تطلبها في أي وقت.'
+          ar: 'السعودية: شهادة الـ CPP / البيع الحر اختيارية وغير مطلوبة لطلبات التسجيل الجديدة في أي مسار؛ وللهيئة أن تطلبها في أي وقت.'
         provenance: SFDA Data Requirements for Human Drugs Submission v4.0 (2025-08-03) §1.7.2
       - &id003
         level: R
         note:
           en: 'Outside Saudi Arabia the certificate is taken as required for an imported product: the other GCC authorities'' own texts were not read for
             this pack — confirm with the authority.'
-          ar: 'برّه السعودية الشهادة محسوبة مطلوبة للمستحضر المستورد: نصوص باقي هيئات الخليج ما اتقرتش للملف ده — راجع مع الهيئة.'
+          ar: 'خارج السعودية تُعدّ الشهادة مطلوبة للمستحضر المستورد: نصوص باقي هيئات الخليج لم تُقرأ عند إعداد هذه القواعد — راجع مع الهيئة.'
     G_IMP:
       cases:
       - *id002

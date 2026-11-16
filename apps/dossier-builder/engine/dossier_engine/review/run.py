@@ -87,10 +87,10 @@ def assess_question(q, ctx):
         if len(found) >= need:
             return _finding(q, 'adequate', hits[:8], _bi(f"Found {len(found)} of {len(ev_spec.get('keywords') or [])} indicators in {pages_read} page(s).", f"وُجد {len(found)} من {len(ev_spec.get('keywords') or [])} مؤشراً في {pages_read} صفحة."), 'text')
         if not readable:
-            return _finding(q, 'not_assessable', doc_ev, _bi('Scanned without a text layer: ' + ', '.join(scanned) + '. EDA requires searchable PDFs: replace it with a copy made searchable when scanning, then re-assess.', 'ممسوح بدون طبقة نصية: ' + '، '.join(scanned) + '. الهيئة طالبة PDF قابل للبحث: استبدله بنسخة اتعمل لها OCR وقت المسح، وبعدين أعد التقييم.'), 'text',
+            return _finding(q, 'not_assessable', doc_ev, _bi('Scanned without a text layer: ' + ', '.join(scanned) + '. EDA requires searchable PDFs: replace it with a copy made searchable when scanning, then re-assess.', 'ممسوح بدون طبقة نصية: ' + '، '.join(scanned) + '. الهيئة تشترط PDF قابلًا للبحث: استبدله بنسخة أُجريت لها قراءة ضوئية عند المسح، ثم أعد التقييم.'), 'text',
                             extra={'needs_text': True})
         detail = _bi(f"Searched {pages_read} page(s) of {len(readable)} document(s) for: {', '.join(ev_spec.get('keywords') or [])} — found {len(found)} (need {need})." + (f" Unreadable scans: {', '.join(scanned)}." if scanned else ''),
-                     f"بُحث في {pages_read} صفحة من {len(readable)} مستند عن: {'، '.join(ev_spec.get('keywords') or [])} — وُجد {len(found)} (المطلوب {need})." + (f" مسوحات غير مقروءة: {'، '.join(scanned)}." if scanned else ''))
+                     f"بُحث في {pages_read} صفحة من {len(readable)} مستند عن: {'، '.join(ev_spec.get('keywords') or [])} — وُجد {len(found)} (المطلوب {need})." + (f" مستندات ممسوحة ضوئيًا غير مقروءة: {'، '.join(scanned)}." if scanned else ''))
         return _finding(q, 'deficient', hits + doc_ev[:4], detail, 'text')
     # kind none: manual / AI only
     return _finding(q, 'not_assessable', doc_ev, _bi('Needs an assessor (human or AI) to read the documents.', 'يحتاج مُقيِّماً (بشرياً أو ذكاءً اصطناعياً) لقراءة المستندات.'), 'manual')
@@ -177,7 +177,7 @@ def dept_verdicts(findings, enabled):
 def overall(dv, enabled):
     if 'screening' in dv and dv['screening']['verdict'] == 'reject':
         return 'not_ready', _bi('The dossier would not pass screening: a critical Module 1 finding stops the file before the technical departments see it.',
-                                'الملف لن يعدي الفحص الأولي: ملاحظة حرجة في الوحدة 1 توقف الملف قبل أن تراه الإدارات الفنية.')
+                                'لن يجتاز الملف الفحص الأولي: ملاحظة حرجة في Module 1 توقف الملف قبل أن تراه الإدارات الفنية.')
     vs = [x['verdict'] for d, x in dv.items() if d in enabled]
     if 'reject' in vs:
         return 'not_ready', _bi('At least one department would reject the dossier or require resubmission.', 'إدارة واحدة على الأقل سترفض الملف أو تطلب إعادة تقديم.')

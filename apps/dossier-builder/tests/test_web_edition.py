@@ -1,5 +1,6 @@
 """The browser edition (web/dist): the same engine runs inside Chromium through Pyodide, with no server.
 Needs `python3 web/build.py` first (vendor.sh fetches the runtime once); skipped when dist is absent."""
+from dossier_engine.checks.pdf import add_javascript
 import functools, http.server, io, pathlib, socket, threading
 import pytest
 from fixtures_pdf import make_pdf
@@ -49,7 +50,7 @@ def test_in_browser_journey(site, tmp_path):
         page.click('#wizNext')
         page.fill('[data-in=applicant]', 'Example Pharma S.A.E.'); page.fill('[data-in=tracking]', 'P-MAA-0001')
         page.click('#wizCreate')
-        page.wait_for_selector('text=Requirements board', timeout=60000)
+        page.wait_for_selector('h1:has-text("Dossier tree and what is missing")', timeout=60000)
         with page.expect_file_chooser() as fc:
             page.locator('tr', has_text='Composition certificate').locator('[data-up]').first.click()
         fc.value.set_files(str(pdf))
@@ -65,12 +66,12 @@ def test_in_browser_journey(site, tmp_path):
         # the guide computes the next step from the in-browser engine
         page.click('#navGuide')
         page.wait_for_selector('.journey', timeout=60000)
-        assert page.locator('.jbar a').count() == 6
+        assert page.locator('#pathbar .sts a').count() == 9
         # the workspace persists in this browser: reload (still on the guide), the dossier is still there
         page.reload()
         page.wait_for_selector('#boot', state='detached', timeout=180000)
         page.wait_for_selector('.journey', timeout=120000)
-        assert 'Examplol 500 mg FCT' in page.inner_text('#view') and page.locator('.jbar a').count() == 6
+        assert 'Examplol 500 mg FCT' in page.inner_text('#view') and page.locator('#pathbar .sts a').count() == 9
         assert errors == [], errors
         b.close()
 
@@ -425,7 +426,7 @@ def test_pdfcraft_runs_inside_the_browser(site, tmp_path):
     if not (DIST / 'assets' / 'pdfcraft' / 'pdfcraft-cli.json').exists():
         pytest.skip('PdfCraft for WebAssembly was not built (tools/pdfcraft/build-wasm.sh)')
     w = PdfWriter(clone_from=str(make_pdf(tmp_path / 's.pdf', 'Composition certificate')))
-    w.add_js('app.alert(1)')
+    add_javascript(w, 'app.alert(1)')
     w.write(open(tmp_path / 'js.pdf', 'wb'))
     with pw.sync_playwright() as p:
         b = p.chromium.launch()

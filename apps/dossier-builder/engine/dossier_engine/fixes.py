@@ -34,19 +34,19 @@ HEADING = re.compile(r'^\s*((?:\d{1,2}|[A-Z])(?:\.(?:\d{1,2}|[A-Z])){1,7}\.?|\d{
 LABEL = {'remove_security': ('Security restrictions removed', 'تمت إزالة قيود الحماية'),
          'remove_javascript': ('JavaScript removed', 'تمت إزالة JavaScript'),
          'pdf_version_normalise': ('Version line set to PDF 1.7 (nothing else in the file changed)',
-                                   'رقم الإصدار في أول سطر بقى 1.7 (ولا حاجة تانية في الملف اتغيّرت)'),
-         'add_bookmarks': ('Bookmarks added from the document headings', 'تمت إضافة bookmarks من عناوين المستند'),
-         'show_bookmarks': ('Opens with the bookmarks panel', 'بيفتح ولوحة الـ bookmarks ظاهرة'),
-         'inherit_zoom': ('Links keep the reader\'s zoom', 'الروابط بتسيب زووم القارئ'),
-         'doc_info': ('Title and subject set in the document\'s properties', 'العنوان والموضوع اتكتبوا في خصائص المستند'),
-         'repair': ('A clean copy written from the damaged file (PdfCraft)', 'اتكتبت نسخة سليمة من الملف التالف (PdfCraft)'),
-         'remove_attachments': ('Attached files removed', 'المرفقات اتشالت'),
-         'remove_comments': ('Comments and mark-ups removed', 'التعليقات والعلامات اتشالت'),
+                                   'صار رقم الإصدار في السطر الأول 1.7 (ولم يتغيّر شيء آخر في الملف)'),
+         'add_bookmarks': ('Bookmarks added from the document headings', 'أُضيفت إشارات مرجعية (bookmarks) من عناوين المستند'),
+         'show_bookmarks': ('Opens with the bookmarks panel', 'يُفتح ولوحة الإشارات المرجعية (bookmarks) ظاهرة'),
+         'inherit_zoom': ('Links keep the reader\'s zoom', 'الروابط تترك تكبير القارئ كما هو'),
+         'doc_info': ('Title and subject set in the document\'s properties', 'كُتب العنوان والموضوع في خصائص المستند'),
+         'repair': ('A clean copy written from the damaged file (PdfCraft)', 'كُتبت نسخة سليمة من الملف التالف'),
+         'remove_attachments': ('Attached files removed', 'أُزيلت المرفقات'),
+         'remove_comments': ('Comments and mark-ups removed', 'أُزيلت التعليقات والعلامات'),
          'apply_redaction': ('Redacted for real: the text under the boxes removed for good (PdfCraft checked nothing readable is left)',
-                             'إخفاء حقيقي: النص اللي تحت المستطيلات اتشال نهائي (PdfCraft اتأكد إن مفيش حاجة فاضلة بتتقري)'),
-         'reduce_size': ('A smaller file: images above 225 ppi brought to 150 ppi', 'الملف بقى أصغر: الصور اللي فوق 225 نقطة/بوصة بقت 150'),
+                             'إخفاء نهائي: أُزيل النص الواقع تحت المستطيلات نهائيًا (وتحقق البرنامج من أنه لم يبقَ منه ما يُقرأ)'),
+         'reduce_size': ('A smaller file: images above 225 ppi brought to 150 ppi', 'صار الملف أصغر: الصور التي تزيد على 225 نقطة/بوصة صارت 150'),
          'make_searchable': ('Searchable: the pages read (OCR, Arabic and English) and their text added under the image — the page looks the same',
-                             'بقى قابل للبحث: الصفحات اتقرت (OCR عربي وإنجليزي) ونصها اتحط تحت الصورة — شكل الصفحة زي ما هو')}
+                             'صار قابلًا للبحث: قُرئت الصفحات (قراءة ضوئية بالعربية والإنجليزية) ووُضع نصها تحت الصورة — وشكل الصفحة كما هو')}
 DOC_INFO = {}                                         # the title and subject an apply() call gives the document (set by the caller)
 
 
@@ -306,7 +306,7 @@ def _pc_op(cur, nxt, op, findings):
         q = pdfcraft.query(Path(cur).read_bytes(), [('doc_audit_redactions', {})]) or {}
         marks = [f for f in ((q.get('doc_audit_redactions') or {}).get('findings') or []) if f.get('rect') and f.get('page')]
         if not marks:
-            raise Refused('No faux redaction was found to redact.', 'مفيش إخفاء مزيّف في الملف علشان يتشال.')
+            raise Refused('No faux redaction was found to redact.', 'لا يوجد في الملف إخفاء زائف لإزالته.')
         _pc_job(cur, nxt, [('redact_mark', {'doc': 1, 'page': int(f['page']), 'rect': [float(v) for v in f['rect']]}) for f in marks]
                 + [('redact_apply', {'doc': 1})])
     elif op == 'add_bookmarks':
@@ -320,17 +320,17 @@ def _pc_op(cur, nxt, op, findings):
         got = pdfcraft.ocr(Path(cur).read_bytes())
         if not got or not got[0]:
             raise Refused('Text recognition (Tesseract with Arabic and English) is not on this machine: install it, or make the text layer when scanning.',
-                          'قراءة النص (Tesseract بالعربي والإنجليزي) مش متسطّبة على الجهاز ده: سطّبها، أو اعمل طبقة النص وقت المسح.')
+                          'القراءة الضوئية للنص (Tesseract بالعربية والإنجليزية) غير مثبَّتة على هذا الجهاز: ثبِّتها، أو أنشئ طبقة النص عند المسح.')
         if not any(t.strip() for t in got[1]):
             raise Refused('No text could be read on the pages (a blank or unreadable scan): scan it again.',
-                          'مفيش أي كلام اتقرى من الصفحات (المسح فاضي أو مش واضح): امسحه تاني.')
+                          'لم يُقرأ أي نص من الصفحات (المسح فارغ أو غير واضح): أعد مسحه.')
         Path(nxt).write_bytes(got[0])
     elif op == 'reduce_size':
         before = Path(cur).read_bytes()
         small, rep = pdfcraft.reduce(before)
         if not pdfcraft.smaller_enough(before, small):
             raise Refused('The file cannot be made smaller (its images are already at 150 ppi or below).',
-                          'الملف مش هيصغر أكتر من كده (صوره أصلًا 150 نقطة/بوصة أو أقل).')
+                          'لا يمكن تصغير الملف أكثر (صوره أصلًا 150 نقطة/بوصة أو أقل).')
         Path(nxt).write_bytes(small)
     else:
         return False                                       # inherit_zoom: PdfCraft's link tool would drop the place the link goes to
@@ -356,19 +356,19 @@ def _browser_searchable(cur, nxt, origin):
     rec = extract.browser_reading(extract._sha(data)) or extract.browser_reading(origin)
     if not rec or not rec.get('layout'):
         raise Refused('Its pages have not been read on this device yet: the page reads them when the file is prepared or fixed — try again.',
-                      'صفحاته لسه ما اتقرتش على الجهاز ده: الصفحة بتقراها لما الملف يتجهّز أو يتصلّح — جرّب تاني.')
+                      'لم تُقرأ صفحاته بعد في هذا المتصفح: تقرؤها الصفحة عند تجهيز الملف أو إصلاحه — أعد المحاولة.')
     n = extract.page_count('scan.pdf', data)
     if len(rec['layout']) < n:
         raise Refused(f'Only {len(rec["layout"])} of its {n} pages were read here; a searchable copy needs every page read.',
-                      f'اتقرى {len(rec["layout"])} صفحة بس من {n}؛ النسخة القابلة للبحث محتاجة كل صفحاته تتقري.')
+                      f'قُرئت {len(rec["layout"])} صفحة فقط من {n}؛ والنسخة القابلة للبحث تحتاج إلى قراءة كل صفحاته.')
     if not any(t.strip() for t in rec['texts']):
         raise Refused('No text could be read on the pages (a blank or unreadable scan): scan it again.',
-                      'مفيش أي كلام اتقرى من الصفحات (المسح فاضي أو مش واضح): امسحه تاني.')
+                      'لم يُقرأ أي نص من الصفحات (المسح فارغ أو غير واضح): أعد مسحه.')
     try:
         Path(nxt).write_bytes(textlayer.write(data, {i + 1: pg for i, pg in enumerate(rec['layout'])}))
     except ValueError:
         raise Refused('No text could be read on the pages (a blank or unreadable scan): scan it again.',
-                      'مفيش أي كلام اتقرى من الصفحات (المسح فاضي أو مش واضح): امسحه تاني.')
+                      'لم يُقرأ أي نص من الصفحات (المسح فارغ أو غير واضح): أعد مسحه.')
 
 
 def apply(path, findings, doc_class, authority=None):
@@ -380,7 +380,7 @@ def apply(path, findings, doc_class, authority=None):
         return {'data': None, 'done': [], 'refused': [], 'report': None}
     if is_signed(path):
         return {'data': None, 'done': [], 'report': None, 'refused': [{'op': o, 'en': 'Digitally signed PDF: rewriting it would break the signature. Ask the signer for a conforming copy.',
-                                                                      'ar': 'ملف موقّع رقمياً: أي تعديل هيبطل التوقيع. اطلب نسخة مطابقة من الموقّع.'} for o in ops]}
+                                                                      'ar': 'ملف موقَّع رقميًا: أي تعديل يُبطل التوقيع. اطلب نسخة مطابقة من الموقِّع.'} for o in ops]}
     with tempfile.TemporaryDirectory() as d:
         cur = Path(d) / 'v0.pdf'
         shutil.copyfile(path, cur)
@@ -392,17 +392,17 @@ def apply(path, findings, doc_class, authority=None):
                 assert_allowed(doc_class, GUARD_OP.get(op, op))
             except LockedError:
                 refused.append({'op': op, 'en': 'Only the issuer may change this on a third-party/EDA document — re-obtain it.',
-                                'ar': 'التعديل ده على مستند جهة خارجية/الهيئة من حق الجهة المصدرة بس — اطلبه منها.'})
+                                'ar': 'هذا التعديل على مستند جهة خارجية أو الهيئة لا يحق إلا للجهة المُصدِرة — اطلبه منها.'})
                 continue
             nxt = Path(d) / f'v{i}.pdf'
             if op == 'pdf_version_normalise':              # the version line only: every other byte stays, so no pixel check is needed
                 v17 = set_version_17(cur.read_bytes())
                 if v17 is None and re.match(rb'%PDF-(1\.[4-7]|2\.0)', cur.read_bytes()[:16]) and cur.name != 'v0.pdf':
                     done.append({'op': op, 'en': 'PDF version 1.4 or later (the file was written again by an earlier fix)',
-                                 'ar': 'إصدار PDF بقى 1.4 أو أحدث (الملف اتكتب من جديد في تصليح قبله)'})
+                                 'ar': 'صار إصدار PDF 1.4 أو أحدث (كُتب الملف من جديد في إصلاح سابق)'})
                     continue
                 if v17 is None:
-                    refused.append({'op': op, 'en': 'The version line could not be changed.', 'ar': 'رقم الإصدار ما ينفعش يتغيّر.'})
+                    refused.append({'op': op, 'en': 'The version line could not be changed.', 'ar': 'لا يمكن تغيير رقم الإصدار.'})
                     continue
                 nxt.write_bytes(v17)
                 cur = nxt
@@ -415,7 +415,7 @@ def apply(path, findings, doc_class, authority=None):
                 elif not (pdfcraft.available() and _pc_op(cur, nxt, op, findings)):
                     if op in PDFCRAFT_ONLY:
                         raise Refused('This needs PdfCraft, which is not on this machine (the desktop and company editions have it).',
-                                      'ده محتاج PdfCraft، وهو مش موجود هنا (موجود في نسخة الكمبيوتر ونسخة الشركة).')
+                                      'أدوات PDF لم تجهز في هذه الصفحة بعد: انتظر لحظات ثم أعد المحاولة.')
                     {'add_bookmarks': lambda: _bookmarks(cur, nxt)}.get(op, lambda: _rewrite(cur, nxt, op))()
             except Refused as e:
                 refused.append({'op': op, 'en': e.en, 'ar': e.ar})
@@ -427,7 +427,7 @@ def apply(path, findings, doc_class, authority=None):
                 from . import textlayer                    # byte for byte, nothing added but text drawn invisibly
                 if not textlayer.invisible_only(cur.read_bytes(), nxt.read_bytes()):
                     refused.append({'op': op, 'en': 'The text layer would have changed the page; discarded.',
-                                    'ar': 'طبقة النص كانت هتغيّر شكل الصفحة؛ اتلغت.'})
+                                    'ar': 'طبقة النص كانت ستغيّر شكل الصفحة؛ فأُلغيت.'})
                     continue
             elif doc_class in LOCKED:
                 try:
@@ -436,11 +436,11 @@ def apply(path, findings, doc_class, authority=None):
                         identical = same_pixels(cur, nxt)
                 except RuntimeError as e:                 # no ghostscript here (browser edition): never touch evidence unverified
                     refused.append({'op': op, 'en': f'Cannot verify the page images on this machine ({e}); the original is kept.',
-                                    'ar': 'مش ممكن نتأكد إن شكل الصفحات ما اتغيّرش على الجهاز ده؛ الأصل محفوظ.'})
+                                    'ar': 'تعذّر التأكد هنا من أن شكل الصفحات لم يتغيّر؛ والأصل محفوظ.'})
                     continue
                 if not identical:
                     refused.append({'op': op, 'en': 'The result would not be pixel-identical to the original; discarded.',
-                                    'ar': 'النتيجة كانت هتغيّر شكل الصفحة؛ اتلغت.'})
+                                    'ar': 'النتيجة كانت ستغيّر شكل الصفحة؛ فأُلغيت.'})
                     continue
             cur = nxt
             done.append({'op': op, 'en': LABEL[op][0], 'ar': LABEL[op][1]})

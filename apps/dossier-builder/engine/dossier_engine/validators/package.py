@@ -117,7 +117,7 @@ def validate_files(files, name='package'):
         seqs = sequences(tmp)
         if not seqs:
             raise PackageError('E-NO-SEQUENCE', 'No eCTD sequence in the package: a four-digit folder (0000, 0001…) holding its index.xml.',
-                               'مفيش تسلسل eCTD في الملف: فولدر من 4 أرقام (0000، 0001…) جواه index.xml.')
+                               'لا يوجد تسلسل eCTD في الملف: مجلد من 4 أرقام (0000، 0001…) بداخله index.xml.')
         reports, rows, prev, regions = {}, [], [], set()
         for s in seqs:
             reg = region_of(s)
@@ -148,7 +148,7 @@ def compare_files(files_a, files_b):
         sa, sb = {s.name: s for s in sequences(ta)}, {s.name: s for s in sequences(tb)}
         if not sa or not sb:
             raise PackageError('E-NO-SEQUENCE', 'Each package needs at least one eCTD sequence (a four-digit folder with its index.xml).',
-                               'كل ملف محتاج تسلسل eCTD واحد على الأقل (فولدر من 4 أرقام جواه index.xml).')
+                               'كل حزمة تحتاج إلى تسلسل eCTD واحد على الأقل (مجلد من 4 أرقام بداخله index.xml).')
         out = []
         for name in sorted(set(sa) | set(sb)):
             if name not in sb or name not in sa:

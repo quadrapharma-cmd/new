@@ -1,5 +1,6 @@
 """Priority 2 in the browser (Playwright): the checks page's «Auto-fix» fixes (it only opened the drawer), an upload never opens the
 drawer by itself, «Turn it into PDF» on a Word file, and the search page finds a batch number with its page."""
+from dossier_engine.checks.pdf import add_javascript
 import io, json, socket, threading, time, urllib.request
 import pytest
 
@@ -51,7 +52,7 @@ def page_of(b, server, lang='en'):
 def test_checks_autofix_fixes_and_search_finds_the_page(server, tmp_path):
     from pypdf import PdfWriter
     did = dossier(server)
-    w = PdfWriter(clone_from=str(make_pdf(tmp_path / 'lay.pdf', 'Appendix 4'))); w.add_js('app.alert(1);')
+    w = PdfWriter(clone_from=str(make_pdf(tmp_path / 'lay.pdf', 'Appendix 4'))); add_javascript(w, 'app.alert(1);')
     buf = io.BytesIO(); w.write(buf)
     upload(server, did, 'M1-11', 'layout.pdf', buf.getvalue())                                  # JavaScript: an auto-fix
     stab = make_pdf_lines(tmp_path / 'stab.pdf', ['Stability summary', 'Batch AYBGE211102 at 25 C / 60 % RH', 'Table 3: assay'], 'Stability')
@@ -219,7 +220,7 @@ def test_the_checks_page_lists_the_rules_with_their_status_and_source(server):
         page.wait_for_selector('#dBody details')
         page.locator('#dBody details summary').first.click()
         body = page.inner_text('#dBody')
-        assert 'NTA065-N4' in body and 'ساري' in body and 'مسودة' in body and 'NP.CAPP.065 v5' in body
+        assert 'NTA065-N4' in body and 'سارٍ' in body and 'مسودة' in body and 'NP.CAPP.065 v5' in body
         assert 'النصوص الرسمية (SHA-256)' in body
         b.close()
     assert not errors, errors
@@ -250,11 +251,11 @@ def test_the_package_page_checks_an_ectd_zip_made_anywhere(server, tmp_path):
         page.click('#pkgGo')
         page.wait_for_selector('#pkgOut table')
         out = page.inner_text('#pkgOut')
-        assert '0000' in out and 'أوروبا' in out and '108/111' in out
+        assert '0000' in out and 'Module 1 الأوروبي' in out and '108/111' in out
         page.set_input_files('#pkgA', str(z)); page.set_input_files('#pkgB', str(z))
         page.click('#cmpGo')
         page.wait_for_selector('#cmpOut .alert')
-        assert 'زي بعض' in page.inner_text('#cmpOut')
+        assert 'متطابقتان' in page.inner_text('#cmpOut')
         b.close()
     assert not errors, errors
 

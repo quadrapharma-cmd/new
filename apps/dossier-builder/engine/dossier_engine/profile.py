@@ -95,7 +95,7 @@ class Profile:
                 bad('P-ENUM', f'dosage_specifics: unknown {s!r}', f'صفة شكل صيدلي غير معروفة: {s}')
         if not self.apis:
             bad('P-NO-API', 'At least one API (name, manufacturer, option) is required.',
-                'لازم مادة فعالة واحدة على الأقل (الاسم، المصنّع، طريقة التقديم).')
+                'يجب إدخال مادة فعالة واحدة على الأقل (الاسم، المصنّع، طريقة التقديم).')
         seen = set()
         for a in self.apis:
             if a.option not in API_OPTIONS:
@@ -103,7 +103,7 @@ class Profile:
                     f'طريقة تقديم غير مقبولة للمادة {a.name}')
             if a.key in seen:
                 bad('P-DUP-API', f'API {a.name} / {a.manufacturer} is listed twice.',
-                    f'المادة {a.name} من نفس المصنّع مكررة.')
+                    f'المادة {a.name} من المصنّع نفسه مكررة.')
             seen.add(a.key)
         for q in (pack.questions if pack is not None else []):
             v, allowed = self.extra.get(q['id'], q.get('default')), [o['id'] for o in q.get('options') or []]
@@ -111,16 +111,16 @@ class Profile:
                 bad('P-ENUM', f"{q['id']}: {v!r} is not one of {allowed}", f"قيمة غير مقبولة للسؤال {q['id']}")
         if egypt and self.origin == 'local' and self.licence in ('imported', 'imported_bulk'):
             bad('P-CONTRA', 'A local product cannot have an imported / imported-bulk licence.',
-                'المنتج المحلي لا يكون ترخيصه مستورد أو bulk مستورد.')
+                'المنتج المحلي لا يكون ترخيصه مستوردًا أو bulk مستوردًا.')
         if egypt and self.origin == 'imported' and self.licence in ('toll', 'f_toll'):
             bad('P-CONTRA', 'Toll manufacturing applies to local products only.',
                 'التصنيع لدى الغير للمنتج المحلي فقط.')
         if egypt and self.route == 'rolling' and today >= ROLLING_CLOSES:
             bad('P-ROLLING-CLOSED', 'Rolling Submission closed on 01/12/2026; use One Submission.',
-                'مسار Rolling اتقفل 01/12/2026؛ استخدم One Submission.')
+                'أُغلق مسار Rolling في 01/12/2026؛ استخدم One Submission.')
         if self.biological:
             bad('P-UNSUPPORTED', 'Biological products are not supported in this version.',
-                'المستحضرات البيولوجية غير مدعومة في الإصدار ده.')
+                'المستحضرات البيولوجية غير مدعومة في هذا الإصدار.')
         if p:
             raise ProfileError(p)
         return True

@@ -148,7 +148,7 @@ def test_a_password_is_reported_never_guessed():
     assert names(r) == ['open.txt'] and r['skipped'] == [{'name': 'locked.txt', 'why': 'password'}]
     with pytest.raises(archives.ArchiveError) as e:                               # nothing readable at all: say why
         archives.unpack('a.zip', encrypted(z))
-    assert e.value.code == 'E-ARCHIVE-PASSWORD' and 'كلمة سر' in e.value.ar
+    assert e.value.code == 'E-ARCHIVE-PASSWORD' and 'كلمة مرور' in e.value.ar
 
 
 def tarred(entries, mode='w', links=()):

@@ -9,7 +9,7 @@
     provenance: ICH
   title:
     en: Table of contents of Modules 2 to 5
-    ar: فهرس الموديولات من ٢ إلى ٥
+    ar: فهرس Modules 2–5
   applies: 'true'
   required:
     I: R
@@ -105,7 +105,7 @@
   provenance: ICH
   level_note: &id002
     en: 'Which Module 2 sections a generic needs differs between authorities: the level here is the general practice — confirm it with the authority.'
-    ar: 'أقسام موديول ٢ المطلوبة من المثيل بتختلف من هيئة للتانية: المستوى هنا من الممارسة العامة — راجعه مع الهيئة.'
+    ar: 'أقسام Module 2 المطلوبة من المثيل تختلف من هيئة إلى أخرى: المستوى هنا من الممارسة العامة — راجعه مع الهيئة.'
 - id: M2-CO
   module: 2
   group: MODULE 2 — CTD summaries
@@ -191,7 +191,7 @@
     provenance: ICH
   title:
     en: Table of contents of Module 3
-    ar: فهرس الموديول ٣
+    ar: فهرس Module 3
   applies: 'true'
   required:
     I: O
@@ -1203,7 +1203,7 @@
     provenance: ICH
   title:
     en: Table of contents of Module 4
-    ar: فهرس الموديول ٤
+    ar: فهرس Module 4
   applies: 'true'
   required:
     I: R
@@ -1403,16 +1403,14 @@
         reason:
           en: 'No equivalence study: the product is exempt (aqueous solution / BCS). This slot holds the exemption justification (same API and molar concentration,
             same or similar excipients; BCS data where claimed) instead of a BE report.'
-          ar: 'مفيش دراسة تكافؤ مطلوبة: المستحضر معفي (محلول مائي / BCS). البند ده بيتحط فيه مبرر الإعفاء (نفس المادة الفعالة بنفس التركيز، ومواد مضافة
-            مماثلة، وبيانات BCS لو مطلوبة) بدل تقرير الدراسة.'
+          ar: 'لا تُطلب دراسة تكافؤ: المستحضر معفى (محلول مائي / BCS). يوضع في هذا البند مبرر الإعفاء (المادة الفعالة نفسها بالتركيز نفسه، ومواد مضافة مماثلة، وبيانات BCS إن كانت مطلوبة) بدلًا من تقرير الدراسة.'
         provenance: General practice (ICH M4E; WHO TRS 1003 Annex 6 for the exemptions) — the authority's own bioequivalence guideline decides the exemption.
       - when: local_equivalence
         level: R
         reason:
           en: 'Locally acting product that is not a solution: no exemption. Equivalence must be shown by comparative clinical, pharmacodynamic, skin-PK
             or in-vitro data instead of a plasma BE study; measure systemic exposure if it carries a systemic risk.'
-          ar: 'مستحضر موضعي التأثير ومش محلول: مفيش إعفاء. لازم إثبات التكافؤ بدراسة إكلينيكية مقارنة، أو دراسة ديناميكية، أو قياس في الجلد، أو اختبارات
-            معملية مقارنة، بدل دراسة التكافؤ في البلازما. ولو فيه خطر امتصاص للجسم، لازم يتقاس.'
+          ar: 'مستحضر موضعي التأثير وليس محلولًا: لا إعفاء. يجب إثبات التكافؤ بدراسة إكلينيكية مقارنة، أو دراسة ديناميكية، أو قياس في الجلد، أو اختبارات معملية مقارنة، بدلًا من دراسة التكافؤ في البلازما. وإن وُجد خطر امتصاص إلى الجسم فيجب قياسه.'
         provenance: General practice (ICH M4E; WHO TRS 1003 Annex 6 for the exemptions) — the authority's own bioequivalence guideline decides the exemption.
       - level: R
     G_LOC:
@@ -1422,16 +1420,14 @@
         reason:
           en: 'No equivalence study: the product is exempt (aqueous solution / BCS). This slot holds the exemption justification (same API and molar concentration,
             same or similar excipients; BCS data where claimed) instead of a BE report.'
-          ar: 'مفيش دراسة تكافؤ مطلوبة: المستحضر معفي (محلول مائي / BCS). البند ده بيتحط فيه مبرر الإعفاء (نفس المادة الفعالة بنفس التركيز، ومواد مضافة
-            مماثلة، وبيانات BCS لو مطلوبة) بدل تقرير الدراسة.'
+          ar: 'لا تُطلب دراسة تكافؤ: المستحضر معفى (محلول مائي / BCS). يوضع في هذا البند مبرر الإعفاء (المادة الفعالة نفسها بالتركيز نفسه، ومواد مضافة مماثلة، وبيانات BCS إن كانت مطلوبة) بدلًا من تقرير الدراسة.'
         provenance: General practice (ICH M4E; WHO TRS 1003 Annex 6 for the exemptions) — the authority's own bioequivalence guideline decides the exemption.
       - when: local_equivalence
         level: R
         reason:
           en: 'Locally acting product that is not a solution: no exemption. Equivalence must be shown by comparative clinical, pharmacodynamic, skin-PK
             or in-vitro data instead of a plasma BE study; measure systemic exposure if it carries a systemic risk.'
-          ar: 'مستحضر موضعي التأثير ومش محلول: مفيش إعفاء. لازم إثبات التكافؤ بدراسة إكلينيكية مقارنة، أو دراسة ديناميكية، أو قياس في الجلد، أو اختبارات
-            معملية مقارنة، بدل دراسة التكافؤ في البلازما. ولو فيه خطر امتصاص للجسم، لازم يتقاس.'
+          ar: 'مستحضر موضعي التأثير وليس محلولًا: لا إعفاء. يجب إثبات التكافؤ بدراسة إكلينيكية مقارنة، أو دراسة ديناميكية، أو قياس في الجلد، أو اختبارات معملية مقارنة، بدلًا من دراسة التكافؤ في البلازما. وإن وُجد خطر امتصاص إلى الجسم فيجب قياسه.'
         provenance: General practice (ICH M4E; WHO TRS 1003 Annex 6 for the exemptions) — the authority's own bioequivalence guideline decides the exemption.
       - level: R
   doc_class: company_technical

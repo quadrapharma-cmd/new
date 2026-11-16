@@ -187,7 +187,7 @@ def run_rules(st, did, doc_id, pack=None, actor='rules'):
             elif vu < today:
                 f.update(verdict='deficient', finding=_bi(f'Expired on {vu}.', f'انتهت صلاحيته في {vu}.'))
             else:
-                f.update(verdict='adequate', finding=_bi(f'Valid until {vu}.', f'ساري حتى {vu}.'))
+                f.update(verdict='adequate', finding=_bi(f'Valid until {vu}.', f'سارٍ حتى {vu}.'))
         elif scanned:
             f.update(verdict='not_assessable', finding=_bi('Image-only scan: the text cannot be checked by the rules; the Assistant reads the pages.', 'صورة ممسوحة: لا تستطيع القواعد فحص النص؛ المساعد يقرأ الصفحات.'))
         elif r['id'] == 'DOC-NAME':

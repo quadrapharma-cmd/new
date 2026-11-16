@@ -444,12 +444,12 @@
   dept: quality
   layer: eda
   ctd: "2.3"
-  title: {en: "QOS consistent with Module 3", ar: "اتساق الملخص الشامل للجودة مع الوحدة 3"}
-  question: {en: "Does the Quality Overall Summary follow the 2.3.S / 2.3.P structure and summarise the same batches, specifications and conclusions as Module 3?", ar: "هل يتبع الملخص الشامل للجودة بنية 2.3.S / 2.3.P ويلخص نفس التشغيلات والمواصفات والاستنتاجات الواردة في الوحدة 3؟"}
+  title: {en: "QOS consistent with Module 3", ar: "اتساق الملخص الشامل للجودة مع Module 3"}
+  question: {en: "Does the Quality Overall Summary follow the 2.3.S / 2.3.P structure and summarise the same batches, specifications and conclusions as Module 3?", ar: "هل يتبع الملخص الشامل للجودة بنية 2.3.S / 2.3.P ويلخص نفس التشغيلات والمواصفات والاستنتاجات الواردة في Module 3؟"}
   severity: minor
   evidence: {slots: [M2-02], keywords: ["2.3.S", "2.3.P", "Quality Overall Summary"]}
   auto: {kind: text, min_hits: 2}
-  deficiency: {en: "The QOS should follow the ICH M4Q structure (2.3.S, 2.3.P, 2.3.A, 2.3.R) and be consistent with the data in Module 3.", ar: "يجب أن يتبع الملخص الشامل للجودة بنية ICH M4Q (2.3.S، 2.3.P، 2.3.A، 2.3.R) ويتسق مع بيانات الوحدة 3."}
+  deficiency: {en: "The QOS should follow the ICH M4Q structure (2.3.S, 2.3.P, 2.3.A, 2.3.R) and be consistent with the data in Module 3.", ar: "يجب أن يتبع الملخص الشامل للجودة بنية ICH M4Q (2.3.S، 2.3.P، 2.3.A، 2.3.R) ويتسق مع بيانات Module 3."}
   action: {type: upload, target: M2-02}
   source: {code: "EDA Quality Module guideline v2/2023", section: "4.1 Module 3", quote: "Information on Quality should be presented in the structured CTD format"}
   anchor: {code: ICH M4Q(R1), section: "2.3 QOS"}

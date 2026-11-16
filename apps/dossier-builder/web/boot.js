@@ -17,7 +17,7 @@
   ov.setAttribute('role', 'status');
   ov.style.cssText = 'position:fixed;inset:0;z-index:1000;display:grid;place-items:center;background:var(--bg,#070B12);color:var(--ink,#E9EFF7);font-family:inherit';
   ov.innerHTML = '<div style="width:min(440px,90vw);display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center">' +
-    '<div style="width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,#22D3EE,#A78BFA);display:grid;place-items:center;font-family:ui-monospace,monospace;font-weight:600;color:#04161B">DB</div>' +
+    '<div style="width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,#22D3EE,#A78BFA);display:grid;place-items:center;font-family:ui-monospace,monospace;font-weight:600;color:#04161B">eB</div>' +
     '<div id="bootMsg" style="font-size:15px;font-weight:600"></div><div id="bootSub" style="font-size:12.5px;color:var(--muted,#8C9BB0)"></div>' +
     '<div style="width:100%;height:6px;border-radius:999px;background:rgba(128,128,128,.2);overflow:hidden"><i id="bootBar" style="display:block;height:100%;width:3%;background:linear-gradient(90deg,#22D3EE,#A78BFA);transition:width .3s"></i></div>' +
     '<div id="bootTime" style="font-size:12px;color:var(--muted,#8C9BB0);font-variant-numeric:tabular-nums;min-height:1.4em"></div>' +
@@ -38,21 +38,21 @@
     if (st.loaded > L0.loaded) L0.moved = Date.now();
     L0.loaded = st.loaded; L0.total = st.total; L0.net = st.net;
     if (st.total) bar(4 + 60 * Math.min(1, st.loaded / st.total));
-    if (st.net > 0) sub(`بينزّل ملفات التشغيل: ${mb(st.loaded)} من ${mb(st.total)} ميجا — أول مرة بس، بعدها بتتفتح من جهازك`, `Downloading the runtime: ${mb(st.loaded)} of ${mb(st.total)} MB — the first time only; afterwards it opens from this device`);
-    else if (st.loaded > 0) sub('بيفتح من الملفات المحفوظة على جهازك — مفيش تنزيل', 'Opening from the files kept on this device — nothing to download');
+    if (st.net > 0) sub(`تحميل مكوّنات البرنامج داخل المتصفح: ${mb(st.loaded)} من ${mb(st.total)} ميغابايت — في المرة الأولى فقط، ولا يُثبَّت شيء على جهازك`, `Loading the program's parts inside the browser: ${mb(st.loaded)} of ${mb(st.total)} MB — the first time only; nothing is installed on this device`);
+    else if (st.loaded > 0) sub('يفتح من المكوّنات المحفوظة في المتصفح — دون تحميل', 'Opening from the parts kept in the browser — nothing to load');
   }
   const tick = setInterval(() => {
     const t = document.getElementById('bootTime'), h = document.getElementById('bootHelp');
     if (L0.done || !document.getElementById('boot')) { clearInterval(tick); return; }
     const secs = Math.round((Date.now() - L0.started) / 1000), still = Math.round((Date.now() - L0.moved) / 1000);
-    if (t && secs >= 8 && !L0.failed) t.textContent = AR ? `بقاله ${secs} ثانية` : `${secs} s so far`;
+    if (t && secs >= 8 && !L0.failed) t.textContent = AR ? `مضت ${secs} ثانية` : `${secs} s so far`;
     const fetching = !L0.total || L0.loaded < L0.total;                // still waiting for bytes; after them the engine works with no news for a while
     const stuck = L0.failed || still >= (fetching ? 40 : 150);
     if (h) { h.hidden = !stuck;
-      if (stuck) { h.firstChild.textContent = L0.failed ? (AR ? 'ما فتحش. جرّب تاني؛ ولو اتكررت ابعت السطر اللي فوق.' : 'It did not open. Try again; if it repeats, send the line above.')
-          : fetching ? (AR ? `مفيش بيانات وصلت من ${still} ثانية: الاتصال بطيء أو مقطوع. استنى شوية أو جرّب تاني.` : `No data has arrived for ${still} s: the line is slow or down. Wait a little, or try again.`)
-          : (AR ? `المحرك بيشتغل من ${still} ثانية من غير رد. استنى شوية أو جرّب تاني.` : `The engine has been starting for ${still} s with no answer. Wait a little, or try again.`);
-        h.lastChild.textContent = AR ? 'حاول تاني' : 'Try again'; h.lastChild.onclick = () => location.reload(); } }
+      if (stuck) { h.firstChild.textContent = L0.failed ? (AR ? 'تعذّر فتح البرنامج. أعد المحاولة؛ وإن تكرر ذلك فأرسل السطر الظاهر أعلاه.' : 'It did not open. Try again; if it repeats, send the line above.')
+          : fetching ? (AR ? `لم تصل أي بيانات منذ ${still} ثانية: الاتصال بطيء أو منقطع. انتظر قليلًا أو أعد المحاولة.` : `No data has arrived for ${still} s: the line is slow or down. Wait a little, or try again.`)
+          : (AR ? `المحرك يعمل منذ ${still} ثانية دون رد. انتظر قليلًا أو أعد المحاولة.` : `The engine has been starting for ${still} s with no answer. Wait a little, or try again.`);
+        h.lastChild.textContent = AR ? 'إعادة المحاولة' : 'Try again'; h.lastChild.onclick = () => location.reload(); } }
   }, 1000);
 
   let bigSync = null;                                               // bigfs.js: large files of the workspace are stored as Blobs
@@ -74,16 +74,16 @@
       (document.body || document.documentElement).appendChild(el);
     }
     const text = full
-      ? (ar ? 'المتصفح رفض يحفظ آخر تغييرات: مساحة التخزين اللي سامح بيها للصفحة دي خلصت. اللي بتعمله دلوقتي مش بيتحفظ. فضّي مساحة: شيل الملف الكبير اللي لسه ضايفه، أو احذف مشروع قديم وفضّي «المحذوفات» — أو استخدم برنامج سطح المكتب للملفات الكبيرة جدًا.'
-            : 'The browser refused to save the last changes: the storage it allows this page is full. What you do now is not being saved. Free some space: remove the large file you just added, or delete an old project and empty the trash — or use the desktop program for very large files.')
-      : (ar ? 'المتصفح ما قدرش يحفظ آخر تغييرات (' + error + '). اللي بتعمله دلوقتي مش بيتحفظ: جرّب تاني، ولو فضلت الرسالة افتح الصفحة من جديد.'
+      ? (ar ? 'رفض المتصفح حفظ آخر التغييرات: امتلأت مساحة التخزين التي يسمح بها لهذه الصفحة. ما تفعله الآن لا يُحفظ. أفرغ مساحة: احذف الملف الكبير الذي أضفته للتو، أو احذف ملفًا قديمًا وأفرغ «المحذوفات» — أو استخدم برنامج سطح المكتب للملفات الكبيرة جدًا.'
+            : 'The browser refused to save the last changes: the storage it allows this page is full. What you do now is not being saved. Free some space: remove the large file you just added, or delete an old dossier and empty the trash — or use the desktop program for very large files.')
+      : (ar ? 'تعذّر على المتصفح حفظ آخر التغييرات (' + error + '). ما تفعله الآن لا يُحفظ: أعد المحاولة، وإن بقيت الرسالة فافتح الصفحة من جديد.'
             : 'The browser could not save the last changes (' + error + '). What you do now is not being saved: try again, and reload the page if this note stays.');
     el.innerHTML = '<span style="flex:1 1 320px;min-width:0"></span><span id="dbStorageUse" style="color:var(--muted,#8C9BB0);font-variant-numeric:tabular-nums"></span><button type="button" style="font:inherit;padding:6px 14px;border-radius:8px;border:1px solid var(--warn,#FBBF24);background:transparent;color:inherit;cursor:pointer"></button>';
     el.firstChild.textContent = '⚠ ' + text;
-    const btn = el.lastChild; btn.textContent = ar ? 'جرّب الحفظ تاني' : 'Try saving again';
+    const btn = el.lastChild; btn.textContent = ar ? 'إعادة محاولة الحفظ' : 'Try saving again';
     btn.onclick = () => { btn.disabled = true; window.DBWEB.sync().then(() => storageNote(), e => storageNote(String(e && e.message || e))); };
     if (navigator.storage && navigator.storage.estimate) navigator.storage.estimate().then(q => { const u = document.getElementById('dbStorageUse');
-      if (u && q && q.quota) u.textContent = (ar ? 'مستخدم ' : 'used ') + (q.usage / 1048576).toFixed(0) + (ar ? ' من ' : ' of ') + (q.quota / 1048576).toFixed(0) + (ar ? ' ميجا' : ' MB'); }).catch(() => {});
+      if (u && q && q.quota) u.textContent = (ar ? 'مستخدم ' : 'used ') + (q.usage / 1048576).toFixed(0) + (ar ? ' من ' : ' of ') + (q.quota / 1048576).toFixed(0) + (ar ? ' ميغابايت' : ' MB'); }).catch(() => {});
   }
 
   const nativeFetch = window.fetch.bind(window);
@@ -144,7 +144,7 @@
     let c;
     try { const r = await window.fetch(`/api/ocr/document/${m[1]}/${m[2] || m[3]}`); if (!r.ok) return; c = await r.json(); } catch (e) { return; }
     if (!c.why || c.here || !c.pages || (c.read >= c.pages && c.layout)) return;
-    if (c.pages > WHOLE) { ocrSay(c.filename, c.sha256, { stage: 'error', message: (document.documentElement.lang === 'en' ? `${c.pages} pages: more than this page reads at once (${WHOLE})` : `${c.pages} صفحة: أكتر من اللي الصفحة بتقراه مرة واحدة (${WHOLE})`) }); return; }
+    if (c.pages > WHOLE) { ocrSay(c.filename, c.sha256, { stage: 'error', message: (document.documentElement.lang === 'en' ? `${c.pages} pages: more than this page reads at once (${WHOLE})` : `${c.pages} صفحة: أكثر مما تقرؤه الصفحة في مرة واحدة (${WHOLE})`) }); return; }
     try {
       const blob = await (await window.fetch(c.url)).blob();
       await readAndKeep(new File([blob], c.filename, { type: blob.type || 'application/pdf' }), c.sha256, c.pages, true);
@@ -180,12 +180,12 @@
     if (!T) return;
     const pg = d.pages ? (ar ? ` · ${d.page} من ${d.pages} صفحة` : ` · ${d.page} of ${d.pages} pages`) : '';
     const msg = {
-      load: ar ? 'بيجهّز قارئ الممسوح (أول مرة بس، وبعدها بيفضل على الجهاز)…' : 'Getting the scan reader ready (the first time only; then it stays on this device)…',
-      read: ar ? 'بيقرا الممسوح' : 'Reading the scan', check: ar ? 'بيراجع الكلمات المش أكيدة' : 'Checking the doubtful words',
-      straighten: ar ? 'بيعدّل صفحة مايلة أو مقلوبة' : 'Turning a skewed or sideways page upright',
-      turned: ar ? 'الصورة كانت متصوّرة بالعرض أو مقلوبة: اتعدلت' : 'The photo was taken sideways or upside down: turned upright',
-      upright: ar ? 'الصورة معدولة ✓' : 'The photo is upright ✓',
-      done: ar ? 'اتقرا ✓' : 'Read ✓', error: (ar ? 'ما اتقراش: ' : 'Not read: ') + (d.message || '') }[d.stage] || '';
+      load: ar ? 'جارٍ تجهيز قارئ المستندات الممسوحة ضوئيًا (في المرة الأولى فقط، ثم يبقى محفوظًا في المتصفح)…' : 'Getting the scan reader ready (the first time only; then it stays on this device)…',
+      read: ar ? 'جارٍ قراءة المستند الممسوح ضوئيًا' : 'Reading the scan', check: ar ? 'جارٍ مراجعة الكلمات غير المؤكدة' : 'Checking the doubtful words',
+      straighten: ar ? 'جارٍ تعديل صفحة مائلة أو مقلوبة' : 'Turning a skewed or sideways page upright',
+      turned: ar ? 'كانت الصورة ملتقطة بالعرض أو مقلوبة: عُدِّلت' : 'The photo was taken sideways or upside down: turned upright',
+      upright: ar ? 'الصورة في وضعها الصحيح ✓' : 'The photo is upright ✓',
+      done: ar ? 'قُرئ ✓' : 'Read ✓', error: (ar ? 'لم يُقرأ: ' : 'Not read: ') + (d.message || '') }[d.stage] || '';
     const last = ['done', 'error', 'turned', 'upright'].includes(d.stage);
     T(`${name}: ${msg}${d.stage === 'load' || last ? '' : pg}`, d.stage === 'error' ? 9000 : d.stage === 'upright' ? 2500 : last ? 5000 : 60000);
   }
@@ -213,7 +213,7 @@
       else if (b instanceof ArrayBuffer) body = new Uint8Array(b.slice(0));                        // a copy: the caller keeps its buffer
       else if (ArrayBuffer.isView(b)) body = new Uint8Array(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength));
     } catch (e) {                                                      // the upload itself does not fit in the page's memory: said, not thrown
-      return new Response(JSON.stringify({ detail: { code: 'E-MEMORY', en: 'A file this large does not fit in the memory the browser gives the page. Close other tabs and try again, split the file, or use the desktop program, which takes it whole.', ar: 'ملف بالحجم ده أكبر من الذاكرة اللي المتصفح بيديها للصفحة. اقفل تبويبات تانية وجرّب تاني، أو قسّم الملف، أو استخدم برنامج سطح المكتب — بياخده كامل.' } }), { status: 507, headers: { 'content-type': 'application/json' } });
+      return new Response(JSON.stringify({ detail: { code: 'E-MEMORY', en: 'A file this large does not fit in the memory the browser gives the page. Close other tabs and try again, split the file, or use the desktop program, which takes it whole.', ar: 'ملف بهذا الحجم أكبر من الذاكرة التي يتيحها المتصفح للصفحة. أغلق تبويبات أخرى وأعد المحاولة، أو قسِّم الملف، أو استخدم برنامج سطح المكتب — فهو يستوعبه كاملًا.' } }), { status: 507, headers: { 'content-type': 'application/json' } });
     }
     headers['content-length'] = String(body.length);
     let meta, out;
@@ -232,7 +232,7 @@
   const pending = new Map(); let seq = 0;
   function ask(msg, transfer) { return new Promise(res => { const id = ++seq; pending.set(id, res); S.worker.postMessage(Object.assign({ id }, msg), transfer || []); }); }
   function engineDown(why) {                                       // the worker died after it was ready: every waiting call gets an answer
-    const body = new TextEncoder().encode(JSON.stringify({ detail: { code: 'E-ENGINE', en: 'The engine stopped (' + why + '). Reload the page.', ar: 'المحرك وقف. افتح الصفحة من جديد.' } }));
+    const body = new TextEncoder().encode(JSON.stringify({ detail: { code: 'E-ENGINE', en: 'The engine stopped (' + why + '). Reload the page.', ar: 'توقّف المحرك. افتح الصفحة من جديد.' } }));
     for (const [id, res] of pending) res({ id, meta: JSON.stringify({ status: 500, headers: [['content-type', 'application/json']] }), out: body.slice().buffer });
     pending.clear();
   }
@@ -266,7 +266,7 @@
       const buf = await (await fetch(base + 'assets/wheels/' + w)).arrayBuffer();
       pyodide.unpackArchive(buf, 'zip', { extractDir: site });
     }
-    say('تحميل قواعد الهيئة…', 'Loading the EDA rule packs…', 70);
+    say('تحميل القواعد التنظيمية…', 'Loading the rule packs…', 70);
     pyodide.FS.mkdirTree('/app');
     pyodide.unpackArchive(await (await fetch(base + 'assets/engine.zip')).arrayBuffer(), 'zip', { extractDir: '/app' });
     pyodide.FS.mkdirTree('/workspace');
@@ -290,15 +290,58 @@
     setTimeout(() => ov.remove(), 150);
   })().catch(e => { console.error(e); L0.failed = true; say('تعذّر تشغيل المحرك', 'The engine could not start', 100); sub(String(e && e.message || e), String(e && e.message || e)); throw e; });
 
+  /* A file leaves the page through claude.ai's «downloads» (the person confirms each one). Nothing fails without a word:
+     the engine's own reason when it has no file to give; a kind claude.ai does not save (.xml, .doc, .xls, .tif…) goes inside a
+     ZIP of the same name, said plainly; a refusal says why. Outside claude.ai the browser saves the file itself. */
+  const tell = (ar, en, ms, bad) => { const m = AR ? ar : en; try { if (bad && window.DS && DS.errlog) DS.errlog.add('download', m); if (window.DS && DS.toast) return DS.toast(m, ms || 6000, bad ? 'bad' : 'note'); } catch (e) {}
+    const t = document.getElementById('toast'); if (t) { t.textContent = m; t.hidden = false; } };
+  const SAVED_AS_IS = /\.(gif|png|jpe?g|webp|mp4|webm|txt|json|md|docx|pptx|epub|csv|ttf|html|svg|pdf|xlsx|zip)$/i;      // what claude.ai's downloads take
+  const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  async function zipOf(name, blob) {                               // one file, stored as it is (no compression), in a ZIP
+    const data = new Uint8Array(await blob.arrayBuffer()), nm = new TextEncoder().encode(name);
+    let c = 0xFFFFFFFF; for (let i = 0; i < data.length; i++) c = CRC[(c ^ data[i]) & 0xFF] ^ (c >>> 8); c = (c ^ 0xFFFFFFFF) >>> 0;
+    const d = new Date(), time = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1), date = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+    const rec = (n, f) => { const v = new DataView(new ArrayBuffer(n)); f(v); return v.buffer; };
+    const local = rec(30, v => { v.setUint32(0, 0x04034b50, true); v.setUint16(4, 20, true); v.setUint16(6, 0x0800, true); v.setUint16(10, time, true); v.setUint16(12, date, true);
+      v.setUint32(14, c, true); v.setUint32(18, data.length, true); v.setUint32(22, data.length, true); v.setUint16(26, nm.length, true); });
+    const central = rec(46, v => { v.setUint32(0, 0x02014b50, true); v.setUint16(4, 20, true); v.setUint16(6, 20, true); v.setUint16(8, 0x0800, true); v.setUint16(12, time, true); v.setUint16(14, date, true);
+      v.setUint32(16, c, true); v.setUint32(20, data.length, true); v.setUint32(24, data.length, true); v.setUint16(28, nm.length, true); });
+    const end = rec(22, v => { v.setUint32(0, 0x06054b50, true); v.setUint16(8, 1, true); v.setUint16(10, 1, true); v.setUint32(12, 46 + nm.length, true); v.setUint32(16, 30 + nm.length + data.length, true); });
+    return new Blob([local, nm, data, central, nm, end], { type: 'application/zip' });
+  }
+  const DL_WHY = {
+    rate_limited: ['نافذة تنزيل أخرى ما زالت مفتوحة، أو طُلبت تنزيلات كثيرة متتالية. انتظر لحظة ثم أعد المحاولة.', 'Another download prompt is still open, or too many were asked in a row. Wait a moment, then try again.'],
+    too_large: ['الملف أكبر مما يسمح به التنزيل هنا.', 'The file is larger than a download may be here.'],
+    rejected_extension: ['claude.ai لا يسمح بتنزيل هذا النوع من الملفات.', 'claude.ai does not save this kind of file.'],
+    extension_not_enabled: ['تنزيل هذا النوع من الملفات غير مفعَّل في هذا العرض.', 'Saving this kind of file is switched off in this view.'],
+  };
   async function saveFromApi(url) {
-    const r = await window.fetch(url);
-    if (!r.ok) { const t = document.getElementById('toast'); if (t) { t.textContent = AR ? 'تعذّر تحميل الملف' : 'Could not fetch the file'; t.hidden = false; } return; }
-    const blob = await r.blob();
+    const WAIT = AR ? 'جارٍ تجهيز الملف للتنزيل…' : 'Preparing the file…';
+    const slow = setTimeout(() => tell(WAIT, WAIT, 600000), 700);        // a large file takes a while: the button never looks dead
+    const calm = () => { clearTimeout(slow); const t = document.getElementById('toast'); if (t && t.textContent === WAIT) t.hidden = true; };
+    let r;
+    try { r = await window.fetch(url); } catch (e) { calm(); tell('تعذّر تجهيز الملف للتنزيل: ' + (e && e.message || e), 'The file could not be prepared: ' + (e && e.message || e), 8000, true); return; }
+    calm();
+    if (!r.ok) { let d = null; try { d = (await r.json()).detail; } catch (e) {}
+      const why = d && typeof d === 'object' ? (AR ? d.ar || d.en : d.en || d.ar) : (typeof d === 'string' ? d : '');
+      tell('تعذّر تجهيز الملف للتنزيل' + (why ? ': ' + why : '.'), 'The file could not be prepared' + (why ? ': ' + why : '.'), 8000, true); return; }
+    let blob = await r.blob();
     const cd = r.headers.get('content-disposition') || '';
     const m1 = cd.match(/filename\*=UTF-8''([^;]+)/i), m2 = cd.match(/filename="?([^";]+)"?/i);
-    const name = m1 ? decodeURIComponent(m1[1]) : m2 ? m2[1] : (url.split('/').pop().split('?')[0] || 'file');
+    let name = m1 ? decodeURIComponent(m1[1]) : m2 ? m2[1] : (url.split('/').pop().split('?')[0] || 'file');
     const dl = (window.claude && typeof window.claude.use === 'function') ? await window.claude.use('downloads') : null;
-    if (dl) { try { await dl.save({ filename: name, data: blob }); } catch (e) { if (!e || e.code !== 'declined') console.warn('download', e); } return; }
+    if (dl) {
+      if (!SAVED_AS_IS.test(name)) {                                  // the same bytes, inside a ZIP claude.ai does save
+        const kind = (name.match(/\.[A-Za-z0-9]{1,8}$/) || [''])[0];
+        blob = await zipOf(name, blob); name = name + '.zip';
+        tell(`claude.ai لا ينزّل ملفات ${kind || 'هذا النوع'} مباشرة: الملف كما هو داخل «${name}».`, `claude.ai does not save ${kind || 'this kind of'} files directly: the file is inside «${name}», as it is.`, 9000);
+      }
+      try { await dl.save({ filename: name, data: blob }); }
+      catch (e) { const code = e && e.code;
+        if (code !== 'declined') { const w = DL_WHY[code] || ['التنزيل غير متاح في هذا العرض' + (code ? ` (${code})` : '') + '.', 'Downloads are not available in this view' + (code ? ` (${code})` : '') + '.'];
+          tell('لم يُنزَّل الملف: ' + w[0], 'The file was not saved: ' + w[1], 9000, true); console.warn('download', e); } }
+      return;
+    }
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
   }

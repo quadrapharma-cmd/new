@@ -106,7 +106,7 @@ def test_browser_edition_reads_a_link_through_the_viewers_drive_connector(server
         page.add_init_script(stub)
         page.goto(server + '/#/new')
         page.wait_for_selector('#intakeDrive'); page.click('#intakeDrive'); page.wait_for_selector('#drvLink')
-        assert 'من غير مفتاح' in page.inner_text('#drawer .chip')                              # connector mode, announced
+        assert 'بلا مفتاح' in page.inner_text('#drawer .chip')                              # connector mode, announced
         assert page.locator('#drvKey').count() == 0                                             # no key form forced
         page.fill('#drvLink', 'https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUv?usp=sharing')
         page.click('#drvList'); page.wait_for_selector('[data-drvsel]')
@@ -300,7 +300,7 @@ def test_every_document_type_old_and_new_is_offered_and_read_by_its_content(serv
         rows = page.evaluate("() => Object.fromEntries([...document.querySelectorAll('#drvFiles tbody tr')].map(tr => { const c = tr.querySelector('[data-drvsel]'), td = tr.querySelectorAll('td'); return [td[1].innerText.trim(), [c.checked, c.disabled, td[2].innerText.trim()]]; }))")
         assert rows['pricing.xls'] == [True, False, 'Excel (.xls)'] and rows['overview.ppt'] == [True, False, 'PowerPoint (.ppt)'] and rows['letter.rtf'] == [True, False, 'RTF'], rows
         assert rows['scan0001'][:2] == [False, False]                                                # offered, not ticked
-        assert rows['Thumbs.db'] == [False, True, 'ملف نظام'] and rows['~$report.docx'] == [False, True, 'ملف نظام'] and rows['empty.docx'] == [False, True, 'ملف فاضي'], rows
+        assert rows['Thumbs.db'] == [False, True, 'ملف نظام'] and rows['~$report.docx'] == [False, True, 'ملف نظام'] and rows['empty.docx'] == [False, True, 'ملف فارغ'], rows
         assert rows['backup.rar'][:2] == [False, False] and 'مضغوط' in rows['backup.rar'][2]            # a compressed file: offered, not ticked, opened after it is fetched
         page.check('tr:has-text("scan0001") [data-drvsel]'); page.click('#drvUse')
         page.wait_for_function("() => typeof S !== 'undefined' && S.wiz && S.wiz.kinds && Object.keys(S.wiz.kinds).length === 4 && Object.values(S.wiz.docs).every(d => d.status !== 'reading')", timeout=180000)
@@ -367,12 +367,12 @@ def test_a_drive_file_over_the_connectors_limit_is_said_and_taken_from_the_compu
         page.fill('#drvLink', 'https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUv'); page.click('#drvList'); page.wait_for_selector('[data-drvsel]')
         big_row = page.locator('tr', has_text='COAs')
         assert not big_row.locator('[data-drvsel]').is_checked() and not big_row.locator('[data-drvsel]').is_disabled()     # said before anything is fetched
-        assert 'أكبر من 10 ميجا' in big_row.inner_text() and page.locator('tr', has_text='licence.pdf').locator('[data-drvsel]').is_checked()
+        assert 'أكبر من 10 ميغابايت' in big_row.inner_text() and page.locator('tr', has_text='licence.pdf').locator('[data-drvsel]').is_checked()
         assert page.get_attribute('#drvBig a', 'href') == 'https://drive.google.com/file/d/big1/view' and page.locator('#drvBig #drvLocal').count() == 1
         big_row.locator('[data-drvsel]').check(); page.click('#drvUse')                               # asked for anyway
         page.wait_for_selector('#drvFails')
         said = page.inner_text('#drvFails')
-        assert 'أكبر من 10 ميجا' in said and 'افتحه في Drive' in said and 'File too large' not in said, said
+        assert 'أكبر من 10 ميغابايت' in said and 'افتحه في Drive' in said and 'File too large' not in said, said
         assert page.locator('#drvRetry').count() == 0 and page.locator('#drvGo').count() == 1                 # trying again cannot help; the fetched one is kept
         assert page.get_attribute('#drvFails a', 'href') == 'https://drive.google.com/file/d/big1/view'
         with page.expect_file_chooser() as fc:

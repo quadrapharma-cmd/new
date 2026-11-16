@@ -61,14 +61,14 @@ def test_assistant_drawer_journey(server, browser, monkeypatch):
         assert 'مفتاح' in page.inner_text('#asstBody')
         page.fill('#asstKey', 'sk-ant-test-0123456789abcdef')
         page.click('#asstSave')
-        page.wait_for_selector('text=المفتاح شغّال')
+        page.wait_for_selector('text=المفتاح يعمل')
         page.wait_for_selector('#asstSend:not([disabled])', timeout=10000)
         page.locator('#drawer').screenshot(path=f'{OUT}/asst_ready_ar.png')
         page.fill('#asstText', 'صدّر الملف')
         page.click('#asstSend')
         page.wait_for_selector('[data-apv][data-dec=deny]', timeout=20000)   # the Assistant asked to export → approval card
         body = page.inner_text('#asstBody')
-        assert 'المساعد عايز يعمل الخطوة دي' in body and 'تصدير الملف' in body and 'هصدّر الملف دلوقتي' in body
+        assert 'يريد المساعد تنفيذ هذه الخطوة' in body and 'تصدير الملف' in body and 'هصدّر الملف دلوقتي' in body
         page.locator('#drawer').screenshot(path=f'{OUT}/asst_approval_ar.png')
         page.click('[data-apv][data-dec=deny]')
         page.wait_for_selector('text=التصدير اترفض منك', timeout=20000)

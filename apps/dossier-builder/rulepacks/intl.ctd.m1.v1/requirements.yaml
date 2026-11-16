@@ -24,7 +24,7 @@
   provenance: GENERAL
   level_note: &id001
     en: 'General layout, not the country''s own text: follow the authority''s checklist for what is asked, its form and its wording.'
-    ar: 'هيكل عام مش نص الدولة نفسها: امشي على قائمة الهيئة في المطلوب وشكله وصياغته.'
+    ar: 'هيكل عام وليس نص الدولة نفسها: اتبع قائمة الهيئة في المطلوب وشكله وصياغته.'
 - id: X-1.1
   module: 1
   group: MODULE 1 — Administrative information (general layout)
@@ -349,7 +349,7 @@
     provenance: GENERAL
   title:
     en: Declarations asked by the country
-    ar: الإقرارات اللي بتطلبها الدولة
+    ar: الإقرارات التي تطلبها الدولة
   applies: 'true'
   required:
     I: O
@@ -451,7 +451,7 @@
     provenance: GENERAL
   title:
     en: Other documents the country asks for
-    ar: مستندات تانية بتطلبها الدولة
+    ar: مستندات أخرى تطلبها الدولة
   applies: 'true'
   required:
     I: O

@@ -62,16 +62,16 @@ def test_make_it_for_me_says_what_the_model_is_doing_and_why_it_did_not_answer(s
         page.wait_for_selector('[data-tpl="P-01"]', timeout=60000)
         page.click('[data-tpl="P-01"]')
         page.wait_for_selector('#tplPanel .docprev')
-        assert 'موديل claude.ai جوه الصفحة' in page.inner_text('#tplPanel')                       # the page knows the model is here
+        assert 'نموذج claude.ai داخل الصفحة' in page.inner_text('#tplPanel')                       # the page knows the model is here
         stat = lambda: page.inner_text('#dpStat')
 
         # 1. the model answers after some seconds: thinking, then writing, then the page is filled with what it wrote
         page.click('#dpFill')
-        page.wait_for_function("() => /Claude بيقرا المستندات وبيفكّر… \\d+ ثانية/.test(document.querySelector('#dpStat').textContent)", timeout=3000)
-        assert 'ممكن ياخد لحد دقيقتين' in stat() and page.is_visible('#dpStop') and page.is_disabled('#dpFill')
-        page.wait_for_function("() => /Claude بيكتب… \\d+ حرف/.test(document.querySelector('#dpStat').textContent)", timeout=6000)
+        page.wait_for_function("() => /Claude يقرأ المستندات ويفكّر… \\d+ ثانية/.test(document.querySelector('#dpStat').textContent)", timeout=3000)
+        assert 'قد يستغرق حتى دقيقتين' in stat() and page.is_visible('#dpStop') and page.is_disabled('#dpFill')
+        page.wait_for_function("() => /Claude يكتب… \\d+ حرف/.test(document.querySelector('#dpStat').textContent)", timeout=6000)
         page.wait_for_function("() => document.querySelector('#tplPanel').textContent.includes('white, homogeneous, smooth cream')", timeout=8000)
-        assert 'اتملت بموديل claude.ai في الصفحة' in stat() and 'White soft paraffin' in page.inner_text('#tplPanel')
+        assert 'مُلئت بنموذج claude.ai داخل الصفحة' in stat() and 'White soft paraffin' in page.inner_text('#tplPanel')
         assert not page.is_visible('#dpStop') and not page.is_disabled('#dpFill')
         ai = page.evaluate("() => window.__ai")
         assert ai['calls'] == 1 and ai['opts'] == ['cache', 'modelTier', 'onText', 'signal'] and ai['prompt'].startswith('You draft one document')
@@ -81,15 +81,15 @@ def test_make_it_for_me_says_what_the_model_is_doing_and_why_it_did_not_answer(s
         page.wait_for_selector('#dpStop:not([hidden])')
         page.wait_for_timeout(700)
         page.click('#dpStop')
-        page.wait_for_function("() => document.querySelector('#dpStat').textContent.includes('اتوقف')", timeout=3000)
+        page.wait_for_function("() => document.querySelector('#dpStat').textContent.includes('توقّف')", timeout=3000)
         assert not page.is_disabled('#dpFill') and 'white, homogeneous, smooth cream' in page.inner_text('#tplPanel')
 
         # 3. the viewer did not allow Claude, or its usage ran out: said in words, and the page is filled from the product data alone
-        for code, words in (('not_granted', 'Claude ما اتسمحلوش في الصفحة دي'), ('rate_limited', 'وصلت لحد استخدام Claude'), ('invalid_json', 'ما طلعش بالشكل المطلوب')):
+        for code, words in (('not_granted', 'لم يُسمح لـ Claude في هذه الصفحة'), ('rate_limited', 'بلغتَ حد استخدام Claude'), ('invalid_json', 'لم يأتِ رد Claude بالشكل المطلوب')):
             page.evaluate("(m) => { window.__ai.mode = m; }", code)
             page.click('#dpFill')
             page.wait_for_function("(w) => document.querySelector('#dpStat').textContent.includes(w)", arg=words, timeout=20000)
-            assert 'الصفحة اتملت من بيانات المنتج بس' in stat(), stat()
+            assert 'مُلئت الصفحة من بيانات المنتج فقط' in stat(), stat()
             assert 'Neomycin sulphate' in page.inner_text('#tplPanel') and 'white, homogeneous' not in page.inner_text('#tplPanel')
         assert errors == [], errors
         b.close()

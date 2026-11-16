@@ -1,5 +1,6 @@
 """Auto-fix: each fixable defect is fixed and re-checked; evidence stays pixel-identical; signed PDFs untouched; the PDF version is
 the version line alone (every other byte the same); no OCR — a scan is not «fixed» here."""
+from dossier_engine.checks.pdf import add_javascript
 import shutil
 import pytest
 from pypdf import PdfWriter
@@ -71,7 +72,7 @@ def test_security_removed_on_company_doc(tmp_path):
 
 def test_javascript_removed(tmp_path):
     src = make_pdf(tmp_path / 's.pdf', 'x')
-    w = PdfWriter(clone_from=str(src)); w.add_js('app.alert(1)')
+    w = PdfWriter(clone_from=str(src)); add_javascript(w, 'app.alert(1)')
     p = tmp_path / 'js.pdf'
     w.write(open(p, 'wb'))
     r = fix(p, 'company_technical', tmp_path)
@@ -97,7 +98,7 @@ def test_a_scan_is_made_searchable_where_pdfcraft_reads_scans(tmp_path):
         assert n4[0]['action'] == ('auto_fix' if ocr else 'user_fix') and (('make_searchable' in ops_for(f)) == ocr)
         if ocr:
             out = apply(p, f, cls)
-            assert out['data'] is None and any(r['op'] == 'make_searchable' and 'no text could be read' in r['en'].lower() and 'امسحه' in r['ar'] for r in out['refused'])
+            assert out['data'] is None and any(r['op'] == 'make_searchable' and 'no text could be read' in r['en'].lower() and 'أعد مسحه' in r['ar'] for r in out['refused'])
 
 
 def test_signed_pdf_never_rewritten(pdf13):

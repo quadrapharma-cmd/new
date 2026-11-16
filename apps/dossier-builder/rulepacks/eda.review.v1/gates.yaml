@@ -55,12 +55,12 @@
   dept: gates
   layer: eda
   ctd: "1.1.4 · 1.1.5 · 1.1.8"
-  title: {en: "Approvals to collect before the updated Module 1", ar: "الموافقات الواجب جمعها قبل الوحدة 1 المحدَّثة"}
-  question: {en: "After the technical approvals, are the pricing certificate and the PV approval ready for the updated Module 1 resubmission?", ar: "بعد الموافقات الفنية، هل شهادة التسعير وموافقة اليقظة الدوائية جاهزتان لإعادة تقديم الوحدة 1 المحدَّثة؟"}
+  title: {en: "Approvals to collect before the updated Module 1", ar: "الموافقات الواجب جمعها قبل Module 1 المحدَّثة"}
+  question: {en: "After the technical approvals, are the pricing certificate and the PV approval ready for the updated Module 1 resubmission?", ar: "بعد الموافقات الفنية، هل شهادة التسعير وموافقة اليقظة الدوائية جاهزتان لإعادة تقديم Module 1 المحدَّثة؟"}
   applies: "activity == 'new'"
   severity: note
   evidence: {slots: [M1-05, M1-08], keywords: ["pricing certificate", "pharmacovigilance approval"]}
   auto: {kind: none}
-  deficiency: {en: "Before the final review, the updated Module 1 must carry all technical approvals, the pricing certificate and the PV approval.", ar: "قبل المراجعة النهائية يجب أن تحمل الوحدة 1 المحدَّثة جميع الموافقات الفنية وشهادة التسعير وموافقة اليقظة الدوائية."}
+  deficiency: {en: "Before the final review, the updated Module 1 must carry all technical approvals, the pricing certificate and the PV approval.", ar: "قبل المراجعة النهائية يجب أن تحمل Module 1 المحدَّثة جميع الموافقات الفنية وشهادة التسعير وموافقة اليقظة الدوائية."}
   action: {type: none}
   source: {code: EDA submission procedures, section: "Step 4", quote: "After Obtaining all technical approvals, Pricing Certificate and PV approval , the applicant Must re-submit the updated Module I"}

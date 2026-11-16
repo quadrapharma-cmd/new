@@ -316,7 +316,7 @@
   layer: eda
   ctd: "3.2"
   title: {en: "Data reflect all approved variations", ar: "البيانات تعكس جميع التغييرات المعتمدة"}
-  question: {en: "Is the Module 3 data representative of the current drug substance and finished product quality, incorporating all approved variations (composition, sites, specifications, methods, packaging, shelf life), consistent with the variation approvals on file?", ar: "هل تمثل بيانات الوحدة الثالثة الجودة الحالية للمادة الفعالة والمنتج النهائي، متضمنة جميع التغييرات المعتمدة (التركيبة والمواقع والمواصفات والطرق والتعبئة ومدة الصلاحية)، ومتسقة مع موافقات التغييرات الموجودة بالملف؟"}
+  question: {en: "Is the Module 3 data representative of the current drug substance and finished product quality, incorporating all approved variations (composition, sites, specifications, methods, packaging, shelf life), consistent with the variation approvals on file?", ar: "هل تمثل بيانات Module 3 الجودة الحالية للمادة الفعالة والمنتج النهائي، متضمنة جميع التغييرات المعتمدة (التركيبة والمواقع والمواصفات والطرق والتعبئة ومدة الصلاحية)، ومتسقة مع موافقات التغييرات الموجودة بالملف؟"}
   applies: "activity == 're_registration'"
   severity: critical
   evidence:
@@ -324,6 +324,6 @@
     keywords: ["variation", "approved", "current"]
     data: [composition]
   auto: {kind: none}
-  deficiency: {en: "The applicant should update Module 3 so that the submitted data are representative of the last current drug substance and FPP quality data, taking into account all approved variations.", ar: "يجب على مقدم الطلب تحديث الوحدة الثالثة بحيث تمثل البيانات المقدمة أحدث بيانات الجودة الحالية للمادة الفعالة والمنتج النهائي، مع مراعاة جميع التغييرات المعتمدة."}
+  deficiency: {en: "The applicant should update Module 3 so that the submitted data are representative of the last current drug substance and FPP quality data, taking into account all approved variations.", ar: "يجب على مقدم الطلب تحديث Module 3 بحيث تمثل البيانات المقدمة أحدث بيانات الجودة الحالية للمادة الفعالة والمنتج النهائي، مع مراعاة جميع التغييرات المعتمدة."}
   action: {type: rebuild, target: "P-01"}
   source: {code: "GL.CAPP.039 v1/2025", section: "6. General Notice", quote: "Data submitted should be representative of last current Drug substance and FPP Quality data considering all approved variations."}

@@ -142,7 +142,7 @@ def test_a_word_file_is_edited_in_the_program_and_kept_as_a_new_version(site, tm
             page.wait_for_function("() => !document.querySelector('.dbprog [data-act=\"save\"]').disabled", timeout=20000)
             page.click('.dbprog [data-act="save"]')
             try:
-                page.wait_for_function("() => /اتحفظ|Saved/.test(document.querySelector('.dbprog-status').textContent)", timeout=60000)
+                page.wait_for_function("() => /حُفظت|Saved/.test(document.querySelector('.dbprog-status').textContent)", timeout=60000)
             except Exception:
                 raise AssertionError(f'round {round_}: not saved — status «{status(page)}», messages {page.evaluate("() => window.__m")}, errors {errors}')
             page.click('.dbprog [data-act="close"]')
@@ -201,12 +201,12 @@ def test_a_pdf_page_is_turned_in_the_pdf_program_and_kept_as_a_new_version(site,
         box = page.query_selector('.dbprog iframe').bounding_box()
         page.mouse.click(box['x'] + box['width'] * 0.6, box['y'] + box['height'] * 0.5)
         page.keyboard.press('Control+s')                                               # nothing changed: nothing kept
-        page.wait_for_function("() => /مفيش تعديل|Nothing was changed/.test(document.querySelector('.dbprog-status').textContent)", timeout=20000)
+        page.wait_for_function("() => /لا يوجد تعديل|Nothing was changed/.test(document.querySelector('.dbprog-status').textContent)", timeout=20000)
         assert page.evaluate("() => document.querySelector('.dbprog [data-act=\"save\"]').disabled")
         page.evaluate("async () => { await document.querySelector('.dbprog iframe').contentWindow.pdfcraft.execute('page.rotate', {}); }")   # a sideways scan's page
         page.wait_for_function("() => !document.querySelector('.dbprog [data-act=\"save\"]').disabled", timeout=20000)
         page.click('.dbprog [data-act="save"]')
-        page.wait_for_function("() => /اتحفظ|Saved/.test(document.querySelector('.dbprog-status').textContent)", timeout=60000)
+        page.wait_for_function("() => /حُفظت|Saved/.test(document.querySelector('.dbprog-status').textContent)", timeout=60000)
         assert 'Word' not in page.evaluate("() => document.querySelector('.dbprog-status').textContent")
         page.click('.dbprog [data-act="close"]')
         page.wait_for_selector('.dbprog', state='detached', timeout=10000)
@@ -229,8 +229,8 @@ def test_without_webassembly_the_program_says_it_cannot_run(tmp_path):
             page.wait_for_function('() => window.DBPROG')
             page.evaluate("data => { window.__h = DBPROG.open('wordcraft', {name: 'made-up.docx', bytes: new Uint8Array(data), lang: 'ar', onSave() {}}); }",
                           list(letter(tmp_path / 'made-up.docx').read_bytes()))
-            page.wait_for_function("() => /ماقدرش/.test(document.querySelector('.dbprog-status').textContent)", timeout=240000)
-            assert 'مش سامحة بتشغيل البرامج' in status(page)
+            page.wait_for_function("() => /تعذّر تشغيل/.test(document.querySelector('.dbprog-status').textContent)", timeout=240000)
+            assert 'لا تسمح بتشغيل البرامج' in status(page)
             page.click('.dbprog [data-act="close"]')
             assert page.query_selector('.dbprog') is None
             b.close()
@@ -276,7 +276,7 @@ def test_a_page_cleaned_in_the_photo_program_takes_its_place_as_a_new_version(si
         started(page, 'photocraft')
         page.wait_for_timeout(2500)                                       # the page is dropped on the program and opened
         keys(page, 'Control+s')
-        page.wait_for_function("() => /اتبدّلت|replaced/.test(document.querySelector('.dbprog-status').textContent)", timeout=180000)
+        page.wait_for_function("() => /استُبدلت|replaced/.test(document.querySelector('.dbprog-status').textContent)", timeout=180000)
         page.click('.dbprog [data-act="close"]')
         page.wait_for_selector('.dbprog', state='detached', timeout=10000)
         docs = page.evaluate("async ([id, slot]) => (await (await fetch(`/api/dossiers/${id}/board`)).json()).slots.find(s => s.slot_id === slot).documents", [did, slot])
@@ -331,7 +331,7 @@ def test_an_artwork_pdf_placed_in_a_design_comes_back_as_its_exported_pdf(site, 
         assert '210 × 297' in ask and '216 × 279' in ask, ask               # the made-up A4 file; the program's Letter page
         assert page.evaluate("() => [...document.querySelectorAll('.dbprog-ask img')].every(i => i.naturalWidth > 0)")
         page.click('.dbprog-ask [data-a="yes"]')
-        page.wait_for_function("() => /اتحفظ|Saved/.test(document.querySelector('.dbprog-status').textContent)", timeout=180000)
+        page.wait_for_function("() => /حُفظت|Saved/.test(document.querySelector('.dbprog-status').textContent)", timeout=180000)
         page.click('.dbprog [data-act="close"]')
         page.wait_for_selector('.dbprog', state='detached', timeout=10000)
         docs = page.evaluate("async id => (await (await fetch(`/api/dossiers/${id}/board`)).json()).slots.find(s => s.slot_id === 'M1-11').documents", did)
@@ -369,7 +369,7 @@ def test_a_new_artwork_made_in_the_design_program_is_the_items_document(site, tm
         page.mouse.click(box['x'] + 81, box['y'] + 324)                    # Export PDF…
         page.wait_for_timeout(1500)
         page.keyboard.press('Enter')
-        page.wait_for_function("() => /اتحفظ|Saved/.test(document.querySelector('.dbprog-status').textContent)", timeout=180000)
+        page.wait_for_function("() => /حُفظت|Saved/.test(document.querySelector('.dbprog-status').textContent)", timeout=180000)
         page.click('.dbprog [data-act="close"]')
         page.wait_for_selector('.dbprog', state='detached', timeout=10000)
         docs = page.evaluate("async id => (await (await fetch(`/api/dossiers/${id}/board`)).json()).slots.find(s => s.slot_id === 'M1-11').documents", did)

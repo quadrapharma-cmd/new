@@ -14,24 +14,47 @@ NAME_OK = re.compile(r'^[a-z0-9][a-z0-9-]*\.pdf$')
 NO_TEXT_EN = ('No text: the pages are images only. EDA requires every document as a searchable PDF (NP.CAPP.065 v5, general note 4). '
               'The desktop and company editions read it (OCR, Arabic and English) and make it searchable themselves (PdfCraft); here, make the '
               'text layer when scanning — the scanner\'s software, Acrobat, or a phone app that saves searchable PDFs.')
-NO_TEXT_AR = ('الملف ده من غير نص: صفحاته صور بس. الهيئة طالبة كل مستند PDF قابل للبحث (NP.CAPP.065 v5، الملاحظة 4). '
-              'نسخة الكمبيوتر ونسخة الشركة بيقروه (OCR عربي وإنجليزي) ويخلّوه قابل للبحث لوحدهم (PdfCraft)؛ هنا اعمل النص وقت المسح — '
-              'من برنامج السكانر أو Acrobat أو تطبيق موبايل بيحفظ PDF قابل للبحث.')
+NO_TEXT_AR = ('هذا الملف بلا نص: صفحاته صور فقط. الهيئة تشترط أن يكون كل مستند PDF قابلًا للبحث (NP.CAPP.065 v5، الملاحظة 4). '
+              'نسخة الحاسوب ونسخة الشركة تقرآنه (قراءة ضوئية بالعربية والإنجليزية) وتجعلانه قابلًا للبحث تلقائيًا؛ أما هنا فأنشئ النص عند المسح — '
+              'من برنامج الماسح الضوئي أو Acrobat أو تطبيق هاتف يحفظ PDF قابلًا للبحث.')
 OCR_FIX_EN = ('No text layer: the pages are images. EDA requires every document as a searchable PDF (NP.CAPP.065 v5, general note 4). '
               'PdfCraft reads the pages (OCR, Arabic and English) and adds their text under the image — the page looks the same, and the '
               'document becomes searchable: «Fix» does it.')
 OCR_BROWSER_EN = ('No text layer: the pages are images. EDA requires every document as a searchable PDF (NP.CAPP.065 v5, general note 4). '
                   'The program reads the pages in this browser (OCR, Arabic and English) and writes their text under the image — the page '
                   'looks the same, and the document becomes searchable: «Fix» does it.')
-OCR_BROWSER_AR = ('الملف ده مالوش طبقة نص: صفحاته صور. الهيئة طالبة كل مستند PDF قابل للبحث (NP.CAPP.065 v5، الملاحظة 4). '
-                  'البرنامج بيقرا الصفحات في المتصفح ده (OCR عربي وإنجليزي) ويكتب نصها تحت الصورة — شكل الصفحة ما بيتغيرش والمستند بيبقى قابل للبحث: «صلّح» بيعملها.')
-OCR_FIX_AR = ('الملف ده مالوش طبقة نص: صفحاته صور. الهيئة طالبة كل مستند PDF قابل للبحث (NP.CAPP.065 v5، الملاحظة 4). '
-              'PdfCraft بيقرا الصفحات (OCR عربي وإنجليزي) ويحط نصها تحت الصورة — شكل الصفحة ما بيتغيرش والمستند بيبقى قابل للبحث: «صلّح» بيعملها.')
+OCR_BROWSER_AR = ('هذا الملف ليست له طبقة نص: صفحاته صور. الهيئة تشترط أن يكون كل مستند PDF قابلًا للبحث (NP.CAPP.065 v5، الملاحظة 4). '
+                  'يقرأ البرنامج الصفحات داخل هذا المتصفح (قراءة ضوئية بالعربية والإنجليزية) ويكتب نصها تحت الصورة — فلا يتغيّر شكل الصفحة ويصبح المستند قابلًا للبحث: «إصلاح تلقائي» ينفّذ ذلك.')
+OCR_FIX_AR = ('هذا الملف ليست له طبقة نص: صفحاته صور. الهيئة تشترط أن يكون كل مستند PDF قابلًا للبحث (NP.CAPP.065 v5، الملاحظة 4). '
+              'يقرأ البرنامج الصفحات (قراءة ضوئية بالعربية والإنجليزية) ويضع نصها تحت الصورة — فلا يتغيّر شكل الصفحة ويصبح المستند قابلًا للبحث: «إصلاح تلقائي» ينفّذ ذلك.')
 NO_TEXT_IMAGE_EN = ('An image, not a PDF. EDA requires every document as a searchable PDF (NP.CAPP.065 v5, general note 4). The desktop and '
                     'company editions turn a PNG, JPEG, TIFF, GIF or BMP into a searchable PDF themselves (PdfCraft); here, scan it as a PDF, '
                     'or save the photo as JPEG or PNG, and upload it again.')
-NO_TEXT_IMAGE_AR = ('ده صورة مش PDF. الهيئة طالبة كل مستند PDF قابل للبحث (NP.CAPP.065 v5، الملاحظة 4). نسخة الكمبيوتر ونسخة الشركة '
-                    'بيحوّلوا صورة PNG أو JPEG أو TIFF أو GIF أو BMP لـ PDF قابل للبحث لوحدهم (PdfCraft)؛ هنا امسحه PDF، أو احفظ الصورة JPEG أو PNG وارفعها تاني.')
+NO_TEXT_IMAGE_AR = ('هذه صورة لا ملف PDF. الهيئة تشترط أن يكون كل مستند PDF قابلًا للبحث (NP.CAPP.065 v5، الملاحظة 4). نسخة الحاسوب ونسخة الشركة '
+                    'تحوّلان صور PNG أو JPEG أو TIFF أو GIF أو BMP إلى PDF قابل للبحث تلقائيًا؛ أما هنا فامسحه ضوئيًا بصيغة PDF، أو احفظ الصورة بصيغة JPEG أو PNG وارفعها من جديد.')
+
+
+def add_javascript(writer, code):
+    """A document-level script on a pypdf writer (for the fixtures of the checks: a PDF that carries JavaScript). Written into the
+    catalogue's /Names by hand: pypdf's own call for it is add_js up to 6.x and add_open_action from 7.0 — neither is in both."""
+    import uuid
+    from pypdf.generic import ArrayObject, DictionaryObject, NameObject, TextStringObject
+    root = writer.root_object if hasattr(writer, 'root_object') else writer._root_object
+    names = root.get('/Names')
+    names = names.get_object() if names is not None else None
+    if names is None:
+        names = DictionaryObject()
+        root[NameObject('/Names')] = names
+    tree = names.get('/JavaScript')
+    tree = tree.get_object() if tree is not None else None
+    if tree is None:
+        tree = DictionaryObject({NameObject('/Names'): ArrayObject()})
+        names[NameObject('/JavaScript')] = tree
+    action = DictionaryObject({NameObject('/Type'): NameObject('/Action'), NameObject('/S'): NameObject('/JavaScript'),
+                               NameObject('/JS'): TextStringObject(str(code))})
+    lst = tree['/Names']
+    lst.append(TextStringObject(str(uuid.uuid4())))
+    lst.append(writer._add_object(action))
 
 
 ECTD_DRAFT = {'EG-PF-15.4', 'ICH-NAME', 'EG-PF-16.3', 'EG-BP-E23', 'PDF-JS', 'EG-PF-16.1', 'EG-BP-16.BP1', 'NTA065-BM', 'ECTD-WORD',
@@ -168,20 +191,20 @@ def props(rd, r, add, has_outline, doc_class='company_technical'):
         pass
     if state == 'not_embedded':
         add(Finding('PDF-FONTS', 'warn', f"Fonts not embedded: {', '.join(missing)}. Make the PDF again with all fonts embedded (it cannot be done without redrawing the pages).",
-                    f"خطوط مش مدمجة: {', '.join(missing)}. اعمل الـ PDF تاني والخطوط كلها مدمجة (ما ينفعش يتعمل من غير ما الصفحات تترسم تاني).", 'user_fix', src))
+                    f"خطوط غير مدمجة: {', '.join(missing)}. أعد إنشاء ملف PDF مع دمج كل الخطوط (لا يمكن إصلاح ذلك دون إعادة رسم الصفحات).", 'user_fix', src))
     elif state == 'unknown':
-        add(Finding('PDF-FONTS', 'warn', 'Whether the fonts are embedded could not be told from this file.', 'مش قادرين نعرف من الملف ده إذا كانت الخطوط مدمجة.', 'none', src))
+        add(Finding('PDF-FONTS', 'warn', 'Whether the fonts are embedded could not be told from this file.', 'لا يمكن التحقق من هذا الملف هل الخطوط مدمجة فيه.', 'none', src))
     try:
         mode = str(rd.trailer['/Root'].get('/PageMode') or '')
     except Exception:
         mode = ''
     if has_outline and mode != '/UseOutlines':
-        add(Finding('PDF-VIEW', 'warn', 'It has bookmarks but does not open with the bookmarks panel.', 'فيه bookmarks بس مش بيفتح ولوحة الـ bookmarks ظاهرة.', 'auto_fix', src))
+        add(Finding('PDF-VIEW', 'warn', 'It has bookmarks but does not open with the bookmarks panel.', 'فيه إشارات مرجعية (bookmarks) لكنه لا يُفتح ولوحتها ظاهرة.', 'auto_fix', src))
     z = _fixed_zoom(rd)
     r.info['fixed_zoom_links'] = z
     if z:
         add(Finding('PDF-ZOOM', 'warn', f'{z} link(s) set their own zoom; links keep the reader\'s zoom («inherit zoom»).',
-                    f'{z} رابط بيغيّر الزووم؛ الروابط المفروض تسيب زووم القارئ («inherit zoom»).', 'auto_fix', src))
+                    f'{z} رابط يغيّر مستوى التكبير؛ والمطلوب أن تترك الروابط تكبير القارئ كما هو («inherit zoom»).', 'auto_fix', src))
     try:
         info = rd.metadata or {}
         title = str(info.get('/Title') or '').strip()
@@ -189,7 +212,7 @@ def props(rd, r, add, has_outline, doc_class='company_technical'):
         title = ''
     r.info['title'] = title
     if not title and doc_class not in LOCKED:            # the company's own documents: offered (another's are as their issuer made them)
-        add(Finding('PDF-INFO', 'warn', 'The document has no title in its properties (File → Properties).', 'المستند مالوش عنوان في خصائصه (File ← Properties).', 'auto_fix',
+        add(Finding('PDF-INFO', 'warn', 'The document has no title in its properties (File → Properties).', 'ليس للمستند عنوان في خصائصه (File ← Properties).', 'auto_fix',
                     src + '; EU VC 8.2 16.BP11 (1.3.1, centralised procedure)'))
 
 
@@ -199,20 +222,20 @@ def check(path, doc_class='company_technical', ectd_name=False, authority=None):
     name = os.path.basename(path)
     size = os.path.getsize(path) if os.path.exists(path) else -1
     if size <= 0:
-        add(Finding('EG-PF-16.5', 'block', 'The file is empty (0 bytes).', 'الملف فاضي (0 بايت).',
+        add(Finding('EG-PF-16.5', 'block', 'The file is empty (0 bytes).', 'الملف فارغ (0 بايت).',
                     're_obtain' if doc_class in LOCKED else 'user_fix', 'EU VC 16.5 via EG provisional profile'))
         return r
     mb, who, where = LIMITS.get(authority or 'EG-EDA', LIMITS['OTHER'])          # the dossier's authority: 100 MB, the EU 500, the FDA 400
     if size > size_limit(authority):
         add(Finding('PDF-SIZE', 'warn', f'{size / 1e6:.0f} MB; an eCTD file is at most {mb} MB ({who}) — PdfCraft can make it smaller (images above 225 ppi brought to 150 ppi), or split it.',
-                    f'{size / 1e6:.0f} ميجا؛ ملف الـ eCTD بالكتير {mb} ميجا ({who}) — PdfCraft ممكن يصغّره (الصور اللي فوق 225 نقطة/بوصة تبقى 150)، أو قسّمه.',
+                    f'{size / 1e6:.0f} ميغابايت؛ والحد الأقصى لملف eCTD {mb} ميغابايت ({who}) — تستطيع أدوات PDF تصغيره (الصور التي تزيد على 225 نقطة/بوصة تصبح 150)، أو قسِّمه.',
                     'user_fix' if doc_class in LOCKED else 'auto_fix', where))
     if len(name) > 64:
         add(Finding('EG-PF-15.4', 'warn', f'File name has {len(name)} characters; an eCTD name has at most 64 — the export gives the file its eCTD name.',
-                    f'اسم الملف {len(name)} حرف؛ اسم الـ eCTD بالكتير 64 — التصدير بيدّي الملف اسمه في الـ eCTD.', 'none', 'EG eCTD TG draft p.12 l.275'))
+                    f'اسم الملف {len(name)} حرفًا؛ والحد الأقصى لاسم الملف في eCTD 64 حرفًا — يعطي التصدير الملف اسمه في eCTD.', 'none', 'EG eCTD TG draft p.12 l.275'))
     if ectd_name and not NAME_OK.match(name):
         add(Finding('ICH-NAME', 'warn', 'eCTD file names use only a-z, 0-9 and "-" (the tool renames on export).',
-                    'أسماء ملفات eCTD حروف صغيرة وأرقام و"-" فقط (الأداة بتعيد التسمية عند التصدير).',
+                    'أسماء ملفات eCTD حروف صغيرة وأرقام و"-" فقط (يعيد البرنامج التسمية عند التصدير).',
                     'auto_fix', 'ICH eCTD SPEC 3.2.2 p.2-3'))
     with open(path, 'rb') as fh:
         head = fh.read(1024)
@@ -220,7 +243,7 @@ def check(path, doc_class='company_technical', ectd_name=False, authority=None):
         tail = fh.read()
     m = re.match(rb'%PDF-(\d)\.(\d)', head)
     if not m:
-        add(Finding('EG-PF-16.5', 'block', 'Not a PDF file (no %PDF header).', 'الملف مش PDF.',
+        add(Finding('EG-PF-16.5', 'block', 'Not a PDF file (no %PDF header).', 'الملف ليس PDF.',
                     'user_fix', 'EU VC 16.5'))
         return r
     ver = (int(m[1]), int(m[2]))
@@ -246,22 +269,22 @@ def check(path, doc_class='company_technical', ectd_name=False, authority=None):
             except Exception:
                 ok = 0
             if not ok:
-                add(Finding('EG-PF-16.2', 'block', 'The PDF needs a password to open.', 'الملف محتاج باسورد عشان يتفتح.',
+                add(Finding('EG-PF-16.2', 'block', 'The PDF needs a password to open.', 'يحتاج الملف إلى كلمة مرور لفتحه.',
                             're_obtain' if doc_class in LOCKED else 'user_fix', 'EG eCTD TG draft; EU VC 16.2'))
                 return r
             add(Finding('EG-PF-16.3', 'block', 'The PDF has security restrictions (printing/copying). Remove them; '
                         'digitally signed documents may keep printing and copying allowed only.',
-                        'الملف عليه قيود حماية (طباعة/نسخ). لازم تتشال؛ الموقّع رقمياً يسمح بالطباعة والنسخ على الأقل.',
+                        'على الملف قيود حماية (طباعة/نسخ) ويجب إزالتها؛ والملف الموقَّع رقميًا يجب أن يسمح بالطباعة والنسخ على الأقل.',
                         're_obtain' if doc_class in LOCKED else 'auto_fix', 'EG eCTD TG draft; EU VC 16.3'))
         pages = len(rd.pages)
         r.info['pages'] = pages
         root = rd.trailer['/Root']
         if '/Collection' in root:
             add(Finding('EG-BP-E23', 'block', 'PDF Portfolio is not allowed; submit each document as its own PDF.',
-                        'ملفات الـ Portfolio ممنوعة؛ كل مستند PDF لوحده.', 'user_fix', 'EG eCTD TG draft (EG-BP-E23)'))
+                        'ملفات الـ Portfolio غير مقبولة؛ يُقدَّم كل مستند في ملف PDF مستقل.', 'user_fix', 'EG eCTD TG draft (EG-BP-E23)'))
         names = root.get('/Names') or {}
         if '/JavaScript' in names or ('/OpenAction' in root and '/JS' in str(root['/OpenAction'])):
-            add(Finding('PDF-JS', 'block', 'The PDF contains JavaScript.', 'الملف فيه JavaScript.',
+            add(Finding('PDF-JS', 'block', 'The PDF contains JavaScript.', 'في الملف JavaScript.',
                         're_obtain' if doc_class in LOCKED else 'auto_fix', 'ICH eCTD SPEC App. 7 (no active content)'))
         cat_ver = root.get('/Version')
         eff = ver
@@ -275,12 +298,12 @@ def check(path, doc_class='company_technical', ectd_name=False, authority=None):
             add(Finding('EG-PF-16.1', 'warn' if signed else 'block',
                         f'PDF version {eff[0]}.{eff[1]} — eCTD takes 1.4 to 1.7 (EDA eCTD technical guidance, draft).'
                         + (' Digitally signed: the version line is left as it is, changing it would break the signature.' if signed else ''),
-                        f'إصدار PDF {eff[0]}.{eff[1]} — الـ eCTD بياخد من 1.4 لـ 1.7 (مسودة الهيئة).'
-                        + (' الملف موقّع رقميًا: رقم الإصدار متساب زي ما هو، تغييره يبوّظ التوقيع.' if signed else ''),
+                        f'إصدار PDF {eff[0]}.{eff[1]} — يقبل eCTD الإصدارات من 1.4 إلى 1.7 (مسودة الهيئة).'
+                        + (' الملف موقَّع رقميًا: تُرك رقم الإصدار كما هو، لأن تغييره يُبطل التوقيع.' if signed else ''),
                         'none' if signed else 'auto_fix', 'EG eCTD technical guidance v1.0/2026 (DRAFT, not in force); EU VC 16.1'))
         elif eff > (1, 7):
             add(Finding('EG-BP-16.BP1', 'warn', f'PDF version {eff[0]}.{eff[1]}; eCTD prefers 1.4–1.7 (EDA eCTD technical guidance, draft).',
-                        f'إصدار PDF {eff[0]}.{eff[1]}؛ الـ eCTD بيفضّل 1.4–1.7 (مسودة الهيئة).', 'none', 'EG eCTD technical guidance v1.0/2026 (DRAFT)'))
+                        f'إصدار PDF {eff[0]}.{eff[1]}؛ ويفضِّل eCTD الإصدارات 1.4–1.7 (مسودة الهيئة).', 'none', 'EG eCTD technical guidance v1.0/2026 (DRAFT)'))
         try:
             has_outline = bool(rd.outline)
         except Exception:
@@ -289,7 +312,7 @@ def check(path, doc_class='company_technical', ectd_name=False, authority=None):
         props(rd, r, add, has_outline, doc_class)
         if pages >= 10 and not has_outline:
             add(Finding('NTA065-BM', 'warn', f'{pages} pages and no bookmarks; long documents need bookmarks to navigate.',
-                        f'{pages} صفحة من غير bookmarks؛ المستندات الطويلة لازم يبقى فيها bookmarks.',
+                        f'{pages} صفحة بلا إشارات مرجعية (bookmarks)؛ والمستندات الطويلة يجب أن تكون فيها إشارات مرجعية.',
                         'auto_fix', 'EG eCTD TG draft (bookmarks for documents with a TOC); ICH eCTD SPEC App. 7'))
         chars = 0                                        # the same measure as the upload gate: some text in the first 12 pages
         for pg in rd.pages[:min(pages, 12)]:
@@ -308,7 +331,7 @@ def check(path, doc_class='company_technical', ectd_name=False, authority=None):
                 add(Finding('NTA065-N4', 'block', NO_TEXT_EN, NO_TEXT_AR,
                             'rebuild' if doc_class in ('generated', 'company_letter') else 'user_fix', 'NP.CAPP.065 v5 general note 4'))
     except Exception as e:  # pypdf could not parse
-        add(Finding('EG-PF-16.5', 'block', f'The PDF cannot be read ({type(e).__name__}).', 'الملف مش بيتقري (تالف).',
+        add(Finding('EG-PF-16.5', 'block', f'The PDF cannot be read ({type(e).__name__}).', 'الملف غير مقروء (تالف).',
                     're_obtain' if doc_class in LOCKED else 'user_fix', 'EU VC 16.5'))
     return r
 
@@ -325,20 +348,20 @@ def _pdfcraft_checks(r, add, path, q, ver, doc_class):
         r.info['repairs'] = repairs[:6]
         add(Finding('PDF-REPAIR', 'warn', f"The file is damaged ({'; '.join(repairs[:2]) or 'objects that cannot be read'}). PdfCraft reads it; "
                     'a clean copy can be written — the pages are compared with the original to look the same.',
-                    'الملف فيه تلف. PdfCraft قادر يقراه؛ ممكن نكتب منه نسخة سليمة — وبنقارن الصفحات بالأصل عشان نتأكد إن شكلها ما اتغيّرش.',
+                    'في الملف تلف، ويستطيع البرنامج قراءته؛ يمكن كتابة نسخة سليمة منه — وتُقارَن الصفحات بالأصل للتأكد من أن شكلها لم يتغيّر.',
                     'auto_fix', 'EU VC 16.5 (a PDF that opens); PdfCraft tolerant reading'))
     sec = info.get('security') or {}
     if sec.get('protected'):
         add(Finding('EG-PF-16.3', 'block', 'The PDF has security restrictions (printing/copying). Remove them; '
                     'digitally signed documents may keep printing and copying allowed only.',
-                    'الملف عليه قيود حماية (طباعة/نسخ). لازم تتشال؛ الموقّع رقمياً يسمح بالطباعة والنسخ على الأقل.',
+                    'على الملف قيود حماية (طباعة/نسخ) ويجب إزالتها؛ والملف الموقَّع رقميًا يجب أن يسمح بالطباعة والنسخ على الأقل.',
                     're_obtain' if locked else 'auto_fix', 'EG eCTD TG draft; EU VC 16.3'))
     if info.get('portfolio'):
         add(Finding('EG-BP-E23', 'block', 'PDF Portfolio is not allowed; submit each document as its own PDF.',
-                    'ملفات الـ Portfolio ممنوعة؛ كل مستند PDF لوحده.', 'user_fix', 'EG eCTD TG draft (EG-BP-E23)'))
+                    'ملفات الـ Portfolio غير مقبولة؛ يُقدَّم كل مستند في ملف PDF مستقل.', 'user_fix', 'EG eCTD TG draft (EG-BP-E23)'))
     scripts = (q.get('js_document_scripts') or {}).get('scripts') or []
     if info.get('has_javascript') or scripts:
-        add(Finding('PDF-JS', 'block', 'The PDF contains JavaScript.', 'الملف فيه JavaScript.',
+        add(Finding('PDF-JS', 'block', 'The PDF contains JavaScript.', 'في الملف JavaScript.',
                     're_obtain' if locked else 'auto_fix', 'ICH eCTD SPEC App. 7 (no active content); ' + FMT))
     sigs = q.get('sign_list') or {}
     r.info['signatures'] = int(sigs.get('count') or 0)
@@ -347,7 +370,7 @@ def _pdfcraft_checks(r, add, path, q, ver, doc_class):
         if sg.get('status') == 'invalid':
             who = sg.get('signer') or sg.get('name') or ''
             add(Finding('PDF-SIG', 'warn', f'A digital signature no longer matches the document — it changed after signing{": " + str(who) if who else ""}. Ask the signer for the signed copy.',
-                        f'توقيع رقمي مابقاش مطابق للمستند — المستند اتغيّر بعد التوقيع{": " + str(who) if who else ""}. اطلب النسخة الموقّعة من صاحب التوقيع.',
+                        f'التوقيع الرقمي لم يعد مطابقًا للمستند — تغيَّر المستند بعد التوقيع{": " + str(who) if who else ""}. اطلب النسخة الموقَّعة من صاحب التوقيع.',
                         're_obtain' if locked else 'user_fix', 'PdfCraft signature validation (PAdES)'))
             break
     try:
@@ -360,12 +383,12 @@ def _pdfcraft_checks(r, add, path, q, ver, doc_class):
         add(Finding('EG-PF-16.1', 'warn' if signed else 'block',
                     f'PDF version {eff[0]}.{eff[1]} — eCTD takes 1.4 to 1.7 (EDA eCTD technical guidance, draft).'
                     + (' Digitally signed: the version line is left as it is, changing it would break the signature.' if signed else ''),
-                    f'إصدار PDF {eff[0]}.{eff[1]} — الـ eCTD بياخد من 1.4 لـ 1.7 (مسودة الهيئة).'
-                    + (' الملف موقّع رقميًا: رقم الإصدار متساب زي ما هو، تغييره يبوّظ التوقيع.' if signed else ''),
+                    f'إصدار PDF {eff[0]}.{eff[1]} — يقبل eCTD الإصدارات من 1.4 إلى 1.7 (مسودة الهيئة).'
+                    + (' الملف موقَّع رقميًا: تُرك رقم الإصدار كما هو، لأن تغييره يُبطل التوقيع.' if signed else ''),
                     'none' if signed else 'auto_fix', 'EG eCTD technical guidance v1.0/2026 (DRAFT, not in force); EU VC 16.1'))
     elif eff > (1, 7):
         add(Finding('EG-BP-16.BP1', 'warn', f'PDF version {eff[0]}.{eff[1]}; eCTD prefers 1.4–1.7 (EDA eCTD technical guidance, draft).',
-                    f'إصدار PDF {eff[0]}.{eff[1]}؛ الـ eCTD بيفضّل 1.4–1.7 (مسودة الهيئة).', 'none', 'EG eCTD technical guidance v1.0/2026 (DRAFT)'))
+                    f'إصدار PDF {eff[0]}.{eff[1]}؛ ويفضِّل eCTD الإصدارات 1.4–1.7 (مسودة الهيئة).', 'none', 'EG eCTD technical guidance v1.0/2026 (DRAFT)'))
     has_outline = bool(info.get('outline'))
     r.info['bookmarks'] = has_outline
     src = 'ICH eCTD SPEC App. 7 (PDF properties); EU harmonised eCTD guidance'
@@ -378,30 +401,30 @@ def _pdfcraft_checks(r, add, path, q, ver, doc_class):
     r.info['fonts'] = 'not_embedded' if missing else 'embedded'
     if missing:
         add(Finding('PDF-FONTS', 'warn', f"Fonts not embedded: {', '.join(sorted(set(missing))[:8])}. Make the PDF again with all fonts embedded (it cannot be done without redrawing the pages).",
-                    f"خطوط مش مدمجة: {', '.join(sorted(set(missing))[:8])}. اعمل الـ PDF تاني والخطوط كلها مدمجة (ما ينفعش يتعمل من غير ما الصفحات تترسم تاني).", 'user_fix', src))
+                    f"خطوط غير مدمجة: {', '.join(sorted(set(missing))[:8])}. أعد إنشاء ملف PDF مع دمج كل الخطوط (لا يمكن إصلاح ذلك دون إعادة رسم الصفحات).", 'user_fix', src))
     nav = ((q.get('doc_initial_view') or {}).get('initial_view') or {}).get('navigation')
     if has_outline and nav != 'Bookmarks':
-        add(Finding('PDF-VIEW', 'warn', 'It has bookmarks but does not open with the bookmarks panel.', 'فيه bookmarks بس مش بيفتح ولوحة الـ bookmarks ظاهرة.', 'auto_fix', src))
+        add(Finding('PDF-VIEW', 'warn', 'It has bookmarks but does not open with the bookmarks panel.', 'فيه إشارات مرجعية (bookmarks) لكنه لا يُفتح ولوحتها ظاهرة.', 'auto_fix', src))
     links = (q.get('link_list') or {}).get('links') or []
     z = sum(1 for k in links if k.get('to_page') and isinstance(k.get('zoom'), (int, float)) and k.get('zoom'))
     r.info['fixed_zoom_links'] = z
     if z:
         add(Finding('PDF-ZOOM', 'warn', f'{z} link(s) set their own zoom; links keep the reader\'s zoom («inherit zoom»).',
-                    f'{z} رابط بيغيّر الزووم؛ الروابط المفروض تسيب زووم القارئ («inherit zoom»).', 'auto_fix', src))
+                    f'{z} رابط يغيّر مستوى التكبير؛ والمطلوب أن تترك الروابط تكبير القارئ كما هو («inherit zoom»).', 'auto_fix', src))
     title = str(info.get('title') or '').strip()
     r.info['title'] = title
     if not title and not locked:
-        add(Finding('PDF-INFO', 'warn', 'The document has no title in its properties (File → Properties).', 'المستند مالوش عنوان في خصائصه (File ← Properties).', 'auto_fix',
+        add(Finding('PDF-INFO', 'warn', 'The document has no title in its properties (File → Properties).', 'ليس للمستند عنوان في خصائصه (File ← Properties).', 'auto_fix',
                     src + '; EU VC 8.2 16.BP11 (1.3.1, centralised procedure)'))
     hidden = {c.get('category'): int(c.get('count') or 0) for c in ((q.get('doc_hidden_info') or {}).get('categories') or [])}
     if hidden.get('attachments'):
         n = hidden['attachments']
         add(Finding('PDF-ATTACH', 'warn', f'{n} file(s) attached inside the PDF; eCTD documents carry no attachments.',
-                    f'فيه {n} ملف مرفق جوه الـ PDF؛ مستندات الـ eCTD ما يبقاش فيها مرفقات.', 're_obtain' if locked else 'auto_fix', FMT))
+                    f'في ملف PDF {n} ملف مرفق؛ ومستندات eCTD لا تكون فيها مرفقات.', 're_obtain' if locked else 'auto_fix', FMT))
     if hidden.get('comments'):
         n = hidden['comments']
         add(Finding('PDF-ANNOT', 'warn', f'{n} comment(s) or mark-up(s) on the pages; eCTD documents carry none (annotated CRFs aside).',
-                    f'فيه {n} تعليق أو علامة على الصفحات؛ مستندات الـ eCTD ما يبقاش فيها تعليقات (غير الـ CRF المعلّق عليها).', 're_obtain' if locked else 'auto_fix', FMT))
+                    f'على الصفحات {n} تعليق أو علامة؛ ومستندات eCTD لا تكون فيها تعليقات (عدا نماذج CRF المعلَّق عليها).', 're_obtain' if locked else 'auto_fix', FMT))
     faux = (q.get('doc_audit_redactions') or {}).get('findings') or []
     if faux:
         f0 = faux[0]
@@ -409,11 +432,11 @@ def _pdfcraft_checks(r, add, path, q, ver, doc_class):
         r.info['faux_redactions'] = [{'page': f.get('page'), 'rect': f.get('rect'), 'kind': f.get('kind')} for f in faux[:50]]
         add(Finding('PDF-REDACT', 'warn', f'Faux redaction: {len(faux)} dark box(es) cover text that can still be read and copied (page {f0.get("page")}: «{seen}»). '
                     'A real redaction removes the text under the boxes for good.',
-                    f'إخفاء مزيّف: {len(faux)} مستطيل غامق فوق نص لسه بيتقري وبيتنسخ (صفحة {f0.get("page")}: «{seen}»). الإخفاء الحقيقي بيشيل النص اللي تحت المستطيل نهائي.',
+                    f'إخفاء غير حقيقي: {len(faux)} مستطيل داكن فوق نص ما زال يُقرأ ويُنسخ (صفحة {f0.get("page")}: «{seen}»). الإخفاء الحقيقي يحذف النص الذي تحت المستطيل نهائيًا.',
                     're_obtain' if locked else 'auto_fix', 'PdfCraft redaction audit (opaque boxes painted over extractable text)'))
     if pages >= 10 and not has_outline:
         add(Finding('NTA065-BM', 'warn', f'{pages} pages and no bookmarks; long documents need bookmarks to navigate.',
-                    f'{pages} صفحة من غير bookmarks؛ المستندات الطويلة لازم يبقى فيها bookmarks.',
+                    f'{pages} صفحة بلا إشارات مرجعية (bookmarks)؛ والمستندات الطويلة يجب أن تكون فيها إشارات مرجعية.',
                     'auto_fix', 'EG eCTD TG draft (bookmarks for documents with a TOC); ICH eCTD SPEC App. 7'))
     chars = len(re.sub(r'\s', '', ''.join(q.get('texts') or [])))
     r.info['searchable'] = chars >= 20

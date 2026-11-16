@@ -319,6 +319,7 @@ html[dir=rtl] .drawer{animation-name:drawer-in-rtl}
 .toast{position:fixed;bottom:20px;inset-inline-start:50%;transform:translateX(-50%);background:var(--surface-3);color:var(--ink);border:1px solid var(--line-2);
   padding:10px 16px;border-radius:12px;z-index:40;max-width:min(600px,92vw);box-shadow:var(--shadow);display:flex;gap:10px;align-items:center}
 html[dir=rtl] .toast{transform:translateX(50%)}
+.toast.bad{border-color:var(--bad)} .toast.bad::before{background:var(--bad);box-shadow:0 0 10px var(--bad-soft)}
 .toast::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--brand);box-shadow:0 0 10px var(--brand-glow);flex:none}
 
 /* ---------- misc */

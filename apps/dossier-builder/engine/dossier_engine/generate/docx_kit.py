@@ -138,7 +138,7 @@ def to_pdf(docx_path, out_dir=None):
     exe = find_soffice()
     if not exe:
         raise RuntimeError('LibreOffice not found — install it free from https://www.libreoffice.org/download/ '
-                           '(لازم LibreOffice علشان الخطابات تتحول لـ PDF؛ نزّله مجانًا من libreoffice.org)')
+                           '(التحويل إلى PDF يحتاج إلى LibreOffice على هذا الحاسوب: libreoffice.org)')
     docx_path = Path(docx_path)
     out_dir = Path(out_dir or docx_path.parent)
     with tempfile.TemporaryDirectory() as prof:

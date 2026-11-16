@@ -79,7 +79,7 @@ def test_the_button_and_each_items_link_open_the_library(server):
         page.wait_for_selector('#libItem')
         link = page.locator('#libItem')
         assert link.get_attribute('href') == LIB_URL + '#r-EG-EDA-M1-11' and link.get_attribute('target') == '_blank'
-        assert 'افتح البند ده في المكتبة' in link.inner_text()
+        assert 'فتح هذا البند في المكتبة' in link.inner_text()
         page.click('#dClose')
         page.click('#lang-en')
         assert page.locator('#libBtn').inner_text().strip() == 'Library'

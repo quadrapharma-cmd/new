@@ -62,7 +62,7 @@ const ready = (async () => {
     const buf = await (await fetch(base + 'assets/wheels/' + w)).arrayBuffer();
     pyodide.unpackArchive(buf, 'zip', { extractDir: site });
   }
-  say('تحميل قواعد الهيئة…', 'Loading the EDA rule packs…', 70);
+  say('تحميل القواعد التنظيمية…', 'Loading the EDA rule packs…', 70);
   pyodide.FS.mkdirTree('/app');
   pyodide.unpackArchive(await (await fetch(base + 'assets/engine.zip')).arrayBuffer(), 'zip', { extractDir: '/app' });
   pyodide.FS.mkdirTree('/workspace');
@@ -87,8 +87,8 @@ self.onmessage = async (ev) => {
       self.postMessage({ type: 'api', id: m.id, meta: res[0], out: buf }, [buf]);
     } catch (e) {
       const mem = /MemoryError|alloc|out of memory/i.test(String(e && e.message || e));          // a file larger than what the page can hold
-      const body = new TextEncoder().encode(JSON.stringify({ detail: mem ? { code: 'E-MEMORY', en: 'A file this large does not fit in the memory the browser gives the page. Close other tabs and try again, split the file, or use the desktop program, which takes it whole.', ar: 'ملف بالحجم ده أكبر من الذاكرة اللي المتصفح بيديها للصفحة. اقفل تبويبات تانية وجرّب تاني، أو قسّم الملف، أو استخدم برنامج سطح المكتب — بياخده كامل.' }
-        : { code: 'E-ENGINE', en: String(e && e.message || e), ar: 'المحرك ما قدرش ينفّذ الطلب.' } }));
+      const body = new TextEncoder().encode(JSON.stringify({ detail: mem ? { code: 'E-MEMORY', en: 'A file this large does not fit in the memory the browser gives the page. Close other tabs and try again, split the file, or use the desktop program, which takes it whole.', ar: 'ملف بهذا الحجم أكبر من الذاكرة التي يتيحها المتصفح للصفحة. أغلق تبويبات أخرى وأعد المحاولة، أو قسِّم الملف، أو استخدم برنامج سطح المكتب — فهو يستوعبه كاملًا.' }
+        : { code: 'E-ENGINE', en: String(e && e.message || e), ar: 'تعذّر على المحرك تنفيذ الطلب.' } }));
       self.postMessage({ type: 'api', id: m.id, meta: JSON.stringify({ status: mem ? 507 : 500, headers: [['content-type', 'application/json']] }), out: body.buffer }, [body.buffer]);
     }
   } else if (m.type === 'sync') {

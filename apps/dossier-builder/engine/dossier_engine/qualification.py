@@ -42,6 +42,9 @@ def iq(workspace):
         if root.exists():
             dg, n = _digest(root)
             _row(rows, f'IQ-0{i}', f'The program\'s {name} files are installed', 'present; fingerprint recorded', f'{n} files · SHA-256 {dg}', n > 0)
+        elif name == 'interface' and sys.platform == 'emscripten':        # the browser edition: the interface is the page that runs this engine
+            _row(rows, f'IQ-0{i}', 'The program\'s interface files are installed', 'present',
+                 'the browser edition: the interface is the published page itself, which runs this engine', True, kind='info')
         else:
             _row(rows, f'IQ-0{i}', f'The program\'s {name} files are installed', 'present', 'missing', False)
     _row(rows, 'IQ-04', 'Python 3.10 or later', '≥ 3.10', platform.python_version(), sys.version_info >= (3, 10))
@@ -157,7 +160,8 @@ def oq():
                  n4 and f"{n4['severity']} · {n4['action']}" or 'not flagged', bool(n4) and n4['severity'] == 'block')
         js = tmp / 'js.pdf'
         from pypdf import PdfReader
-        w = PdfWriter(clone_from=PdfReader(str(good))); w.add_js('app.alert(1);'); w.write(str(js))
+        from .checks.pdf import add_javascript
+        w = PdfWriter(clone_from=PdfReader(str(good))); add_javascript(w, 'app.alert(1);'); w.write(str(js))
         rules = {f.rule for f in pdf_check(str(js)).findings}
         _row(rows, 'OQ-04', 'The PDF checks find JavaScript in a document (negative control)', 'PDF-JS found', ', '.join(sorted(rules)) or 'none', 'PDF-JS' in rules)
         ok, _ = st.verify_audit()
@@ -205,7 +209,7 @@ def oq():
         from . import pdfcraft
         if pdfcraft.available():                         # the PDF engine: a faux redaction found, and the text read in its order
             box = tmp / 'faux.pdf'
-            box.write_bytes(_raw_pdf(b'BT /F1 12 Tf 60 780 Td (OQ document of the Dossier Builder) Tj ET\n'
+            box.write_bytes(_raw_pdf(b'BT /F1 12 Tf 60 780 Td (OQ document of eBOX) Tj ET\n'
                                      b'BT /F1 12 Tf 60 700 Td (Confidential price: EGP 45.00 per pack) Tj ET\n0 g 55 695 260 18 re f\n'))
             rep = pdf_check(str(box), 'company_technical')
             faux = [f for f in rep.findings if f.rule == 'PDF-REDACT']
@@ -257,7 +261,7 @@ def package(st, out_dir):
     (out / f'{stem}.json').write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding='utf-8')
     doc = Document()
     doc.styles['Normal'].font.size = Pt(9.5)
-    doc.add_heading('Dossier Builder — qualification package (IQ / OQ / PQ)', 0)
+    doc.add_heading('eBOX — qualification package (IQ / OQ / PQ)', 0)
     doc.add_paragraph(f'Made {t0} on {res["machine"]} ({res["system"]}). IQ: {res["summary"]["iq"]["pass"]} passed, {res["summary"]["iq"]["fail"]} failed. '
                       f'OQ: {res["summary"]["oq"]["pass"]} passed, {res["summary"]["oq"]["fail"]} failed. The OQ ran in a workspace of its own, '
                       'never the company\'s. This package is evidence for the company\'s own validation decision; it does not replace it.')

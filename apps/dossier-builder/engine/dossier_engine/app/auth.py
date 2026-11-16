@@ -179,7 +179,7 @@ def install(app, auth, store):
             user = auth.verify(request.cookies.get(COOKIE, ''))
             if not user:
                 if path.startswith('/api/'):
-                    return JSONResponse({'detail': {'code': 'E-AUTH', 'en': 'Please sign in.', 'ar': 'من فضلك سجّل الدخول.'}},
+                    return JSONResponse({'detail': {'code': 'E-AUTH', 'en': 'Please sign in.', 'ar': 'سجِّل الدخول من فضلك.'}},
                                         status_code=401)
                 return RedirectResponse('/login', status_code=303)
             if request.method not in ('GET', 'HEAD', 'OPTIONS') and request.headers.get('x-db') != '1':
@@ -190,12 +190,12 @@ def install(app, auth, store):
             write = request.method not in ('GET', 'HEAD', 'OPTIONS')
             if write and request.state.role == 'viewer' and path not in ('/api/logout', '/api/me/password'):
                 return JSONResponse({'detail': {'code': 'E-ROLE', 'en': 'Your role can view only.',
-                                                'ar': 'صلاحيتك مشاهدة بس.'}}, status_code=403)
+                                                'ar': 'صلاحيتك للمشاهدة فقط.'}}, status_code=403)
             admin_only = path.startswith('/api/users') or path == '/api/auth/disable' or path.startswith('/api/backups') or path.startswith('/api/qualification') or \
                 (write and (path.startswith('/api/assistant/settings') or path.startswith('/api/drive/settings')))
             if admin_only and request.state.role != 'admin':
                 return JSONResponse({'detail': {'code': 'E-ROLE', 'en': 'Administrators only: users, sign-in and the keys.',
-                                                'ar': 'للمدير بس: المستخدمين وتسجيل الدخول والمفاتيح.'}}, status_code=403)
+                                                'ar': 'للمدير فقط: المستخدمون وتسجيل الدخول والمفاتيح.'}}, status_code=403)
         from .store import ACTOR
         token = ACTOR.set(getattr(request.state, 'user', None) or 'local')
         try:
@@ -228,12 +228,12 @@ def install(app, auth, store):
         key = f"{body.username}|{request.client.host if request.client else '-'}"
         if auth.blocked(key):
             return JSONResponse({'detail': {'code': 'E-RATE', 'en': 'Too many attempts — try again in 15 minutes.',
-                                            'ar': 'محاولات كتير — جرّب بعد 15 دقيقة.'}}, status_code=429)
+                                            'ar': 'محاولات كثيرة — أعد المحاولة بعد 15 دقيقة.'}}, status_code=429)
         if not auth.check(body.username, body.password):
             auth.fail(key)
             store.audit(None, 'login.failed', user=body.username)
             return JSONResponse({'detail': {'code': 'E-LOGIN', 'en': 'Wrong username or password.',
-                                            'ar': 'اسم المستخدم أو كلمة السر غلط.'}}, status_code=401)
+                                            'ar': 'اسم المستخدم أو كلمة المرور غير صحيحة.'}}, status_code=401)
         from .store import ACTOR
         t = ACTOR.set(body.username)
         store.audit(None, 'login', user=body.username)
@@ -265,11 +265,11 @@ def install(app, auth, store):
     def change_password(body: Pw, request: Request):
         u = getattr(request.state, 'user', None)
         if not u or not auth.check(u, body.old):
-            return bad('E-LOGIN', 'Current password is wrong.', 'كلمة السر الحالية غلط.', 401)
+            return bad('E-LOGIN', 'Current password is wrong.', 'كلمة المرور الحالية غير صحيحة.', 401)
         try:
             auth.add_user(u, body.new, auth.role(u))
         except ValueError as e:
-            return bad('E-PASSWORD', str(e), 'كلمة السر لازم تكون 10 حروف على الأقل.')
+            return bad('E-PASSWORD', str(e), 'يجب ألا تقل كلمة المرور عن 10 أحرف.')
         store.audit(None, 'user.password_changed', user=u)
         return {'ok': True}
 
@@ -280,11 +280,11 @@ def install(app, auth, store):
     @app.delete('/api/users/{username}')
     def users_delete(username: str, request: Request):
         if username == getattr(request.state, 'user', None):
-            return bad('E-SELF', 'You cannot delete your own account.', 'مينفعش تمسح حسابك إنت.')
+            return bad('E-SELF', 'You cannot delete your own account.', 'لا يمكنك حذف حسابك أنت.')
         try:
             auth.remove_user(username)
         except ValueError as e:
-            return bad('E-USER', str(e), 'مينفعش: المستخدم غير موجود أو هو آخر مدير.')
+            return bad('E-USER', str(e), 'غير ممكن: المستخدم غير موجود أو هو المدير الأخير.')
         store.audit(None, 'user.removed', user=username)
         return {'ok': True}
 
@@ -303,25 +303,25 @@ def install(app, auth, store):
         """Local editions: turn sign-in on. No accounts yet → the body creates the first administrator (201); accounts exist →
         the body must be an existing administrator's username and password (200). The caller is signed in at once."""
         if auth.enabled:
-            return bad('E-AUTH-ON', 'Sign-in is already on.', 'تسجيل الدخول شغّال بالفعل.', 409)
+            return bad('E-AUTH-ON', 'Sign-in is already on.', 'تسجيل الدخول مفعَّل بالفعل.', 409)
         if not auth.switchable:
-            return bad('E-AUTH-FIXED', 'Sign-in cannot be switched in this edition.', 'تسجيل الدخول مش بيتغيّر في النسخة دي.', 409)
+            return bad('E-AUTH-FIXED', 'Sign-in cannot be switched in this edition.', 'تسجيل الدخول لا يتغيّر في هذه النسخة.', 409)
         users = auth.users()
         created = not users
         if users:                                             # a sign-in in effect: same brute-force limit as /api/login; 403, not 401, so the page stays
             key = f"{body.username}|{request.client.host if request.client else '-'}"
             if auth.blocked(key):
-                return bad('E-RATE', 'Too many attempts — try again in 15 minutes.', 'محاولات كتير — جرّب بعد 15 دقيقة.', 429)
+                return bad('E-RATE', 'Too many attempts — try again in 15 minutes.', 'محاولات كثيرة — أعد المحاولة بعد 15 دقيقة.', 429)
             if body.username not in users or auth.role(body.username) != 'admin' or not auth.check(body.username, body.password):
                 auth.fail(key)
                 store.audit(None, 'login.failed', user=body.username)
                 return bad('E-LOGIN', 'Accounts exist: sign in as an existing administrator to turn sign-in on.',
-                           'في حسابات موجودة: ادخل باسم مدير موجود وكلمة سره.', 403)
+                           'توجد حسابات مسجَّلة: سجِّل الدخول باسم مدير موجود وكلمة مروره.', 403)
         else:
             try:
                 auth.add_user(body.username, body.password, 'admin')
             except ValueError as e:
-                return bad('E-USER', str(e), 'اسم المستخدم حروف وأرقام و . _ - @ وكلمة السر 10 حروف على الأقل.')
+                return bad('E-USER', str(e), 'اسم المستخدم حروف وأرقام و . _ - @ وكلمة المرور 10 أحرف على الأقل.')
         auth.set_enabled(True)
         from .store import ACTOR
         t = ACTOR.set(body.username)
@@ -338,7 +338,7 @@ def install(app, auth, store):
     def auth_disable(request: Request):
         """Local editions: turn sign-in off (accounts are kept). Not in the cloud edition."""
         if not auth.switchable:
-            return bad('E-AUTH-FORCED', 'Sign-in is always on in this edition.', 'تسجيل الدخول إجباري في النسخة دي.', 409)
+            return bad('E-AUTH-FORCED', 'Sign-in is always on in this edition.', 'تسجيل الدخول إلزامي في هذه النسخة.', 409)
         auth.set_enabled(False)
         store.audit(None, 'auth.disabled', by=getattr(request.state, 'user', None))
         r = JSONResponse({'ok': True})
@@ -353,11 +353,11 @@ def install(app, auth, store):
     @app.post('/api/users', status_code=201)
     def users_add(body: NewUser):
         if body.username in auth.users():
-            return bad('E-DUP', 'This username exists.', 'اسم المستخدم موجود.')
+            return bad('E-DUP', 'This username exists.', 'اسم المستخدم موجود بالفعل.')
         try:
             auth.add_user(body.username, body.password, body.role)
         except ValueError as e:
-            return bad('E-USER', str(e), 'بيانات المستخدم غير صحيحة (كلمة السر 10 حروف على الأقل، والدور مدير/محرّر/مشاهد).')
+            return bad('E-USER', str(e), 'بيانات المستخدم غير صحيحة (كلمة المرور 10 أحرف على الأقل، والدور مدير/محرّر/مشاهد).')
         store.audit(None, 'user.added', user=body.username, role=body.role)
         return {'ok': True}
 
@@ -375,6 +375,6 @@ def install(app, auth, store):
             if body.password:
                 auth.add_user(username, body.password, auth.role(username))
         except ValueError as e:
-            return bad('E-USER', str(e), 'مينفعش: لازم يفضل مدير واحد على الأقل، وكلمة السر 10 حروف على الأقل.')
+            return bad('E-USER', str(e), 'غير ممكن: يجب أن يبقى مدير واحد على الأقل، وألا تقل كلمة المرور عن 10 أحرف.')
         store.audit(None, 'user.updated', user=username, role=body.role, password_reset=bool(body.password))
         return {'ok': True}

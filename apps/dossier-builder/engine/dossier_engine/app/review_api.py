@@ -108,7 +108,7 @@ def install(app, st):
             st.audit(did, 'review.finding.confirmed', finding=fid, by=by)
         elif body.action == 'override':
             if body.verdict not in packmod.VERDICTS or not (body.reason or '').strip():
-                err(422, 'E-OVERRIDE', 'An override needs a verdict and a reason.', 'التعديل اليدوي يحتاج حكماً وسبباً.')
+                err(422, 'E-OVERRIDE', 'An override needs a verdict and a reason.', 'التعديل اليدوي يحتاج إلى حكم وسبب.')
             payload = dict(f['payload'], needs_review=False)
             status = 'closed' if body.verdict == 'adequate' else 'open'
             storage.update_finding(st, fid, verdict=body.verdict, origin='human', confirmed_by=by, confirmed_at=time.time(), status=status, payload=payload,
@@ -117,7 +117,7 @@ def install(app, st):
             f = storage.finding(st, fid)
         elif body.action == 'withdraw':
             if not (body.reason or '').strip():
-                err(422, 'E-OVERRIDE', 'Withdrawing a finding needs a reason.', 'سحب الملاحظة يحتاج سبباً.')
+                err(422, 'E-OVERRIDE', 'Withdrawing a finding needs a reason.', 'سحب الملاحظة يحتاج إلى سبب.')
             storage.update_finding(st, fid, status='withdrawn', override={'by': by, 'reason': body.reason, 'at': time.time(), 'from': f['status']})
             st.audit(did, 'review.finding.withdrawn', finding=fid, by=by, reason=body.reason)
             f = storage.finding(st, fid)
@@ -159,10 +159,10 @@ def install(app, st):
     def sign(did: str, rid: str, body: SignReq):
         run = _run(did, rid)
         if body.role not in ('assessor', 'peer'):
-            err(422, 'E-SIGN', 'Role must be assessor or peer.', 'الدور يجب أن يكون مُقيِّماً أو مُقيِّماً ثانياً.')
+            err(422, 'E-SIGN', 'Role must be assessor or peer.', 'يجب أن يكون الدور مقيِّمًا أو مقيِّمًا ثانيًا.')
         signed = dict(run.get('signed') or {})
         if body.role == 'peer' and signed.get('assessor', {}).get('by') == body.by:
-            err(422, 'E-SIGN', 'The second assessor must be a different person.', 'المُقيِّم الثاني يجب أن يكون شخصاً مختلفاً.')
+            err(422, 'E-SIGN', 'The second assessor must be a different person.', 'يجب أن يكون المقيِّم الثاني شخصًا آخر.')
         signed[body.role] = {'by': body.by, 'at': time.strftime('%Y-%m-%d %H:%M')}
         storage.update_run(st, rid, signed=signed)
         for f in storage.findings(st, rid):
@@ -210,7 +210,7 @@ def install(app, st):
         k = {'letters': 'letter', 'reports': 'report'}.get(kind)
         meta = (run.get('letters') or {}).get(f"{k}:{dept}")
         if not meta or not meta.get(fmt):
-            err(404, 'E-NOT-FOUND', 'Generate the document first.', 'ولّد المستند أولاً.')
+            err(404, 'E-NOT-FOUND', 'Generate the document first.', 'ولِّد المستند أولًا.')
         data = st.blob_path(meta[fmt]).read_bytes()
         name = f"{k}-{dept}-{rid}.{fmt}"
         return Response(data, media_type=MEDIA.get(fmt, 'application/octet-stream'), headers={'content-disposition': f'attachment; filename="{name}"'})
@@ -298,6 +298,6 @@ def install(app, st):
                                        model=_aset.load(st.root).get('model'))
         except RuntimeError as e:
             if str(e) == 'E-NO-AI':
-                err(501, 'E-NO-AI', "Save the Anthropic API key (the Assistant's settings) to let Claude assess the documents.", 'سجّل مفتاح Anthropic (من إعدادات المساعد) عشان Claude يقيّم المستندات.')
-            err(422, 'E-AI-REFUSED', 'Claude declined to assess these documents.', 'Claude اعتذر عن تقييم المستندات دي.')
+                err(501, 'E-NO-AI', "Save the Anthropic API key (the Assistant's settings) to let Claude assess the documents.", 'سجِّل مفتاح Anthropic (من إعدادات المساعد) ليقيّم Claude المستندات.')
+            err(422, 'E-AI-REFUSED', 'Claude declined to assess these documents.', 'اعتذر Claude عن تقييم هذه المستندات.')
         return ai_apply(did, rid, AiAnswers(answers=text))

@@ -41,14 +41,14 @@ authority:
     ar: الاتحاد الأوروبي / المنطقة الاقتصادية الأوروبية — EMA والهيئات الوطنية
 title:
   en: EU CTD dossier — EU Module 1 (eCTD specification v3.1.1)
-  ar: ملف CTD للاتحاد الأوروبي — موديول ١ الأوروبي (مواصفة 3.1.1)
+  ar: ملف CTD للاتحاد الأوروبي — Module 1 الأوروبي (المواصفة 3.1.1)
 status: in-force
 valid_from: '2025-06-01'
 valid_to: null
 verified: true
 matrix:
   en: EU Module 1 / Notice to Applicants Vol. 2B
-  ar: موديول ١ الأوروبي / Notice to Applicants
+  ar: Module 1 الأوروبي / Notice to Applicants
 columns:
   I:
     en: New active substance
@@ -114,8 +114,7 @@ overrides:
     level_note: &id001
       en: The section and its number are the EU specification. Its level is the general rule of Directive 2001/83/EC and the Notice to Applicants, which
         were not re-read line by line for this pack — confirm for your procedure and Member State.
-      ar: البند ورقمه من المواصفة الأوروبية. مستواه هو القاعدة العامة في التوجيه 2001/83/EC و Notice to Applicants، ودول ما اتراجعوش سطر بسطر للملف ده —
-        راجعه حسب الإجراء والدولة العضو.
+      ar: البند ورقمه من المواصفة الأوروبية. مستواه هو القاعدة العامة في التوجيه 2001/83/EC و Notice to Applicants، ولم يُراجَعا سطرًا سطرًا عند إعداد هذه القواعد — راجعه بحسب الإجراء والدولة العضو.
   M2-CO:
     level_note: *id001
   M2-NCS:
@@ -136,5 +135,4 @@ sources:
 note:
   en: The structure and numbering are the specification, word for word. Which sections an application needs follows its legal basis; the levels are the
     general rule of the Notice to Applicants — a Member State may ask for more under «Additional data».
-  ar: الهيكل والترقيم من المواصفة حرفياً. الأقسام المطلوبة بتتحدد بالأساس القانوني للطلب؛ المستويات هي القاعدة العامة في Notice to Applicants — والدولة
-    العضو ممكن تطلب أكتر تحت «بيانات إضافية».
+  ar: الهيكل والترقيم من المواصفة حرفيًا. الأقسام المطلوبة تتحدد بالأساس القانوني للطلب؛ والمستويات هي القاعدة العامة في Notice to Applicants — وللدولة العضو أن تطلب أكثر تحت «بيانات إضافية».

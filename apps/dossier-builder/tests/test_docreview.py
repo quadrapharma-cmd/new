@@ -80,7 +80,7 @@ def test_tracked_change_amendments_and_memo(tmp_path):
                                        {'op': 'delete', 'find': 'Product: Dermacure', 'rule': 'DOC-DUP', 'reason': 'duplicated heading'}])
     x = _xml(out)
     assert x.count('<w:ins ') >= 3 and x.count('<w:del ') >= 2 and 'w:delText' in x and 'Shelf life: 24 months' in x and 'Shelf life: 36 months' in x and 'Protect from light.' in x
-    assert 'w:author="Dossier Builder Assistant"' in x and [l['op'] for l in log] == ['replace', 'insert_after', 'delete'] and log[0]['before'] == 'Shelf life: 24 months'
+    assert 'w:author="eBOX Assistant"' in x and [l['op'] for l in log] == ['replace', 'insert_after', 'delete'] and log[0]['before'] == 'Shelf life: 24 months'
     assert 'Change log' in x                                                           # appended as a plain final section
     with pytest.raises(amend.AmendError):                                              # «below 25°C» is inside two paragraphs: ambiguous
         amend.apply_edits(src, [{'op': 'replace', 'find': 'below 25°C', 'text': 'x'}])

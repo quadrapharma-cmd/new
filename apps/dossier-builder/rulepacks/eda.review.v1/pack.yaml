@@ -17,7 +17,7 @@ strictness:
 departments:
   - {id: screening, en: Screening, ar: الفحص الأولي, body: {en: Administration of Human Pharmaceuticals Regulatory Affairs, ar: إدارة الشؤون التنظيمية للمستحضرات البشرية}, modules: [1]}
   - {id: technical, en: Technical file, ar: الملف الفني, body: {en: eCTD / PDF technical profile, ar: الملف الإلكتروني (PDF / eCTD)}, modules: []}
-  - {id: quality, en: Quality (Module 3), ar: الجودة (الوحدة 3), body: {en: Technical Affairs — Quality assessment, ar: الشؤون الفنية — تقييم الجودة}, modules: [2, 3]}
+  - {id: quality, en: Quality (Module 3), ar: الجودة (Module 3), body: {en: Technical Affairs — Quality assessment, ar: الشؤون الفنية — تقييم الجودة}, modules: [2, 3]}
   - {id: cadc, en: CADC (national control laboratory), ar: معامل الرقابة الدوائية CADC, body: {en: Central Administration of Drug Control — file assessment, ar: الإدارة المركزية للرقابة الدوائية — تقييم الملف}, modules: [3]}
   - {id: stability, en: Stability, ar: الثبات, body: {en: General Administration for Stability, ar: الإدارة العامة للثبات}, modules: [3]}
   - {id: be, en: Bioequivalence, ar: التكافؤ الحيوي, body: {en: Bioequivalence assessment (GL.CAPP.024), ar: تقييم التكافؤ الحيوي (GL.CAPP.024)}, modules: [5]}

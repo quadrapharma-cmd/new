@@ -28,7 +28,7 @@ def test_the_limit_is_the_authoritys(tmp_path, monkeypatch, mb, authority, limit
     if limit is None:
         assert got is None
     else:
-        assert got and f'at most {limit} MB' in got.en and f'بالكتير {limit} ميجا' in got.ar
+        assert got and f'at most {limit} MB' in got.en and f'والحد الأقصى لملف eCTD {limit} ميغابايت' in got.ar
         assert ({100: 'ICH', 500: 'EU eCTD validation criteria v8.2, criterion 15.BP1', 400: 'FDA eCTD validation criteria, criterion 1238'}[limit]
                 in got.source)
 

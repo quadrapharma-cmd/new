@@ -38,7 +38,7 @@ def _date(s, field):
     try:
         return date.fromisoformat(str(s)).isoformat()
     except ValueError:
-        raise M2Error('E-DATE', f'{field}: use a date like 2027-03-31.', f'{field}: اكتب التاريخ بالشكل 2027-03-31.')
+        raise M2Error('E-DATE', f'{field}: use a date like 2027-03-31.', f'{field}: اكتب التاريخ بالصيغة 2027-03-31.')
 
 
 def questions_in(text):
@@ -99,7 +99,7 @@ class M2:
         subject = (meta.get('subject') or '').strip()
         direction = meta.get('direction') or 'in'
         if direction not in DIRECTIONS:
-            raise M2Error('E-DIRECTION', 'A letter comes in from the authority or goes out to it.', 'الخطاب يا وارد من الهيئة يا صادر ليها.')
+            raise M2Error('E-DIRECTION', 'A letter comes in from the authority or goes out to it.', 'الخطاب إما وارد من الهيئة وإما صادر إليها.')
         text = ''
         if data:
             from .. import extract
@@ -133,7 +133,7 @@ class M2:
     def letter(self, lid):
         r = self.db.execute('select * from letter where id=?', (lid,)).fetchone()
         if not r:
-            raise M2Error('E-NOT-FOUND', 'Letter not found.', 'الخطاب مش موجود.')
+            raise M2Error('E-NOT-FOUND', 'Letter not found.', 'الخطاب غير موجود.')
         out = dict(r)
         out['questions'] = [dict(q) for q in self.db.execute('select * from question where letter_id=? order by n', (lid,)).fetchall()]
         out['product'] = self._product_name(out['product_id'])
@@ -160,7 +160,7 @@ class M2:
                 self.db.execute(f'update letter set {k}=? where id=?', (_date(f[k], k), lid))
         if 'status' in f:
             if f['status'] not in LETTER_STATUS:
-                raise M2Error('E-STATUS', 'Unknown status.', 'حالة مش معروفة.')
+                raise M2Error('E-STATUS', 'Unknown status.', 'حالة غير معروفة.')
             self.db.execute('update letter set status=? where id=?', (f['status'], lid))
         self.db.commit()
         return self.letter(lid)
@@ -187,7 +187,7 @@ class M2:
     def question(self, qid):
         r = self.db.execute('select * from question where id=?', (qid,)).fetchone()
         if not r:
-            raise M2Error('E-NOT-FOUND', 'Question not found.', 'السؤال مش موجود.')
+            raise M2Error('E-NOT-FOUND', 'Question not found.', 'السؤال غير موجود.')
         return dict(r)
 
     def update_question(self, qid, **f):
@@ -200,7 +200,7 @@ class M2:
         status = f.get('status') or ('drafted' if f.get('answer') and q['status'] == 'open' else None)
         if status:
             if status not in Q_STATUS:
-                raise M2Error('E-STATUS', 'Unknown status.', 'حالة مش معروفة.')
+                raise M2Error('E-STATUS', 'Unknown status.', 'حالة غير معروفة.')
             self.db.execute('update question set status=?, answered=? where id=?', (status, time.time() if status == 'answered' else None, qid))
         self.db.commit()
         let = self.letter(q['letter_id'])
@@ -232,7 +232,7 @@ class M2:
     def commitment(self, cid):
         r = self.db.execute('select * from commitment where id=?', (cid,)).fetchone()
         if not r:
-            raise M2Error('E-NOT-FOUND', 'Commitment not found.', 'الالتزام مش موجود.')
+            raise M2Error('E-NOT-FOUND', 'Commitment not found.', 'الالتزام غير موجود.')
         return dict(r, product=self._product_name(r['product_id']))
 
     def commitments(self, product=None):
@@ -250,7 +250,7 @@ class M2:
             self.db.execute('update commitment set due=? where id=?', (_date(f['due'], 'due'), cid))
         if 'status' in f:
             if f['status'] not in ('open', 'done'):
-                raise M2Error('E-STATUS', 'A commitment is open or done.', 'الالتزام يا مفتوح يا اتنفّذ.')
+                raise M2Error('E-STATUS', 'A commitment is open or done.', 'الالتزام إما مفتوح وإما منفَّذ.')
             self.db.execute('update commitment set status=?, done=? where id=?', (f['status'], time.time() if f['status'] == 'done' else None, cid))
         self.db.commit()
         return self.commitment(cid)
@@ -282,7 +282,7 @@ class M2:
         let = self.letter(lid)
         ar = lang == 'ar'
         if not let['questions'] or any(not (q['answer'] or '').strip() for q in let['questions']):
-            raise M2Error('E-ANSWERS', 'Answer every question first.', 'جاوب كل الأسئلة الأول.')
+            raise M2Error('E-ANSWERS', 'Answer every question first.', 'أجب عن كل الأسئلة أولًا.')
         d = new_doc(draft=True)
         para(d, f"{'إلى' if ar else 'To'}: {let['authority'] or 'EDA'}", ar=ar)
         para(d, f"{'الموضوع: الرد على' if ar else 'Subject: Response to'} {let['subject']}" + (f" ({let['ref_no']})" if let['ref_no'] else ''), ar=ar, bold=True)
@@ -299,7 +299,7 @@ class M2:
     def _product(self, pid):
         r = self.db.execute('select id, name from product where id=?', (pid,)).fetchone()
         if not r:
-            raise M2Error('E-NOT-FOUND', 'Product not found.', 'المنتج مش موجود.')
+            raise M2Error('E-NOT-FOUND', 'Product not found.', 'المنتج غير موجود.')
         return dict(r)
 
     def _product_name(self, pid):
@@ -344,7 +344,7 @@ def install(app, st, err):
     def letter_file(lid: str):
         x = m2.letter(lid)
         if not x['sha256']:
-            err(404, 'E-NO-FILE', 'This letter has no file.', 'الخطاب ده مفيهوش ملف.')
+            err(404, 'E-NO-FILE', 'This letter has no file.', 'هذا الخطاب ليس له ملف.')
         return FileResponse(st.blob_path(x['sha256']), filename=x['filename'] or 'letter.pdf')
 
     @app.post('/api/suite/letters/{lid}/questions', status_code=201)

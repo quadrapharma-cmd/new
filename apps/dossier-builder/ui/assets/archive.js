@@ -55,23 +55,23 @@
 
   /* ---------------- RAR in the page: the program's own reader, in a worker */
   /* no limit of the program's own on an archive's size or on the number of files in it: only the memory the browser gives the page */
-  const noMemory = () => fail('E-ARCHIVE-BIG', 'ذاكرة المتصفح ما كفتش تفك الأرشيف ده كله مرة واحدة: فكّه على جهازك وارفع الملفات نفسها.', 'The browser does not have the memory to unpack this archive at once: unpack it on your computer and upload the files themselves.');
+  const noMemory = () => fail('E-ARCHIVE-BIG', 'لم تكفِ ذاكرة المتصفح لفك هذا الأرشيف كله دفعة واحدة: فُكَّه على جهازك وارفع الملفات نفسها.', 'The browser does not have the memory to unpack this archive at once: unpack it on your computer and upload the files themselves.');
   function rarError(e) {
     const code = e && e.rar;
-    if (code === 'password') return fail('E-ARCHIVE-PASSWORD', 'الأرشيف عليه كلمة سر: فكّه الأول.', 'The archive is protected with a password: unpack it first.');
-    if (code === 'big' && e.why === 'bomb') return Object.assign(fail('E-ARCHIVE-BIG', 'الأرشيف بيتفك لحجم كبير جدًا (مئات المرات قد حجمه): فكّه على جهازك واختار اللي الملف محتاجه.', 'The archive expands hundreds of times its size: unpack it on your computer and choose what the dossier needs.'), { bomb: true });
+    if (code === 'password') return fail('E-ARCHIVE-PASSWORD', 'الأرشيف محمي بكلمة مرور: فُكَّه أولًا.', 'The archive is protected with a password: unpack it first.');
+    if (code === 'big' && e.why === 'bomb') return Object.assign(fail('E-ARCHIVE-BIG', 'يتمدد الأرشيف عند فكه إلى حجم كبير جدًا (مئات أضعاف حجمه): فُكَّه على جهازك واختر ما يحتاج إليه الملف.', 'The archive expands hundreds of times its size: unpack it on your computer and choose what the dossier needs.'), { bomb: true });
     if (code === 'big' || code === 'memory') return noMemory();
-    if (code === 'damaged') return fail('E-ARCHIVE', 'ملف الـ RAR تالف أو مش مكتمل.', 'The RAR file is damaged or incomplete.');
-    return fail('E-ARCHIVE', 'ملف الـ RAR ما اتفتحش.', 'The RAR file could not be opened.');
+    if (code === 'damaged') return fail('E-ARCHIVE', 'ملف RAR تالف أو غير مكتمل.', 'The RAR file is damaged or incomplete.');
+    return fail('E-ARCHIVE', 'تعذّر فتح ملف RAR.', 'The RAR file could not be opened.');
   }
   /* vols: the parts of ONE archive in order ({file}); opts.keep: a RegExp of the names worth taking (the others are not unpacked) */
   async function unrar(vols, opts) {
     opts = opts || {};
-    if (!window.DBRAR) throw fail('E-ARCHIVE-TOOL', 'فك RAR مش متاح في الصفحة دي: فك الأرشيف على جهازك، أو اضغط الملفات ZIP.', 'RAR cannot be opened in this page: unpack the archive on your computer, or pack the files as ZIP.');
+    if (!window.DBRAR) throw fail('E-ARCHIVE-TOOL', 'فك RAR غير متاح في هذه الصفحة: فُكَّ الأرشيف على جهازك، أو اضغط الملفات بصيغة ZIP.', 'RAR cannot be opened in this page: unpack the archive on your computer, or pack the files as ZIP.');
     let r;
     try {
       r = await window.DBRAR.extract(vols.map(v => v.file), { skipRx: SYSTEM.source,
-        keepRx: opts.keep ? '(' + opts.keep.source + ')|(' + ARCH_RX.source + ')' : null }, name => { if (opts.onStatus) opts.onStatus(say('بيفك ', 'Unpacking ') + name.split('/').pop() + '…'); });
+        keepRx: opts.keep ? '(' + opts.keep.source + ')|(' + ARCH_RX.source + ')' : null }, name => { if (opts.onStatus) opts.onStatus(say('جارٍ فك ', 'Unpacking ') + name.split('/').pop() + '…'); });
     } catch (e) { throw rarError(e); }
     if (!r.files.length && r.skipped.some(s => s.why === 'password')) throw rarError({ rar: 'password' });
     return { kind: 'rar', files: named(r.files), skipped: r.skipped, left: r.left || 0 };
@@ -80,22 +80,22 @@
   /* ---------------- 7z in the page: the program's own reader (sevenz.js), in a worker */
   function sevenzError(e) {
     const code = e && e.z7, how = e && e.why && !/^(bomb|files|total)$/.test(e.why) ? ' (' + e.why + ')' : '';
-    if (code === 'password') return fail('E-ARCHIVE-PASSWORD', 'الأرشيف عليه كلمة سر: فكّه الأول.', 'The archive is protected with a password: unpack it first.');
-    if (code === 'big' && e.why === 'bomb') return Object.assign(fail('E-ARCHIVE-BIG', 'الأرشيف بيتفك لحجم كبير جدًا (مئات المرات قد حجمه): فكّه على جهازك واختار اللي الملف محتاجه.', 'The archive expands hundreds of times its size: unpack it on your computer and choose what the dossier needs.'), { bomb: true });
+    if (code === 'password') return fail('E-ARCHIVE-PASSWORD', 'الأرشيف محمي بكلمة مرور: فُكَّه أولًا.', 'The archive is protected with a password: unpack it first.');
+    if (code === 'big' && e.why === 'bomb') return Object.assign(fail('E-ARCHIVE-BIG', 'يتمدد الأرشيف عند فكه إلى حجم كبير جدًا (مئات أضعاف حجمه): فُكَّه على جهازك واختر ما يحتاج إليه الملف.', 'The archive expands hundreds of times its size: unpack it on your computer and choose what the dossier needs.'), { bomb: true });
     if (code === 'big' || code === 'memory') return noMemory();
-    if (code === 'volume') return fail('E-ARCHIVE-VOLUME', 'ده أرشيف 7z متقسّم أجزاء أو ناقص: فكّه على جهازك وارفع الملفات نفسها.', 'This 7z archive is split in parts or incomplete: unpack it on your computer and upload the files themselves.');
-    if (code === 'unsupported') return fail('E-ARCHIVE-METHOD', 'الأرشيف مضغوط بطريقة الصفحة مابتقراهاش' + how + ': فكّه على جهازك، أو اضغط الملفات ZIP أو 7z بالطريقة العادية.', 'The archive uses a compression method this page does not read' + how + ': unpack it on your computer, or pack the files as ZIP or a standard 7z.');
-    if (code === 'damaged' || code === 'unreadable') return fail('E-ARCHIVE', 'أرشيف الـ 7z ده تالف أو مش مكتمل: افتحه على جهازك، ولو اتفتح اضغط الملفات ZIP وارفعها.', 'This 7z archive is damaged or incomplete: open it on your computer; if it opens there, pack the files as ZIP and add that.');
-    return fail('E-ARCHIVE', 'أرشيف الـ 7z ده ما اتفتحش: فكّه على جهازك، أو اضغط الملفات ZIP.', 'This 7z archive could not be opened: unpack it on your computer, or pack the files as ZIP.');
+    if (code === 'volume') return fail('E-ARCHIVE-VOLUME', 'هذا أرشيف 7z مقسَّم إلى أجزاء أو ناقص: فُكَّه على جهازك وارفع الملفات نفسها.', 'This 7z archive is split in parts or incomplete: unpack it on your computer and upload the files themselves.');
+    if (code === 'unsupported') return fail('E-ARCHIVE-METHOD', 'الأرشيف مضغوط بطريقة لا تقرؤها الصفحة' + how + ': فُكَّه على جهازك، أو اضغط الملفات بصيغة ZIP أو 7z بالطريقة المعتادة.', 'The archive uses a compression method this page does not read' + how + ': unpack it on your computer, or pack the files as ZIP or a standard 7z.');
+    if (code === 'damaged' || code === 'unreadable') return fail('E-ARCHIVE', 'أرشيف 7z هذا تالف أو غير مكتمل: افتحه على جهازك، وإن فُتح فاضغط الملفات بصيغة ZIP وارفعها.', 'This 7z archive is damaged or incomplete: open it on your computer; if it opens there, pack the files as ZIP and add that.');
+    return fail('E-ARCHIVE', 'تعذّر فتح أرشيف 7z هذا: فُكَّه على جهازك، أو اضغط الملفات بصيغة ZIP.', 'This 7z archive could not be opened: unpack it on your computer, or pack the files as ZIP.');
   }
   /* opts.keep: a RegExp of the names worth taking (the others are unpacked only where they share a solid block with one) */
   async function un7z(file, opts) {
     opts = opts || {};
-    if (!window.DB7Z) throw fail('E-ARCHIVE-TOOL', 'فك 7z مش متاح في الصفحة دي: فك الأرشيف على جهازك، أو اضغط الملفات ZIP.', '7z cannot be opened in this page: unpack the archive on your computer, or pack the files as ZIP.');
+    if (!window.DB7Z) throw fail('E-ARCHIVE-TOOL', 'فك 7z غير متاح في هذه الصفحة: فُكَّ الأرشيف على جهازك، أو اضغط الملفات بصيغة ZIP.', '7z cannot be opened in this page: unpack the archive on your computer, or pack the files as ZIP.');
     let r;
     try {
       r = await window.DB7Z.extract([file], { skipRx: SYSTEM.source,
-        keepRx: opts.keep ? '(' + opts.keep.source + ')|(' + ARCH_RX.source + ')' : null }, name => { if (opts.onStatus) opts.onStatus(say('بيفك ', 'Unpacking ') + name.split('/').pop() + '…'); });
+        keepRx: opts.keep ? '(' + opts.keep.source + ')|(' + ARCH_RX.source + ')' : null }, name => { if (opts.onStatus) opts.onStatus(say('جارٍ فك ', 'Unpacking ') + name.split('/').pop() + '…'); });
     } catch (e) { throw sevenzError(e); }
     const skipped = r.skipped.map(x => x.why === 'unsupported' ? { name: x.name, why: 'method' } : { name: x.name, why: x.why });
     const real = r.files.filter(f => f.parts.some(x => (x.byteLength || 0) > 0));                  // an empty file is not a document
@@ -146,16 +146,16 @@
         if (kinds[i] === 'rar') {
           const set = sets[f.dbVol.key];
           if (!f.dbVol.first) {                                      // a later part: taken with its first part
-            if (!set.some(v => v.first) && !set.noted) { set.noted = true; throw fail('E-ARCHIVE-VOLUME', 'ده جزء من أرشيف متقسّم والجزء الأول مش مع الملفات: اختار كل الأجزاء مع بعض.', 'This is one part of a split archive and the first part is not among the files: choose all the parts together.'); }
+            if (!set.some(v => v.first) && !set.noted) { set.noted = true; throw fail('E-ARCHIVE-VOLUME', 'هذا جزء من أرشيف مقسَّم، والجزء الأول ليس ضمن الملفات: اختر كل الأجزاء معًا.', 'This is one part of a split archive and the first part is not among the files: choose all the parts together.'); }
             continue;
           }
-          if (opts.onStatus) opts.onStatus(say('بيفك ', 'Unpacking ') + f.name + '…');
+          if (opts.onStatus) opts.onStatus(say('جارٍ فك ', 'Unpacking ') + f.name + '…');
           r = await unrarSet(set.slice().sort((a, b) => a.order - b.order), opts);
         } else if (kinds[i] === '7z') {
-          if (opts.onStatus) opts.onStatus(say('بيفك ', 'Unpacking ') + f.name + '…');
+          if (opts.onStatus) opts.onStatus(say('جارٍ فك ', 'Unpacking ') + f.name + '…');
           r = await un7zSet(f, opts);
         } else {
-          if (opts.onStatus) opts.onStatus(say('بيفك ', 'Unpacking ') + f.name + '…');
+          if (opts.onStatus) opts.onStatus(say('جارٍ فك ', 'Unpacking ') + f.name + '…');
           r = await unpack(f);
         }
       } catch (e) { notes.push({ archive: f.name, error: String(e && e.message || e) }); continue; }
@@ -173,13 +173,13 @@
   }
 
   function summary(notes) {
-    const why = { password: say('كلمة سر', 'password'), 'too large': say('كبير جدًا', 'too large'), link: say('رابط', 'a link'), unreadable: say('تالف', 'damaged'),
+    const why = { password: say('كلمة مرور', 'password'), 'too large': say('كبير جدًا', 'too large'), link: say('رابط', 'a link'), unreadable: say('تالف', 'damaged'),
       volume: say('جزء من الأرشيف ناقص', 'a part of the archive is missing'), unsupported: say('نسخة RAR قديمة جدًا', 'a very old RAR version'),
-      memory: say('ذاكرة المتصفح ما كفتش', 'the browser ran out of memory'), method: say('طريقة ضغط الصفحة مابتقراهاش', 'a compression method this page does not read') };
+      memory: say('ذاكرة المتصفح لم تكفِ', 'the browser ran out of memory'), method: say('طريقة ضغط لا تقرؤها الصفحة', 'a compression method this page does not read') };
     return notes.map(n => n.error ? `${n.archive}: ${n.error}`
-      : say(`«${n.archive}» اتفك: ${n.taken} مستند`, `«${n.archive}» unpacked: ${n.taken} document(s)`)
-        + (n.left ? say(`، و${n.left} ملف تاني اتساب`, `, ${n.left} other file(s) left out`) : '')
-        + (n.skipped.length ? say(`، و${n.skipped.length} ما اتفتحش`, `, ${n.skipped.length} not opened`) + ' (' + n.skipped.slice(0, 3).map(s => s.name.split('/').pop() + ': ' + (why[s.why] || s.why)).join('، ') + ')' : '')).join(' · ');
+      : say(`فُكَّ «${n.archive}»: ${n.taken} مستند`, `«${n.archive}» unpacked: ${n.taken} document(s)`)
+        + (n.left ? say(`، وتُرك ${n.left} ملف آخر`, `, ${n.left} other file(s) left out`) : '')
+        + (n.skipped.length ? say(`، و${n.skipped.length} تعذّر فتحه`, `, ${n.skipped.length} not opened`) + ' (' + n.skipped.slice(0, 3).map(s => s.name.split('/').pop() + ': ' + (why[s.why] || s.why)).join('، ') + ')' : '')).join(' · ');
   }
 
   window.DBARCH = { ARCH_RX, isArchive, kindOf, unpack, unrar, un7z, expand, summary };

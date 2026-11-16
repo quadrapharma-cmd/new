@@ -50,21 +50,21 @@ def test_users_screen(server):
         assert admin.is_hidden('#who') and admin.get_attribute('body', 'data-role') == 'local'
         admin.fill('#enUser', 'haytham'); admin.fill('#enPw', ADMIN_PW); admin.fill('#enPw2', ADMIN_PW + 'x'); admin.click('#enGo')
         admin.wait_for_selector('#toast:not([hidden])')
-        assert 'مش زي بعض' in admin.inner_text('#toast')                                     # the two passwords differ: caught in the page
+        assert 'غير متطابقتين' in admin.inner_text('#toast')                                     # the two passwords differ: caught in the page
         admin.fill('#enPw2', ADMIN_PW); admin.click('#enGo')
         admin.wait_for_selector('#usersTable')                                               # on, and signed in as administrator
         assert 'haytham' in admin.inner_text('#who') and 'مدير' in admin.inner_text('#who')
         assert admin.get_attribute('body', 'data-role') == 'admin' and admin.is_visible('#pwBtn') and admin.is_visible('#logout')
-        assert admin.locator('tr[data-user="haytham"] .tag').inner_text() == 'إنت'
+        assert admin.locator('tr[data-user="haytham"] .tag').inner_text() == 'أنت'
         assert admin.is_disabled('[data-role-of="haytham"]')                                 # not your own role
         assert admin.locator('[data-del="haytham"]').count() == 0                            # nor your own account
 
         # add sara (editor), make her a viewer, set her password
         admin.fill('#nuUser', 'sara'); admin.fill('#nuPw', SARA_PW); admin.select_option('#nuRole', 'editor'); admin.click('#nuAdd')
         admin.wait_for_selector('tr[data-user="sara"]')
-        assert admin.inner_text('tr[data-user="sara"]').count('لسه') == 1                     # never signed in
+        assert admin.inner_text('tr[data-user="sara"]').count('لم يسجّل الدخول بعد') == 1                     # never signed in
         admin.select_option('[data-role-of="sara"]', 'viewer')
-        admin.wait_for_function("() => document.querySelector('#toast').textContent.includes('الدور اتحفظ')")
+        admin.wait_for_function("() => document.querySelector('#toast').textContent.includes('تم حفظ الدور')")
         assert {u['username']: u['role'] for u in users_json(admin)} == {'haytham': 'admin', 'sara': 'viewer'}
         admin.click('[data-reset="sara"]'); admin.wait_for_selector('#rpNew')
         admin.fill('#rpNew', SARA_PW2); admin.fill('#rpNew2', SARA_PW2); admin.click('#rpGo')
@@ -79,7 +79,7 @@ def test_users_screen(server):
         sara.wait_for_selector('#e:not(:empty)')                                             # the old password is gone
         sara.fill('input[name=password]', SARA_PW2); sara.click('form#f button')
         sara.wait_for_selector('#roleNote:not([hidden])')
-        assert sara.get_attribute('body', 'data-role') == 'viewer' and 'مشاهدة بس' in sara.inner_text('#roleNote')
+        assert sara.get_attribute('body', 'data-role') == 'viewer' and 'للمشاهدة فقط' in sara.inner_text('#roleNote')
         assert sara.locator('#nav a[data-r="users"]').count() == 0                           # no Users entry for a viewer
         assert 'sara' in sara.inner_text('#who') and 'مشاهد' in sara.inner_text('#who')
         sara.goto(server + '/#/users'); sara.wait_for_selector('#mpOld')                     # own password only

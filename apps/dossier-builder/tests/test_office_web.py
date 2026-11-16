@@ -81,7 +81,7 @@ def test_the_new_file_wizard_shows_a_base_document_being_read(site, files):
             page.locator('[data-updoc=registration_licence]').first.click()
         fc.value.set_files(str(files[0]))
         page.wait_for_function("""() => { const l = document.querySelector('[data-docline]'); const img = l && l.querySelector('.pv-pic:not([hidden]) img');
-            return img && img.src.startsWith('blob:') && /Claude بيقراها/.test(l.querySelector('.pv-cap').textContent); }""", timeout=60000)
+            return img && img.src.startsWith('blob:') && /يقرؤها Claude/.test(l.querySelector('.pv-cap').textContent); }""", timeout=60000)
         page.wait_for_function("() => document.querySelector('[data-docline] .pv-strip img') !== null", timeout=60000)
         page.wait_for_function("() => { const l = document.querySelector('[data-docline]'); return l && !l.querySelector('.pv-now') && /Claude/.test(l.innerText); }", timeout=60000)
         b.close()
@@ -123,7 +123,7 @@ def test_files_show_their_pages_and_what_claude_is_given_and_the_office_edits_th
         rows = page.evaluate("() => [...document.querySelectorAll('[data-offdoc]')].map(r => ({text: r.innerText, edit: !!r.querySelector('[data-offedit]')}))")
         scan = next(r for r in rows if 'made-up-scan.pdf' in r['text'])
         word = next(r for r in rows if 'made-up-cover.docx' in r['text'])
-        assert not scan['edit'] and 'مابيتعدّلش' in scan['text']
+        assert not scan['edit'] and 'لا يُعدَّل' in scan['text']
         assert word['edit'] and 'Word' in word['text']
         # the Word file opened from the office, and back on the page
         page.click('[data-offedit]')

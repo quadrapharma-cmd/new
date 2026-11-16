@@ -10,9 +10,9 @@ SCALARS = {'registration': ('reg_no', 'reg_date', 'valid_until', 'shelf_life', '
            'product': ('name', 'name_ar', 'dosage_form', 'strength', 'manufacturer', 'manufacturer_address', 'indication',
                        'shelf_life', 'storage')}
 NAMES = {'registration.reg_no': ('registration no.', 'رقم التسجيل'), 'registration.reg_date': ('registration date', 'تاريخ التسجيل'),
-         'registration.valid_until': ('licence valid until', 'الترخيص ساري لحد'), 'registration.shelf_life': ('shelf life', 'الصلاحية'),
+         'registration.valid_until': ('licence valid until', 'الترخيص سارٍ حتى'), 'registration.shelf_life': ('shelf life', 'الصلاحية'),
          'registration.storage': ('storage', 'التخزين'), 'registration.price': ('price', 'السعر'), 'registration.licence_type': ('licence type', 'نوع الترخيص'),
-         'registration.marketing': ('marketing', 'التسويق'), 'product.name': ('trade name', 'الاسم التجاري'), 'product.name_ar': ('Arabic name', 'الاسم بالعربي'),
+         'registration.marketing': ('marketing', 'التسويق'), 'product.name': ('trade name', 'الاسم التجاري'), 'product.name_ar': ('Arabic name', 'الاسم بالعربية'),
          'product.dosage_form': ('dosage form', 'الشكل الصيدلي'), 'product.strength': ('strength', 'التركيز'), 'product.manufacturer': ('manufacturer', 'المصنّع'),
          'product.manufacturer_address': ('manufacturer address', 'عنوان المصنّع'), 'product.indication': ('indication', 'دواعي الاستعمال'),
          'product.shelf_life': ('shelf life', 'الصلاحية'), 'product.storage': ('storage', 'التخزين'),

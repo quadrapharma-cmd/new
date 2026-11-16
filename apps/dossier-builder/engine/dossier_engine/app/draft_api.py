@@ -22,7 +22,7 @@ def install(app, st):
         for s in st.slots(did):
             if s.slot_id == slot_id:
                 if need_active and not s.active:
-                    err(422, 'E-SLOT-INACTIVE', 'This item is not required for this product.', 'البند ده مش مطلوب للمنتج ده.')
+                    err(422, 'E-SLOT-INACTIVE', 'This item is not required for this product.', 'هذا البند غير مطلوب لهذا المنتج.')
                 return s
         err(404, 'E-SLOT', 'Unknown item.', 'بند غير معروف.')
 
@@ -56,17 +56,17 @@ def install(app, st):
         s = _slot(did, slot_id)
         e = _draft.template(s.req_id, _req_item(did, s.req_id))
         if not e or e['draft'] not in ('full', 'partial'):
-            err(422, 'E-NOT-DRAFTABLE', 'This document is not drafted by the program.', 'المستند ده مش بيتعمل كمسودة.')
+            err(422, 'E-NOT-DRAFTABLE', 'This document is not drafted by the program.', 'هذا المستند لا يُعدّ مسودةً.')
         try:
             answers = _draft.parse_answers(body.answers) if body.answers is not None else None
         except ValueError as ex:
-            err(422, 'E-ANSWERS', str(ex), 'إجابات الموديل مش بالشكل المتوقع.')
+            err(422, 'E-ANSWERS', str(ex), 'إجابات النموذج ليست بالشكل المتوقع.')
         try:
             answers, how, _ctx = _draft.compute(st, did, s, answers=answers, use_ai=body.ai)
         except ValueError as ex:
-            err(422, 'E-DRAFT', str(ex), 'ما قدرتش أملي النموذج.')
+            err(422, 'E-DRAFT', str(ex), 'تعذّر ملء النموذج.')
         except Exception as ex:
-            err(502, 'E-DRAFT-AI', f'The template could not be filled: {ex}', f'النموذج ما اتملاش: {ex}')
+            err(502, 'E-DRAFT-AI', f'The template could not be filled: {ex}', f'تعذّر ملء النموذج: {ex}')
         return {'answers': answers, 'how': how}
 
     @app.post('/api/dossiers/{did}/slots/{slot_id:path}/draft', status_code=201)
@@ -75,14 +75,14 @@ def install(app, st):
         e = _draft.template(s.req_id, _req_item(did, s.req_id))
         if not e or e['draft'] not in ('full', 'partial'):
             err(422, 'E-NOT-DRAFTABLE', 'This document is not drafted by the program: it is issued by a third party or made by a generator.',
-                'المستند ده مش بيتعمل كمسودة: صادر من جهة خارجية أو بيتولّد بمولّد جاهز.')
+                'هذا المستند لا يُعدّ مسودةً: صادر من جهة خارجية أو يُولَّد بمولّد جاهز.')
         try:
             answers = _draft.parse_answers(body.answers) if body.answers is not None else None
         except ValueError as ex:
-            err(422, 'E-ANSWERS', str(ex), 'إجابات الموديل مش بالشكل المتوقع.')
+            err(422, 'E-ANSWERS', str(ex), 'إجابات النموذج ليست بالشكل المتوقع.')
         try:
             return _draft.draft(st, did, s, answers=answers, lang=body.lang, use_ai=body.ai, req_item=_req_item(did, s.req_id))
         except ValueError as ex:
-            err(422, 'E-DRAFT', str(ex), 'ما قدرتش أعمل المسودة.')
+            err(422, 'E-DRAFT', str(ex), 'تعذّر إعداد المسودة.')
         except Exception as ex:                                   # the model or the network
-            err(502, 'E-DRAFT-AI', f'The draft could not be made: {ex}', f'المسودة ما اتعملتش: {ex}')
+            err(502, 'E-DRAFT-AI', f'The draft could not be made: {ex}', f'تعذّر إعداد المسودة: {ex}')

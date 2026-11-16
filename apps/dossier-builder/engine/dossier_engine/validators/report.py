@@ -8,7 +8,7 @@ EG_NOTE = ('Provisional EG profiles — reports say «conforms to EDA drafts + I
            'ملفات التعريف المصرية مؤقتة — التقرير يقول «مطابق لمسودات الهيئة و ICH» وليس «معتمد من الهيئة».')
 EU_NOTE = ('EU Module 1 v3.1.1 (the EMA\'s DTD) and the EU eCTD validation criteria v8.2 — checked here; this is not an EMA-accepted '
            'validation tool: run one before submission.',
-           'موديول ١ الأوروبي 3.1.1 (الـ DTD بتاع الوكالة) ومعايير التحقق الأوروبية 8.2 — اتفحصوا هنا؛ ده مش فاحص معتمد من الوكالة: شغّل واحد معتمد قبل التقديم.')
+           'Module 1 الأوروبي 3.1.1 (الـ DTD الصادر عن الوكالة) ومعايير التحقق الأوروبية 8.2 — فُحصت هنا؛ وهذه ليست أداة تحقق معتمدة من الوكالة: شغِّل أداة معتمدة قبل التقديم.')
 
 
 def render(title, reports, note=EG_NOTE):

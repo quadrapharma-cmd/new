@@ -50,7 +50,7 @@
   provisional: true
   evidence: {slots: [M1-09, P-01, P-16], keywords: ["excipient", "shelf life", "manufacturer", "store"], data: [composition, product]}
   auto: {kind: none}
-  deficiency: {en: "The leaflet should state the excipients, the manufacturer, the shelf life and the storage conditions consistently with Module 3.", ar: "يجب أن تذكر النشرة السواغات والمصنّع ومدة الصلاحية وظروف التخزين بما يتسق مع الوحدة 3."}
+  deficiency: {en: "The leaflet should state the excipients, the manufacturer, the shelf life and the storage conditions consistently with Module 3.", ar: "يجب أن تذكر النشرة السواغات والمصنّع ومدة الصلاحية وظروف التخزين بما يتسق مع Module 3."}
   action: {type: upload, target: M1-09}
   source: {code: "EG Human Pharmaceutical Module 1 Submission Guidance (draft)", section: "1.3.1 approved leaflet", quote: "Manufacturer and excipients must be mentioned"}
 - id: LB-REF-01

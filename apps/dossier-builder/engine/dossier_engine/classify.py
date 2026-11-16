@@ -73,11 +73,11 @@ class Classifier:
                 sub = _norm(api_key(s.item.get('name') or ''))
                 if sub and re.search(r'(?<![a-z])' + re.escape(sub) + r'(?![a-z])', tx):
                     score += 3
-                    why.append({'en': f"names {s.item['name']}", 'ar': f"بيذكر {s.item['name']}"})
+                    why.append({'en': f"names {s.item['name']}", 'ar': f"يذكر {s.item['name']}"})
                 man = _norm(s.item['manufacturer'])
                 if man and man in tx:
                     score += 3
-                    why.append({'en': f"names {s.item['manufacturer']}", 'ar': f"بيذكر {s.item['manufacturer']}"})
+                    why.append({'en': f"names {s.item['manufacturer']}", 'ar': f"يذكر {s.item['manufacturer']}"})
             if score >= 3:
                 scored.append({'slot_id': s.slot_id, 'req_id': s.req_id, 'score': score, 'why': why[:4]})
         scored.sort(key=lambda x: (-x['score'], x['slot_id']))

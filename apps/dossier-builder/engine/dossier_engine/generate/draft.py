@@ -45,24 +45,24 @@ def derived(req):
     if cls in THIRD:
         return {**e, 'kind': 'third_party', 'draft': 'none',
                 'note': _T('Uploaded as issued, never re-typed; the program checks it and can open a re-issue request to the issuer.',
-                           'يُرفع كما صدر ولا يُعاد كتابته؛ البرنامج يفحصه ويقدر يفتح طلب إعادة إصدار للجهة.')}
+                           'يُرفع كما صدر ولا تُعاد كتابته؛ يفحصه البرنامج ويستطيع فتح طلب إعادة إصدار للجهة.')}
     hint = _T(acc, '')
     if cls == 'generated':
         return {**e, 'kind': 'toc', 'draft': 'full', 'sections': [
             {'id': 'contents', 'title': _T('Contents', 'المحتويات'), 'kind': 'table', 'columns': ['Section', 'Document', 'Location'], 'hint': hint}]}
     if cls == 'company_letter':
         return {**e, 'kind': 'letter', 'draft': 'full', 'letterhead': True, 'sections': [
-            {'id': 'addressee', 'title': _T('Addressed to', 'موجَّه إلى'), 'kind': 'para', 'hint': _T('The authority, and the department it asks to be addressed.', 'الهيئة والإدارة اللي بتطلب المخاطبة عليها.')},
+            {'id': 'addressee', 'title': _T('Addressed to', 'موجَّه إلى'), 'kind': 'para', 'hint': _T('The authority, and the department it asks to be addressed.', 'الهيئة والإدارة التي تطلب المخاطبة عليها.')},
             {'id': 'subject', 'title': _T('Subject', 'الموضوع'), 'kind': 'para', 'source': 'product', 'hint': _T(f"{title['en']} — trade name, dosage form, strength.", f"{title['ar']} — الاسم التجاري، الشكل الصيدلي، التركيز.")},
             {'id': 'body', 'title': _T('Text', 'النص'), 'kind': 'para', 'hint': hint},
-            {'id': 'enclosures', 'title': _T('Enclosures', 'المرفقات'), 'kind': 'list', 'hint': _T('What is attached to this document, one per line.', 'المرفقات، كل واحد في سطر.')},
+            {'id': 'enclosures', 'title': _T('Enclosures', 'المرفقات'), 'kind': 'list', 'hint': _T('What is attached to this document, one per line.', 'المرفقات، كلٌّ منها في سطر.')},
             {'id': 'signature', 'title': _T('Signature', 'التوقيع'), 'kind': 'fields', 'fields': [
                 {'key': 'signatory', 'label': _T('Name', 'الاسم')}, {'key': 'signatory_title', 'label': _T('Position', 'الوظيفة')},
                 {'key': 'applicant', 'label': _T('Company', 'الشركة')}, {'key': 'date', 'label': _T('Date', 'التاريخ')}]}]}
     return {**e, 'kind': 'section', 'draft': 'partial', 'sections': [
         {'id': 'content', 'title': title, 'kind': 'para', 'hint': hint},
         {'id': 'references', 'title': _T('Supporting documents and references', 'المستندات المؤيدة والمراجع'), 'kind': 'list',
-         'hint': _T('The documents this section rests on, one per line.', 'المستندات اللي القسم ده مبني عليها، كل واحد في سطر.')}]}
+         'hint': _T('The documents this section rests on, one per line.', 'المستندات التي بُني عليها هذا القسم، كلٌّ منها في سطر.')}]}
 
 
 def template(req_id, req=None):

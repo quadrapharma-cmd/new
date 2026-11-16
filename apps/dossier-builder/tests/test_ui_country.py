@@ -51,7 +51,7 @@ def test_the_wizard_starts_with_the_country_and_builds_for_its_authority(server)
         page.select_option('#auCountry', 'SA')
         page.wait_for_function("() => document.querySelector('#auName').textContent.includes('SFDA')")
         card = page.inner_text('#auCard')
-        assert 'موديول ١ من النص المنشور للهيئة' in card and 'SFDA' in card and 'v4.0' in card and 'مجلدات CTD' in card and 'eCTD 3.2.2' not in card
+        assert 'Module 1 من النص المنشور للجهة الرقابية' in card and 'SFDA' in card and 'v4.0' in card and 'مجلدات CTD' in card and 'eCTD 3.2.2' not in card
         assert page.locator('[data-updoc="analysis_conformity"]').count() == 0                  # the Egyptian laboratory's certificate is Egypt's card
         page.wait_for_function("() => document.querySelector('#pvAu') && document.querySelector('#pvAu').textContent.includes('SFDA')")
         page.click('#wizNext')
@@ -59,7 +59,7 @@ def test_the_wizard_starts_with_the_country_and_builds_for_its_authority(server)
         page.fill('[data-in="name"]', 'Dermacure KSA'); page.fill('[data-in="trade"]', 'Dermacure'); page.fill('[data-in="man"]', 'Example Pharm Co.')
         page.click('#wizNext')
         body = page.inner_text('#wizBody')
-        assert 'مصنّع في دولة التسجيل ولا مستورد ليها؟' in body and page.locator('[data-k="licence"]').count() == 0 and page.locator('[data-k="activity"]').count() == 0
+        assert 'هل هو مصنَّع في دولة التسجيل أم مستورد إليها؟' in body and page.locator('[data-k="licence"]').count() == 0 and page.locator('[data-k="activity"]').count() == 0
         assert page.locator('[data-auq="gcc_agency"]').input_value() == 'SA'                    # the receiving authority follows the country
         page.click('[data-k="origin"][data-v="imported"]')
         page.click('#wizNext')
@@ -86,7 +86,7 @@ def test_the_wizard_starts_with_the_country_and_builds_for_its_authority(server)
         page.wait_for_selector('#tplPanel .docprev')
         assert 'pork' in page.inner_text('#tplPanel')
         page.click('#dClose')
-        assert 'موديول ١ بتاع الهيئة' in page.inner_text('.head .sub')
+        assert 'Module 1 الخاص بالجهة الرقابية' in page.inner_text('.head .sub')
         # the guide and the publisher: the Gulf's own eCTD (GCC Module 1 v1.5) beside the CTD folders, never Egypt's
         page.goto(f'{server}/#/d/{did}/guide')
         page.wait_for_selector('.outcard')
@@ -132,9 +132,9 @@ def test_each_authority_asks_its_own_questions_and_a_general_module_1_says_so(se
         # any other country: a general Module 1, said plainly
         page.click('#auGo')
         page.select_option('#auCountry', 'JO')
-        page.wait_for_function("() => document.querySelector('#auCard').textContent.includes('موديول ١ عام')")
-        assert 'لسه ما اتكتبش' in page.inner_text('#auCard')
-        page.wait_for_function("() => document.querySelector('#pvAu') && document.querySelector('#pvAu').textContent.includes('موديول ١ عام')")
+        page.wait_for_function("() => document.querySelector('#auCard').textContent.includes('Module 1 عام')")
+        assert 'لم يُكتب في البرنامج بعد' in page.inner_text('#auCard')
+        page.wait_for_function("() => document.querySelector('#pvAu') && document.querySelector('#pvAu').textContent.includes('Module 1 عام')")
         page.screenshot(path=f'{OUT}/country-wizard.png')
         # back to Egypt: its own questions are back
         page.select_option('#auCountry', 'EG')
@@ -153,6 +153,6 @@ def test_home_names_the_countries(server):
         page.goto(f'{server}/#/')
         page.wait_for_selector('#homeAu')
         text = page.inner_text('#homeAu')
-        assert 'SFDA' in text and 'FDA' in text and 'هيئة الدواء المصرية' in text and 'أي دولة تانية' in text
+        assert 'SFDA' in text and 'FDA' in text and 'هيئة الدواء المصرية' in text and 'أي دولة أخرى' in text
         b.close()
     assert not errors, errors

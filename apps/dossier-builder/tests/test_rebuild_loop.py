@@ -1,4 +1,5 @@
 """The non-conforming → conforming loop through the API: auto-fix, re-obtain request, signed scan."""
+from dossier_engine.checks.pdf import add_javascript
 import io, json, shutil
 import pytest
 from fastapi.testclient import TestClient
@@ -30,7 +31,7 @@ def did_block_ectd(c, did, sid):
 
 def test_auto_fix_makes_new_conforming_version(c, tmp_path):
     from pypdf import PdfWriter
-    w = PdfWriter(clone_from=str(make_pdf(tmp_path / 's.pdf', 'Appendix 4'))); w.add_js('app.alert(1);')
+    w = PdfWriter(clone_from=str(make_pdf(tmp_path / 's.pdf', 'Appendix 4'))); add_javascript(w, 'app.alert(1);')
     p = tmp_path / 'js.pdf'; w.write(open(p, 'wb'))
     did = new(c)
     doc = up(c, did, 'M1-11', p.read_bytes()).json()                # a company document with JavaScript (written as PDF 1.3: its version line changed at upload)

@@ -105,7 +105,7 @@ def _zip_name(info):
 
 def _bomb():
     return ArchiveError('E-ARCHIVE-BIG', 'The archive expands too much to be opened safely: unpack it and choose what the dossier needs.',
-                        'الأرشيف بيتفك لحجم كبير جدًا: فكّه واختار اللي الملف محتاجه.')
+                        'يتمدد الأرشيف عند فكه إلى حجم كبير جدًا: فُكَّه واختر ما يحتاج إليه الملف.')
 
 
 class _Take:
@@ -120,13 +120,13 @@ class _Take:
             return
         if MAX_FILES is not None and len(self.files) >= MAX_FILES:
             raise ArchiveError('E-ARCHIVE-BIG', f'The archive holds more than {MAX_FILES} files: unpack it and choose what the dossier needs.',
-                               f'الأرشيف فيه أكتر من {MAX_FILES} ملف: فكّه واختار اللي الملف محتاجه.')
+                               f'في الأرشيف أكثر من {MAX_FILES} ملف: فُكَّه واختر ما يحتاج إليه الملف.')
         self.total += len(data)
         if self.packed and self.total > 100 * 1024 * 1024 and self.total > MAX_RATIO * self.packed:      # whatever the headers declared
             raise _bomb()
         if MAX_TOTAL is not None and self.total > MAX_TOTAL:
             raise ArchiveError('E-ARCHIVE-BIG', f'The archive unpacks to more than {MAX_TOTAL >> 20} MB: unpack it and choose what the dossier needs.',
-                               f'الأرشيف بيتفك لأكتر من {MAX_TOTAL >> 20} ميجا: فكّه واختار اللي الملف محتاجه.')
+                               f'يتمدد الأرشيف عند فكه إلى أكثر من {MAX_TOTAL >> 20} ميغابايت: فُكَّه واختر ما يحتاج إليه الملف.')
         self.files.append((path, data))
 
     def skip(self, path, why):
@@ -137,7 +137,7 @@ def _unzip(data, take):
     try:
         z = zipfile.ZipFile(io.BytesIO(data))
     except zipfile.BadZipFile:
-        raise ArchiveError('E-ARCHIVE', 'The ZIP file is damaged.', 'ملف الـ ZIP تالف.')
+        raise ArchiveError('E-ARCHIVE', 'The ZIP file is damaged.', 'ملف ZIP تالف.')
     infos = [i for i in z.infolist() if not i.is_dir()]
     declared = sum(i.file_size for i in infos)
     if (MAX_TOTAL is not None and declared > MAX_TOTAL) or (declared > 100 * 1024 * 1024 and declared > MAX_RATIO * max(1, len(data))):
@@ -163,7 +163,7 @@ def _untar(data, take):
     except tarfile.CompressionError:                      # packed with a method this build of Python does not have (xz in the browser edition)
         raise _no_method('TAR')
     except _DAMAGED:
-        raise ArchiveError('E-ARCHIVE', 'The TAR file is damaged.', 'ملف الـ TAR تالف.')
+        raise ArchiveError('E-ARCHIVE', 'The TAR file is damaged.', 'ملف TAR تالف.')
     try:
         for m in t:
             if not m.isfile():
@@ -178,13 +178,13 @@ def _untar(data, take):
                 take.add(m.name, f.read() if f else b'')
     except _DAMAGED:                                      # cut short (a download that did not finish): what was read before the break is kept
         if not take.files:
-            raise ArchiveError('E-ARCHIVE', 'The TAR file is damaged.', 'ملف الـ TAR تالف.')
+            raise ArchiveError('E-ARCHIVE', 'The TAR file is damaged.', 'ملف TAR تالف.')
         take.skip('…', 'unreadable')
 
 
 def _no_method(label):
     return ArchiveError('E-ARCHIVE-TOOL', f'This {label} file is packed with a method this program cannot open here: unpack it first, or pack the files as ZIP.',
-                        f'ملف الـ {label} ده مضغوط بطريقة البرنامج ما بيفتحهاش هنا: فكّه الأول، أو اضغط الملفات ZIP.')
+                        f'ملف {label} هذا مضغوط بطريقة لا يفتحها البرنامج هنا: فُكَّه أولًا، أو اضغط الملفات بصيغة ZIP.')
 
 
 def _gzip_name(data):
@@ -279,7 +279,7 @@ def _external(kind, data, take):
     if not have:
         label = 'RAR' if kind == 'rar' else '7z'
         raise ArchiveError('E-ARCHIVE-TOOL', f'A {label} archive needs an unpacker this program does not have here: unpack it first, or pack the files as ZIP.',
-                           f'أرشيف {label} محتاج برنامج فك مش موجود هنا: فكّه الأول، أو اضغط الملفات ZIP.')
+                           f'أرشيف {label} يحتاج إلى برنامج فك غير متاح هنا: فُكَّه أولًا، أو اضغط الملفات بصيغة ZIP.')
     env = dict(os.environ)
     if sys.platform != 'win32':
         env.update(LC_ALL='en_US.UTF-8' if sys.platform == 'darwin' else 'C.UTF-8', LANG='en_US.UTF-8' if sys.platform == 'darwin' else 'C.UTF-8')
@@ -314,9 +314,9 @@ def _external(kind, data, take):
                 return tool
             last = (r.stderr or b'').decode('utf-8', 'replace')[-300:]
     if re.search(r'ncrypt|assword|passphrase', last, re.I):
-        raise ArchiveError('E-ARCHIVE-PASSWORD', 'The archive is protected with a password: unpack it first.', 'الأرشيف عليه كلمة سر: فكّه الأول.')
+        raise ArchiveError('E-ARCHIVE-PASSWORD', 'The archive is protected with a password: unpack it first.', 'الأرشيف محمي بكلمة مرور: فُكَّه أولًا.')
     raise ArchiveError('E-ARCHIVE', 'The archive could not be opened: it may be damaged or of a kind the unpacker here does not read.',
-                       'الأرشيف ما اتفتحش: ممكن يكون تالف أو من نوع البرنامج هنا ما بيفكّوش.')
+                       'تعذّر فتح الأرشيف: قد يكون تالفًا أو من نوع لا يفكه البرنامج هنا.')
 
 
 def unpack(name, data, depth=0, take=None, prefix=''):
@@ -325,13 +325,13 @@ def unpack(name, data, depth=0, take=None, prefix=''):
         return _unpack(name, data, depth, take, prefix)
     except MemoryError:
         raise ArchiveError('E-ARCHIVE-BIG', 'This machine does not have the memory to open the whole archive at once: unpack it and give the files themselves.',
-                           'ذاكرة الجهاز ما كفتش تفك الأرشيف كله مرة واحدة: فكّه وادّي الملفات نفسها.')
+                           'لم تكفِ ذاكرة الجهاز لفك الأرشيف كله دفعة واحدة: فُكَّه وقدِّم الملفات نفسها.')
 
 
 def _unpack(name, data, depth, take, prefix):
     kind = archive_kind(name, data)
     if not kind:
-        raise ArchiveError('E-ARCHIVE', 'Not an archive this program opens.', 'ده مش أرشيف البرنامج بيفتحه.')
+        raise ArchiveError('E-ARCHIVE', 'Not an archive this program opens.', 'هذا ليس أرشيفًا يفتحه البرنامج.')
     top = take is None
     take = take or _Take(len(data))
     inner = _Take(take.packed)
@@ -357,10 +357,10 @@ def _unpack(name, data, depth, take, prefix):
         else:
             if MAX_FILES is not None and len(take.files) >= MAX_FILES:
                 raise ArchiveError('E-ARCHIVE-BIG', f'The archive holds more than {MAX_FILES} files: unpack it and choose what the dossier needs.',
-                                   f'الأرشيف فيه أكتر من {MAX_FILES} ملف: فكّه واختار اللي الملف محتاجه.')
+                                   f'في الأرشيف أكثر من {MAX_FILES} ملف: فُكَّه واختر ما يحتاج إليه الملف.')
             take.files.append((prefix + path, blob))
     if top and not take.files and any(s['why'] == 'password' for s in take.skipped):
-        raise ArchiveError('E-ARCHIVE-PASSWORD', 'The archive is protected with a password: unpack it first.', 'الأرشيف عليه كلمة سر: فكّه الأول.')
+        raise ArchiveError('E-ARCHIVE-PASSWORD', 'The archive is protected with a password: unpack it first.', 'الأرشيف محمي بكلمة مرور: فُكَّه أولًا.')
     return {'kind': kind, 'tool': tool, 'files': take.files, 'skipped': take.skipped}
 
 

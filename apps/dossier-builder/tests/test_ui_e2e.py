@@ -1,4 +1,5 @@
 """UI journey in a real browser (Playwright): wizard -> board -> upload -> why -> export gate, AR + EN, desktop + phone."""
+from dossier_engine.checks.pdf import add_javascript
 import socket, threading, time
 import pytest
 from fixtures_pdf import make_pdf
@@ -57,7 +58,7 @@ def test_journey(server, browser, tmp_path):
     page.fill('[data-in=applicant]', 'Example Pharma S.A.E.')
     page.fill('[data-in=tracking]', 'P-MAA-0001')
     page.click('#wizCreate')
-    page.wait_for_selector('text=Requirements board')
+    page.wait_for_selector('h1:has-text("Dossier tree and what is missing")')
     assert page.locator('tbody tr', has_text='Toll manufacturer licence').count() == 1   # toll -> required
     # upload a conforming document
     with page.expect_file_chooser() as fc:
@@ -103,7 +104,7 @@ def test_journey(server, browser, tmp_path):
     page.click('#lang-ar')
     page.set_viewport_size({'width': 390, 'height': 844})
     page.goto(page.url.replace('/export', '/board'))
-    page.wait_for_selector('text=لوحة المتطلبات')
+    page.wait_for_selector('h1:has-text("شجرة الملف والنواقص")')
     sw = page.evaluate('document.documentElement.scrollWidth')
     assert sw <= 390, sw
     page.screenshot(path=str(tmp_path / 'ar-390.png'))
@@ -254,7 +255,7 @@ def test_rebuild_loop_ui(server, browser, tmp_path):
         name='Examplol 500 mg', dosageform='tablet', manufacturer='Example Pharma'),
         envelope={'applicant': 'Example Pharma S.A.E.', 'tracking': 'P-MAA-0001', 'invented_name': 'Examplol'})).json()['id']
     from pypdf import PdfWriter
-    w = PdfWriter(clone_from=str(make_pdf(tmp_path / 'lay.pdf', 'Appendix 4'))); w.add_js('app.alert(1);')
+    w = PdfWriter(clone_from=str(make_pdf(tmp_path / 'lay.pdf', 'Appendix 4'))); add_javascript(w, 'app.alert(1);')
     js = tmp_path / 'js.pdf'
     with open(js, 'wb') as f:
         w.write(f)                                                                          # a company document with JavaScript: an auto-fix
@@ -341,7 +342,8 @@ def test_guide_and_live_preview(server, browser, tmp_path):
     page.goto(f'{server}/#/d/{did}/guide')
     page.wait_for_selector('.journey')
     assert 'Start with the product data' in page.inner_text('.next')
-    assert page.locator('.jbar a').count() == 6 and page.locator('.jbar a.now').count() == 1
+    assert page.locator('#pathbar .sts a').count() == 9 and page.locator('#pathbar a.here').count() == 0      # the path's nine stations; the guide is a tool, on none of them
+    assert page.locator('#pathbar a.done').count() == 5 and page.locator('#pathNext').count() == 1                 # the first five are behind an open dossier; one «next»
     page.click('.next [data-go]')
     page.wait_for_selector('#dSave')
     page.click('[data-dadd=batches]'); page.fill('[data-d="batches.0.no"]', 'EX0001'); page.click('#dSave')
@@ -415,7 +417,7 @@ def test_intake_fills_the_wizard_and_places_the_files(server, browser, tmp_path)
     page.click('#wizNext')
     assert page.input_value('[data-in=applicant]').startswith('Medis')
     page.click('#wizCreate')
-    page.wait_for_selector('text=Requirements board')
+    page.wait_for_selector('h1:has-text("Dossier tree and what is missing")')
     page.wait_for_selector('#toast:has-text("placed")', timeout=60000)
     page.click('[data-f=all]')
     assert 'cpp.pdf' in page.locator('tr', has_text='CPP / eCPP').first.inner_text()

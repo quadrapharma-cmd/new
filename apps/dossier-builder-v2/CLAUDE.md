@@ -20,7 +20,7 @@ library, and tell him plainly what you did and what you found. Read this file at
 | Path | What |
 |---|---|
 | `apps/dossier-builder-v2/` | This program. Your workspace. |
-| `apps/dossier-builder/` | The old program (v1, «منشئ ملفات التسجيل», private artifact https://claude.ai/artifact/RaqU6QLkLmcANCSVsPXjNR). **The program again since 15/11** (rule 11): new pieces go into it one at a time, each tried on his real files first. Its own README and tests (`python3 -m pytest -q apps/dossier-builder/tests`); build `python3 apps/dossier-builder/web/build.py`. |
+| `apps/dossier-builder/` | The old program (v1, **eBOX** since 16/11 — «منشئ ملفات التسجيل» before; private artifact https://claude.ai/artifact/RaqU6QLkLmcANCSVsPXjNR). **The program again since 15/11** (rule 11): new pieces go into it one at a time, each tried on his real files first. Its own README and tests (`python3 -m pytest -q apps/dossier-builder/tests`); build `python3 apps/dossier-builder/web/build.py`. |
 | `docs/ctd/sources/` | The copies of the official documents the knowledge cites, and `MANIFEST.json` (file, sha256, size, taken) — the build refuses a copy that differs from its entry. |
 | root `CLAUDE.md` | About **Drugbox**, a different program in the same repository. Do not work on Drugbox unless he asks. |
 
@@ -242,7 +242,7 @@ the readiness report and a checklist). «شغّل لوحدك» runs it all; «خ
 8. GPL/AGPL code: ideas only, never its code. The ArtCraft name and logos are not used.
 9. Desktop builds for Windows or Mac only after he approves.
 10. No `rm` with wildcards; `pkill -f` only with an anchored pattern that cannot match your own command.
-11. Leave Drugbox alone unless he asks. **`apps/dossier-builder/` (v1, «منشئ ملفات التسجيل») is the program again since 15/11** (see «His
+11. Leave Drugbox alone unless he asks. **`apps/dossier-builder/` (v1, eBOX since 16/11) is the program again since 15/11** (see «His
     decisions»): change it only for what he asks, and never so that it reads his files worse than it does now.
 12. Do the work yourself, in lean turns: no sub-agents unless he asks for them.
 13. **Nothing reaches him untested** (14/11/2026: «مينفعش تبعت حاجة متجربتش او لم يتم اختبارها انت كدا بتضيع وقت و جهد و فلوس»).
@@ -257,6 +257,12 @@ the readiness report and a checklist). «شغّل لوحدك» runs it all; «خ
     written here in Claude's place (the mock of `sample` in `real_flow.py`) tests the program around the reading, never the reading:
     where Claude's reading is concerned, compare with real calls (an API key for tests, saved as an environment secret, when he
     gives one) or say plainly that it was not compared.
+14. **The program speaks formal Arabic (فصحى), never Egyptian colloquial** (16/11/2026: «اللغة هتبقي عربيه فصحي مش لهجة عاميه و محتاج كل
+    الاختيارات تبقي تسميه غير محيره لليوزر») — every text a person reads: pages, messages, rule-pack notes, reports. One thing has
+    one name (the glossary is in the old program's README, «eBOX, stage 1»). `tests/test_formal_arabic.py` fails on a colloquial
+    word. Not interface text, and never «corrected»: the words the program looks for inside his documents (`extract.py`,
+    `arabic.py`, `intake_eda.py`, `classify.yaml`), the prompts, the letters' fixed wording, and his own words quoted in comments.
+    The chat with him stays Egyptian Arabic.
 
 ## His decisions so far
 This file is your memory beyond this conversation. When he decides something new — a rule, a preference, a decision about the
@@ -475,9 +481,6 @@ When a part is done or an open item is closed, update «What exists» and «Open
   before the file is composed (today's «المكتب» and its page viewer are where it starts).
 
 ## Open items (propose when relevant; do when he asks)
-- Old program, claude.ai edition: its fonts never load — `web/build.py` writes the font link's `onload="this.media=\'all\'"` with
-  the backslashes kept (a script error on every opening, in the version he has used since 13/11 too), so the page shows the
-  system's fonts. Left as it is (the look he knows); fix only if he asks.
 - Old program, next pieces (one at a time, each on his real files first): the 14/11 update and measuring Claude's reading (need
   the API key: `ANTHROPIC_API_KEY` in the environment's settings, added by him), «شروط الشكل لكل دولة», the Assistant on his
   account and «المشغّل» (cannot be tested inside claude.ai from here).

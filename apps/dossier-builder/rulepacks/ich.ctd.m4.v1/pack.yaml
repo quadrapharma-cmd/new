@@ -4,7 +4,7 @@ id: ich.ctd.m4.v1
 kind: base
 title:
   en: ICH Common Technical Document — Modules 2 to 5 (the same for every authority)
-  ar: الملف الفني المشترك (ICH CTD) — الموديولات من ٢ إلى ٥ (واحدة لكل الهيئات)
+  ar: الملف الفني المشترك (ICH CTD) — Modules 2–5 (واحدة لكل الهيئات)
 status: in-force
 valid_from: '2016-06-15'
 valid_to: null
@@ -40,4 +40,4 @@ sources:
   date: '2016-06-15'
 note:
   en: 'Which sections a generic needs differs between authorities: each authority pack sets its own levels over these.'
-  ar: 'الأقسام المطلوبة من المثيل بتختلف من هيئة للتانية: كل هيئة بتحط مستوياتها فوق القائمة دي.'
+  ar: 'الأقسام المطلوبة من المثيل تختلف من هيئة إلى أخرى: كل هيئة تضع مستوياتها فوق هذه القائمة.'

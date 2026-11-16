@@ -26,21 +26,21 @@ class ExportError(Exception):
 
 WORKING = {'en': 'WORKING COPY — NOT FOR SUBMISSION', 'ar': 'نسخة عمل — ليست للتقديم'}
 WORKING_NOTE = '00-WORKING-COPY-NOT-FOR-SUBMISSION.txt'
-WHY_NOT_PDF = {'en': 'an eCTD takes PDF only', 'ar': 'الـ eCTD بياخد PDF بس'}
-WHY_WORD = {'en': 'a Word file: add its PDF to the item (save it as PDF from Word)', 'ar': 'ملف Word: ضيف الـ PDF بتاعه في البند (احفظه PDF من Word)'}
+WHY_NOT_PDF = {'en': 'an eCTD takes PDF only', 'ar': 'eCTD يأخذ ملفات PDF فقط'}
+WHY_WORD = {'en': 'a Word file: add its PDF to the item (save it as PDF from Word)', 'ar': 'ملف Word: أضف نسخة PDF منه في البند (احفظه بصيغة PDF من Word)'}
 WHY_WRITER = (                                    # the eCTD writers' own reasons for a document, said in Arabic too
-    ('needs pi_type and lang', 'نوع النشرة (SmPC أو PIL) ولغتها ناقصين: افتح البند واختارهم'),
-    ('needs substance and manufacturer', 'المادة الفعالة ومصنّعها ناقصين لمستند الـ 3.2.S ده'),
+    ('needs pi_type and lang', 'نوع النشرة (SmPC أو PIL) ولغتها ناقصان: افتح البند واخترهما'),
+    ('needs substance and manufacturer', 'المادة الفعالة ومصنّعها ناقصان لمستند 3.2.S هذا'),
     ('needs an indication', 'دواعي الاستعمال (indication) ناقصة في بيانات المنتج'),
-    ('needs its country', 'الدولة اللي المستند ده بيخصها ناقصة'),
-    ('the language is one of', 'لغة المستند ناقصة أو مش من لغات الهيئة'),
-    ('not a document heading', 'البند ده مالوش مكان مستند في موديول 1 للـ eCTD'),
+    ('needs its country', 'الدولة التي يخصها هذا المستند ناقصة'),
+    ('the language is one of', 'لغة المستند ناقصة أو ليست من لغات الجهة الرقابية'),
+    ('not a document heading', 'هذا البند ليس له موضع مستند في Module 1 الخاص بـ eCTD'),
 )
 
 
 def _why(msg):
     msg = str(msg)
-    return {'en': msg, 'ar': next((ar for key, ar in WHY_WRITER if key in msg), 'مكانه في الـ eCTD محتاج تفاصيل: ' + msg)}
+    return {'en': msg, 'ar': next((ar for key, ar in WHY_WRITER if key in msg), 'موضعه في eCTD يحتاج إلى تفاصيل: ' + msg)}
 
 
 def _zip(src_root, rel_folder, out, note=None):
@@ -59,11 +59,11 @@ def _working_text(note, left_out):
              "(index.xml and the regional XML) can be seen before the dossier is complete. It is not recorded as a submission: the next "
              "real export takes the same sequence number. Required documents still missing are not in it (00-MISSING.txt in the CTD "
              "working copy lists them).",
-             'التسلسل ده اتكتب من اللي في الملف دلوقتي، بنفس كاتب الـ eCTD بتاع البرنامج، علشان تشوف الـ XML (index.xml والـ XML الإقليمي) '
-             'قبل ما الملف يكمل. مش متسجّل كتقديم: التصدير الحقيقي الجاي هياخد نفس رقم التسلسل. المستندات المطلوبة الناقصة مش فيه '
-             '(00-MISSING.txt في نسخة العمل بتاعة الـ CTD فيه قايمتها).', '', note['en'], note['ar']]
+             'كُتب هذا التسلسل مما في الملف الآن، بكاتب eCTD نفسه في البرنامج، لتطّلع على ملفات XML (index.xml وملف XML الإقليمي) '
+             'قبل اكتمال الملف. غير مسجَّل على أنه تقديم: التصدير الفعلي التالي يأخذ رقم التسلسل نفسه. المستندات المطلوبة الناقصة ليست فيه '
+             '(قائمتها في 00-MISSING.txt ضمن نسخة العمل الخاصة بـ CTD).', '', note['en'], note['ar']]
     if left_out:
-        lines += ['', 'Left out of this eCTD / اتساب برّه الـ eCTD ده:'] + [f"- {t['name']}: {t['why']['en']} / {t['why']['ar']}" for t in left_out]
+        lines += ['', 'Left out of this eCTD / تُرك خارج هذا الـ eCTD:'] + [f"- {t['name']}: {t['why']['en']} / {t['why']['ar']}" for t in left_out]
     return '\n'.join(lines) + '\n'
 
 
@@ -129,9 +129,9 @@ def _working_ectd(st, did, d, slots, base, exp_id, sub, p40, ig_zip, note):
                     docs = [d for d in docs if d.doc_id not in bad]
                     shutil.rmtree(base / ('ectd-3.2.2' if o == 'ectd32' else 'ectd-4.0'), ignore_errors=True)   # what the refused try left
                     continue
-                res['skipped'][o] = {'en': f'Not written: {ex}', 'ar': f'ما اتكتبش: {_why(ex)["ar"]}'}
+                res['skipped'][o] = {'en': f'Not written: {ex}', 'ar': f'لم يُكتب: {_why(ex)["ar"]}'}
             except Exception as ex:                   # the CTD folders are still given; this output says why it is not
-                res['skipped'][o] = {'en': f'Not written: {ex}', 'ar': f'ما اتكتبش: {ex}'}
+                res['skipped'][o] = {'en': f'Not written: {ex}', 'ar': f'لم يُكتب: {ex}'}
             break
         if r:
             res['downloads'].update(r['zips'])
@@ -192,20 +192,20 @@ def _working_copy(st, did, g, sub=None, p40=None, ig_zip=None):
     missing = len(g.get('missing_required') or [])
     note = {'en': f"WORKING COPY — NOT FOR SUBMISSION. {n_docs} document(s) in place; {missing} required item(s) still missing, "
                   f"{len(g.get('non_conforming') or [])} to fix, {len(g.get('unsigned') or [])} draft(s) to sign. See 00-MISSING.txt.",
-            'ar': f"نسخة عمل — ليست للتقديم. {n_docs} مستند في مكانه؛ {missing} بند مطلوب لسه ناقص، {len(g.get('non_conforming') or [])} محتاج تصليح، "
-                  f"{len(g.get('unsigned') or [])} مسودة محتاجة توقيع. شوف 00-MISSING.txt."}
+            'ar': f"نسخة عمل — ليست للتقديم. {n_docs} مستند في موضعه؛ {missing} بند مطلوب ما زال ناقصًا، {len(g.get('non_conforming') or [])} يحتاج إلى إصلاح، "
+                  f"{len(g.get('unsigned') or [])} مسودة تحتاج إلى توقيع. راجع 00-MISSING.txt."}
     try:
         res = ctd.write(base / 'ctd', d['name'] + ' - WORKING COPY', slots, files, working=note)
         _zip(Path(res['path']).parent, Path(res['path']).name, base / 'ctd-working.zip')
     except (WriterError, OSError) as ex:
         shutil.rmtree(base, ignore_errors=True)
-        raise ExportError(422, 'E-WRITER', f'Export failed: {ex}', f'التصدير فشل: {ex}')
+        raise ExportError(422, 'E-WRITER', f'Export failed: {ex}', f'فشل التصدير: {ex}')
     shutil.rmtree(work, ignore_errors=True)
     try:
         ectd = _working_ectd(st, did, d, slots, base, exp_id, sub or {}, p40, ig_zip, note)
     except Exception as ex:                           # the CTD working copy is given whatever happens to its eCTD
         ectd = {'region': st.pack(d['pack']).ectd_region, 'downloads': {}, 'sequences': {}, 'reports': {}, 'left_out': [],
-                'skipped': {'ectd': {'en': f'Not written: {ex}', 'ar': f'ما اتكتبش: {ex}'}}}
+                'skipped': {'ectd': {'en': f'Not written: {ex}', 'ar': f'لم يُكتب: {ex}'}}}
     downloads = {'ctd-working': f'/api/dossiers/{did}/exports/{exp_id}/ctd-working.zip', **(ectd['downloads'] if ectd else {})}
     reports = ectd['reports'] if ectd else {}
     if reports:
@@ -254,8 +254,8 @@ def ectd_files(files, left_out=None):
                     continue
                 raise ExportError(422, 'E-WORD-PDF', f"«{f.get('title')}» is a Word file and an eCTD takes PDF: add its PDF to the item "
                                   '(save it as PDF from Word), or export on a machine with LibreOffice.',
-                                  f"«{f.get('title')}» ملف Word والـ eCTD بياخد PDF: ضيف الـ PDF بتاعه في البند (احفظه PDF من Word)، "
-                                  'أو صدّر من جهاز عليه LibreOffice.')
+                                  f"«{f.get('title')}» ملف Word و eCTD لا يقبل إلا PDF: أضف نسخة PDF منه إلى البند (احفظه بصيغة PDF من Word)، "
+                                  'أو صدِّر من نسخة الحاسوب التي تحوّل ملفات Word تلقائيًا.')
             keep.append(dict(f, file=str(pdf), ext='.pdf'))
         out[sid] = keep
     return out
@@ -331,10 +331,10 @@ def eu_envelope(d, prof, sub, hist, seq, stype, unit, activity, desc, tracking):
     proc, countries = eu_countries(d, prof, sub, hist)
     values = ectd32_eu.default_profile().values
     if not countries:
-        raise ExportError(422, 'E-ENVELOPE', 'Name the countries of the procedure (the EU envelopes).', 'حدّد دول الإجراء (الـ envelope الأوروبي).')
+        raise ExportError(422, 'E-ENVELOPE', 'Name the countries of the procedure (the EU envelopes).', 'حدِّد دول الإجراء (الـ envelope الأوروبي).')
     bad = [c for c in countries if c not in values['env_countries']]
     if bad:
-        raise ExportError(422, 'E-ENVELOPE', f'Not an EU M1 destination: {bad}.', f'دي مش دولة في موديول ١ الأوروبي: {bad}.')
+        raise ExportError(422, 'E-ENVELOPE', f'Not an EU M1 destination: {bad}.', f'ليست من دول Module 1 الأوروبي: {bad}.')
     if stype not in values['submission_types']:
         raise ExportError(422, 'E-SUBMISSION', f'An EU submission type is one of: {", ".join(values["submission_types"])}.',
                           'نوع التقديم الأوروبي واحد من: ' + '، '.join(values['submission_types']) + '.')
@@ -343,7 +343,7 @@ def eu_envelope(d, prof, sub, hist, seq, stype, unit, activity, desc, tracking):
                           'نوع الوحدة الأوروبي واحد من: ' + '، '.join(values['units']) + '.')
     applicant = env.get('applicant') or pr.get('manufacturer')
     if not applicant:
-        raise ExportError(422, 'E-ENVELOPE', "The envelope needs the applicant's name.", 'الـ envelope محتاج اسم مقدّم الطلب.')
+        raise ExportError(422, 'E-ENVELOPE', "The envelope needs the applicant's name.", 'يحتاج الـ envelope إلى اسم مقدّم الطلب.')
     mode = (sub or {}).get('mode') or 'single' if stype.startswith('var-') or stype == 'extension' else None
     if not desc:                                       # mandatory in the EU envelope; said plainly when the dossier gives none
         desc = ('Initial marketing authorisation application' if stype == 'maa' and unit == 'initial' else
@@ -391,12 +391,12 @@ def _sequences(st, did, x, outputs, sub, base, exp_id, p40, ig_zip, replace_last
             if follow and not working:                    # a working copy asks neither the follow-on's type nor its new cover letter
                 if not sub.get('type'):
                     raise ExportError(422, 'E-SUBMISSION', 'A follow-on sequence needs its submission type (e.g. var-pac-b).',
-                                      'التسلسل التالي محتاج نوع التقديم (مثلاً var-pac-b).')
+                                      'يحتاج التسلسل التالي إلى نوع التقديم (مثلًا var-pac-b).')
                 submitted = {lf['doc_id'] for h in hist for lf in h['leaves']}
                 covers = [c for c in x.docs_ectd if c.node == '1.0' and c.name != 'tracking']
                 if not covers or all(c.doc_id in submitted for c in covers):
                     raise ExportError(409, 'E-COVER', f'Generate the cover letter for sequence {seq} first (a new cover letter goes in every sequence).',
-                                      f'ولّد خطاب التغطية للتسلسل {seq} الأول (كل تسلسل له خطاب تغطية جديد).')
+                                      f'ولِّد خطاب التغطية للتسلسل {seq} أولًا (لكل تسلسل خطاب تغطية جديد).')
             stype = sub.get('type') or env.get('submission_type', 'maa')
             if region == 'eu' and not follow and stype not in ectd32_eu.default_profile().values['submission_types']:
                 stype = 'maa'                             # the dossier's first sequence: a marketing authorisation application
@@ -500,7 +500,7 @@ def export(st, did, outputs, ack, sub, p40, ig_zip, working=False, replace_last=
         return _working_copy(st, did, g, sub, p40, ig_zip)
     if not g['ok']:
         raise ExportError(409, 'E-GATE', 'Export blocked: required documents are missing or non-conforming.',
-                          'التصدير متوقف: فيه مستندات مطلوبة ناقصة أو غير مطابقة.', gate=g)
+                          'التصدير متوقف: توجد مستندات مطلوبة ناقصة أو غير مطابقة.', gate=g)
     pk = st.pack(st.dossier(did)['pack'])
     egypt, region = pk.egypt, pk.ectd_region      # the regional eCTD backbone: Egypt's (provisional) and the EU's; others get the CTD folders
     country = (st.dossier(did).get('envelope') or {}).get('country')
@@ -509,22 +509,22 @@ def export(st, did, outputs, ack, sub, p40, ig_zip, working=False, replace_last=
     elif set(outputs) - set(pk.outputs):
         if region == 'eu':
             raise ExportError(422, 'E-OUTPUT-AUTHORITY', 'eCTD 4.0 is written for Egypt only; an EU dossier exports as CTD folders and eCTD 3.2.2 '
-                              '(EU Module 1 v3.1.1).', 'الـ eCTD 4.0 مكتوب لمصر بس؛ الملف الأوروبي بيتصدّر كمجلدات CTD و eCTD 3.2.2 (موديول ١ الأوروبي 3.1.1).', gate=g)
+                              '(EU Module 1 v3.1.1).', 'eCTD 4.0 معدّ لمصر فقط؛ الملف الأوروبي يُصدَّر على هيئة مجلدات CTD و eCTD 3.2.2 (Module 1 الأوروبي 3.1.1).', gate=g)
         raise ExportError(422, 'E-OUTPUT-AUTHORITY', "The eCTD package is written for Egypt's and the EU's Module 1; this dossier exports as CTD folders.",
-                          'حزمة الـ eCTD مكتوبة لموديول ١ المصري والأوروبي بس؛ الملف ده بيتصدّر كمجلدات CTD.', gate=g)
+                          'حزمة eCTD معدّة لـ Module 1 المصري والأوروبي فقط؛ يُصدَّر هذا الملف على هيئة مجلدات CTD.', gate=g)
     if {'ectd32', 'ectd40'} & set(outputs) and g.get('ectd_blocking'):
         raise ExportError(409, 'E-GATE-ECTD', 'eCTD readiness: some documents carry restrictions, a Portfolio or JavaScript (the eCTD rules). '
                           'Fix them (auto-fix for company documents, a new copy from the issuer otherwise), or export the CTD folders only.',
-                          'جاهزية الـ eCTD: فيه مستندات عليها قيود أو Portfolio أو JavaScript (قواعد الـ eCTD). صلّحها (إصلاح تلقائي لمستندات الشركة، '
-                          'ونسخة جديدة من الجهة لغيرها)، أو صدّر مجلدات CTD بس.', gate=g)
+                          'جاهزية eCTD: توجد مستندات عليها قيود أو Portfolio أو JavaScript (قواعد eCTD). أصلِحها (إصلاح تلقائي لمستندات الشركة، '
+                          'ونسخة جديدة من الجهة لغيرها)، أو صدِّر مجلدات CTD فقط.', gate=g)
     if {'ectd32', 'ectd40'} & set(outputs) and g.get('ectd_indication'):    # ICH eCTD DTD 3.2: m2-7-3 and m5-3-5 «indication #REQUIRED»
         raise ExportError(409, 'E-GATE-INDICATION', "The eCTD needs the product's indication: the clinical summary (2.7.3) and the efficacy and "
                           'safety studies (5.3.5) carry it (ICH eCTD DTD, required). Write it on this page, or export the CTD folders only.',
-                          'الـ eCTD محتاج دواعي استعمال المستحضر: ملخص الفعالية (2.7.3) ودراسات الفعالية والأمان (5.3.5) بيحملوها (مطلوبة في '
-                          'الـ DTD بتاع ICH). اكتبها في الصفحة دي، أو صدّر مجلدات الـ CTD بس.', gate=g)
+                          'يحتاج eCTD إلى دواعي استعمال المستحضر: ملخص الفعالية (2.7.3) ودراسات الفعالية والأمان (5.3.5) تحملها (وهي مطلوبة في '
+                          'الـ DTD الخاص بـ ICH). اكتبها في هذه الصفحة، أو صدِّر مجلدات CTD فقط.', gate=g)
     if {'ectd32', 'ectd40'} & set(outputs) and not ack and egypt:            # the EG profiles are provisional; the EU's is the EMA's own
         raise ExportError(409, 'E-PROVISIONAL-ACK', 'eCTD outputs use the provisional EG profiles; acknowledge before export.',
-                          'مخرجات eCTD مبنية على ملف تعريف مصري مؤقت؛ لازم توافق قبل التصدير.', gate=g)
+                          'مخرجات eCTD مبنية على ملف تعريف مصري مؤقت؛ يجب أن توافق قبل التصدير.', gate=g)
     sub = sub or {}
     d = st.dossier(did)
     slots = st.slots(did)
@@ -581,7 +581,7 @@ def export(st, did, outputs, ack, sub, p40, ig_zip, working=False, replace_last=
         seqs = _sequences(st, did, x, outputs, sub, base, exp_id, p40, ig_zip, replace_last=replace_last)
     except WriterError as ex:
         shutil.rmtree(base, ignore_errors=True)
-        raise ExportError(422, 'E-WRITER', f'Export failed: {ex}', f'التصدير فشل: {ex}')
+        raise ExportError(422, 'E-WRITER', f'Export failed: {ex}', f'فشل التصدير: {ex}')
     except ExportError:
         shutil.rmtree(base, ignore_errors=True)
         raise

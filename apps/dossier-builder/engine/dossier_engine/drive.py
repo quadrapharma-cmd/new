@@ -92,7 +92,7 @@ def save(workspace, api_key=None, service_account=None):
             sa = json.loads(service_account) if isinstance(service_account, str) else dict(service_account)
             for k in ('client_email', 'private_key', 'token_uri'):
                 if not sa.get(k):
-                    raise DriveError(422, 'E-DRIVE-SA', f'The service account JSON lacks «{k}».', f'ملف حساب الخدمة ناقصه «{k}».')
+                    raise DriveError(422, 'E-DRIVE-SA', f'The service account JSON lacks «{k}».', f'ملف حساب الخدمة ينقصه «{k}».')
             d['service_account'] = {k: sa[k] for k in ('client_email', 'private_key', 'token_uri', 'project_id') if k in sa}
     p = path(workspace)
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -160,13 +160,13 @@ class Drive:
         try:
             import jwt
         except ImportError:
-            raise DriveError(501, 'E-DRIVE-LIB', 'Install pyjwt and cryptography for service-account access.', 'ثبّت pyjwt وcryptography لاستخدام حساب الخدمة.')
+            raise DriveError(501, 'E-DRIVE-LIB', 'Install pyjwt and cryptography for service-account access.', 'استخدام حساب الخدمة يحتاج إلى المكتبتين pyjwt و cryptography على الخادم.')
         now = int(time.time())
         assertion = jwt.encode({'iss': sa['client_email'], 'scope': SCOPE, 'aud': sa['token_uri'], 'iat': now, 'exp': now + 3600}, sa['private_key'], algorithm='RS256')
         body = urllib.parse.urlencode({'grant_type': 'urn:ietf:params:oauth:grant-type:jwt-bearer', 'assertion': assertion}).encode()
         st, ct, data = await ahttp('POST', sa['token_uri'], {'content-type': 'application/x-www-form-urlencoded'}, body)
         if st != 200:
-            raise DriveError(502, 'E-DRIVE-AUTH', f'Google refused the service account ({st}).', f'جوجل رفض حساب الخدمة ({st}).')
+            raise DriveError(502, 'E-DRIVE-AUTH', f'Google refused the service account ({st}).', f'رفض Google حساب الخدمة ({st}).')
         j = json.loads(data)
         self._tok, self._exp = j['access_token'], time.time() + int(j.get('expires_in', 3600))
         return self._tok
@@ -180,16 +180,16 @@ class Drive:
             params['key'] = self.s['api_key']
         else:
             raise DriveError(501, 'E-DRIVE-KEY', 'Set a Google API key (public folders) or a service account (private folders) in the Drive settings.',
-                             'سجّل مفتاح Google API (للفولدرات العامة) أو حساب خدمة (للفولدرات الخاصة) في إعدادات Drive.')
+                             'سجِّل مفتاح Google API (للمجلدات العامة) أو حساب خدمة (للمجلدات الخاصة) في إعدادات Drive.')
         url = API + p + ('?' + urllib.parse.urlencode(params) if params else '')
         st, ct, data = await ahttp('GET', url, headers)
         if st == 404:
-            raise DriveError(404, 'E-DRIVE-404', 'Not found on Drive: check the link and that it is shared.', 'مش موجود على Drive: راجع اللينك والمشاركة.')
+            raise DriveError(404, 'E-DRIVE-404', 'Not found on Drive: check the link and that it is shared.', 'غير موجود على Drive: راجع الرابط والمشاركة.')
         if st in (401, 403):
             who = 'the service account ' + self.s['service_account'].get('client_email', '') if self.mode == 'service_account' else 'anyone with the link'
-            raise DriveError(403, 'E-DRIVE-FORBIDDEN', f'Drive refused ({st}): share the folder with {who}.', f'Drive رفض ({st}): شارك الفولدر مع {who}.')
+            raise DriveError(403, 'E-DRIVE-FORBIDDEN', f'Drive refused ({st}): share the folder with {who}.', f'رفض Google Drive الطلب ({st}): شارك المجلد مع {who}.')
         if st != 200:
-            raise DriveError(502, 'E-DRIVE', f'Drive answered {st}.', f'Drive رد بـ {st}.')
+            raise DriveError(502, 'E-DRIVE', f'Drive answered {st}.', f'ردّ Google Drive بالرمز {st}.')
         return data if raw else json.loads(data)
 
     @staticmethod
@@ -206,7 +206,7 @@ class Drive:
         """Entries of a folder (sub-folders first); recursive walks sub-folders (≤ 3 levels) with their path."""
         if self.mode == 'public':
             if self.browser:
-                raise DriveError(501, 'E-DRIVE-KEY', 'The browser edition needs a Google API key for Drive folders.', 'نسخة المتصفح محتاجة مفتاح Google API لفولدرات Drive.')
+                raise DriveError(501, 'E-DRIVE-KEY', 'The browser edition needs a Google API key for Drive folders.', 'نسخة المتصفح تحتاج إلى مفتاح Google API لمجلدات Drive.')
             entries = await self._public_list(folder_id, _prefix)
         else:
             entries, token = [], None
@@ -263,7 +263,7 @@ class Drive:
         st, ct, data = await ahttp('GET', f'https://drive.google.com/embeddedfolderview?id={folder_id}#list', {'user-agent': 'Mozilla/5.0'})
         if st != 200:
             raise DriveError(403 if st in (401, 403) else 502, 'E-DRIVE-PUBLIC', f'The folder is not public ({st}): share it «anyone with the link», or set a key.',
-                             f'الفولدر مش عام ({st}): شاركه «أي شخص معه اللينك»، أو سجّل مفتاح.')
+                             f'المجلد غير عام ({st}): شاركه مع «أي شخص لديه الرابط»، أو سجِّل مفتاحًا.')
         html = data.decode('utf-8', 'replace')
         out = []
         for m in re.finditer(r'<div class="flip-entry(?: [^"]*)?" id="entry-([A-Za-z0-9_-]+)"(.*?)flip-entry-title">([^<]*)<', html, re.S):
@@ -279,5 +279,5 @@ class Drive:
             if m:
                 st, ct, data = await ahttp('GET', url + '&confirm=' + m.group(1).decode(), {'user-agent': 'Mozilla/5.0'})
         if st != 200 or ('text/html' in ct and data[:5] != b'%PDF'):
-            raise DriveError(403 if st in (401, 403) else 502, 'E-DRIVE-PUBLIC', f'The file is not public ({st}).', f'الملف مش عام ({st}).')
+            raise DriveError(403 if st in (401, 403) else 502, 'E-DRIVE-PUBLIC', f'The file is not public ({st}).', f'الملف غير عام ({st}).')
         return data

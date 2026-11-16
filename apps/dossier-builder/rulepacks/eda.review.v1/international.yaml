@@ -249,7 +249,7 @@
   layer: intl
   ctd: "1.1.13"
   title: {en: "Reference approval current and matching", ar: "موافقة المرجع سارية ومطابقة"}
-  question: {en: "Is the reference authority's approval current (not withdrawn or suspended), and do the CPP, the approved SmPC and the Module 3 of the submitted dossier correspond to that approval?", ar: "هل موافقة الجهة المرجعية سارية (غير مسحوبة أو موقوفة)، وهل شهادة CPP والنشرة المعتمدة والوحدة 3 في الملف المقدم مطابقة لتلك الموافقة؟"}
+  question: {en: "Is the reference authority's approval current (not withdrawn or suspended), and do the CPP, the approved SmPC and the Module 3 of the submitted dossier correspond to that approval?", ar: "هل موافقة الجهة المرجعية سارية (غير مسحوبة أو موقوفة)، وهل شهادة CPP والنشرة المعتمدة وModule 3 في الملف المقدم مطابقة لتلك الموافقة؟"}
   applies: "reliance"
   severity: critical
   evidence: {slots: [M1-14, M1-09, M1-17], keywords: ["marketing authorisation", "marketing authorization", "approved", "valid"]}

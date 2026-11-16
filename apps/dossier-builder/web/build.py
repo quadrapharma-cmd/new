@@ -44,14 +44,21 @@ def page(src, *, builder, programs=None):
                         '<script>\n' + (f'window.DB_PROGRAMS={json.dumps(programs, separators=(",", ":"))};\n' if programs and programs.get('apps') else '')
                         + (UI / 'assets' / 'programs.js').read_text(encoding='utf-8') + '\n</script>')
     if builder:
-        html = html.replace("'/suite/'", "'suite.html'").replace('<title>Dossier Builder — منشئ ملفات التسجيل</title>', '<title>منشئ ملفات التسجيل</title>')
+        assert html.count("'/suite/'") >= 1 and html.count('<title>eBOX</title>') == 1
+        html = html.replace("'/suite/'", "'suite.html'")
     else:
         html = html.replace('href="/"', 'href="index.html"')
     head = re.search(r'<head>(.*?)</head>', html, re.S).group(1)
     body = re.search(r'<body>(.*)</body>', html, re.S).group(1)      # the last </body>: a script may write one in a string (programs.js)
     head = re.sub(r'<meta charset="utf-8">\s*|<meta name="viewport"[^>]*>\s*', '', head)
-    head = re.sub(r'<link href="(https://fonts\.googleapis\.com/[^"]+)" rel="stylesheet">',
-                  r'<link href="\1" rel="stylesheet" media="print" onload="this.media=\'all\'">', head)      # the fonts load beside the page, never before it
+    # The fonts load beside the page, never before it: the sheet is fetched as a «print» sheet and switched on when it has come.
+    # The switch is a script after the link, not an onload attribute (written with a raw string, that attribute came out as
+    # this.media=\'all\' — a script error at every opening, and the fonts never applied).
+    head, fonts = re.subn(r'<link href="(https://fonts\.googleapis\.com/[^"]+)" rel="stylesheet">',
+                          lambda m: f'<link href="{m.group(1)}" rel="stylesheet" media="print" id="dbFonts">'
+                                    '<script>(function(l){function on(){l.media="all";}if(l.sheet)on();else l.addEventListener("load",on);})'
+                                    '(document.getElementById("dbFonts"));</script>', head)
+    assert fonts == 1, fonts
     head = re.sub(r'(</title>)', lambda m: m.group(1) + '\n' + FIRST_SCREEN, head, count=1)
     content = head.strip() + '\n' + body.strip() + '\n'
     return content, SKELETON + content + '</body></html>\n'
@@ -135,11 +142,12 @@ FIRST_SCREEN = ('<div id="boot0" role="status" style="position:fixed;inset:0;z-i
                 'color:#E9EFF7;font:15px/1.7 system-ui,-apple-system,Segoe UI,sans-serif;text-align:center;padding:0 16px">'
                 '<div style="display:flex;flex-direction:column;gap:10px;align-items:center;max-width:440px">'
                 '<div style="width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,#22D3EE,#A78BFA);display:grid;place-items:center;'
-                'font-family:ui-monospace,monospace;font-weight:600;color:#04161B">DB</div>'
-                '<b dir="rtl">بيفتح منشئ ملفات التسجيل…</b>'
-                '<span dir="rtl" style="font-size:13px;color:#8C9BB0">أول مرة بينزّل البرنامج نفسه على جهازك (دقيقة تقريبًا على خط عادي)؛ بعدها بيفتح في ثواني.</span>'
-                '<span dir="ltr" style="font-size:12.5px;color:#8C9BB0">Opening Dossier Builder… The first time, the program itself is downloaded to this device '
-                '(about a minute on an ordinary line); after that it opens in seconds.</span></div></div>')
+                'font-family:ui-monospace,monospace;font-weight:600;color:#04161B">eB</div>'
+                '<b dir="rtl">جارٍ فتح eBOX…</b>'
+                '<span dir="rtl" style="font-size:13px;color:#8C9BB0">في المرة الأولى تُحمَّل مكوّنات البرنامج داخل المتصفح (نحو دقيقة على اتصال عادي)، '
+                'ولا يُثبَّت شيء على جهازك؛ وبعدها يفتح خلال ثوانٍ.</span>'
+                '<span dir="ltr" style="font-size:12.5px;color:#8C9BB0">Opening eBOX… The first time, the program\'s parts are loaded inside the browser '
+                '(about a minute on an ordinary line) — nothing is installed on this device; after that it opens in seconds.</span></div></div>')
 
 
 MARK = '/*DB_MANIFEST*/{}'
@@ -215,6 +223,8 @@ def main():
         shutil.rmtree(DIST)
     (DIST / 'assets').mkdir(parents=True)
     programs = programs_dist(DIST / 'assets' / 'programs')
+    if 'photocraft' in programs['apps']:        # the photo program asks for the fonts a host serves beside the page (fonts/manifest.txt): none here — said, not a 404
+        put(DIST / 'fonts' / 'manifest.txt', b'# eBOX serves no extra fonts: the photo program uses the ones built into it.\n')
     content, full = page(UI / 'index.html', builder=True, programs=programs)
     (DIST / 'index.html').write_text(content, encoding='utf-8')
     (DIST / 'index.local.html').write_text(full, encoding='utf-8')

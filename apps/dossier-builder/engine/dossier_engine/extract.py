@@ -1158,7 +1158,7 @@ KIND_NAMES = {'pricing': {'en': 'pricing certificate', 'ar': 'شهادة تسع�
               'method': {'en': 'method of analysis', 'ar': 'طريقة تحليل'}, 'validation': {'en': 'method validation / chromatograms', 'ar': 'تحقق من طريقة التحليل / كروماتوجرام'},
               'receipt': {'en': 'fees receipt', 'ar': 'إيصال رسوم'}, 'variation': {'en': 'variation approval', 'ar': 'موافقة تغيير'},
               'import': {'en': 'import approval', 'ar': 'موافقة استيرادية'}, 'refstd': {'en': 'reference / working standard certificate', 'ar': 'شهادة مادة مرجعية'},
-              'sampling': {'en': 'sampling form (not a dossier document)', 'ar': 'استمارة سحب عينة (مش مستند في الملف)'}}
+              'sampling': {'en': 'sampling form (not a dossier document)', 'ar': 'استمارة سحب عينة (ليست مستندًا في الملف)'}}
 ORG_STOP = {'pharmaceutical', 'pharmaceuticals', 'pharma', 'pharm', 'company', 'co', 'ltd', 'limited', 'inc', 'corp', 'corporation', 'group',
             'industries', 'industry', 'industrial', 'for', 'the', 'and', 'of', 'gmbh', 'sae', 'laboratories', 'laboratory', 'labs', 'chemical',
             'chemicals', 'biochemical', 'biochemistry', 'biotech', 'international', 'egypt', 'china', 'india', 'plc', 'llc', 'spa', 'srl',

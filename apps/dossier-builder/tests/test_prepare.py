@@ -84,7 +84,7 @@ def test_a_fix_the_program_cannot_make_is_asked_of_the_user_with_why(c, tmp_path
     placed = next(x for x in c.get(f'/api/dossiers/{did}/prepare').json()['placed'] if x['id'] == r['document']['id'])
     assert 'NTA065-N4' not in placed['fixable']                                                 # not offered again …
     why = next(n for n in placed['needs_you'] if n['rule'] == 'NTA065-N4')
-    assert 'no text could be read' in why['en'].lower() and 'امسحه تاني' in why['ar']           # … asked of the user, with why
+    assert 'no text could be read' in why['en'].lower() and 'أعد مسحه' in why['ar']           # … asked of the user, with why
     text = make_pdf_lines(tmp_path / 'spec.pdf', SPEC, 'Specification').read_bytes()             # a new scan of it, readable this time
     new = c.post(f"/api/dossiers/{did}/slots/{slot}/documents", files=[('file', ('scan0003.pdf', io.BytesIO(scan_of(text)), 'application/pdf'))],
                  data={'meta': '{}', 'replaces': r['document']['id']})

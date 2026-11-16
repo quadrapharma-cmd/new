@@ -157,7 +157,7 @@ def test_a_scan_without_text_is_refused_and_the_others_go_on(server, browser, tm
     page.click('#wizNext')
     page.fill('[data-in=tracking]', 'P-MAA-0002')
     page.click('#wizCreate')
-    page.wait_for_selector('text=Requirements board')
+    page.wait_for_selector('h1:has-text("Dossier tree and what is missing")')
     did = page.url.split('/d/')[1].split('/')[0]
     placed, unplaced = _board_when(server, did, lambda p, u: 'price.pdf' in p and 'cpp.pdf' in p)
     assert placed.get('price.pdf') == 'M1-05' and placed.get('cpp.pdf') == 'M1-14'
@@ -227,7 +227,7 @@ def test_a_refresh_while_the_documents_are_being_placed_finishes_the_placement(s
     held = []
     page.route('**/classify/text', lambda r: held.append(r))                            # the placement hangs here: the user refreshes in the middle of it
     page.click('#wizCreate')
-    page.wait_for_selector('text=Requirements board')
+    page.wait_for_selector('h1:has-text("Dossier tree and what is missing")')
     for _ in range(200):
         if held:
             break
@@ -259,7 +259,7 @@ def _to_create(page, tracking):
     page.click('#wizNext')
     page.fill('[data-in=tracking]', tracking)
     page.click('#wizCreate')
-    page.wait_for_selector('text=Requirements board')
+    page.wait_for_selector('h1:has-text("Dossier tree and what is missing")')
     return page.url.split('/d/')[1].split('/')[0]
 
 

@@ -19,7 +19,7 @@ async def _inline(func, *args, **kwargs):             # Pyodide has no worker th
 
 anyio.to_thread.run_sync = _inline
 
-from dossier_engine.app.api import create_app          # noqa: E402  (after the patch: starlette binds run_sync at import)
+from dossier_engine.app.api import create_app, internal_error      # noqa: E402  (after the patch: starlette binds run_sync at import)
 
 os.environ.setdefault('DB_HOME', 'web')
 APP = create_app('/workspace', auth_enabled=False)
@@ -63,15 +63,15 @@ async def handle(method, path, query, headers_json, body):
         await APP(scope, receive, send)
     except MemoryError:                                  # a file larger than what the page can hold: said, not a crash
         status, resp_headers, chunks = 507, [(b'content-type', b'application/json')], [NO_MEMORY]
-    except Exception:
+    except Exception as exc:                             # a fault of the program: said plainly; what failed goes to the faults record
+        traceback.print_exc()                            # the whole of it stays in the browser's console, for whoever looks there
         status, resp_headers = 500, [(b'content-type', b'application/json')]
-        chunks = [json.dumps({'detail': {'code': 'E-INTERNAL', 'en': traceback.format_exc()[-1500:],
-                                         'ar': 'حصل خطأ داخلي في المحرك.'}}).encode()]
+        chunks = [json.dumps({'detail': internal_error(exc)}).encode()]
     return _answer(status, resp_headers, b''.join(chunks))
 
 
 NO_MEMORY = json.dumps({'detail': {'code': 'E-MEMORY', 'en': 'A file this large does not fit in the memory the browser gives the page. Close other tabs and try again, split the file, or use the desktop program, which takes it whole.',
-                                   'ar': 'ملف بالحجم ده أكبر من الذاكرة اللي المتصفح بيديها للصفحة. اقفل تبويبات تانية وجرّب تاني، أو قسّم الملف، أو استخدم برنامج سطح المكتب — بياخده كامل.'}}).encode()
+                                   'ar': 'ملف بهذا الحجم أكبر من الذاكرة التي يتيحها المتصفح للصفحة. أغلق تبويبات أخرى وأعد المحاولة، أو قسِّم الملف، أو استخدم برنامج سطح المكتب — فهو يستوعبه كاملًا.'}}).encode()
 
 
 def _answer(status, resp_headers, out):

@@ -18,11 +18,11 @@
   layer: eda
   ctd: "1.0"
   title: {en: "Complete soft copy", ar: "اكتمال النسخة الإلكترونية"}
-  question: {en: "Is the soft copy complete — every required Module 1 item has a document and no required slot is empty?", ar: "هل النسخة الإلكترونية كاملة — لكل بند مطلوب في الوحدة 1 مستند ولا توجد خانة مطلوبة فارغة؟"}
+  question: {en: "Is the soft copy complete — every required Module 1 item has a document and no required slot is empty?", ar: "هل النسخة الإلكترونية كاملة — لكل بند مطلوب في Module 1 مستند ولا توجد خانة مطلوبة فارغة؟"}
   severity: critical
   evidence: {data: [board.missing_required]}
   auto: {kind: data, check: m1_complete}
-  deficiency: {en: "The soft copy is incomplete: required Module 1 items are missing. The file is not accepted for assessment until the soft copy is complete.", ar: "النسخة الإلكترونية غير مكتملة: توجد بنود مطلوبة في الوحدة 1 ناقصة. لا يُقبل الملف للتقييم قبل اكتمال النسخة الإلكترونية."}
+  deficiency: {en: "The soft copy is incomplete: required Module 1 items are missing. The file is not accepted for assessment until the soft copy is complete.", ar: "النسخة الإلكترونية غير مكتملة: توجد بنود مطلوبة في Module 1 ناقصة. لا يُقبل الملف للتقييم قبل اكتمال النسخة الإلكترونية."}
   action: {type: upload, target: board}
   source: {code: "NP.CAPP.065 v5/2025", section: "p.13, note 1", quote: "In order to accept the registration file for assessment soft copies must be fulfilled."}
 - id: SC-PDF-01
@@ -34,7 +34,7 @@
   severity: critical
   evidence: {data: [documents.searchable]}
   auto: {kind: data, check: pdfs_searchable}
-  deficiency: {en: "All documents must be scanned and searchable PDF. The listed company documents have no text layer; make the text layer when scanning (the scanner's software, Acrobat, or a phone app that saves searchable PDFs) and replace them.", ar: "يجب أن تكون جميع المستندات PDF ممسوحة وقابلة للبحث. مستندات الشركة المذكورة بلا طبقة نصية؛ اعمل النص وقت المسح (برنامج السكانر أو Acrobat أو تطبيق بيحفظ PDF قابل للبحث) واستبدلها."}
+  deficiency: {en: "All documents must be scanned and searchable PDF. The listed company documents have no text layer; make the text layer when scanning (the scanner's software, Acrobat, or a phone app that saves searchable PDFs) and replace them.", ar: "يجب أن تكون جميع المستندات PDF ممسوحة وقابلة للبحث. مستندات الشركة المذكورة بلا طبقة نصية؛ أنشئ طبقة النص عند المسح (ببرنامج الماسح الضوئي أو Acrobat أو تطبيق هاتف يحفظ ملفات PDF قابلة للبحث) ثم استبدلها."}
   action: {type: upload, target: documents}
   source: {code: NP.CAPP.065 v5/2025, section: "General notes, note 4", quote: "All submitted documents should be scanned and searchable PDF files."}
 - id: SC-VALID-01
@@ -42,7 +42,7 @@
   layer: eda
   ctd: "1.1 · 1.2"
   title: {en: "Validity of dated certificates", ar: "صلاحية الشهادات المؤرخة"}
-  question: {en: "Is every dated certificate in Module 1 (GMP, CPP, licences, pricing, register of trade) within its validity period at the planned submission date?", ar: "هل كل شهادة مؤرخة في الوحدة 1 (GMP، CPP، التراخيص، التسعير، السجل التجاري) سارية في تاريخ التقديم المخطط؟"}
+  question: {en: "Is every dated certificate in Module 1 (GMP, CPP, licences, pricing, register of trade) within its validity period at the planned submission date?", ar: "هل كل شهادة مؤرخة في Module 1 (GMP، CPP، التراخيص، التسعير، السجل التجاري) سارية في تاريخ التقديم المخطط؟"}
   severity: critical
   evidence: {data: [documents.valid_until]}
   auto: {kind: data, check: certificates_valid}
@@ -81,11 +81,11 @@
   layer: eda
   ctd: "1.1.17 · 3.2.P.3.1"
   title: {en: "Sites consistent across the file", ar: "اتساق المواقع عبر الملف"}
-  question: {en: "Are the manufacturing sites named in Module 1 (licences, GMP, CPP) the same as those in 3.2.P.3.1 and 3.2.S.2.1, with full addresses?", ar: "هل مواقع التصنيع المذكورة في الوحدة 1 (التراخيص، GMP، CPP) هي نفسها في 3.2.P.3.1 و3.2.S.2.1 وبعناوين كاملة؟"}
+  question: {en: "Are the manufacturing sites named in Module 1 (licences, GMP, CPP) the same as those in 3.2.P.3.1 and 3.2.S.2.1, with full addresses?", ar: "هل مواقع التصنيع المذكورة في Module 1 (التراخيص، GMP، CPP) هي نفسها في 3.2.P.3.1 و3.2.S.2.1 وبعناوين كاملة؟"}
   severity: critical
   evidence: {slots: [M1-14, M1-37, M1-38, P-03, S-04], keywords: ["manufactur", "site", "address"], data: [apis.address_gmp]}
   auto: {kind: data, check: sites_consistent}
-  deficiency: {en: "The manufacturers and sites stated in Module 1 should be identical to those in 3.2.P.3.1 / 3.2.S.2.1 and on the CPP; for imported products the manufacturers must not differ from the CPP.", ar: "يجب أن تتطابق أسماء المصنّعين والمواقع في الوحدة 1 مع 3.2.P.3.1 / 3.2.S.2.1 ومع شهادة CPP؛ وللمنتجات المستوردة يجب ألا تختلف عن CPP."}
+  deficiency: {en: "The manufacturers and sites stated in Module 1 should be identical to those in 3.2.P.3.1 / 3.2.S.2.1 and on the CPP; for imported products the manufacturers must not differ from the CPP.", ar: "يجب أن تتطابق أسماء المصنّعين والمواقع في Module 1 مع 3.2.P.3.1 / 3.2.S.2.1 ومع شهادة CPP؛ وللمنتجات المستوردة يجب ألا تختلف عن CPP."}
   action: {type: edit_data, target: apis}
   source: {code: NP.CAPP.040 v1/2022, section: "3.2.P.3.1", quote: "For Imported products: Manufactures in this section are different than that in the CPP"}
   anchor: {code: WHO PQ screening checklist 05/2021, section: "full site address including unit and block"}

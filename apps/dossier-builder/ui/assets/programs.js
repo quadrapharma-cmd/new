@@ -23,19 +23,19 @@
 (function (root) {
   'use strict';
   const PROGRAMS = {
-    wordcraft: { ar: 'برنامج الـ Word', en: 'the Word program', canvas: 'wordcraft_canvas', loading: 'wordcraft_loading', host: 'page',
+    wordcraft: { ar: 'برنامج تعديل Word', en: 'the Word program', canvas: 'wordcraft_canvas', loading: 'wordcraft_loading', host: 'page',
                  query: '?webgl&control', files: /\.docx$/i,
-                 afterSave: { ar: 'الـ PDF بتاعه اعمله من Word على جهازك زي العادة.', en: 'Make its PDF in Word on your computer, as before.' } },
+                 afterSave: { ar: 'أما نسخة PDF منه فتُعدّ من Word على جهازك (ملف ← حفظ باسم ← PDF) ثم تُرفع إلى البند.', en: 'Make its PDF in Word on your computer, as before.' } },
     // PdfCraft's own scan reader is not started (no <meta name="pdfcraft-ocr-worker">): English-only models; the page has its own.
-    pdfcraft: { ar: 'برنامج الـ PDF', en: 'the PDF program', canvas: 'pdfcraft', loading: 'pdfcraft_loading', host: 'page',
+    pdfcraft: { ar: 'برنامج تعديل PDF', en: 'the PDF program', canvas: 'pdfcraft', loading: 'pdfcraft_loading', host: 'page',
                 query: '?webgl&control', files: /\.pdf$/i },
     // the page opens these two itself (no file kind of the dossier is theirs): a PDF page drawn as a picture for the photo program,
     // an artwork PDF placed into a design in the design program (ui/index.html pageInPhoto, docInDesign)
-    photocraft: { ar: 'برنامج الصور', en: 'the photo program', canvas: 'photocraft_canvas', loading: 'photocraft_loading', host: 'drop', query: '', files: null,
-                  hint: { ar: 'نضّف الصفحة (قص، عدل، فتّح، امسح) واحفظ بـ Ctrl+S: الصفحة دي بتتبدّل في الملف كنسخة جديدة، والباقي زي ما هو.',
+    photocraft: { ar: 'برنامج تعديل الصور', en: 'the photo program', canvas: 'photocraft_canvas', loading: 'photocraft_loading', host: 'drop', query: '', files: null,
+                  hint: { ar: 'نظِّف الصفحة (قص، تقويم، تفتيح، مسح) ثم احفظ بـ Ctrl+S: تُستبدل هذه الصفحة في الملف بنسخة جديدة، وتبقى الصفحات الأخرى كما هي.',
                           en: 'Clean the page (crop, straighten, lighten, erase) and save with Ctrl+S: this page is replaced in the file as a new version; the others stay as they are.' } },
     designcraft: { ar: 'برنامج التصميم', en: 'the design program', canvas: 'designcraft_canvas', loading: 'designcraft_loading', host: 'drop', query: '', files: null,
-                   hint: { ar: 'اعمل مستند (Ctrl+N)، وبعدين «حط الملف في التصميم». لما تخلص: File ← Export PDF… والـ PDF بيرجع للبند كنسخة جديدة. (Ctrl+S بيحفظ التصميم نفسه، ومش بيتحط في الملف.)',
+                   hint: { ar: 'أنشئ مستندًا (Ctrl+N)، ثم اضغط «وضع الملف في التصميم». عند الانتهاء: File ← Export PDF… فيعود ملف PDF إلى البند نسخةً جديدة. (Ctrl+S يحفظ التصميم نفسه، ولا يوضع في الملف.)',
                            en: 'Make a document (Ctrl+N), then «Place the file in the design». When done: File ▸ Export PDF… and the PDF comes back to the item as a new version. (Ctrl+S saves the design itself; it does not go into the dossier.)' } },
   };
   const list = () => (root.DB_PROGRAMS && root.DB_PROGRAMS.apps) || {};
@@ -45,25 +45,25 @@
   const abs = rel => new URL(rel, document.baseURI).href;
 
   const T = {
-    loading: { ar: 'بيحمّل {p}…', en: 'Loading {p}…' },
-    first: { ar: 'أول مرة بس: البرنامج بيتنزّل على جهازك ({mb} ميجا)، وبعد كده بيفتح على طول.', en: 'The first time only: the program is downloaded to this device ({mb} MB); after that it opens at once.' },
-    starting: { ar: 'بيشغّل {p}…', en: 'Starting {p}…' },
-    opening: { ar: 'بيفتح الملف…', en: 'Opening the file…' },
-    ready: { ar: 'عدّل في الملف، وبعدين «احفظه نسخة جديدة» (أو Ctrl+S). النسخة القديمة بتفضل محفوظة.', en: 'Edit the file, then «Save as a new version» (or Ctrl+S). The old version is kept.' },
-    saving: { ar: 'بيحفظ نسخة جديدة…', en: 'Saving a new version…' },
-    saved: { ar: 'اتحفظ نسخة جديدة: {n}.', en: 'Saved as a new version: {n}.' },
-    nothing: { ar: 'مفيش تعديل يتحفظ.', en: 'Nothing was changed: nothing to save.' },
-    noFile: { ar: 'البرنامج مارجّعش الملف. جرّب «احفظه نسخة جديدة» تاني (أو Ctrl+S).', en: 'The program gave no file back. Try «Save as a new version» again (or Ctrl+S).' },
-    saveFail: { ar: 'ماقدرتش أحفظ: {e}', en: 'Could not save: {e}' },
-    failed: { ar: '{p} ماقدرش يشتغل هنا: {e}', en: '{p} could not start here: {e}' },
-    blocked: { ar: 'الصفحة دي مش سامحة بتشغيل البرامج جواها.', en: 'This page does not allow programs to run inside it.' },
-    save: { ar: 'احفظه نسخة جديدة', en: 'Save as a new version' },
-    close: { ar: 'اقفل', en: 'Close' },
-    unsaved: { ar: 'فيه تعديلات ماتحفظتش. تقفل من غير ما تحفظها؟', en: 'There are changes that were not saved. Close without saving them?' },
-    discard: { ar: 'اقفل من غير حفظ', en: 'Close without saving' },
-    back: { ar: 'ارجع للملف', en: 'Back to the file' },
-    place: { ar: 'حط الملف في التصميم', en: 'Place the file in the design' },
-    placed: { ar: 'الملف اتحط في الصفحة المفتوحة في البرنامج.', en: 'The file was placed on the page open in the program.' },
+    loading: { ar: 'جارٍ تحميل {p}…', en: 'Loading {p}…' },
+    first: { ar: 'في المرة الأولى فقط يُحمَّل البرنامج داخل الصفحة ({mb} ميغابايت) — لا يُثبَّت شيء على جهازك، وبعدها يُفتح فورًا.', en: 'The first time only, the program is loaded inside the page ({mb} MB) — nothing is installed on this device; after that it opens at once.' },
+    starting: { ar: 'جارٍ تشغيل {p}…', en: 'Starting {p}…' },
+    opening: { ar: 'جارٍ فتح الملف…', en: 'Opening the file…' },
+    ready: { ar: 'عدِّل الملف، ثم اضغط «حفظه نسخةً جديدة» (أو Ctrl+S). النسخة السابقة تبقى محفوظة.', en: 'Edit the file, then «Save as a new version» (or Ctrl+S). The old version is kept.' },
+    saving: { ar: 'جارٍ حفظ نسخة جديدة…', en: 'Saving a new version…' },
+    saved: { ar: 'حُفظت نسخة جديدة: {n}.', en: 'Saved as a new version: {n}.' },
+    nothing: { ar: 'لا يوجد تعديل لحفظه.', en: 'Nothing was changed: nothing to save.' },
+    noFile: { ar: 'لم يُرجع البرنامج الملف. اضغط «حفظه نسخةً جديدة» مرة أخرى (أو Ctrl+S).', en: 'The program gave no file back. Try «Save as a new version» again (or Ctrl+S).' },
+    saveFail: { ar: 'تعذّر الحفظ: {e}', en: 'Could not save: {e}' },
+    failed: { ar: 'تعذّر تشغيل {p} هنا: {e}', en: '{p} could not start here: {e}' },
+    blocked: { ar: 'هذه الصفحة لا تسمح بتشغيل البرامج داخلها.', en: 'This page does not allow programs to run inside it.' },
+    save: { ar: 'حفظه نسخةً جديدة', en: 'Save as a new version' },
+    close: { ar: 'إغلاق', en: 'Close' },
+    unsaved: { ar: 'توجد تعديلات لم تُحفظ. هل تريد الإغلاق دون حفظها؟', en: 'There are changes that were not saved. Close without saving them?' },
+    discard: { ar: 'إغلاق دون حفظ', en: 'Close without saving' },
+    back: { ar: 'العودة إلى الملف', en: 'Back to the file' },
+    place: { ar: 'وضع الملف في التصميم', en: 'Place the file in the design' },
+    placed: { ar: 'وُضع الملف في الصفحة المفتوحة في البرنامج.', en: 'The file was placed on the page open in the program.' },
   };
 
   // ── what runs inside the frame: the relay between the program and the page, and the program's loader ──────────────────────
@@ -264,6 +264,7 @@
     });
     const failed = e => {
       const blocked = /Refused to compile|unsafe-eval|wasm-unsafe-eval|Content Security Policy|CompileError: WebAssembly/i.test(e);
+      try { if (root.DS && root.DS.errlog) root.DS.errlog.add('program', app + ': ' + e); } catch (err) { /* the record is a help, never a failure */ }
       status(say('failed', { e: blocked ? say('blocked') : e }), 'bad'); wait(say('failed', { e: blocked ? say('blocked') : e }), '');
       const w = $('.dbprog-wait'); if (w) w.querySelector('.dbprog-meter').hidden = true;
     };
@@ -414,5 +415,52 @@
     return { bytes: new Uint8Array(await blob.arrayBuffer()), kind: 'png' };
   }
 
-  root.DBPROG = { PROGRAMS, available, forFile, title, open, frameDoc, picture };
+  // ── a program got ready before it is asked for: its WebAssembly fetched by a worker and kept in the browser exactly as the
+  //    frame keeps it after its first opening (IndexedDB «db-programs», by its SHA-256). Nothing is started; the page's thread is
+  //    not held; a failure is silent — the frame fetches the program itself when it is opened.
+  const WARM = `self.onmessage = async e => { const { app, base, m } = e.data;
+    const idb = (mode, what) => new Promise(res => { try { const q = indexedDB.open('db-programs', 1);
+        q.onupgradeneeded = () => { try { q.result.createObjectStore('files'); } catch (x) {} };
+        q.onerror = q.onblocked = () => res(undefined);
+        q.onsuccess = () => { try { const r = what(q.result.transaction('files', mode).objectStore('files')); r.onsuccess = () => res(r.result); r.onerror = () => res(undefined); } catch (x) { res(undefined); } };
+      } catch (x) { res(undefined); } });
+    try {
+      const kept = await idb('readonly', s => s.get(app));
+      if (kept && kept.sha256 === m.sha256 && kept.gz) return self.postMessage({ ok: true, kept: true });
+      let loaded = 0; const texts = [];
+      for (let k = 1; k <= m.parts; k++) {
+        const r = await fetch(base + app + '/wasm.gz.b64.' + k + '.txt');
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const t = await r.text(); loaded += t.length; texts.push(t);
+        self.postMessage({ part: loaded / m.size });
+      }
+      const bin = atob(texts.join('')), gz = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) gz[i] = bin.charCodeAt(i);
+      const wasm = new Uint8Array(await new Response(new Blob([gz]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer());
+      const d = new Uint8Array(await crypto.subtle.digest('SHA-256', wasm)); let hex = '';
+      for (let i = 0; i < d.length; i++) hex += (d[i] < 16 ? '0' : '') + d[i].toString(16);
+      if (wasm.length !== m.bytes || hex !== m.sha256) throw new Error('the files did not arrive whole');
+      await idb('readwrite', s => s.put({ sha256: m.sha256, gz: gz.buffer }, app));
+      self.postMessage({ ok: true });
+    } catch (err) { self.postMessage({ ok: false, error: String((err && err.message) || err) }); } };`;
+  const warming = new Map();
+  function warm(app, onPart) {
+    if (!available(app) || typeof Worker !== 'function' || typeof indexedDB === 'undefined') return Promise.resolve(false);
+    if (warming.has(app)) return warming.get(app);
+    const job = new Promise(done => {
+      let w, url;
+      const end = ok => { try { if (w) w.terminate(); if (url) URL.revokeObjectURL(url); } catch (e) { /* gone already */ } if (!ok) warming.delete(app); done(!!ok); };
+      try {
+        url = URL.createObjectURL(new Blob([WARM], { type: 'text/javascript' }));
+        w = new Worker(url);
+        w.onmessage = e => { const d = e.data || {}; if (d.part !== undefined) { try { if (onPart) onPart(d.part); } catch (x) { /* the page's own */ } } else end(d.ok); };
+        w.onerror = () => end(false);
+        w.postMessage({ app, base: abs((root.DB_PROGRAMS && root.DB_PROGRAMS.base) || 'assets/programs/'), m: list()[app] });
+      } catch (e) { end(false); }
+    });
+    warming.set(app, job);
+    return job;
+  }
+
+  root.DBPROG = { PROGRAMS, available, forFile, title, open, frameDoc, picture, warm };
 })(window);

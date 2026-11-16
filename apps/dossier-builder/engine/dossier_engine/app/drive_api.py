@@ -28,7 +28,7 @@ class StageReq(BaseModel):
 def install(app, st):
     def _admin_only(request):
         if app.state.auth.enabled and getattr(request.state, 'role', None) != 'admin':
-            err(403, 'E-ROLE', 'Only an administrator can change the Drive settings.', 'إعدادات Drive للمدير بس.')
+            err(403, 'E-ROLE', 'Only an administrator can change the Drive settings.', 'إعدادات Drive للمدير فقط.')
 
     def _client():
         return _drive.Drive(_drive.load(st.root))
@@ -44,13 +44,13 @@ def install(app, st):
     def put_settings(body: DriveSettings, request: Request):
         _admin_only(request)
         if _drive.status(st.root)['browser'] and body.service_account not in (None, '', {}):
-            err(501, 'E-BROWSER', 'A service account key stays on a server; the browser edition uses an API key.', 'مفتاح حساب الخدمة بيفضل على الخادم؛ نسخة المتصفح بتستخدم مفتاح API.')
+            err(501, 'E-BROWSER', 'A service account key stays on a server; the browser edition uses an API key.', 'مفتاح حساب الخدمة يبقى على الخادم؛ ونسخة المتصفح تستخدم مفتاح API.')
         try:
             out = _drive.save(st.root, body.api_key, body.service_account)
         except _drive.DriveError as e:
             _raise(e)
         except ValueError:
-            err(422, 'E-DRIVE-SA', 'The service account must be valid JSON.', 'حساب الخدمة لازم يكون JSON صحيح.')
+            err(422, 'E-DRIVE-SA', 'The service account must be valid JSON.', 'يجب أن يكون حساب الخدمة بصيغة JSON صحيحة.')
         st.audit(None, 'drive.settings', keys=[k for k, v in body.model_dump().items() if v is not None], by=getattr(request.state, 'user', None) or 'local')
         return out
 
@@ -58,7 +58,7 @@ def install(app, st):
     async def list_link(body: ListReq):
         link = _drive.parse_link(body.link)
         if not link:
-            err(422, 'E-DRIVE-LINK', 'Not a Google Drive folder or file link.', 'ده مش لينك فولدر أو ملف على Google Drive.')
+            err(422, 'E-DRIVE-LINK', 'Not a Google Drive folder or file link.', 'هذا ليس رابط مجلد أو ملف على Google Drive.')
         d = _client()
         try:
             if link['kind'] == 'folder':

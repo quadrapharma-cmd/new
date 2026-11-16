@@ -78,12 +78,25 @@
   function busy(d){ busyN=Math.max(0, busyN+d); const el=document.getElementById('busy');
     if(busyN&&!busyT&&!(el&&!el.hidden)) busyT=setTimeout(()=>{ busyT=null; if(!busyN||!document.body) return;
       const b=document.getElementById('busy')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'busy'}));
-      b.setAttribute('role','status'); b.setAttribute('aria-label', document.documentElement.lang==='en'?'Working…':'شغّال…'); b.hidden=false; }, 350);
+      b.setAttribute('role','status'); b.setAttribute('aria-label', document.documentElement.lang==='en'?'Working…':'جارٍ العمل…'); b.hidden=false; }, 350);
     if(!busyN){ clearTimeout(busyT); busyT=null; if(el) el.hidden=true; } }
-  /* nothing fails silently: an error the page did not expect is shown, at most once every few seconds */
-  let lastErr=0;
-  function surface(msg){ const now=Date.now(); if(now-lastErr<4000) return; lastErr=now;
-    try{ toast((document.documentElement.lang==='en'?'Something went wrong: ':'حصل خطأ: ')+String(msg).slice(0,200)); }catch(e){} }
+  /* the faults record: what went wrong, written down on this device so the person can read it in the program and send it —
+     the time, the screen, the kind and the message, never a document's content. The last 200 are kept. */
+  const ERRKEY='db.errlog';
+  const errlog={
+    list(){ try{ const l=JSON.parse(localStorage.getItem(ERRKEY)||'[]'); return Array.isArray(l)?l:[]; }catch(e){ return []; } },
+    add(kind, msg, detail){ try{ const l=errlog.list(); const last=l[l.length-1], m=String(msg||'').slice(0,400), d=detail?String(detail).slice(0,400):'';
+        if(last&&last.kind===kind&&last.msg===m&&last.detail===d&&Date.now()-last.t<3000){ last.n=(last.n||1)+1; }       // the same fault again at once: counted, not repeated
+        else l.push({t:Date.now(), at:(location.hash||'#/').replace(/[0-9a-f]{8}-[0-9a-f-]{27}/g,'…'), kind, msg:m, detail:d});
+        while(l.length>200) l.shift(); localStorage.setItem(ERRKEY, JSON.stringify(l)); }catch(e){} },
+    clear(){ try{ localStorage.removeItem(ERRKEY); }catch(e){} },
+    text(){ const pad=n=>String(n).padStart(2,'0');
+      return errlog.list().map(e=>{ const d=new Date(e.t); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())} | ${e.at} | ${e.kind}${e.n?' ×'+e.n:''} | ${e.msg}${e.detail?' | '+e.detail:''}`; }).join('\n'); },
+  };
+  /* nothing fails silently: an error the page did not expect is shown, at most once every few seconds — and always written down */
+  let lastErr=0, lastApiErr={msg:'', t:0};
+  function surface(msg){ errlog.add('unexpected', msg); const now=Date.now(); if(now-lastErr<4000) return; lastErr=now;
+    try{ toast((document.documentElement.lang==='en'?'Something went wrong: ':'حدث خطأ غير متوقع: ')+String(msg).slice(0,200), 7000, 'bad'); }catch(e){} }
   window.addEventListener('error', e=>{ if(e&&e.message&&!/ResizeObserver|Script error/.test(e.message)) surface(e.message+(e.lineno?` (${e.lineno})`:'')); });
   window.addEventListener('unhandledrejection', e=>{ const r=e&&e.reason, m=r&&(r.message||r.code)||(typeof r==='string'?r:''); if(m&&m!=='auth'&&!/AbortError/.test(String(r&&r.name))) surface(m); });
   async function api(path, opt={}, root='/api'){
@@ -98,16 +111,34 @@
     if(r.status===401){ location.href='/login'; throw new Error('auth'); }
     const ct = r.headers.get('content-type') || '';
     const body = ct.includes('json') ? await r.json() : null;
-    if(!r.ok){ const d = body && body.detail || {}; const lang = document.documentElement.lang || 'ar';
-      const e = new Error(d[lang] || d.en || d.ar || r.statusText); e.detail = d; e.status = r.status; throw e; }
+    if(!r.ok){ const raw = body && body.detail, d = raw && typeof raw==='object' && !Array.isArray(raw) ? raw : {};
+      const lang = document.documentElement.lang || 'ar', ar = lang!=='en';
+      /* the words of a refusal: the engine's own ({code, en, ar}); else what its answer was — never an empty note */
+      let msg = d[lang] || d.en || d.ar || (typeof raw==='string' ? raw : ''), more = d.where ? String(d.where) : '';
+      if(!msg && Array.isArray(raw) && raw.length){ const f = raw[0] || {};                     // the engine's own check of the request (what the page sent, not what the person did)
+        more = `${(f.loc||[]).join('.')}: ${f.msg||f.type||''}`;
+        msg = ar ? 'لم يقبل المحرك هذا الطلب: بياناته ناقصة أو غير صحيحة.' : 'The engine did not accept this request: its data is missing or not valid.'; }
+      if(!msg) msg = (ar ? 'تعذّر على المحرك تنفيذ الطلب' : 'The engine could not carry out the request') + ` (${r.status}${r.statusText?' '+r.statusText:''}).`;
+      const e = new Error(msg); e.detail = d; e.status = r.status;
+      lastApiErr={msg:e.message, t:Date.now()};                               // its toast, if the page shows one, is an error's
+      errlog.add('engine', e.message, `${(opt.method||'GET')} ${String(path).replace(/[0-9a-f]{8}-[0-9a-f-]{27}/g,'…').split('?')[0]} → ${r.status}${d.code?' '+d.code:''}${more?' · '+more:''}`);
+      throw e; }
     return body;
   }
 
   /* ---- toast + drawer (elements #toast, #drawer, #dTitle, #dBody, #dClose, #scrim) */
-  function toast(msg, ms){ const el=$('#toast'); if(!el) return; el.textContent=msg; el.hidden=false; clearTimeout(toast.h); toast.h=setTimeout(()=>el.hidden=true, ms||3800); }
+  /* kind 'bad' = an error (said in the error's colour, and for longer); with no kind, the engine's last refusal is recognised by its words */
+  function toast(msg, ms, kind){ const el=$('#toast'); if(!el) return;
+    if(!msg||!String(msg).trim()){ msg = document.documentElement.lang==='en' ? 'Something went wrong (no reason was given).' : 'حدث خطأ (لم يُذكر سببه).'; kind='bad'; }      // never an empty note
+    const bad = kind==='bad' || (!kind && msg && msg===lastApiErr.msg && Date.now()-lastApiErr.t<8000);
+    el.textContent=msg; el.classList.toggle('bad', !!bad); el.setAttribute('role', bad?'alert':'status'); el.hidden=false;
+    clearTimeout(toast.h); toast.h=setTimeout(()=>el.hidden=true, ms||(bad?7000:3800)); }
   function openDrawer(title, html, wide){ $('#dTitle').textContent=title; $('#dBody').innerHTML=html; $('#drawer').classList.toggle('wide', !!wide);
     $('#drawer').hidden=false; $('#scrim').hidden=false;
-    setTimeout(()=>{ const f=$('#dBody').querySelector('input:not([type=checkbox]),select,textarea'); (f||$('#dClose')).focus(); }, 30); }
+    /* the first field takes the focus — unless the person is already in a field of the panel: the timer used to take the focus
+       away from it, and what was being typed went into the first field instead (a typed value «lost», seen under load) */
+    setTimeout(()=>{ const d=$('#drawer'); if(!d||d.hidden||d.contains(document.activeElement)) return;
+      const f=$('#dBody').querySelector('input:not([type=checkbox]),select,textarea'); (f||$('#dClose')).focus(); }, 30); }
   /* a question asked in the page itself (a browser dialog does not open inside an embedded page): resolves true when the person
      confirms. opts.typed = a text the person must type first (deleting for good). Closing the panel answers nothing. */
   function confirmBox(title, html, okLabel, opts){ opts=opts||{}; return new Promise(done=>{
@@ -153,5 +184,5 @@
   const ARCH_EXT = ['zip','rar','7z','tar','tgz','gz','bz2','xz'];                   // compressed files: opened, and the documents inside taken
   const DOC_ACCEPT = DOC_EXT.concat(ARCH_EXT).map(e => '.' + e).join(',') + ',application/pdf,image/*';
   document.addEventListener('DOMContentLoaded', () => { const p = document.getElementById('picker'); if(p && !p.accept) p.accept = DOC_ACCEPT; });
-  window.DS = { $, $$, esc, bdi, store, icon, api, toast, confirmBox, twoStep, DOC_EXT, DOC_RX, DOC_ACCEPT, IMG_EXT, IMG_RX, ARCH_EXT, isDoc, openDrawer, closeDrawer, wireChrome, theme, ring, meter, fmtDate, fmtTs, pct };
+  window.DS = { $, $$, esc, bdi, store, icon, api, toast, errlog, confirmBox, twoStep, DOC_EXT, DOC_RX, DOC_ACCEPT, IMG_EXT, IMG_RX, ARCH_EXT, isDoc, openDrawer, closeDrawer, wireChrome, theme, ring, meter, fmtDate, fmtTs, pct };
 })();

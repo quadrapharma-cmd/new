@@ -34,7 +34,7 @@ def test_files_are_read_placed_fixed_and_named(server, tmp_path):
         assert 'Tesseract' in page.inner_text('#prepOcr')
         page.set_input_files('#prepFiles', [str(scan), str(stab)])
         page.wait_for_function("() => document.querySelectorAll('[data-pw]').length === 2", timeout=120000)
-        assert 'اتقرى بالـ OCR' in page.inner_text('#prepOut')                                      # the scan was read by OCR
+        assert 'قُرئ بالقراءة الضوئية (OCR)' in page.inner_text('#prepOut')                                      # the scan was read by OCR
         page.click('#prepAll')
         page.wait_for_function("() => S.prep && S.prep.waiting.length === 0 && S.prep.placed.length >= 2", timeout=300000)
         out = page.inner_text('#prepOut')

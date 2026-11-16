@@ -1,4 +1,4 @@
-# Dossier Builder for EDA — engine (phase P0)
+# eBOX — registration dossiers, CTD and eCTD (the folder keeps its first name: Dossier Builder)
 
 The design lives in `docs/ctd/design/`: `01-PLAN.md`, `02-LOGIC.md`, `03-UX.md`, and the prototype.
 
@@ -33,6 +33,64 @@ This folder is the code skeleton. It is kept here until the separate repository 
 | **Interface v2** | `ui/assets/ds.css` + `ds.js` (shared design system), `ui/index.html`, `ui/suite/index.html`, `ui/login.html` | Dark-first «regulatory instrument» design, RTL/LTR. **Home** shows what the program does with numbers read live from the engine (`GET /api/capabilities`: requirements by module, variations, generators, PDF checks and fixes, cross-checks, validator rules, document types). **New-dossier wizard** with a live requirements preview on every answer (`POST /api/profile/preview`: slots, counts by level and module, generable and third-party items; works before the APIs are entered). **Guide** per dossier: six stages (profile → data → M1 → M2–5 → checks → export) with their live state, a computed «next step» with its action button, the output formats and the sequence history; a journey strip on every dossier page; the profile can be edited (`PUT …/profile`) and documents keep their place. **Checks** page: every technical finding, cross-document finding, open request, unsigned draft and Drive reference in one place |
 | Assembler | `engine/dossier_engine/assemble.py` | Turns slots + files into writer documents. Picks the right node when a requirement has more than one (e.g. M1-04 new vs re-registration) |
 | CLI | `tools/resolve.py` | Prints the requirements board for a profile |
+
+## eBOX, stage 1 — the name, the path of nine stations, formal Arabic, and nothing fails without a word (16/11/2026) — «وكل مرحلة توصلني لوحدها»
+
+The program is **eBOX** from 16/11/2026 (the page's title, the logo, the first screen, the reports, the Assistant's name in a
+tracked change; the folder keeps its first name). The owner re-ordered it as a path of nine stations and asked for four stages,
+each delivered by itself. Stage 1 is the shell and the cleaning; the stations' own screens change in stages 2–4.
+
+**The path.** `1 الرئيسية · 2 الدولة · 3 الرفع · 4 القراءة والفرز · 5 الشجرة المقترحة · 6 التجهيز والمراجعة · 7 شجرة الملف والنواقص ·
+8 التحقق · 9 التصدير`. One bar under the top bar (`#pathbar`, `paintPath` in `ui/index.html`) on the home, in the new-dossier wizard
+(stations 2–4 on its first step, 5 on the others) and on every page of an open dossier; each station's state for 6–9 comes from
+the same `journey()` the «الخطوة التالية» page uses (`pathStates`); one «التالي» button leads to the first station that is not
+done. The general tools' screens are off the path. The menu follows it (`NAV_MAIN`, `DNAV`, `NAV_TOOLS`): الرئيسية · ملفاتي ·
+المكتبة, then under «الملف الحالي» the dossier's pages with their station's number (6 تجهيز المستندات · 6 مراجعة المستندات
+وتعديلها · 7 شجرة الملف والنواقص · 8 التحقق الفني · 8 مراجعة المقيِّم · 9 التصدير), under «أدوات الملف» what is on no station
+(الخطوة التالية · بيانات المنتج · شجرة الإخراج · البحث في المستندات · سجل النشاط), and under «أدوات عامة» the rest (التغييرات بعد
+التسجيل · التحقق من حزمة eCTD جاهزة · ملف المنتجات · سجل الأعطال · المستخدمون).
+
+**The home.** The library and «ملفاتي» side by side (`.home2`; one above the other on a phone): every authority the program builds
+for with its countries, its Module 1 size and its outputs, «أدلتها في المكتبة» (the country's record in the published library) and
+«بدء ملف لهذه الدولة» (the wizard opens with the country chosen); a search by country or authority in either language.
+
+**Formal Arabic, one name for one thing.** Every text a person reads is in formal Arabic (فصحى): the page (741 texts), the other
+interface files (138), the engine's messages (354 plain strings and 68 f-strings in 30 files), the rule packs' notes and titles
+(42) — never the words the program looks for inside his documents (`extract.py`, `arabic.py`, `intake_eda.py`, `classify.yaml`),
+the prompts, or the letters' fixed wording. The glossary: a dossier is «الملف», a document «المستند», an item «البند», a CTD module
+«Module N» in Latin letters (not «موديول», not «الوحدة N»), a third party «الجهة المُصدِرة», shelf life «مدة الصلاحية» (a
+certificate's «الصلاحية» is its validity), megabyte «ميغابايت», the AI model «نموذج الذكاء الاصطناعي» («النموذج» alone is a
+template), buttons as verbal nouns (حفظ، إغلاق، رفع، تنزيل، تجهيز، توليد، «صياغة تلقائية»). `tests/test_formal_arabic.py` keeps it
+so: it fails on the colloquial words and verb shapes that were there (591 in the page before this stage) and on any other name
+for a module.
+
+**Nothing fails without a word** — the owner tried version 50 and met «اخطاء كتير و رسايل اخطاء». Found by walking every screen
+of the browser edition under a page policy like claude.ai's, clicking what can be clicked (`tests/test_web_sweep.py`), and fixed:
+
+| What he would have met | Cause | Now |
+|---|---|---|
+| «تجهيز» failed on every Word and Excel document, one red note per document in «تجهيز الكل» | `split_large` asked `_current_pdf` for a file that is not a PDF | not a PDF: nothing to split (`store.py`); `tests/test_prepare_office.py` |
+| «Document not found» on a document just prepared | the page held the id of the version before the fix | `store.current_of` follows `document.added … supersedes`; `E-NOT-CURRENT` says so where a page is needed |
+| A note with no text at all | a refusal that was not the engine's own `{code, en, ar}` (its check of the request; an unexpected failure) left the message empty | `ds.js apiCall` always has words; `toast()` never shows an empty note |
+| A Python traceback as the English note; «Internal Server Error» on the desktop | the bridge's own answer; no handler in the engine | `api.internal_error`: a plain sentence + `where` (the kind of error and the engine's lines, never its message) in every edition; `tests/test_error_words.py` |
+| The page viewer opened empty | `<img src="/api/…">` asks the network, and the browser edition has no server | the picture is fetched and shown from memory |
+| A download that did nothing | `.xml`, `.doc`, `.xls`… are not on claude.ai's list; refusals went to the console | the same bytes inside a ZIP of the same name, said; the engine's reason and claude.ai's refusal said (`web/boot.js saveFromApi`) |
+| A script error at every opening, and the fonts never applied | `onload="this.media=\'all\'"` written with the backslashes | a script after the link (`web/build.py`) |
+| «مسح المحادثة» did nothing | `confirm()` answers «no» inside claude.ai | the button asks once more itself (`DS.twoStep`); no `confirm`/`prompt`/`alert` is left |
+| A «print» button that did nothing | `window.print()` does nothing there | not shown in the browser edition |
+| «Single PDF» for a module with no PDF answered 404 | offered for every module | offered where there is a PDF |
+| The photo program asked for a file that is not there (404) | `fonts/manifest.txt` | an empty one is shipped |
+| The qualification report failed | the browser edition ships pypdf 7 (no `add_js`) | `checks/pdf.add_javascript`; `tests/test_vendored_libs.py` runs the report on the shipped libraries |
+| The editing programs «say things must be downloaded» | the first-time note | reworded («لا يُثبَّت شيء على جهازك»), and the programs a dossier's documents need are fetched in the background from «مراجعة المستندات وتعديلها» (`DBPROG.warm`) |
+| Typed text went into another field now and then | the side panel took the focus 30 ms after opening | not when a field of the panel already has it (`ds.js openDrawer`) |
+
+**«سجل الأعطال»** (`#/faults`, `DS.errlog`): every error the program meets is written down on the device — the time, the screen,
+the kind and the message, never a document's content (ids are replaced) — and can be copied and sent. An error's note is marked
+(`.toast.bad`) and stays longer. What cannot be seen from here (Claude's answers on his account) reaches us through this record.
+
+Tests added: `test_web_sweep.py` (every screen in both languages and at 390 px; `SWEEP_CLICKS=1` clicks every button — run before
+a publish), `test_web_faults.py`, `test_ui_shell.py`, `test_prepare_office.py`, `test_error_words.py`, `test_formal_arabic.py`,
+`test_vendored_libs.py`.
 
 ## Countries and authorities (November 2026) — «تختار الدولة ويعمل على أساسها موديول ١»
 

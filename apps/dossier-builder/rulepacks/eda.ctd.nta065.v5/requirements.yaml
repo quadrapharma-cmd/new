@@ -3188,13 +3188,13 @@
         level: R
         reason:
           en: 'No equivalence study: the product is exempt (aqueous solution / BCS). This slot holds the exemption justification (same API and molar concentration, same or similar excipients; BCS data where claimed) instead of a BE report.'
-          ar: 'مفيش دراسة تكافؤ مطلوبة: المستحضر معفي (محلول مائي / BCS). البند ده بيتحط فيه مبرر الإعفاء (نفس المادة الفعالة بنفس التركيز، ومواد مضافة مماثلة، وبيانات BCS لو مطلوبة) بدل تقرير الدراسة.'
+          ar: 'لا تُطلب دراسة تكافؤ: المستحضر معفى (محلول مائي / BCS). يوضع في هذا البند مبرر الإعفاء (المادة الفعالة نفسها بالتركيز نفسه، ومواد مضافة مماثلة، وبيانات BCS إن كانت مطلوبة) بدلًا من تقرير الدراسة.'
         provenance: 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'
       - when: local_equivalence
         level: R
         reason:
           en: 'Locally acting product that is not a solution: no exemption. Equivalence must be shown by comparative clinical, pharmacodynamic, skin-PK or in-vitro data instead of a plasma BE study; measure systemic exposure if it carries a systemic risk.'
-          ar: 'مستحضر موضعي التأثير ومش محلول: مفيش إعفاء. لازم إثبات التكافؤ بدراسة إكلينيكية مقارنة، أو دراسة ديناميكية، أو قياس في الجلد، أو اختبارات معملية مقارنة، بدل دراسة التكافؤ في البلازما. ولو فيه خطر امتصاص للجسم، لازم يتقاس.'
+          ar: 'مستحضر موضعي التأثير وليس محلولًا: لا إعفاء. يجب إثبات التكافؤ بدراسة إكلينيكية مقارنة، أو دراسة ديناميكية، أو قياس في الجلد، أو اختبارات معملية مقارنة، بدلًا من دراسة التكافؤ في البلازما. وإن وُجد خطر امتصاص إلى الجسم فيجب قياسه.'
         provenance: 'EDA GL.CAPP.024 v4/2026 §3.13 p.111-112'
       - level: R
     G_LOC:
@@ -3203,13 +3203,13 @@
         level: R
         reason:
           en: 'No equivalence study: the product is exempt (aqueous solution / BCS). This slot holds the exemption justification (same API and molar concentration, same or similar excipients; BCS data where claimed) instead of a BE report.'
-          ar: 'مفيش دراسة تكافؤ مطلوبة: المستحضر معفي (محلول مائي / BCS). البند ده بيتحط فيه مبرر الإعفاء (نفس المادة الفعالة بنفس التركيز، ومواد مضافة مماثلة، وبيانات BCS لو مطلوبة) بدل تقرير الدراسة.'
+          ar: 'لا تُطلب دراسة تكافؤ: المستحضر معفى (محلول مائي / BCS). يوضع في هذا البند مبرر الإعفاء (المادة الفعالة نفسها بالتركيز نفسه، ومواد مضافة مماثلة، وبيانات BCS إن كانت مطلوبة) بدلًا من تقرير الدراسة.'
         provenance: 'EDA GL.CAPP.024 v4/2026 §2.2 p.25 (aqueous solutions, powders for solution, gases) and §4.5.1 p.119-121 (BCS I, III, II weak acids)'
       - when: local_equivalence
         level: R
         reason:
           en: 'Locally acting product that is not a solution: no exemption. Equivalence must be shown by comparative clinical, pharmacodynamic, skin-PK or in-vitro data instead of a plasma BE study; measure systemic exposure if it carries a systemic risk.'
-          ar: 'مستحضر موضعي التأثير ومش محلول: مفيش إعفاء. لازم إثبات التكافؤ بدراسة إكلينيكية مقارنة، أو دراسة ديناميكية، أو قياس في الجلد، أو اختبارات معملية مقارنة، بدل دراسة التكافؤ في البلازما. ولو فيه خطر امتصاص للجسم، لازم يتقاس.'
+          ar: 'مستحضر موضعي التأثير وليس محلولًا: لا إعفاء. يجب إثبات التكافؤ بدراسة إكلينيكية مقارنة، أو دراسة ديناميكية، أو قياس في الجلد، أو اختبارات معملية مقارنة، بدلًا من دراسة التكافؤ في البلازما. وإن وُجد خطر امتصاص إلى الجسم فيجب قياسه.'
         provenance: 'EDA GL.CAPP.024 v4/2026 §3.13 p.111-112'
       - level: R
   doc_class: company_technical
