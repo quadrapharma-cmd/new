@@ -220,7 +220,7 @@ body.reading{overflow:hidden}
 .rd-side>*{flex-shrink:0}
 @media (max-width:860px){.rd-top>.grow{flex-basis:100%}.rd-body{flex-direction:column;overflow:auto}.rd-main{flex:none}.rd-page{min-height:60vh}.rd-side{width:auto;border-inline-start:0;border-top:1px solid var(--line);overflow:visible}}
 .ready-t{font-size:16px;display:inline-flex;gap:8px;align-items:center}
-#readySign.ok{border-color:color-mix(in srgb,var(--ok) 55%,var(--line))}#readySign.ok .ready-t{color:var(--ok)}
+#readySign.ok,#boardSign.ok{border-color:color-mix(in srgb,var(--ok) 55%,var(--line))}#readySign.ok .ready-t,#boardSign.ok .ready-t{color:var(--ok)}
 .rs-line{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);font-size:13px}
 .unflip{display:inline-flex;transform:scaleX(-1)}html[dir=rtl] .unflip{transform:none}
 .vmod{font-weight:600;margin-top:10px}
@@ -340,7 +340,7 @@ const T = {
   offBusy:{en:'The documents are being prepared now: open this one when the preparation has ended.',ar:'جارٍ تجهيز المستندات الآن: افتح هذا المستند بعد انتهاء التجهيز.'},
   offChanged:{en:'This document has just changed: the list is up to date now, press again.',ar:'تغيّر هذا المستند للتو: حُدِّثت القائمة، فاضغط مرة أخرى.'},
   pgLook:{en:'To look at only: the documents are being prepared now.',ar:'للعرض فقط: جارٍ تجهيز المستندات الآن.'},
-  offFind:{en:'Find by file name or item',ar:'ابحث باسم المستند أو البند'}, offItem:{en:'Its item',ar:'عرض بنده'},
+  offFind:{en:'Find by file name or item',ar:'ابحث باسم المستند أو البند'}, offItem:{en:'Item details',ar:'تفاصيل البند'},
   offLocked:{en:'An authority\'s or a third party\'s document: not edited',ar:'مستند صادر من جهة خارجية أو من الهيئة: لا يُعدَّل'},
   offNoProg:{en:'Edit it on your computer (Word, Excel…) and upload it again',ar:'لا يوجد له برنامج تعديل هنا: عدِّله في برنامجه على جهازك ثم ارفع النسخة الجديدة'},
   offVer:{en:'version',ar:'نسخة'},
@@ -667,8 +667,8 @@ const T = {
   wkDone:{en:'Working copy',ar:'نسخة العمل'}, wkDocs:{en:'documents in place',ar:'مستند في موضعه'}, wkMiss:{en:'required still missing',ar:'مطلوب ما زال ناقصًا'},
   auCtdD:{en:"Folders in the order of the authority's Module 1 and the common CTD, with a navigator and a checklist.",ar:'مجلدات بترتيب Module 1 الخاص بالجهة الرقابية والـ CTD المشترك، مع فهرس وقائمة.'}, auExportSub:{en:'One dossier, as CTD folders.',ar:'ملف واحد بمجلدات CTD.'},
   auT:{en:'Countries and authorities',ar:'الدول والجهات الرقابية'}, auItems:{en:'items',ar:'بند'}, auAny:{en:'any other country',ar:'أي دولة أخرى'},
-  unplacedT:{en:'Uploaded, not placed yet',ar:'مستندات مرفوعة بانتظار تحديد بنودها'}, unplacedSub:{en:'Pick the item and place it; the suggestion comes from the file\'s content.',ar:'اختر البند ثم ضع المستند فيه؛ الاقتراح مبني على محتوى المستند.'}, pickItem:{en:'— choose the item —',ar:'— اختر البند —'},
-  putHere:{en:'Place it',ar:'وضعه في البند'}, renamedDup:{en:'another file with this name: kept as',ar:'مستند آخر بالاسم نفسه: حُفظ باسم'}, placedOne:{en:'Placed.',ar:'وُضع في بنده.'}, suggested:{en:'suggested',ar:'مقترح'}, noSuggestion:{en:'no suggestion: choose the item',ar:'لا يوجد اقتراح: اختر البند'}, notThisDoc:{en:'not this document',ar:'ليس هذا المستند المطلوب'}, stText:{en:'reading the text…',ar:'جارٍ قراءة النص…'}, stModel:{en:'Claude is reading it…',ar:'Claude يقرؤه…'}, stPictures:{en:'drawing its pages for Claude…',ar:'جارٍ تحضير صور صفحاته لـ Claude…'}, stOcr:{en:'reading the scan',ar:'جارٍ قراءة المستند الممسوح ضوئيًا'}, readByModel:{en:'read by Claude from its pages',ar:'قرأه Claude من صور صفحاته'},
+  pickItem:{en:'— choose the item —',ar:'— اختر البند —'},
+  putHere:{en:'Place it',ar:'وضعه في البند'}, renamedDup:{en:'another file with this name: kept as',ar:'مستند آخر بالاسم نفسه: حُفظ باسم'}, notThisDoc:{en:'not this document',ar:'ليس هذا المستند المطلوب'}, stText:{en:'reading the text…',ar:'جارٍ قراءة النص…'}, stModel:{en:'Claude is reading it…',ar:'Claude يقرؤه…'}, stPictures:{en:'drawing its pages for Claude…',ar:'جارٍ تحضير صور صفحاته لـ Claude…'}, stOcr:{en:'reading the scan',ar:'جارٍ قراءة المستند الممسوح ضوئيًا'}, readByModel:{en:'read by Claude from its pages',ar:'قرأه Claude من صور صفحاته'},
   stDone:{en:'read',ar:'قُرئ'}, gotFrom:{en:'It gave us',ar:'استُخرج منه'}, gotNothing:{en:'no data came out of it',ar:'لم تُستخرج منه بيانات'}, moveToIts:{en:'Move it to',ar:'نقله إلى خانة'}, removeFile:{en:'Remove it',ar:'إزالته'},
   dupFile:{en:'already uploaded',ar:'مرفوع من قبل'}, wizSaved:{en:'Saved as a draft ✓',ar:'محفوظ مسودةً ✓'}, wizAutosave:{en:'Saved automatically as a draft as you go',ar:'يُحفظ تلقائيًا مسودةً أولًا بأول'}, wizRestart:{en:'Start over',ar:'البدء من جديد'},
   wizRestored:{en:'Your saved work was restored.',ar:'استُعيد عملك المحفوظ.'}, wizResume:{en:'Finishing putting your documents into the dossier…',ar:'جارٍ استكمال وضع مستنداتك في الملف…'}, liveT:{en:'Recognised so far',ar:'ما تم التعرّف عليه حتى الآن'}, act_move:{en:'Move it to its own item.',ar:'انقله إلى بنده الصحيح.'}, attestQ:{en:'Before submission',ar:'قبل التقديم'}, ectdReady:{en:'eCTD readiness — the draft eCTD rules; not required for the One Submission in force',ar:'جاهزية eCTD — قواعد مسودة eCTD؛ غير مطلوبة في الـ One Submission الساري'},
@@ -771,12 +771,31 @@ const T = {
   na_wait:{en:'Follow up with the issuer on',ar:'تابِع الجهة المُصدِرة بخصوص'}, na_waitD:{en:'Requested; the item closes itself when a conforming copy is uploaded.',ar:'مطلوب؛ يُغلق البند تلقائيًا عند رفع نسخة مطابقة.'},
   na_export:{en:'Export the dossier',ar:'تصدير الملف'}, na_exportD:{en:'Every required item is present and conforming.',ar:'كل البنود المطلوبة موجودة ومطابقة.'},
   /* board */
-  board:{en:'Dossier tree and what is missing',ar:'شجرة الملف والنواقص'}, boardSub:{en:'Every item comes from NP.CAPP.065 v5 with its reason and source.',ar:'كل بند من NP.CAPP.065 الإصدار 5 مع سببه ومصدره.'},
-  all:{en:'All',ar:'الكل'}, todo:{en:'To do',ar:'المطلوب'}, problems:{en:'Problems',ar:'المشكلات'}, hidden:{en:'Not required',ar:'غير المطلوب'},
+  board:{en:'Dossier tree and what is missing',ar:'شجرة الملف والنواقص'},
+  bsAll:{en:'Every required point is closed',ar:'كل النقاط المطلوبة مغلقة'}, bsClosed:{en:'Points closed: {a} of {b}',ar:'النقاط المغلقة: {a} من {b}'},
+  bsOpenWhy:{en:'The open ones, by reason:',ar:'النقاط المفتوحة بحسب السبب:'},
+  bsTarget:{en:'Target submission date',ar:'تاريخ التقديم المستهدف'}, bsTargetLeft:{en:'Days left until then: {n}.',ar:'الأيام المتبقية حتى هذا التاريخ: {n}.'},
+  bsTargetPast:{en:'This date has passed.',ar:'هذا التاريخ قد مضى.'}, bsTargetNone:{en:'No date is set: validity is judged on today.',ar:'لم يُحدَّد تاريخ بعد: تُحسب الصلاحية على تاريخ اليوم.'},
+  bsTargetWhy:{en:'A certificate must still be valid on the day of submission.',ar:'يجب أن تكون كل شهادة سارية يوم التقديم.'},
+  bsTargetSaved:{en:'The target date is saved.',ar:'حُفظ تاريخ التقديم المستهدف.'}, bsTargetCleared:{en:'The target date is removed.',ar:'أُزيل تاريخ التقديم المستهدف.'},
+  bsHand:{en:'Open points whose documents are here: {n} — finished at «Preparation and review»',ar:'نقاط مفتوحة ومستنداتها موجودة: {n} — تُستكمل في محطة «التجهيز والمراجعة»'},
+  bvTree:{en:'The tree',ar:'الشجرة'}, bvParties:{en:'What is missing, by who issues it',ar:'النواقص بحسب الجهة المُصدِرة'},
+  fOpen:{en:'Open',ar:'المفتوحة'}, fClosed:{en:'Closed',ar:'المغلقة'}, colPoint:{en:'Point',ar:'النقطة'},
+  partiesNone:{en:'Nothing is missing: every required point is closed.',ar:'لا نواقص: كل النقاط المطلوبة مغلقة.'},
+  partiesHand:{en:'No document has to be obtained: the open points have their documents.',ar:'لا يوجد مستند مطلوب استخراجه: النقاط المفتوحة مستنداتها موجودة.'},
+  pk_company:{en:'Documents your company writes or signs itself: generate them here, have them drafted, or upload them.',ar:'مستندات تُعدّها شركتك أو توقّعها بنفسها: ولِّدها هنا أو اطلب صياغتها أو ارفعها.'},
+  pk_authority:{en:'Issued by the authority: ask for them in one request, then upload each when it arrives.',ar:'تصدر من الجهة الرقابية: اطلبها في طلب واحد، ثم ارفع كل مستند عند وصوله.'},
+  pk_api:{en:'Issued by the manufacturer of this active substance: one request covers them all.',ar:'تصدر من مصنّع هذه المادة الفعالة: طلب واحد يشملها كلها.'},
+  pk_other:{en:'Issued by different parties: tick the items one party issues, and ask it for them in one request.',ar:'تصدر من جهات مختلفة: حدِّد البنود التي تصدرها جهة واحدة، واطلبها منها في طلب واحد.'},
+  preqBtn:{en:'One request to this party',ar:'طلب واحد من هذه الجهة'}, preqBtnOther:{en:'One request to a party',ar:'طلب واحد من إحدى الجهات'},
+  preqT:{en:'One request to the issuing party',ar:'طلب واحد من الجهة المُصدِرة'}, preqItems:{en:'The items this request asks for',ar:'البنود التي يشملها الطلب'},
+  preqNone:{en:'Tick at least one item.',ar:'حدِّد بندًا واحدًا على الأقل.'}, preqAsked:{en:'Asked already: {n}',ar:'طُلب بالفعل: {n}'},
+  preqDone:{en:'The request is made. Items now waiting on their issuer: {n}',ar:'أُنشئ الطلب. البنود التي بانتظار جهتها الآن: {n}'}, boardSub:{en:'Every item comes from NP.CAPP.065 v5 with its reason and source.',ar:'كل بند من NP.CAPP.065 الإصدار 5 مع سببه ومصدره.'},
+  all:{en:'All',ar:'الكل'}, hidden:{en:'Not required',ar:'غير المطلوب'},
   colSec:{en:'Section',ar:'القسم'}, colDoc:{en:'Document',ar:'المستند'}, colLevel:{en:'Level',ar:'المستوى'}, colStatus:{en:'Status',ar:'الحالة'}, colFiles:{en:'Documents',ar:'المستندات'},
-  upload:{en:'Upload',ar:'رفع'}, why:{en:'Reason and source',ar:'السبب والمصدر'}, module:{en:'Module',ar:'Module'},
+  upload:{en:'Upload',ar:'رفع'}, why:{en:'Item details',ar:'تفاصيل البند'}, module:{en:'Module',ar:'Module'},
   progress:{en:'Required items ready',ar:'البنود المطلوبة المستوفاة'}, unassigned:{en:'Unassigned documents',ar:'مستندات بانتظار تحديد البند'},
-  unassignedSub:{en:'Kept after a profile change — nothing is deleted.',ar:'محفوظة بعد تغيير الملف التعريفي — لا يُحذف شيء.'},
+  
   reasons:{en:'Why this item',ar:'سبب البند'}, findings:{en:'Check results',ar:'نتائج الفحص'}, noFind:{en:'No problems found.',ar:'لا توجد مشاكل.'},
   docs:{en:'Documents',ar:'المستندات'}, version:{en:'v',ar:'إصدار'}, withdraw:{en:'Delete',ar:'حذف'}, view:{en:'View',ar:'عرض'},
   required:{en:'Required',ar:'مطلوب'}, optional:{en:'Optional',ar:'اختياري'}, notreq:{en:'Not required',ar:'غير مطلوب'}, na:{en:'Not applicable',ar:'لا ينطبق'},
@@ -807,9 +826,9 @@ const T = {
   extL:{en:'Registered from Drive, file not uploaded',ar:'مسجَّلة من Google Drive ولم يُرفع الملف بعد'}, uploadSigned:{en:'Upload the signed copy',ar:'رفع النسخة الموقّعة'},
   signHint:{en:'Print on letterhead → sign → stamp → scan → upload here. The signed copy replaces the draft.',ar:'اطبع على ورق الشركة ← وقِّع ← اختم ← امسح ضوئيًا ← ارفع هنا. النسخة الموقّعة تحل محل المسودة.'},
   unsignedL:{en:'Unsigned drafts',ar:'مسودات غير موقّعة'}, needData:{en:'Enter the specification and batches in «Product data» first.',ar:'أدخل المواصفات والتشغيلات في «بيانات المنتج» أولًا.'},
-  bulk:{en:'Add files',ar:'إضافة مستندات'}, bulkSub:{en:'The tool suggests a section for each file from its name, CTD number and first page. Check and confirm.',ar:'يقترح البرنامج قسمًا لكل ملف من اسمه ورقم الـ CTD وصفحته الأولى. راجع ثم أكِّد.'},
-  noSuggest:{en:'— choose a section —',ar:'— اختر القسم —'}, confirmAll:{en:'Add to the chosen sections',ar:'إضافة إلى الأقسام المختارة'},
-  needsDetails:{en:'needs details — use the section\'s Upload button',ar:'يحتاج إلى بيانات — استخدم زر الرفع في القسم'}, added:{en:'files added',ar:'ملفات أُضيفت'}, generate:{en:'Generate',ar:'توليد'}, justify:{en:'Write a justification',ar:'كتابة تبرير'},
+  bulk:{en:'Add files',ar:'إضافة مستندات'}, 
+  
+  generate:{en:'Generate',ar:'توليد'}, justify:{en:'Write a justification',ar:'كتابة تبرير'},
   genSub:{en:'Filled from the dossier where possible. Missing data is asked for, never guessed. The PDF is marked «DRAFT — unsigned» until the signed scan is uploaded.',ar:'تُملأ من بيانات الملف قدر الإمكان. البيانات الناقصة تُطلب ولا تُخمَّن. يحمل الملف عبارة «مسودة — غير موقّعة» إلى أن تُرفع النسخة الممسوحة الموقّعة.'},
   addRow:{en:'Add row',ar:'إضافة سطر'}, genDone:{en:'Generated and added to the section.',ar:'تم التوليد وأُضيف إلى القسم.'}, generating:{en:'Generating…',ar:'جارٍ التوليد…'},
   fillMissing:{en:'Please fill the highlighted fields.',ar:'من فضلك املأ الحقول المحددة.'}, guided:{en:'Guided',ar:'إرشادي'}, publisher:{en:'Output structure',ar:'هيكل المخرجات'},
@@ -941,7 +960,7 @@ function pathStates(J){
   const st=k=>J.stages.find(x=>x.key===k)||{}, ck=st('checks'), ex=st('export');
   const total=J.required||0, done=J.have||0, anyDocs=!!J.anyDocs;
   return {5:{state: J.unplaced?'now':'done', count: J.unplaced?String(J.unplaced):''},      // files still waiting for their place in the proposed tree
-          6:{state: J.blocking.length?'bad':(ck.attn||[]).length?'warn':anyDocs?'done':'todo'},
+          6:{state: J.s6||(J.blocking.length?'bad':(ck.attn||[]).length?'warn':anyDocs?'done':'todo')},      // as the station's own sign says it
           7:{state: total&&done===total?'done':anyDocs||done?'now':'todo', count: total?`${done}/${total}`:''},
           8:{state: (J.xb.length||J.unsigned.length||J.external.length)?'bad':J.gateOk?'done':'todo'},
           9:{state: ex.state||'todo'}};
@@ -1292,7 +1311,7 @@ function wireDossierDeletes(list, trash){
 async function fillReadiness(list, tok){
   await Promise.all(list.map(async d=>{
     try{ const b = await api(`/dossiers/${d.id}/board`); if(!fresh(tok)) return;
-      const req=b.slots.filter(s=>s.level==='R'), ok=req.filter(hasItsDoc).length, p=pct(ok, req.length);
+      const req=b.slots.filter(s=>s.level==='R'), P=b.points, p=P?pct(P.closed, P.required):pct(req.filter(hasItsDoc).length, req.length);     // the same count as the dossier's own tree: closed points of the required ones
       const el=$(`[data-ready="${d.id}"]`); if(!el) return;
       el.innerHTML = `${meter(p, p===100?'ok':'')}<span class="small code">${p}%</span>${(b.counts.non_conforming||0)?`<span class="chip c-bad"><i></i>${b.counts.non_conforming}</span>`:''}`;
     }catch(e){}
@@ -2426,7 +2445,11 @@ function journey(b, data, hist){
   const cur = stages.find(s=>s.state!=='done') || stages[stages.length-1];
   stages.forEach(s=>{ if(s===cur && s.state==='todo') s.state='now'; });
   const required=slots.filter(R);
-  return {stages, cur, gateOk, missing, blocking, unsigned, external, xb, waiting, dataStarted, anyDocs, required:required.length, have:required.filter(hasItsDoc).length, unplaced:(b.unassigned||[]).length};
+  const pts=b.points;                                     // one count everywhere: the required points, and how many of them are closed
+  /* station 6 as its own sign reckons it: a document that needs the person, documents still to prepare or to check, or all ready */
+  const prep6=slots.flatMap(s=>s.documents.filter(d=>!(d.meta&&d.meta.external)).map(d=>d.prep||null)), unplaced6=(b.unassigned||[]).length;
+  const s6=prep6.some(x=>!x)?null:!prep6.length?(unplaced6?'now':'todo'):prep6.some(x=>x.prepared&&x.needs_you)?'bad':(prep6.some(x=>!x.prepared||x.fix||x.check)||unplaced6)?'now':'done';
+  return {stages, cur, gateOk, missing, blocking, unsigned, external, xb, waiting, dataStarted, anyDocs, required:pts?pts.required:required.length, have:pts?pts.closed:required.filter(hasItsDoc).length, unplaced:(b.unassigned||[]).length, s6};
 }
 function nextAction(J, b){
   const slots=b.slots, R=s=>s.level==='R', firstNS = pred => slots.find(s=>R(s)&&s.status==='not_started'&&pred(s));
@@ -2533,13 +2556,34 @@ async function board(tok){
   S.board = b; S.bdata = data;
   renderBoard();
 }
+/* ---------------- station 7, «شجرة الملف والنواقص» (eBOX stage 3, 16/11/2026). The whole tree: each required point is said closed, or
+   open with its reason, in the words of stations 5 and 6. What still has to be obtained is set out under who issues it — the company
+   itself, the authority, each active substance's manufacturer, other parties — with how each is obtained, one request to a party for
+   everything asked of it, and each request followed up. A target submission date: a certificate is judged valid on that day.
+   Documents are added the proposed tree's way (station 5: read, proposed a place, approved): the board's own classify-and-place
+   dialog and its waiting box are gone — a file dropped here goes there. */
+const howOf = s => (S.lang==='ar'&&s.how_ar)||s.how||'';
+const BY_NAME = {'Company':{en:'The company',ar:'الشركة'}, 'Third party':{en:'A third party',ar:'جهة خارجية'}, 'EDA':{en:'The Egyptian Drug Authority',ar:'هيئة الدواء المصرية'}, 'Tool (generated)':{en:'The program (generated)',ar:'البرنامج (يولّده)'}};
+const byName = s => s.party&&s.party.kind!=='other'&&s.party.name ? L(s.party.name) : (BY_NAME[s.produced_by]?L(BY_NAME[s.produced_by]):(s.produced_by||''));
+const TO_GET = ['missing','non_conforming','unsigned','external','waiting'];          // open because a document has to be obtained, made again or followed up
+const toGet = s => s.level==='R'&&s.point==='open'&&(s.open_why||[]).some(w=>TO_GET.includes(w));
+/* the request made for an item: who was asked, when, the day to follow up, late or not, and its letter */
+function reqLine(s){
+  const r=s.request; if(!r) return ''; const day=x=>dateL(new Date(x*1000).toISOString().slice(0,10));
+  return `<div class="small" data-breq="${esc(s.slot_id)}">${icon('mail',12)} ${esc(t('reqOpen'))} <bdi>${esc(r.issuer||'')}</bdi>${r.sent?` · ${esc(day(r.sent))}`:''} · ${esc(t('due'))} ${esc(day(r.due))}${r.overdue?` · <b style="color:var(--bad)" data-overdue>${esc(t('overdue'))}</b>`:''}
+    · <a href="/api/dossiers/${S.dossier.id}/requests/${r.id}/letter" target="_blank" rel="noopener">${esc(t('letter'))}</a></div>`; }
 function renderBoard(){
-  const b=S.board, c=b.counts, slots=b.slots, J=journey(b, S.bdata||{}, null), id=S.dossier.id;
-  const req = slots.filter(s=>s.level==='R'); const ready = req.filter(hasItsDoc).length;
-  const p = pct(ready, req.length);
+  const b=S.board, slots=b.slots, J=journey(b, S.bdata||{}, null), id=S.dossier.id;
+  const P=b.points||{required:0, closed:0, open:0}, view=S.boardView==='parties'?'parties':'tree';
+  if(!['todo','closed','all','hidden'].includes(S.filter)) S.filter='todo';
   const f=S.filter, m=S.module;
-  const show_ = s => (m===0||s.module===m) && (f==='all' ? true : f==='todo' ? (s.level!=='NR'&&s.level!=='NA'&&s.status!=='conforming') :
-     f==='problems' ? ['non_conforming','needs_attention'].includes(s.status) : (s.level==='NR'||s.level==='NA'));
+  const openR=slots.filter(s=>s.level==='R'&&s.point==='open'), getR=openR.filter(toGet), handR=openR.filter(s=>!toGet(s));
+  const WHY=['missing','not_prepared','needs_you','to_check','non_conforming','cross','unsigned','external','waiting'];
+  const nWhy=Object.fromEntries(WHY.map(k=>[k, openR.filter(s=>(s.open_why||[]).includes(k)).length]));
+  if(S.bwhy&&!nWhy[S.bwhy]) S.bwhy='';
+  const wy=S.bwhy||'';
+  const show_ = s => (m===0||s.module===m) && (f==='all' ? true : f==='todo' ? (s.point==='open'&&(!wy||(s.open_why||[]).includes(wy))) :
+     f==='closed' ? s.point==='closed' : (s.level==='NR'||s.level==='NA'));
   let rows='', lastGroup='';
   slots.filter(show_).forEach(s=>{
     const grp = `M${s.module}`;
@@ -2548,77 +2592,109 @@ function renderBoard(){
     const files = s.documents.map(d=>`<div class="small row gap-s"><span class="muted code">${esc(t('version'))} ${d.version}</span> ${bdi(d.filename)}${d.findings.length?` <span class="chip ${d.check_status==='non_conforming'?'c-bad':'c-warn'}"><i></i>${d.findings.length}</span>`:''}</div>`).join('');
     const can = s.level==='R'||s.level==='O';
     const marks = `${LOCKED.includes(s.doc_class)?`<span class="tag" title="${esc(t('thirdParty'))}">${icon('lock',11)}</span>`:''}${genFor(s)?`<span class="tag brand" title="${esc(t('generable'))}">✦</span>`:''}`;
-    rows+=`<tr><td><span class="code">${esc(s.ctd)}</span></td><td><div class="row gap-s">${esc(L(s.title))}${marks}</div>${apiL}</td>
-      <td class="hide-m"><span class="chip ${s.level==='R'?'c-rec':'c-na'}"><i></i>${esc(t(LEVEL[s.level]))}</span></td><td>${chip(s.status)}</td>
+    const state = s.point ? pointChip(s.point, s.open_why) : (can&&s.documents.length ? chip(s.status) : `<span class="muted">—</span>`);
+    const by=byName(s), how=howOf(s);
+    const help = s.point==='open'&&(by||how) ? `<div class="small muted" data-bhelp>${by?`<b>${esc(t('byT'))}:</b> ${esc(by)}`:''}${by&&how?' · ':''}${how?`<b>${esc(t('howT'))}:</b> <span dir="auto">${esc(how)}</span>`:''}</div>` : '';
+    rows+=`<tr data-brow="${esc(s.slot_id)}"><td><span class="code">${esc(s.ctd)}</span></td><td><div class="row gap-s">${esc(L(s.title))}${marks}</div>${apiL}${help}${reqLine(s)}</td>
+      <td class="hide-m"><span class="chip ${s.level==='R'?'c-rec':'c-na'}"><i></i>${esc(t(LEVEL[s.level]))}</span></td><td>${state}</td>
       <td>${files}<div class="row gap-s" style="margin-top:4px">${can?`<button class="btn sm" data-up="${esc(s.slot_id)}">${icon('upload',14)} ${esc(t('upload'))}</button><button class="btn sm ghost" data-updrv="${esc(s.slot_id)}" title="${esc(t('driveT'))}" aria-label="${esc(t('driveT'))}">${icon('link',14)}</button>`:''}
+      ${can&&genFor(s)?`<button class="btn sm pri" data-pgen="${esc(s.slot_id)}">${icon('sparkles',14)} ${esc(t('generate'))}</button>`:''}
       ${draftable(s)&&!genFor(s)?`<button class="btn sm pri" data-draft="${esc(s.slot_id)}" title="${esc(t('draftBtnLong'))}">${icon('sparkles',14)} ${esc(t('draftBtn'))}</button>`:''}
       <button class="btn sm ghost" data-tpl="${esc(s.slot_id)}">${icon('file',14)} ${esc(t('tplBtn'))}</button><button class="btn sm ghost" data-why="${esc(s.slot_id)}">${esc(t('why'))}</button></div></td></tr>`;
   });
+  /* the sign: how many of the required points are closed, the open ones by reason, the target date, what waits for a place */
+  const allClosed=P.required>0&&P.closed===P.required, td=b.target_date||'';
+  const today=new Date(); today.setHours(0,0,0,0);
+  const left=td?Math.round((new Date(td+'T00:00:00')-today)/86400000):null;
+  const nWait=(b.unassigned||[]).length;
+  const sign=`<section class="card glow pad stack gap-s ${allClosed?'ok':''}" id="boardSign" data-closed="${P.closed}" data-required="${P.required}">
+      <div class="row gap-s" style="flex-wrap:wrap;align-items:center">
+        <div class="grow" style="min-width:14em"><b id="bsT" class="ready-t">${allClosed?`${icon('check',18)} ${esc(t('bsAll'))}`:esc(t('bsClosed').replace('{a}', P.closed).replace('{b}', P.required))}</b>
+          <div class="meter ${allClosed?'ok':''}" style="margin-top:6px;max-width:28em" role="progressbar" aria-valuemin="0" aria-valuemax="${P.required}" aria-valuenow="${P.closed}" aria-label="${esc(t('bsClosed').replace('{a}', P.closed).replace('{b}', P.required))}"><i style="width:${pct(P.closed, P.required)}%"></i></div></div>
+        <label class="small row gap-s" style="align-items:center;flex-wrap:wrap">${icon('calendar',14)} ${esc(t('bsTarget'))} <input type="date" id="targetDate" value="${esc(td)}" style="width:auto"></label>
+        <button class="btn sm" id="targetSave">${esc(t('saveDate'))}</button></div>
+      <div class="small muted" id="targetNote">${esc(td?(left<0?t('bsTargetPast'):t('bsTargetLeft').replace('{n}', left)):t('bsTargetNone'))} ${esc(t('bsTargetWhy'))}</div>
+      ${openR.length?`<div class="row gap-s" id="bsWhy" style="flex-wrap:wrap;align-items:center"><span class="small muted">${esc(t('bsOpenWhy'))}</span>${WHY.filter(k=>nWhy[k]).map(k=>`<button class="btn sm ${wy===k?'pri':''}" data-bwhy="${k}" aria-pressed="${wy===k}">${esc(t('why_'+k))}: ${nWhy[k]}</button>`).join('')}</div>`:''}
+      ${nWait?`<div class="rs-line" id="unplacedNote"><span class="grow">${esc(t('prepWaitNote').replace('{docs}', nOf(nWait,'doc')))}</span><a class="btn sm" href="#/d/${id}/tree">${esc(t('prepWaitGo'))}</a></div>`:''}</section>`;
+  /* what has to be obtained, under who issues it */
+  const groups=[], order=['company','authority','api','other'];
+  getR.forEach(s=>{ const p=s.party||{key:'other', kind:'other', name:{en:'Other parties',ar:'جهات أخرى'}}; let g=groups.find(x=>x.key===p.key); if(!g) groups.push(g={key:p.key, kind:p.kind, name:p.name, items:[]}); g.items.push(s); });
+  groups.sort((x,y)=>order.indexOf(x.kind)-order.indexOf(y.kind)||String(x.key).localeCompare(String(y.key)));
+  S.bgroups=groups;
+  const P_ICON={company:'building', authority:'shield', api:'flask', other:'users'};
+  const partyItem=(g, s)=>`<div class="finding" data-pitem="${esc(s.slot_id)}">
+      <div class="row gap-s" style="flex-wrap:wrap"><span class="code">${esc(s.ctd||'')}</span><b>${esc(L(s.title))}</b>${s.item?`<span class="small muted">· ${bdi(s.item.name||'')}${s.item.manufacturer?' — '+bdi(s.item.manufacturer):''}</span>`:''}${pointChip(s.point, s.open_why)}</div>
+      ${howOf(s)?`<div class="small muted" data-phow><b>${esc(t('howT'))}:</b> <span dir="auto">${esc(howOf(s))}</span></div>`:''}
+      ${reqLine(s)}
+      <div class="row gap-s" style="flex-wrap:wrap;margin-top:4px">
+        ${genFor(s)?`<button class="btn sm pri" data-pgen="${esc(s.slot_id)}">${icon('sparkles',14)} ${esc(t('generate'))}</button>`:''}
+        ${draftable(s)&&!genFor(s)?`<button class="btn sm ${g.kind==='company'?'pri':''}" data-draft="${esc(s.slot_id)}" title="${esc(t('draftBtnLong'))}">${icon('sparkles',14)} ${esc(t('draftBtn'))}</button>`:''}
+        <button class="btn sm" data-up="${esc(s.slot_id)}">${icon('upload',14)} ${esc(t('upload'))}</button>
+        <button class="btn sm ghost" data-lib="${esc(s.slot_id)}">${icon('book',14)} ${esc(t('libBtn'))}</button>
+        <button class="btn sm ghost" data-why="${esc(s.slot_id)}">${esc(t('why'))}</button></div></div>`;
+  const partyCard=g=>{ const asked=g.items.filter(s=>s.request).length, free=g.items.length-asked;
+    return `<section class="card pad stack gap-s" data-party="${esc(g.key)}" data-pkind="${esc(g.kind)}">
+      <div class="hd row gap-s" style="flex-wrap:wrap"><h3 class="grow">${icon(P_ICON[g.kind]||'users',16)} ${esc(L(g.name))} <span class="tag" data-pn>${g.items.length}</span></h3>
+        ${asked?`<span class="small muted" data-pasked>${esc(t('preqAsked').replace('{n}', asked))}</span>`:''}
+        ${g.kind!=='company'&&free?`<button class="btn sm pri" data-preq="${esc(g.key)}">${icon('mail',14)} ${esc(t(g.kind==='other'?'preqBtnOther':'preqBtn'))}</button>`:''}</div>
+      <p class="small muted">${esc(t('pk_'+g.kind))}</p>${g.items.map(s=>partyItem(g, s)).join('')}</section>`; };
+  const parties=`<div id="partiesOut" class="stack">
+      ${handR.length?`<div class="rs-line" id="bsHand"><span class="grow">${esc(t('bsHand').replace('{n}', handR.length))}</span><a class="btn sm" href="#/d/${id}/prepare">${esc(t('stn6'))}</a></div>`:''}
+      ${groups.length?groups.map(partyCard).join(''):`<div class="card pad"><p class="small muted" id="partiesNone">${esc(t(openR.length?'partiesHand':'partiesNone'))}</p></div>`}</div>`;
+  const FIL=[['todo','fOpen',slots.filter(s=>s.point==='open').length],['closed','fClosed',slots.filter(s=>s.point==='closed').length],['all','all',null],['hidden','hidden',null]];      // the rows each shows (an optional item that holds a document has a point too)
   $('#view').innerHTML=`${stripHtml(J)}<div class="head"><div class="title"><h1>${esc(t('board'))}</h1><p class="sub">${esc(t(isEG()?'boardSub':'auBoardSub'))}</p></div>
-    <div class="row"><button class="btn" id="bulkBtn">${icon('upload')} ${esc(t('bulk'))}</button>${b.slots.some(s=>draftable(s)&&!genFor(s)&&s.status==='not_started')?`<button class="btn" id="draftAllBtn">${icon('sparkles')} ${esc(t('draftAll'))}</button>`:''}<button class="btn" id="bulkDrive">${icon('link')} ${esc(t('driveT'))}</button><button class="btn ghost" id="copyBtn">${icon('repeat')} ${esc(t('copyT'))}</button><button class="btn ghost" id="sheetBtn">${icon('table')} ${esc(t('sheetT'))}</button><span class="modeswitch"><a class="on" href="#/d/${id}/board">${esc(t('guided'))}</a><a href="#/d/${id}/publisher">${esc(t('navPublisher'))}</a></span>
+    <div class="row"><a class="btn" id="bulkBtn" href="#/d/${id}/tree">${icon('upload')} ${esc(t('bulk'))}</a>${b.slots.some(s=>draftable(s)&&!genFor(s)&&s.status==='not_started')?`<button class="btn" id="draftAllBtn">${icon('sparkles')} ${esc(t('draftAll'))}</button>`:''}<button class="btn ghost" id="copyBtn">${icon('repeat')} ${esc(t('copyT'))}</button><button class="btn ghost" id="sheetBtn">${icon('table')} ${esc(t('sheetT'))}</button><span class="modeswitch"><a class="on" href="#/d/${id}/board">${esc(t('guided'))}</a><a href="#/d/${id}/publisher">${esc(t('navPublisher'))}</a></span>
     <a class="btn" href="#/d/${id}/guide">${icon('compass')} ${esc(t('guide'))}</a><a class="btn pri" href="#/d/${id}/export">${esc(t('navExport'))} <span class="flip">${icon('arrow',16)}</span></a></div></div>
-    <div class="kpis">
-      <div class="card kpi br"><span class="n">${p}%</span><span class="l">${esc(t('progress'))} (${ready}/${req.length})</span></div>
-      <div class="card kpi ns"><span class="n">${c.not_started||0}</span><span class="l">${esc(t('not_started'))}</span></div>
-      <div class="card kpi ok"><span class="n">${c.conforming||0}</span><span class="l">${esc(t('conforming'))}</span></div>
-      <div class="card kpi warn"><span class="n">${c.needs_attention||0}</span><span class="l">${esc(t('needs_attention'))}</span></div>
-      <div class="card kpi bad"><span class="n">${c.non_conforming||0}</span><span class="l">${esc(t('non_conforming'))}</span></div>
-      ${c.waiting?`<div class="card kpi wait"><span class="n">${c.waiting}</span><span class="l">${esc(t('waiting'))}</span></div>`:''}</div>
-    <div class="row"><div class="seg" role="group">${['todo','problems','all','hidden'].map(k=>`<button data-f="${k}" class="${f===k?'on':''}">${esc(t(k))}</button>`).join('')}</div>
-      <div class="seg" role="group">${[0,1,2,3,4,5].map(k=>`<button data-m="${k}" class="${m===k?'on':''}">${k?'M'+k:esc(t('all'))}</button>`).join('')}</div></div>
-    ${(b.unassigned||[]).length?`<div class="card pad stack gap-s" id="unplacedBox"><div class="row gap-s"><b>${icon('alert',16)} ${esc(t('unplacedT'))} <span class="tag">${b.unassigned.length}</span></b><span class="small muted">${esc(t('unplacedSub'))}</span></div>
-      ${b.unassigned.map(u=>`<div class="row gap-s" data-unp="${esc(u.id)}" style="flex-wrap:wrap"><b dir="auto">${bdi(u.filename)}</b>${u.meta&&u.meta.previous_slot?`<span class="code" title="${esc(t('unassignedSub'))}">${esc(u.meta.previous_slot)}</span>`:''}<select data-ups="${esc(u.id)}"><option value="" selected disabled>${esc(t('pickItem'))}</option>${slots.filter(x=>x.level==='R'||x.level==='O').map(x=>`<option value="${esc(x.slot_id)}">${esc(x.ctd)} · ${esc(L(x.title))}${itemLabel(x)}</option>`).join('')}</select>
-        <button class="btn sm pri" data-upl="${esc(u.id)}" disabled title="${esc(t('pickItem'))}">${icon('check',14)} ${esc(t('putHere'))}</button><button class="btn sm ghost" data-updel="${esc(u.id)}">${icon('trash',14)} ${esc(t('withdraw'))}</button>${/\.pdf$/i.test(u.filename)?`<button class="btn sm ghost" data-split="${esc(u.id)}">${icon('scan',14)} ${esc(t('splitBtn'))}</button>`:''}<span class="small muted" data-upwhy="${esc(u.id)}"></span></div>`).join('')}</div>`:''}
-    <div class="card"><div class="tablewrap"><table><thead><tr><th>${esc(t('colSec'))}</th><th>${esc(t('colDoc'))}</th><th class="hide-m">${esc(t('colLevel'))}</th><th>${esc(t('colStatus'))}</th><th>${esc(t('colFiles'))}</th></tr></thead>
-    <tbody>${rows||`<tr><td colspan="5" class="empty">—</td></tr>`}</tbody></table></div></div>
+    ${sign}
+    <div class="row" style="flex-wrap:wrap;margin-top:12px"><div class="seg vf" role="group" id="boardViews">${[['tree','bvTree',null],['parties','bvParties',getR.length]].map(([k,tk,n])=>`<button data-bv="${k}" class="${view===k?'on':''}" aria-pressed="${view===k}">${esc(t(tk))}${n===null?'':` <span class="n">${n}</span>`}</button>`).join('')}</div>
+      ${view==='tree'?`<div class="seg vf" role="group">${FIL.map(([k,tk,n])=>`<button data-f="${k}" class="${f===k?'on':''}" aria-pressed="${f===k}">${esc(t(tk))}${n===null?'':` <span class="n">${n}</span>`}</button>`).join('')}</div>
+      <div class="seg" role="group">${[0,1,2,3,4,5].map(k=>`<button data-m="${k}" class="${m===k?'on':''}">${k?'M'+k:esc(t('all'))}</button>`).join('')}</div>`:''}</div>
+    ${view==='parties'?parties:`<div class="card"><div class="tablewrap"><table><thead><tr><th>${esc(t('colSec'))}</th><th>${esc(t('colDoc'))}</th><th class="hide-m">${esc(t('colLevel'))}</th><th>${esc(t('colPoint'))}</th><th>${esc(t('colFiles'))}</th></tr></thead>
+    <tbody>${rows||`<tr><td colspan="5" class="empty">${esc(f==='todo'&&!wy&&allClosed?t('bsAll'):'—')}</td></tr>`}</tbody></table></div></div>`}
 `;
   const v=$('#view');
-  v.querySelectorAll('[data-f]').forEach(x=>x.onclick=()=>{S.filter=x.dataset.f; renderBoard();});
+  v.querySelectorAll('[data-bv]').forEach(x=>x.onclick=()=>{ S.boardView=x.dataset.bv; renderBoard(); });
+  v.querySelectorAll('[data-f]').forEach(x=>x.onclick=()=>{ S.filter=x.dataset.f; if(S.filter!=='todo') S.bwhy=''; renderBoard(); });
   v.querySelectorAll('[data-m]').forEach(x=>x.onclick=()=>{S.module=+x.dataset.m; renderBoard();});
+  v.querySelectorAll('[data-bwhy]').forEach(x=>x.onclick=()=>{ S.bwhy=S.bwhy===x.dataset.bwhy?'':x.dataset.bwhy; S.filter='todo'; S.boardView='tree'; renderBoard(); });   // the open points of that reason, in the tree
   v.querySelectorAll('[data-up]').forEach(x=>x.onclick=()=>startUpload(x.dataset.up)); v.querySelectorAll('[data-updrv]').forEach(x=>x.onclick=()=>startUpload(x.dataset.updrv,'drive'));
   v.querySelectorAll('[data-why]').forEach(x=>x.onclick=()=>openWhy(x.dataset.why));
   v.querySelectorAll('[data-tpl]').forEach(x=>x.onclick=()=>openWhy(x.dataset.tpl, true));
   v.querySelectorAll('[data-draft]').forEach(x=>x.onclick=()=>draftIt(x.dataset.draft));
-  if($('#unplacedBox')){ api(`/dossiers/${id}/unplaced`).then(list=>{ for(const u of list){ const sel=v.querySelector(`[data-ups="${u.id}"]`), why=v.querySelector(`[data-upwhy="${u.id}"]`); const best=(u.suggestions||[])[0];
-      if(sel&&best&&!sel.value&&[...sel.options].some(o=>o.value===best.slot_id)){ sel.value=best.slot_id; const btn=v.querySelector(`[data-upl="${u.id}"]`); if(btn) btn.disabled=false; }
-      if(why) why.textContent=best?`${t('suggested')}: ${whyText(best.why)}`:t('noSuggestion'); } }).catch(()=>{});
-    v.querySelectorAll('#unplacedBox [data-split]').forEach(b=>b.onclick=()=>splitDoc(b.dataset.split));
-    v.querySelectorAll('[data-ups]').forEach(s=>s.onchange=()=>{ const btn=v.querySelector(`[data-upl="${s.dataset.ups}"]`); if(btn) btn.disabled=!s.value; });   // a choice, never a default
-    v.querySelectorAll('[data-upl]').forEach(x=>x.onclick=async()=>{ const sel=v.querySelector(`[data-ups="${x.dataset.upl}"]`); if(!sel.value){ sel.focus(); return; } const meta=await askMeta(slotById(sel.value)); x.disabled=true; try{ await api(`/dossiers/${id}/documents/${x.dataset.upl}/place`,{method:'POST',json:{slot_id:sel.value, meta}}); toast(t('placedOne')); S.board=null; route(); }catch(e){ toast(e.message); x.disabled=false; } });
-    v.querySelectorAll('[data-updel]').forEach(x=>DS.twoStep(x, L({ar:'متأكد؟ اضغط مرة أخرى للحذف',en:'Sure? Press again to delete'}), async()=>{ try{ await api(`/dossiers/${id}/documents/${x.dataset.updel}/withdraw`,{method:'POST'}); toast(t('withdrawn')); S.board=null; route(); }catch(e){ toast(e.message); } })); }
+  v.querySelectorAll('[data-lib]').forEach(x=>x.onclick=()=>openLib(x.dataset.lib));
+  v.querySelectorAll('[data-pgen]').forEach(x=>x.onclick=()=>{ const s=slotById(x.dataset.pgen), k=s&&genFor(s); if(!k) return; S.gens[k].source==='data'?genDirect(k, s):genForm(k, s); });
+  v.querySelectorAll('[data-preq]').forEach(x=>x.onclick=()=>{ const g=(S.bgroups||[]).find(y=>y.key===x.dataset.preq); if(g) partyRequest(g); });
+  $('#targetSave').onclick=async()=>{ const val=$('#targetDate').value||null;
+    try{ await api(`/dossiers/${id}/target-date`,{method:'PUT',json:{target_date:val}}); toast(t(val?'bsTargetSaved':'bsTargetCleared')); S.board=null; await refreshCurrent(); }catch(e){ toast(e.message); } };
   if($('#draftAllBtn')) $('#draftAllBtn').onclick=()=>draftAll();
   $('#copyBtn').onclick=()=>copyPanel();
   $('#sheetBtn').onclick=()=>sheetPanel();
-  $('#bulkBtn').onclick=()=>{ const p=$('#picker'); p.multiple=true; p.value=''; p.onchange=()=>{ p.multiple=false; bulk([...p.files]); }; p.click(); };
-  $('#bulkDrive').onclick=()=>drivePicker(files=>bulk(files), {label:t('drivePlace')});
   v.ondragover=e=>{ if(e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault(); };
-  v.ondrop=e=>{ if(e.dataTransfer && e.dataTransfer.files.length){ e.preventDefault(); bulk([...e.dataTransfer.files]); } };
+  v.ondrop=e=>{ if(e.dataTransfer && e.dataTransfer.files.length){ e.preventDefault(); S.treeIncoming=[...e.dataTransfer.files]; location.hash=`#/d/${id}/tree`; } };     // added the tree's way: read, proposed a place, approved
 }
-async function bulk(files){
-  files=(await withArchives(files)).filter(f=>DS.isDoc(f.name));          // a compressed file gives the documents inside it
-  if(!files.length) return;
-  const res=[];                                                      // one file at a time: a big selection never becomes one giant request
-  for(const [i,f] of files.entries()){ if(files.length>1) toast(`${t('reading')} ${i+1}/${files.length} · ${f.name}`);
-    const fd=new FormData(); fd.append('files',f);
-    try{ res.push(...await api(`/dossiers/${S.dossier.id}/classify`,{method:'POST',body:fd})); }catch(e){ toast(`${f.name}: ${e.message}`); return; } }
-  const act = S.board.slots.filter(s=>s.level==='R'||s.level==='O');
-  const opt = s => `${esc(s.ctd)} ${esc(L(s.title)).slice(0,70)}${itemLabel(s)}`;
-  openDrawer(t('bulk'), `<p class="small muted">${esc(t('bulkSub'))}</p><div class="tablewrap"><table><thead><tr><th>${esc(t('pFile'))}</th><th>${esc(t('colSec'))}</th></tr></thead><tbody>
-    ${res.map((r,i)=>{ const best=r.suggestions[0]; return `<tr><td>${bdi(r.filename)}${best?`<div class="small muted">${esc(whyText(best.why))}</div>`:''}</td>
-      <td><select data-bulk="${i}"><option value="">${esc(t('noSuggest'))}</option>
-      ${r.suggestions.map(x=>`<option value="${esc(x.slot_id)}" ${best&&x.slot_id===best.slot_id?'selected':''}>★ ${opt(slotById(x.slot_id))}</option>`).join('')}
-      <option disabled>────────</option>${act.map(s=>`<option value="${esc(s.slot_id)}">${opt(s)}</option>`).join('')}</select></td></tr>`; }).join('')}
-    </tbody></table></div><div class="row"><button class="btn pri" id="bulkGo">${icon('check')} ${esc(t('confirmAll'))}</button></div>`, true);
-  $('#bulkGo').onclick=async()=>{
-    let n=0; const skipped=[];
-    for(const sel of $$('[data-bulk]')){
-      const slotId=sel.value, f=files[+sel.dataset.bulk]; if(!slotId) continue;
-      if(needsMeta(slotById(slotId))){ skipped.push(f.name); continue; }
-      const fd=new FormData(); fd.append('file',f); fd.append('meta','{}');
-      try{ await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(slotId)}/documents`,{method:'POST',body:fd}); n++; }catch(e){ upErr(e); }
-    }
-    closeDrawer(); toast(`${n} ${t('added')}${skipped.length?' · '+skipped.join(', ')+': '+t('needsDetails'):''}`); await refreshCurrent();
-  };
+/* «طلب واحد من هذه الجهة»: one letter to one party for the items chosen (all of them for the authority or a manufacturer; for «جهات
+   أخرى», which are several parties, the person ticks the ones this party issues). Each item then waits on its issuer, and its request
+   closes by itself when its document arrives. */
+function partyRequest(g){
+  const free=g.items.filter(s=>!s.request), def=g.kind==='authority'?L(g.name):g.kind==='api'?(((g.items[0]||{}).item||{}).manufacturer||''):'';
+  openDrawer(t('preqT'), `<p class="small muted">${esc(t('pk_'+g.kind))}</p><div class="gform">
+    <label class="f"><span>${esc(t('issuer'))}</span><input type="text" dir="auto" id="prIssuer" value="${esc(def)}"></label>
+    <label class="f"><span>${esc(t('letterLang'))}</span><select id="prLang"><option value="en">English</option><option value="ar" ${g.kind==='authority'?'selected':''}>العربية</option></select></label>
+    <label class="f"><span>${esc(t('dueDays'))}</span><input type="text" inputmode="numeric" id="prDue" value="21"></label>
+    <label class="f"><span>${esc(L({en:'Signatory name',ar:'اسم الموقّع'}))}</span><input type="text" dir="auto" id="prSig" value="${esc(S.lastSig||'')}"></label>
+    <label class="f"><span>${esc(L({en:'Signatory title',ar:'صفة الموقّع'}))}</span><input type="text" dir="auto" id="prSigT" value="${esc(S.lastSigT||'')}"></label></div>
+    <div class="stack gap-s" id="prItems"><b class="small">${esc(t('preqItems'))}</b>
+      ${free.map(s=>`<label class="row gap-s small" style="align-items:flex-start;flex-wrap:nowrap"><input type="checkbox" data-pri="${esc(s.slot_id)}" ${g.kind==='other'?'':'checked'}> <span><span class="code">${esc(s.ctd||'')}</span> ${esc(L(s.title))}${s.item?` · ${bdi(s.item.name||'')}${s.item.manufacturer?' — '+bdi(s.item.manufacturer):''}`:''}</span></label>`).join('')}</div>
+    <div class="row"><button class="btn pri" id="prGo">${icon('mail')} ${esc(t('makeLetter'))}</button></div><div id="prErr" aria-live="polite"></div>`, true);
+  const bad=msg=>{ $('#prErr').innerHTML=`<div class="alert bad"><p class="small">${esc(msg)}</p></div>`; };
+  $('#prGo').onclick=async()=>{ const issuer=$('#prIssuer').value.trim(); if(!issuer){ $('#prIssuer').focus(); return; }
+    const ids=$$('[data-pri]:checked', $('#dBody')).map(x=>x.dataset.pri); if(!ids.length){ bad(t('preqNone')); return; }
+    $('#prGo').disabled=true;
+    try{ const r=await api(`/dossiers/${S.dossier.id}/requests`,{method:'POST',json:{issuer, slot_ids:ids, lang:$('#prLang').value, due_days:+$('#prDue').value||21,
+        signatory:$('#prSig').value.trim()||null, signatory_title:$('#prSigT').value.trim()||null}});
+      S.lastSig=$('#prSig').value.trim(); S.lastSigT=$('#prSigT').value.trim();
+      window.open(r.letter,'_blank','noopener'); closeDrawer(); toast(t('preqDone').replace('{n}', r.items)); S.board=null; await refreshCurrent(); }
+    catch(e){ bad(e.message); const go=$('#prGo'); if(go) go.disabled=false; } };
 }
 function slotById(id){ return ((S.board&&S.board.slots)||[]).find(s=>s.slot_id===id); }      // the board may be on its way (asked again after a change)
 const whyText = arr => (arr||[]).map(w=>typeof w==='string'?w:L(w)).join(' · ');
@@ -2703,7 +2779,7 @@ function openWhy(slotId, focusTemplate){
   const attestBox = (s.attest_need||[]).length ? `<div class="alert ${s.attest&&s.attest.answer==='no'?'bad':''}" id="attestBox"><p class="small"><b>${esc(t('attestQ'))}:</b> ${esc(t('attestAsk').replace('{what}', s.attest_need.map(w=>t('att_'+w)).join(L({en:' and ',ar:' و'}))))}
       ${s.attest?` <span class="tag">${esc(t(s.attest.answer==='yes'?'attestYes':'attestNo'))}</span>`:''}<br><span class="muted">${esc(t('attestNoNote'))}</span></p>
       <div class="row gap-s"><button class="btn sm ${s.attest&&s.attest.answer==='yes'?'pri':''}" data-attest="yes">${esc(t('attestYes'))}</button><button class="btn sm ${s.attest&&s.attest.answer==='no'?'pri':''}" data-attest="no">${esc(t('attestNo'))}</button></div></div>` : '';
-  openDrawer(L(s.title), `<div class="row"><span class="code">${esc(s.ctd)}</span>${s.ectd&&s.ectd.length?`<span class="code muted">eCTD ${esc(s.ectd.join(', '))}</span>`:''}${chip(s.status)}<span class="chip ${s.level==='R'?'c-rec':'c-na'}"><i></i>${esc(t(LEVEL[s.level]))}</span></div>
+  openDrawer(L(s.title), `<div class="row"><span class="code">${esc(s.ctd)}</span>${s.ectd&&s.ectd.length?`<span class="code muted">eCTD ${esc(s.ectd.join(', '))}</span>`:''}${s.point?pointChip(s.point, s.open_why):chip(s.status)}<span class="chip ${s.level==='R'?'c-rec':'c-na'}"><i></i>${esc(t(LEVEL[s.level]))}</span></div>
     ${locked?`<div class="alert">${icon('lock')}<p class="small">${esc(t('lockedNote'))}</p></div>`:''}
     ${attestBox}
     <details class="cond" id="itemCond" open><summary><b>${esc(t('condT'))}</b></summary><div class="skeleton" style="height:40px"></div></details>
@@ -3039,7 +3115,7 @@ async function splitDoc(docId){
   $('#splitGo').onclick=async()=>{ $('#splitGo').disabled=true;
     try{ const r=await api(`/dossiers/${S.dossier.id}/documents/${docId}/split`,{method:'POST',json:{starts:starts()}});
       closeDrawer(); toast(t('splitDone').replace('{n}', r.parts.length)); S.board=null; await route();
-      const box=$('#unplacedBox'); if(box) box.scrollIntoView({block:'start', behavior:'smooth'}); }
+      const box=$('#unplacedNote')||$('#prepWaitNote'); if(box) box.scrollIntoView({block:'center', behavior:'smooth'}); }
     catch(e){ toast(e.message); $('#splitGo').disabled=false; } };
 }
 async function mergeDocs(s){
@@ -3273,7 +3349,8 @@ function treeView(tok){
   $('#view').innerHTML=`<div class="head"><div class="title"><h1>${esc(t('navTree'))}</h1><p class="sub">${esc(t('treeSub'))}</p></div></div>
     <section class="card pad stack gap-s" id="prepDrop"><div class="row gap-s" style="flex-wrap:wrap;align-items:center"><span class="ic-tile accent">${icon('upload')}</span>
       <div class="grow" style="min-width:12em"><b>${esc(t('treeAdd'))}</b><div class="small muted">${esc(t('treeAddSub'))}</div></div>
-      <label class="btn pri">${icon('upload',16)} ${esc(t('prepDrop'))}<input type="file" id="prepFiles" multiple hidden></label></div>
+      <label class="btn pri">${icon('upload',16)} ${esc(t('prepDrop'))}<input type="file" id="prepFiles" multiple hidden></label>
+      <button class="btn" id="treeDrive">${icon('link',16)} ${esc(t('driveT'))}</button></div>
       <div class="small" id="prepMsg" aria-live="polite" style="color:var(--accent)"></div><div class="small muted" id="prepOcr"></div></section>
     <div id="treeOut" class="stack" style="margin-top:12px"><div class="skeleton" style="height:160px"></div></div>`;
   const send=async files=>{ files=(await withArchives(files)).filter(f=>DS.isDoc(f.name)); if(!files.length){ if(!withArchives.said) toast(t('badFiles')); return; }
@@ -3283,9 +3360,11 @@ function treeView(tok){
     S.board=null; if(!S.dossier||S.dossier.id!==did) return;
     await paintTree(); treeArrived(); };
   $('#prepFiles').onchange=e=>{ const fs=[...e.target.files]; e.target.value=''; send(fs); };
+  $('#treeDrive').onclick=()=>drivePicker(files=>send(files), {label:t('drivePlace')});
   const dz=$('#prepDrop'); dz.ondragover=e=>{ e.preventDefault(); dz.classList.add('drop'); }; dz.ondragleave=()=>dz.classList.remove('drop');
   dz.ondrop=e=>{ e.preventDefault(); dz.classList.remove('drop'); send([...(e.dataTransfer.files||[])]); };
-  paintTree().then(treeArrived);
+  if(S.treeIncoming){ const fs=S.treeIncoming; S.treeIncoming=null; send(fs); }           // dropped on «شجرة الملف والنواقص»: they are added here
+  else paintTree().then(treeArrived);
 }
 /* what arrived is looked at once, behind the page: a combined file cut, a scan read by Claude. One run at a time; «اعتماد» waits for it. */
 function treeArrived(){

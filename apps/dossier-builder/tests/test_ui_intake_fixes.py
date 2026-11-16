@@ -190,7 +190,7 @@ def test_a_refused_scan_is_replaced_by_its_searchable_copy(server, browser, tmp_
     page.close()
 
 
-def test_a_leaflet_placed_from_the_box_asks_its_type_and_language(server, browser, tmp_path):
+def test_a_leaflet_placed_from_the_proposed_tree_asks_its_type_and_language(server, browser, tmp_path):
     prof = dict(dossier_kind='generic', origin='local', licence='own', activity='new', admin_route='topical',
                 apis=[dict(name='Neomycin sulphate', manufacturer='Sichuan Example Pharmaceutical', option='FULL')])
     c = httpx.Client(base_url=server, headers={'X-DB': '1'})
@@ -204,14 +204,20 @@ def test_a_leaflet_placed_from_the_box_asks_its_type_and_language(server, browse
     page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
     page.add_init_script("localStorage.setItem('db.lang','en')")
     page.goto(f'{server}/#/d/{did}/board')
-    page.wait_for_selector('#unplacedBox [data-upl]')
-    assert page.locator('#unplacedBox [data-unp]').count() == 1 and page.locator('text=Unassigned documents').count() == 0   # listed once
-    page.select_option('#unplacedBox select', 'M1-09')
-    page.click('#unplacedBox [data-upl]')
+    # a file waiting for a place: said once on the board, with the way to the proposed tree — where it is placed (stage 3: the
+    # board's own box of waiting files is gone)
+    page.wait_for_selector('#unplacedNote')
+    assert 'Waiting for a place' in page.inner_text('#unplacedNote') and page.locator('#unplacedBox').count() == 0 and page.locator('text=Unassigned documents').count() == 0
+    page.click('#unplacedNote a')
+    page.wait_for_selector('[data-pw] [data-tplace]', timeout=60000)
+    assert page.locator('[data-pw]').count() == 1                                        # listed once
+    page.select_option('[data-pw] [data-tplace]', 'M1-09')
+    page.wait_for_function("() => (document.querySelector('[data-pw]') || {dataset: {}}).dataset.tplaceof === 'M1-09' && !S.prepWaitP && !!document.getElementById('treeGo')", timeout=60000)
+    page.click('#treeGo')
     page.wait_for_selector('#mType')                                                     # the item's details first, as an upload there asks
     page.select_option('#mType', 'spc'); page.select_option('#mLang', 'en')
     page.click('#mGo')
-    page.wait_for_selector('#toast:has-text("Placed")')
+    page.wait_for_function("() => location.hash.endsWith('/prepare')", timeout=60000)      # all in their items: on to preparing them
     docs = [d for s in c.get(f'/api/dossiers/{did}/board').json()['slots'] if s['req_id'] == 'M1-09' for d in s['documents']]
     assert len(docs) == 1 and docs[0]['meta']['pi_type'] == 'spc' and docs[0]['meta']['lang'] == 'en'
     assert errors == [], errors

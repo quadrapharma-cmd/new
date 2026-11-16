@@ -177,7 +177,7 @@ def test_two_drive_folders_of_one_product_are_listed_each_under_its_name(server,
         drive.HTTP = None
 
 
-def test_split_a_combined_file_from_the_unplaced_box_and_join_pages(server, tmp_path):
+def test_split_a_combined_file_and_join_pages(server, tmp_path):
     import base64
     from dossier_engine import pages
     lic = make_pdf_lines(tmp_path / 'a.pdf', ['Final Registration License', 'Trade Name: Dermacure', 'Egyptian Drug Authority'], 'Licence').read_bytes()
@@ -198,9 +198,15 @@ def test_split_a_combined_file_from_the_unplaced_box_and_join_pages(server, tmp_
         page.wait_for_selector('[data-start="2"]')
         assert page.is_checked('[data-start="2"]') and 'مستند 2' not in page.inner_text('#splitSum') and '2' in page.inner_text('#splitSum')
         page.click('#splitGo')
-        page.wait_for_selector('#unplacedBox')
-        box = page.inner_text('#unplacedBox')
+        # the two parts wait for a place: said on the board with their number, and listed on the proposed tree
+        page.wait_for_selector('#unplacedNote')
+        assert 'بانتظار تحديد الموضع: مستندان' in page.inner_text('#unplacedNote')
+        page.click('#unplacedNote a')
+        page.wait_for_function("() => document.querySelectorAll('[data-pw]').length === 2", timeout=60000)
+        box = page.inner_text('#treeOut')
         assert 'licence and pricing (p1).pdf' in box and 'licence and pricing (p2).pdf' in box
+        page.goto(f'{server}/#/d/{did}/board')
+        page.wait_for_function("() => typeof S !== 'undefined' && S.board && S.board.slots && S.board.slots.length > 0 && !!document.getElementById('boardSign')")
         page.evaluate("openWhy('P-16')")
         page.click('#mergeBtn')
         page.click('#cfOk')

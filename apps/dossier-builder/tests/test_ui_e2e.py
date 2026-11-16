@@ -65,9 +65,12 @@ def test_journey(server, browser, tmp_path):
         page.locator('tr', has_text='Composition certificate').locator('[data-up]').first.click()
     fc.value.set_files(str(pdf))
     page.wait_for_selector('#toast:not([hidden])')
-    page.wait_for_function("!document.querySelector('tbody').innerText.includes('Composition certificate')")  # left the to-do list
-    page.click('[data-f=all]')
-    page.wait_for_selector('tr:has-text("Composition certificate") .chip.c-ok', state='attached')
+    # its document is in, and not prepared yet: the point stays open and says so (before stage 3 the row left the to-do list as soon
+    # as a file was in it, as if nothing was left to do)
+    page.wait_for_selector('tr:has-text("Composition certificate") [data-point="open"]:has-text("not prepared yet")')
+    assert 'composition.pdf' in page.locator('tr', has_text='Composition certificate').inner_text()
+    page.click('[data-f=closed]')
+    assert page.locator('tr', has_text='Composition certificate').count() == 0
     page.click('[data-f=todo]')
     # a composition certificate saved as PDF 1.3, put in the GMP item: its version line was changed at upload; the kind rule refuses
     # it there and the drawer says why, with the locked note of third-party evidence
@@ -183,7 +186,10 @@ def test_generate_from_ui(server, browser):
     assert 'composition.pdf' in row.inner_text()
 
 
-def test_bulk_classify(server, browser, tmp_path):
+def test_documents_added_on_the_board_go_the_proposed_trees_way(server, browser, tmp_path):
+    """«إضافة مستندات» on «شجرة الملف والنواقص» leads to the proposed tree (station 5): each file is read, a place is proposed for it, and
+    nothing is placed until approved. Before stage 3 the board had a classify-and-place dialog of its own — a second way to do the
+    same thing, with other words."""
     import httpx
     prof = dict(dossier_kind='generic', origin='local', licence='own', activity='new',
                 apis=[dict(name='Paracetamol', manufacturer='Granules India', option='CEP')])
@@ -195,17 +201,26 @@ def test_bulk_classify(server, browser, tmp_path):
     page.add_init_script("localStorage.setItem('db.lang','en')")
     page.goto(f'{server}/#/d/{did}/board')
     page.wait_for_selector('#bulkBtn')
-    with page.expect_file_chooser() as fc:
-        page.click('#bulkBtn')
-    fc.value.set_files([str(f) for f in files])
-    page.wait_for_selector('[data-bulk]')
-    vals = page.eval_on_selector_all('[data-bulk]', 'els => els.map(e => e.value)')
-    assert vals == ['M1-37', 'M1-05', '']                     # unknown file: no guess
-    page.click('#bulkGo')
-    page.wait_for_selector('#toast:has-text("2 files added")')
+    assert page.get_attribute('#bulkBtn', 'href') == f'#/d/{did}/tree' and page.locator('#bulkDrive').count() == 0
+    page.click('#bulkBtn')
+    page.wait_for_selector('#prepFiles', state='attached')
+    assert page.locator('#treeDrive').count() == 1                                   # Google Drive beside «choose the files», where files are added
+    page.set_input_files('#prepFiles', [str(f) for f in files])
+    page.wait_for_function("() => document.querySelectorAll('[data-pw]').length === 3 && !S.prepWaitP && !!document.getElementById('treeGo')", timeout=120000)
+    proposed = page.evaluate("() => Object.fromEntries([...document.querySelectorAll('[data-pw]')].map(x => [x.querySelector('b').innerText.trim(), x.dataset.tplaceof]))")
+    assert proposed == {'GMP certificate Example Pharma.pdf': 'M1-37', 'Pricing certificate.pdf': 'M1-05', 'IMG_2041.pdf': ''}, proposed     # unknown file: no guess
+    assert all(not s['documents'] for s in httpx.get(f'{server}/api/dossiers/{did}/board').json()['slots'])                 # nothing placed before the approval
+    page.click('#treeGo')
+    page.wait_for_function("() => document.querySelectorAll('[data-tplaced]').length === 2 && !S.treeBusy", timeout=60000)
     board = httpx.get(f'{server}/api/dossiers/{did}/board').json()
     st = {s['slot_id']: s['status'] for s in board['slots']}
-    assert st['M1-37'] == 'conforming' and st['M1-05'] == 'conforming'
+    assert st['M1-37'] == 'conforming' and st['M1-05'] == 'conforming' and len(board['unassigned']) == 1
+    # back on the board: the file with no place is said once, with the way to it; its two points are open «not prepared yet»
+    page.click('#navBoard')
+    page.wait_for_selector('#unplacedNote')
+    assert page.get_attribute('#unplacedNote a', 'href') == f'#/d/{did}/tree' and page.locator('#unplacedBox').count() == 0
+    for name in ('GMP certificate(s) of FPP', 'Pricing Certificate'):
+        assert 'not prepared yet' in page.locator('tbody tr', has_text=name).first.locator('[data-point="open"]').inner_text(), name
 
 
 def test_product_data_page(server, browser):
@@ -284,7 +299,12 @@ def test_rebuild_loop_ui(server, browser, tmp_path):
     with page.context.expect_page(timeout=90000) as newp:              # the letter is made on the server first: slower under a full run
         page.click('#rqGo')
     newp.value.close()
-    page.wait_for_selector('tr:has-text("Register of trade") .chip.c-wait')
+    # the item now waits on its issuer: said on its point, and the request itself is on the row — who was asked, the day to follow
+    # up, and its letter
+    page.wait_for_selector('tr:has-text("Register of trade") [data-breq]')
+    row = page.locator('tr', has_text='Register of trade')
+    assert 'asked of its issuer' in row.locator('[data-point="open"]').inner_text()
+    assert 'Commercial Registry Office' in row.locator('[data-breq]').inner_text() and row.locator('[data-breq] a').get_attribute('href').endswith('/letter')
 
 
 def test_upload_asks_replace(server, browser, tmp_path):

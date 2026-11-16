@@ -1976,7 +1976,7 @@ def create_app(workspace, auth_enabled=None):
             rq = x.get('request')
             g['items'].append({'slot_id': x['slot_id'], 'req_id': x['req_id'], 'ctd': x.get('ctd'), 'module': x.get('module'), 'title': x.get('title'),
                                'item': x.get('item'), 'doc_class': x.get('doc_class'), 'status': x.get('status'), 'why': pt.get('why') or [],
-                               'how': x.get('how'), 'library': x.get('library'), 'generable': x['req_id'] in gen,
+                               'how': x.get('how'), 'how_ar': x.get('how_ar'), 'library': x.get('library'), 'generable': x['req_id'] in gen,
                                'documents': [{'id': y['id'], 'filename': y['filename'], 'version': y.get('version')} for y in x.get('documents') or []],
                                'request': rq and {k: rq.get(k) for k in ('id', 'issuer', 'sent', 'due', 'overdue', 'batch', 'lang')}})
         parties = sorted(groups.values(), key=lambda g: (order.index(g['kind']), g['key']))

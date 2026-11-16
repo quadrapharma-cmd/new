@@ -1873,6 +1873,7 @@ class Store:
             x['provenance'] = rq.get('provenance')
             x['produced_by'] = rq.get('produced_by')
             x['how'] = (rq.get('rebuild') or {}).get('needs')
+            x['how_ar'] = (rq.get('rebuild') or {}).get('needs_ar')
             x['note'] = rq.get('level_note')            # where the level comes from when the source does not state it
             x['group'] = rq.get('group')
         cross = self.cross(did)

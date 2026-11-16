@@ -84,7 +84,8 @@ def test_the_wizard_starts_with_the_country_and_builds_for_its_authority(server)
         assert d['pack'] == 'gcc.ctd.m1.v1' and d['authority']['country'] == 'SA' and d['profile']['extra'] == {'gcc_agency': 'SA'}
         assert 'السعودية' in page.inner_text('#crumbAu') and page.locator('#navReview').is_hidden()
         assert page.locator('[data-draft="GCC-1.7.5"]').count() == 1 and page.locator('[data-draft="GCC-1.7.1"]').count() == 0     # a declaration is drafted, a certificate never
-        # the item says where its level comes from when the source does not
+        # the item says where its level comes from when the source does not (an optional item — not a point to close: under «الكل»)
+        page.click('[data-f="all"]')
         page.click('[data-why="GCC-1.4.2"]')
         page.wait_for_selector('[data-levelnote]')
         assert 'راجعه مع الهيئة' in page.inner_text('[data-levelnote]')

@@ -131,6 +131,11 @@ def load(pack_id, packs_dir=PACKS_DIR):
     d = pathlib.Path(packs_dir) / pack_id
     meta = yload((d / 'pack.yaml').read_text(encoding='utf-8'))
     reqs = yload((d / 'requirements.yaml').read_text(encoding='utf-8')) or []
+    if (d / 'how.ar.yaml').exists():                       # «كيف يُستخرج» in Arabic, item by item (the pack's own file)
+        how = yload((d / 'how.ar.yaml').read_text(encoding='utf-8')) or {}
+        for r in reqs:
+            if how.get(r['id']) and isinstance(r.get('rebuild'), dict):
+                r['rebuild'] = {**r['rebuild'], 'needs_ar': how[r['id']]}
     base, own = None, {r['id'] for r in reqs}
     if meta.get('extends'):                                # the common CTD under this authority's Module 1
         base = load(meta['extends'], packs_dir)
