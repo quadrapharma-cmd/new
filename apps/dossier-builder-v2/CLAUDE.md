@@ -480,6 +480,29 @@ When a part is done or an open item is closed, update «What exists» and «Open
   and prepared is kept in a vault he opens and reads inside the program, with no download, and a plain sign that he is ready
   before the file is composed (today's «المكتب» and its page viewer are where it starts).
 
+- **16/11/2026, eBOX stage 1 built** (`6768d73` and the commits after it; the old program's README, «eBOX, stage 1», has the
+  whole of it). What it is: the name eBOX everywhere a person reads it; one path bar of nine stations (الرئيسية · الدولة · الرفع ·
+  القراءة والفرز · الشجرة المقترحة · التجهيز والمراجعة · شجرة الملف والنواقص · التحقق · التصدير) with one «التالي», and the menu
+  ordered as the path; the home with the library beside «ملفاتي» and «بدء ملف لهذه الدولة»; every text in formal Arabic with
+  one name for one thing (rule 14). The stations' own screens are still version 50's: they change in stages 2–4.
+  **The errors he met, found by walking every screen under a page policy like claude.ai's** (`tests/test_web_sweep.py`; nobody
+  can open his claude.ai from here, and he sent no screenshots): «تجهيز» failed on every Word and Excel document (one red note
+  per document in «تجهيز الكل»); a document just prepared answered «not found»; a refusal that was not in the engine's own words
+  gave a note with **no text at all**; an internal failure showed a Python traceback; the page viewer opened empty; `.xml`,
+  `.doc`, `.xls` downloads did nothing; a script error at every opening and the fonts never applied; «مسح المحادثة» and «print»
+  did nothing (`confirm()`, `print()` inside the frame); the qualification report failed on the shipped pypdf 7; a typed value
+  went into another field now and then (the review race of 16/11: the side panel took the focus 30 ms after opening). The
+  editing programs' first-time note no longer reads as «download something»: it says nothing is installed, and the programs a
+  dossier's documents need are fetched in the background from «مراجعة المستندات وتعديلها».
+  **«سجل الأعطال»** (menu → أدوات عامة): what goes wrong is written down on his device (time, screen, kind, message — never a
+  document's content) and copied with one button. **When he reports a problem, ask him for this record first.**
+  **How the wording was changed, for the next time** (`apps/dossier-builder/tools/wording/`, with its README): texts were
+  replaced at their exact place by a list `id ⇒ new text`, checked for the same placeholders and a clean parse. Two traps cost
+  a second pass: Python 3.12+ tokenizes f-strings apart from plain strings (126 messages were missed at first), and a text
+  that is one piece of a sentence joined in code must keep its end spaces (25 were lost; `edges.py` finds them).
+  **Not changed:** the reading rules and their words, the prompts, the letters' wording, the desktop edition's read-me
+  (`desktop/README-AR.txt` is still colloquial and out of date: for the day he approves a desktop build).
+
 ## Open items (propose when relevant; do when he asks)
 - Old program, next pieces (one at a time, each on his real files first): the 14/11 update and measuring Claude's reading (need
   the API key: `ANTHROPIC_API_KEY` in the environment's settings, added by him), «شروط الشكل لكل دولة», the Assistant on his

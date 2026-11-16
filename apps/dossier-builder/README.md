@@ -47,7 +47,7 @@ the same `journey()` the «الخطوة التالية» page uses (`pathStates`
 done. The general tools' screens are off the path. The menu follows it (`NAV_MAIN`, `DNAV`, `NAV_TOOLS`): الرئيسية · ملفاتي ·
 المكتبة, then under «الملف الحالي» the dossier's pages with their station's number (6 تجهيز المستندات · 6 مراجعة المستندات
 وتعديلها · 7 شجرة الملف والنواقص · 8 التحقق الفني · 8 مراجعة المقيِّم · 9 التصدير), under «أدوات الملف» what is on no station
-(الخطوة التالية · بيانات المنتج · شجرة الإخراج · البحث في المستندات · سجل النشاط), and under «أدوات عامة» the rest (التغييرات بعد
+(الخطوة التالية · بيانات المنتج · هيكل المخرجات · البحث في المستندات · سجل النشاط), and under «أدوات عامة» the rest (التغييرات بعد
 التسجيل · التحقق من حزمة eCTD جاهزة · ملف المنتجات · سجل الأعطال · المستخدمون).
 
 **The home.** The library and «ملفاتي» side by side (`.home2`; one above the other on a phone): every authority the program builds
@@ -88,9 +88,12 @@ of the browser edition under a page policy like claude.ai's, clicking what can b
 the kind and the message, never a document's content (ids are replaced) — and can be copied and sent. An error's note is marked
 (`.toast.bad`) and stays longer. What cannot be seen from here (Claude's answers on his account) reaches us through this record.
 
-Tests added: `test_web_sweep.py` (every screen in both languages and at 390 px; `SWEEP_CLICKS=1` clicks every button — run before
-a publish), `test_web_faults.py`, `test_ui_shell.py`, `test_prepare_office.py`, `test_error_words.py`, `test_formal_arabic.py`,
-`test_vendored_libs.py`.
+Tests added: `test_web_sweep.py` (every screen in both languages and at 390 px, and the product-file page; `SWEEP_CLICKS=1` clicks
+every button — run before a publish), `test_web_faults.py`, `test_ui_shell.py`, `test_prepare_office.py`, `test_error_words.py`,
+`test_formal_arabic.py`, `test_vendored_libs.py`, and in `test_programs_web.py` the programs fetched in the background.
+`DB_DIST=<folder>` points `test_web_sweep`, `test_web_faults`, `test_programs_web` and `test_office_web` at another copy of the
+built page — the files read back from claude.ai after a publish (with `index.local.html` a copy of the served `index.html`).
+The tools that reworded the texts are kept in `tools/wording/`.
 
 ## Countries and authorities (November 2026) — «تختار الدولة ويعمل على أساسها موديول ١»
 

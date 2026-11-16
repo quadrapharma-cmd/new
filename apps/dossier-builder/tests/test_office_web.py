@@ -4,14 +4,14 @@ while Claude reads a scan, the very picture it is given is shown with the page a
 document of the file with its first page, opens a Word file in the Word program and comes back to the page; a document of an
 authority or a third party is not offered for editing. claude.ai's model is stood in by a mock that records what it is sent
 (and takes its time, as a reading does). Page rules as strict as claude.ai's could be. The fixtures are made up."""
-import functools, http.server, io, pathlib, socket, threading
+import os, functools, http.server, io, pathlib, socket, threading
 import pytest
 
 pw = pytest.importorskip('playwright.sync_api')
 docx = pytest.importorskip('docx')
 Image = pytest.importorskip('PIL.Image')
 APP = pathlib.Path(__file__).resolve().parents[1]
-DIST = APP / 'web' / 'dist'
+DIST = pathlib.Path(os.environ.get('DB_DIST') or APP / 'web' / 'dist')      # DB_DIST=<folder>: the page as claude.ai serves it, read back after a publish
 pytestmark = pytest.mark.skipif(not (DIST / 'assets' / 'ocr' / 'pdfjs' / 'pdf.min.mjs').exists() or not (DIST / 'assets' / 'programs' / 'wordcraft' / 'glue.js').exists(),
                                 reason='web/dist was built without the page reader or the Word program')
 GPU = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']

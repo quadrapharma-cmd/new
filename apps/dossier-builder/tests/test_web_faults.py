@@ -2,12 +2,12 @@
 a download never fails without a word, a kind claude.ai does not save travels in a ZIP, an error's note is marked and written into
 the faults record («سجل الأعطال»), a page's picture is shown where there is no server, and the page opens without a script error.
 Each of these was silent, empty or broken in version 50. Needs `python3 web/build.py` first; skipped when dist is absent."""
-import functools, http.server, io, pathlib, re, socket, threading, zipfile
+import functools, http.server, io, os, pathlib, re, socket, threading, zipfile
 import pytest
 from fixtures_pdf import make_pdf
 
 pw = pytest.importorskip('playwright.sync_api')
-DIST = pathlib.Path(__file__).resolve().parents[1] / 'web' / 'dist'
+DIST = pathlib.Path(os.environ.get('DB_DIST') or pathlib.Path(__file__).resolve().parents[1] / 'web' / 'dist')      # DB_DIST=<folder>: the page as claude.ai serves it, read back after a publish
 OFFICE = pathlib.Path(__file__).parent / 'data' / 'office'
 pytestmark = pytest.mark.skipif(not (DIST / 'index.html').exists(), reason='web/dist not built')
 POLICY = ["default-src 'self'", "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'", "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",

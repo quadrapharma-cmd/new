@@ -26,6 +26,10 @@ html[dir=rtl] .pathbar a:not(.pnext){padding:4px 4px 4px 9px}
 .pathbar a.now{color:var(--ink);border-color:var(--line);background:var(--surface-2);font-weight:500} .pathbar a.now .k{background:var(--surface-3);color:var(--ink)}
 .jbar a.here{color:var(--ink);border-color:var(--brand);background:var(--brand-soft);font-weight:650;opacity:1} .jbar a.here .k{background:var(--brand);color:var(--brand-ink)}
 .pathbar .pnext{margin-inline-start:auto;flex:none;padding:6px 12px;border-radius:9px}
+/* when the names do not fit: the stations behind keep their mark only, then «التالي» alone, then only this screen's station is named */
+.pathbar.fit1 .sts a.done:not(.here) .nm,.pathbar.fit2 .sts a.done:not(.here) .nm,.pathbar.fit3 .sts a:not(.here) .nm{display:none}
+.pathbar.fit1 .sts a.done:not(.here),.pathbar.fit2 .sts a.done:not(.here),.pathbar.fit3 .sts a:not(.here){padding:4px}
+.pathbar.fit2 .pnext .nm,.pathbar.fit3 .pnext .nm{display:none}
 .pathbar .pnext.btn{color:var(--brand-ink)}
 @media (max-width:900px){ .pathbar{padding:6px 14px} }
 .rail{overflow-y:auto;scrollbar-width:thin}
@@ -312,7 +316,7 @@ const T = {
   prepNone:{en:'Nothing waiting.',ar:'لا يوجد ما ينتظر.'},
   prepSecond:{en:'The second reader put right',ar:'صحّحه القارئ الثاني'}, prepImproved:{en:'File improved (PdfCraft\'s optimizer): {a} → {b}, the pages the same',ar:'حُسِّن الملف: {a} ← {b}، والصفحات كما هي'}, prepSplit:{en:'Over 100 MB (the eCTD limit a file): cut into {n} parts that fit, in the same item — the pages unchanged',ar:'أكبر من 100 ميغابايت (الحد الأقصى للملف الواحد في eCTD): قُسِّم إلى {n} أجزاء كلٌّ منها دون الحد، في البند نفسه — والصفحات كما هي'}, prepDoubt:{en:'Numbers to check against the page',ar:'أرقام تُراجَع على الصفحة'},
   prepWeak:{en:'Pages hard to read: {p} — if a page is skewed or sideways, turn it in the viewer and prepare it again',ar:'صفحات صعبة القراءة: {p} — إن كانت الصفحة مائلة أو أفقية فأدِرها من عارض الصفحات ثم أعد تجهيز المستند'}, prepWorking:{en:'Preparing {i} of {n}…',ar:'جارٍ تجهيز {i} من {n}…'},
-  navPublisher:{en:'Output tree',ar:'شجرة الإخراج'}, navChecks:{en:'Technical validation',ar:'التحقق الفني'}, navSearch:{en:'Search the documents',ar:'البحث في المستندات'},
+  navPublisher:{en:'Output structure',ar:'هيكل المخرجات'}, navChecks:{en:'Technical validation',ar:'التحقق الفني'}, navSearch:{en:'Search the documents',ar:'البحث في المستندات'},
   srchSub:{en:'The text of every document of this dossier: a batch number, a study, «Table 3». Each file is read once.',ar:'البحث في نصوص كل مستندات هذا الملف: رقم تشغيلة، أو دراسة، أو «Table 3». يُقرأ كل مستند مرة واحدة.'},
   srchPh:{en:'What are you looking for?',ar:'عمَّ تبحث؟'}, srchGo:{en:'Search',ar:'بحث'}, srchNone:{en:'Not found in any document.',ar:'غير موجود في أي مستند.'},
   srchPage:{en:'page',ar:'صفحة'}, srchRead:{en:'Reading the documents…',ar:'جارٍ قراءة المستندات…'},
@@ -363,7 +367,7 @@ const T = {
   cap5:{en:'PDF checks & auto-fix',ar:'فحص PDF والإصلاح التلقائي'}, cap5d:{en:'PDF version, security, JavaScript, searchable text (a file without text is refused at upload), bookmarks, file names. Third-party evidence is locked: its content never changes.',ar:'إصدار PDF، الحماية، JavaScript، النص القابل للبحث، الإشارات المرجعية (bookmarks)، أسماء الملفات. مستندات الجهات الخارجية مقفلة: لا يُغيَّر محتواها أبدًا.'},
   cap6:{en:'Cross-document checks',ar:'فحوص التطابق'}, cap6d:{en:'NP.CAPP.040 deficiencies and the checklist cross-checks: ≥ 2 batches, numeric results not «complies», dissolution Q, sites and manufacturers that match across documents.',ar:'نواقص NP.CAPP.040 وفحوص التطابق: تشغيلتان على الأقل، نتائج رقمية لا كلمة «مطابق»، قيمة Q للذوبان، مواقع ومصنّعون متطابقون بين المستندات.'},
   cap7:{en:'Validation before submission',ar:'التحقق قبل التقديم'}, cap7d:{en:'The validators re-read the output from disk and write an Arabic/English report with every export.',ar:'تقرأ أدوات التحقق المخرَج من القرص، وتكتب تقريرًا بالعربية والإنجليزية مع كل تصدير.'},
-  cap8:{en:'Output tree',ar:'شجرة الإخراج'}, cap8d:{en:'Dossier tree → section documents → properties, like international publishing tools. Drop files on a section.',ar:'شجرة الملف ← مستندات القسم ← الخصائص، على غرار أدوات النشر العالمية — مع سحب المستندات إلى القسم.'},
+  cap8:{en:'Output structure',ar:'هيكل المخرجات'}, cap8d:{en:'Dossier tree → section documents → properties, like international publishing tools. Drop files on a section.',ar:'شجرة الملف ← مستندات القسم ← الخصائص، على غرار أدوات النشر العالمية — مع سحب المستندات إلى القسم.'},
   cap9:{en:'eCTD lifecycle',ar:'دورة حياة eCTD'}, cap9d:{en:'Sequences 0001+ built automatically: new / replace / delete; the tracking table is rebuilt from the history.',ar:'تُبنى التسلسلات 0001 وما بعدها تلقائيًا: جديد / مستبدَل / محذوف؛ ويُبنى جدول التتبع من السجل.'},
   cap10:{en:'Product file',ar:'ملف المنتجات'}, cap10d:{en:'Validity of every certificate and licence, renewals, parties — with a warning before expiry.',ar:'صلاحية كل شهادة ورخصة، التجديدات، الأطراف — مع تنبيه قبل الانتهاء.'},
   cap11:{en:'Hash-linked audit log',ar:'سجل تدقيق مترابط بالبصمة الرقمية'}, cap11d:{en:'Every action is recorded and chained to the previous one; nothing is overwritten or deleted.',ar:'كل إجراء مسجَّل ومرتبط بما قبله؛ لا يُستبدل شيء ولا يُحذف.'},
@@ -698,7 +702,7 @@ const T = {
   needsDetails:{en:'needs details — use the section\'s Upload button',ar:'يحتاج إلى بيانات — استخدم زر الرفع في القسم'}, added:{en:'files added',ar:'ملفات أُضيفت'}, generate:{en:'Generate',ar:'توليد'}, justify:{en:'Write a justification',ar:'كتابة تبرير'},
   genSub:{en:'Filled from the dossier where possible. Missing data is asked for, never guessed. The PDF is marked «DRAFT — unsigned» until the signed scan is uploaded.',ar:'تُملأ من بيانات الملف قدر الإمكان. البيانات الناقصة تُطلب ولا تُخمَّن. يحمل الملف عبارة «مسودة — غير موقّعة» إلى أن تُرفع النسخة الممسوحة الموقّعة.'},
   addRow:{en:'Add row',ar:'إضافة سطر'}, genDone:{en:'Generated and added to the section.',ar:'تم التوليد وأُضيف إلى القسم.'}, generating:{en:'Generating…',ar:'جارٍ التوليد…'},
-  fillMissing:{en:'Please fill the highlighted fields.',ar:'من فضلك املأ الحقول المحددة.'}, guided:{en:'Guided',ar:'إرشادي'}, publisher:{en:'Output tree',ar:'شجرة الإخراج'},
+  fillMissing:{en:'Please fill the highlighted fields.',ar:'من فضلك املأ الحقول المحددة.'}, guided:{en:'Guided',ar:'إرشادي'}, publisher:{en:'Output structure',ar:'هيكل المخرجات'},
   /* publisher */
   pubSub:{en:'Expert view: the dossier tree, the documents in each section and their properties, for the chosen output.',ar:'عرض الخبير: شجرة الملف، ومستندات كل قسم وخصائصها، بحسب المخرج المختار.'},
   sections:{en:'Sections',ar:'الأقسام'}, leaves:{en:'Documents in this section',ar:'مستندات القسم'}, props:{en:'Properties',ar:'الخصائص'},
@@ -831,14 +835,22 @@ function paintPath(J){
   const item=n=>{ const st=n===1?{state:id||inWiz?'done':'todo'}:id?(n<6?{state:'done'}:(ps[n]||{state:'todo'})):{state:inWiz&&n<Math.min(...here)?'done':'todo'};
     const href=n===1?'#/':id?(n>=6?`#/d/${id}/${ST_PAGE[n]}`:''):(n<=5?'#/new':'');
     const on=here.includes(n);
-    return `<a class="${st.state}${on?' here':''}" ${href?`href="${href}"`:'aria-disabled="true"'} data-st="${n}"${on?' aria-current="step"':''} title="${esc(t('stn'+n+'d'))}"><span class="k">${st.state==='done'?'✓':st.state==='bad'?'!':n}</span>${esc(t('stn'+n))}${st.count?` <span class="code">${esc(st.count)}</span>`:''}</a>`; };
+    return `<a class="${st.state}${on?' here':''}" ${href?`href="${href}"`:'aria-disabled="true"'} data-st="${n}"${on?' aria-current="step"':''} aria-label="${n} ${esc(t('stn'+n))}" title="${esc(t('stn'+n))} — ${esc(t('stn'+n+'d'))}"><span class="k">${st.state==='done'?'✓':st.state==='bad'?'!':n}</span><span class="nm">${esc(t('stn'+n))}${st.count?` <span class="code">${esc(st.count)}</span>`:''}</span></a>`; };
   const cur=here.length?Math.max(...here):0;
   const nextN=!id?0:cur===9?0:cur>=6?cur+1:(J?([6,7,8,9].find(n=>(ps[n]||{}).state!=='done')||9):6);
   el.innerHTML=`<div class="sts">${[1,2,3,4,5,6,7,8,9].map(item).join('')}</div>`
-    + (nextN?`<a class="btn sm pri pnext" id="pathNext" href="#/d/${id}/${ST_PAGE[nextN]}">${esc(t('pathNext'))}: ${esc(t('stn'+nextN))} <span class="flip">${icon('arrow',14)}</span></a>`:'');
+    + (nextN?`<a class="btn sm pri pnext" id="pathNext" href="#/d/${id}/${ST_PAGE[nextN]}" title="${esc(t('pathNext'))}: ${esc(t('stn'+nextN))}"><span>${esc(t('pathNext'))}<span class="nm">: ${esc(t('stn'+nextN))}</span></span> <span class="flip">${icon('arrow',14)}</span></a>`:'');
   el.hidden=false;
-  const on=el.querySelector('.sts a.here'); if(on&&on.scrollIntoView) on.scrollIntoView({block:'nearest', inline:'nearest'});      // the station of this screen in sight
+  fitPath();
 }
+/* the nine stations in sight at any width: tighten step by step while they do not fit (see the .fit rules) */
+function fitPath(){
+  const el=$('#pathbar'); if(!el||el.hidden) return; const sts=el.querySelector('.sts'); if(!sts) return;
+  el.classList.remove('fit1','fit2','fit3');
+  for(const c of ['fit1','fit2','fit3']){ if(sts.scrollWidth<=sts.clientWidth+1) break; el.classList.remove('fit1','fit2','fit3'); el.classList.add(c); }
+  const on=sts.querySelector('a.here'); if(on&&on.scrollIntoView&&sts.scrollWidth>sts.clientWidth+1) on.scrollIntoView({block:'nearest', inline:'nearest'});      // still too narrow (a phone): this screen's station in sight
+}
+let fitPathT=null; window.addEventListener('resize', ()=>{ clearTimeout(fitPathT); fitPathT=setTimeout(fitPath, 120); });
 function pathLazy(){ const id=S.dossier&&S.dossier.id; if(!id||S.pathBusy===id) return; S.pathBusy=id;
   loadJourney().then(({J})=>{ if(S.dossier&&S.dossier.id===id) paintPath(J); }).catch(()=>{}).then(()=>{ S.pathBusy=null; }); }
 async function route(){

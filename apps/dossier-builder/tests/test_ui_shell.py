@@ -120,7 +120,7 @@ def test_the_menu_follows_the_path(server, browser):
     tools = [a.get_attribute('data-r') for a in page.locator('#navD a').all() if not a.locator('.stn').count()]
     assert tools == ['guide', 'data', 'publisher', 'search', 'audit'], tools
     names = {a.get_attribute('data-r'): a.inner_text().split('\n')[-1].strip() for a in page.locator('#navD a').all()}
-    assert names['office'] == 'مراجعة المستندات وتعديلها' and names['board'] == 'شجرة الملف والنواقص' and names['guide'] == 'الخطوة التالية' and names['publisher'] == 'شجرة الإخراج'
+    assert names['office'] == 'مراجعة المستندات وتعديلها' and names['board'] == 'شجرة الملف والنواقص' and names['guide'] == 'الخطوة التالية' and names['publisher'] == 'هيكل المخرجات'
     # the path: the first five stations are behind an open dossier, this screen is the seventh, and there is one «التالي»
     assert page.evaluate(HERE) == [7] and page.locator('#pathbar .sts a.done').count() >= 5 and page.locator('#pathNext').count() == 1
     nxt = page.inner_text('#pathNext')
@@ -130,5 +130,44 @@ def test_the_menu_follows_the_path(server, browser):
     assert page.get_attribute('#nav a[aria-current="page"]', 'data-r') == 'checks'
     page.click('#pathbar .sts a[data-st="6"]')                                         # a station is a way back, too
     page.wait_for_function("() => location.hash.endsWith('/prepare')")
+    assert not errors, errors
+    page.close()
+
+
+FIT = """() => { const bar = document.getElementById('pathbar'), s = bar.querySelector('.sts'), box = s.getBoundingClientRect();
+  const st = [...s.querySelectorAll('a')].map(a => { const r = a.getBoundingClientRect(), nm = a.querySelector('.nm');
+    return { n: +a.dataset.st, here: a.classList.contains('here'), inside: r.left >= box.left - 1 && r.right <= box.right + 1, named: !!nm && getComputedStyle(nm).display !== 'none', label: a.getAttribute('aria-label') }; });
+  return { over: s.scrollWidth - s.clientWidth, fit: [...bar.classList].filter(c => c.startsWith('fit')), st, next: (document.getElementById('pathNext') || {}).innerText || '' }; }"""
+
+
+@pytest.mark.parametrize('lang', ['ar', 'en'])
+def test_the_path_bar_shows_its_nine_stations_at_every_width(server, browser, lang):
+    """At 1366 and 1280 px (an ordinary laptop) the last stations were out of sight, in a bar with no scrollbar. Now the bar tightens
+    in steps while the names do not fit: the stations behind keep their mark, then «التالي» alone, then only this screen's station
+    is named — every station stays in sight, with its name for a screen reader and in its tooltip. A phone's bar scrolls."""
+    errors = []
+    page = new_page(browser, errors, 1920, 900)
+    page.add_init_script(f"localStorage.setItem('db.lang','{lang}')")
+    page.goto(server + '/#/')
+    page.wait_for_selector('#homeAu .librow')
+    did = page.evaluate("""async p => (await (await fetch('/api/dossiers', {method: 'POST', headers: {'X-DB': '1', 'Content-Type': 'application/json'},
+        body: JSON.stringify({name: 'Dermacure (made up)', profile: p, product: {name: 'Dermacure 20 mg', dosageform: 'cream', manufacturer: 'Example Pharm'}, envelope: {}})})).json()).id""", PROFILE)
+    page.goto(f'{server}/#/d/{did}/prepare')                                           # the longest «التالي» of all the screens
+    page.wait_for_selector('#pathNext')
+    for width in (1920, 1440, 1366, 1280, 1100):
+        page.set_viewport_size({'width': width, 'height': 900})
+        page.wait_for_timeout(400)                                                     # the bar fits itself again a moment after a resize
+        m = page.evaluate(FIT)
+        assert m['over'] <= 1 and all(x['inside'] for x in m['st']), (width, m)
+        assert [x['n'] for x in m['st']] == list(range(1, 10)) and all(x['label'] for x in m['st'])
+        assert [x['n'] for x in m['st'] if x['here']] == [6] and all(x['named'] for x in m['st'] if x['here']), (width, m)
+        assert m['next'].strip(), (width, m)
+        if width == 1920:
+            assert m['fit'] == [] and all(x['named'] for x in m['st']), m                # room for every name
+    page.set_viewport_size({'width': 390, 'height': 844})
+    page.wait_for_timeout(400)
+    m = page.evaluate(FIT)
+    assert all(x['inside'] for x in m['st'] if x['here']) and len(m['st']) == 9, m       # a phone: this screen's station in sight, the rest by scrolling
+    assert page.evaluate('() => document.documentElement.scrollWidth - window.innerWidth') <= 2
     assert not errors, errors
     page.close()

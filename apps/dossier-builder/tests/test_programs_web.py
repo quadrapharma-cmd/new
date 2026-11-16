@@ -4,13 +4,13 @@ a new version.
 Run under page rules as strict as claude.ai's could be — no frame fetched from any address, no script from a blob:, WebAssembly
 allowed — and once without WebAssembly, where the program must say it cannot run instead of waiting for ever.
 The fixtures are made up. Needs `python3 web/build.py` with the Word program built (dossier-builder-v2/tools/craft/build.mjs)."""
-import base64, functools, gzip, hashlib, http.server, io, json, pathlib, re, socket, threading
+import base64, functools, gzip, hashlib, http.server, io, json, os, pathlib, re, socket, threading
 import pytest
 
 pw = pytest.importorskip('playwright.sync_api')
 docx = pytest.importorskip('docx')
 APP = pathlib.Path(__file__).resolve().parents[1]
-DIST = APP / 'web' / 'dist'
+DIST = pathlib.Path(os.environ.get('DB_DIST') or APP / 'web' / 'dist')      # DB_DIST=<folder>: the page as claude.ai serves it, read back after a publish
 PROG = DIST / 'assets' / 'programs' / 'wordcraft'
 pytestmark = pytest.mark.skipif(not (PROG / 'glue.js').exists(), reason='web/dist was built without the Word program')
 GPU = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']
@@ -374,5 +374,33 @@ def test_a_new_artwork_made_in_the_design_program_is_the_items_document(site, tm
         page.wait_for_selector('.dbprog', state='detached', timeout=10000)
         docs = page.evaluate("async id => (await (await fetch(`/api/dossiers/${id}/board`)).json()).slots.find(s => s.slot_id === 'M1-11').documents", did)
         assert len(docs) == 1 and docs[0]['version'] == 1 and docs[0]['filename'].endswith('.pdf'), docs
+        assert not errors, errors
+        b.close()
+
+
+def test_the_programs_a_dossiers_documents_need_are_fetched_in_the_background(site, tmp_path):
+    """«مراجعة المستندات وتعديلها» fetches the editing programs its documents need while the person looks at the list (16/11/2026: he
+    met «لازم ننزل حجات علشان اشتغل» the first time each program opened): the parts are fetched off the page's thread, checked and
+    kept in the browser («db-programs»), and the page says when they are ready; a program opened after that fetches no part again."""
+    word, pdf = letter(tmp_path / 'made-up.docx'), made_up_pdf(tmp_path / 'made-up-certificate.pdf')
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch(args=GPU)
+        page = b.new_page(viewport={'width': 1280, 'height': 860})
+        errors, parts = [], []
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.on('request', lambda r: parts.append(r.url.split('/assets/programs/')[1]) if '/assets/programs/' in r.url and 'wasm.gz.b64' in r.url else None)
+        page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+        did, _ = open_board(page, site, tmp_path, [word, pdf])
+        office(page, did)
+        page.wait_for_function("() => /جارٍ تجهيز برامج التعديل في الخلفية|برامج التعديل جاهزة/.test(document.getElementById('offProgs').textContent)", timeout=30000)
+        page.wait_for_function("() => document.getElementById('offProgs').textContent.includes('برامج التعديل جاهزة')", timeout=300000)
+        kept = page.evaluate("""() => new Promise(res => { const q = indexedDB.open('db-programs', 1); q.onerror = () => res(null);
+            q.onsuccess = () => { const r = q.result.transaction('files').objectStore('files').getAllKeys(); r.onsuccess = () => res(r.result.sort()); r.onerror = () => res(null); }; })""")
+        assert {'wordcraft', 'pdfcraft'} <= set(kept), kept                 # the Word document's program and the PDF's (and the photo program for its pages)
+        assert {x.split('/')[0] for x in parts} >= {'wordcraft', 'pdfcraft'} and len(parts) == len(set(parts)), parts
+        before = len(parts)
+        page.locator('[data-offdoc]', has_text='made-up-certificate.pdf').locator('[data-offedit]').click()
+        started(page, 'pdfcraft')
+        assert len(parts) == before, parts[before:]                         # opened from what was kept: nothing fetched again
         assert not errors, errors
         b.close()

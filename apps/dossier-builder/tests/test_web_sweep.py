@@ -14,7 +14,7 @@ import pytest
 from fixtures_pdf import make_pdf
 
 pw = pytest.importorskip('playwright.sync_api')
-DIST = pathlib.Path(__file__).resolve().parents[1] / 'web' / 'dist'
+DIST = pathlib.Path(os.environ.get('DB_DIST') or pathlib.Path(__file__).resolve().parents[1] / 'web' / 'dist')      # DB_DIST=<folder>: the page as claude.ai serves it, read back after a publish
 pytestmark = pytest.mark.skipif(not (DIST / 'index.html').exists(), reason='web/dist not built')
 GPU = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']
 POLICY = ["default-src 'self'", "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'", "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
@@ -240,3 +240,41 @@ def test_every_button_can_be_clicked(site, tmp_path, lang):
     bad = [e for e in events if hard(e)]
     print(said(events))                                                   # with -s: everything the clicks said, to read before a publish
     assert not bad, said(bad)
+
+
+@pytest.mark.parametrize('lang', ['ar', 'en'])
+def test_the_product_file_page_opens_clean(site, lang):
+    """«ملف المنتجات» is a second page of the artifact (suite.html): it starts the same engine, and every screen of its menu opens
+    without an error, in both languages."""
+    events = []
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch(args=GPU)
+        page = b.new_context(viewport={'width': 1440, 'height': 900}).new_page()
+        page.on('pageerror', lambda e: events.append(f'pageerror: {e}'))
+        page.on('console', lambda m: events.append(f'console: {m.text}') if m.type == 'error' else None)
+        page.on('response', lambda r: events.append(f'http {r.status} {r.url}') if r.status >= 400 else None)
+        page.route('https://fonts.googleapis.com/**', lambda r: r.fulfill(status=200, content_type='text/css', body='/* fonts */'))
+        page.add_init_script(f"localStorage.setItem('db.lang','{lang}')")
+        page.add_init_script(INIT)
+        page.goto(site + '/suite.html#/')
+        page.wait_for_selector('#boot', state='detached', timeout=240000)
+        page.evaluate('() => DBWEB.ready()')
+        page.evaluate(WRAP)
+        page.wait_for_selector('#nav a', timeout=60000)
+        assert page.title().startswith('eBOX')
+        routes = [h for h in page.evaluate("() => [...document.querySelectorAll('#nav a')].map(a => a.getAttribute('href'))") if h and h.startswith('#')]
+        assert len(routes) >= 6, routes
+        for r in routes:
+            page.evaluate('r => { location.hash = r; }', r)
+            page.wait_for_timeout(500)
+            page.wait_for_function("() => { const b = document.getElementById('busy'); return !b || b.hidden; }", timeout=60000)
+            page.wait_for_timeout(200)
+            if not page.inner_text('#view').strip():
+                events.append(f'empty: {r}')
+            for x in page.evaluate('() => window.__toasts.splice(0)'):
+                if x.get('bad'):
+                    events.append(f"toast at {r}: {x['text']}")
+            for x in page.evaluate('() => window.__bad.splice(0)'):
+                events.append(f"api at {r}: {x['method']} {x['url']} → {x['status']} {x['body'][:200]}")
+        b.close()
+    assert not events, '\n'.join(events)
