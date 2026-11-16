@@ -227,6 +227,123 @@ served (21 passed, 2 skipped), and the three-page TIFF put in an item on the pag
 (the same check fails on version 52 as served). The opening time was not measured again: the page differs from version 52's
 in one line (the engine's size and digest in its manifest) and the engine's archive is 516 bytes longer.
 
+## eBOX, stage 3 — «التجهيز والمراجعة» with «الخزنة», and «شجرة الملف والنواقص» (16/11/2026) — «كمل»
+
+Stations 6 and 7 of the path. Before it, the prepare page showed every document twice (a card each, then «مراجعة المستندات
+وتعديلها» below), a document was looked at one page at a time in the side panel, and the board's status words were another
+vocabulary than the stations'. The owner: «عايز خزنة للملفات اللي اتقرت و اتقطعت و اتجهزت اشوفها و اطلع عليها داخل البرنامج بدون
+تنزيل و ابقي شايف قبل ما ندخل علي التكوين اني جاهز».
+
+**A tree point is closed or open, said the same way everywhere** (engine `_points` in `app/api.py`; `GET /board` gives each
+item `point` and `open_why`, and `points` {required, closed, open}). An item the program makes itself is closed; an item with
+documents is closed when every document is prepared and asks nothing, and open with its reason otherwise: «بلا مستند», «لم
+يُجهَّز بعد», «مستند يحتاج إجراءً منك», «أمر يحتاج إلى تحقُّقك», «ملاحظة من فحوص التطابق بين المستندات», «غير مطابق», «بانتظار
+النسخة الموقَّعة», «مرجع خارجي», «طُلب من الجهة المُصدِرة». One count everywhere: the path bar's station 7, the home's list and
+station 7's sign say «closed of required». «إغلاق البند» — which withdraws an item's documents — is now «سحب مستندات البند كلها».
+
+**Station 6, «التجهيز والمراجعة»** (`#/d/{id}/prepare`; `/office` opens the same page; one entry in the menu):
+- **the sign** (`#readySign`): «المستندات جاهزة لتكوين الملف» or «غير جاهز بعد لتكوين الملف», the counts (in the vault, ready,
+  need you, not prepared), and a line for what is left, each leading to it — not prepared and need you («عرضها» filters the
+  vault), waiting for a place (to the proposed tree), differences in the data, findings of the cross-document checks on these
+  documents (to «التحقق»), required items with no document (to station 7). Ready: «التالي: شجرة الملف والنواقص».
+- **«الخزنة»** (`#office`): every document once, under its module and its tree point, headed by the file's own name with
+  «اسمه في الملف» under it, what was done to it on its way (read from its text / by the page reader / by Claude; cut from «…»,
+  its pages; a picture made into a PDF; the program's fixes), its small pages, its conditions (open when it needs the person,
+  answered on the card), its PDF tools in a fold of their own; filtered (all, need you, ready, not prepared) and searched.
+- **«عرض ومراجعة»** (`#reader`, `pageViewer`): the document over the whole page, with nothing downloaded — a PDF's pages drawn
+  by PdfCraft (larger, a search that lights its places, Enter or leaving the field, PageUp/PageDown and the arrows, Escape), a
+  Word or Excel file's words page by page (engine `GET /documents/{id}/text`); what was read from it and its conditions beside
+  its pages, answered there; the document before and after it in the vault one press away; a third party's document turned,
+  never cut or reordered.
+- **«شروط البند ومصدرها»** (`openLib`): the item's conditions, each with its source, why it is required, how its document is
+  obtained, and its record in the library — in the side panel, without leaving the station (also on stations 5 and 7).
+- While «تجهيز الكل» runs, a document's own buttons wait and say so; «تجهيز الكل» runs once at a time.
+
+**Station 7, «شجرة الملف والنواقص»** (`#/d/{id}/board`):
+- **the sign** (`#boardSign`): «النقاط المغلقة: a من b» with its bar, the open points by reason (each a button that shows them
+  in the tree), **the target submission date** (`PUT /target-date`; a certificate is judged valid on that day — one that will
+  have expired by then is said now: `DOC-EXPIRES-BEFORE-SUBMISSION`), and the files waiting for a place with the way to them.
+- **«الشجرة»**: every item by module, its point in the column «النقطة», and on an open row who issues its document and
+  **«كيفية الحصول عليه» — in Arabic in the Arabic page** (`rulepacks/eda.ctd.nta065.v5/how.ar.yaml`, item by item; the pack
+  had it in English only) — and its request: who was asked, the day to follow up, «متأخر», the letter. Filters «المفتوحة» /
+  «المغلقة» / «الكل» / «غير المطلوب» (an optional item is not a point to close: it is under «الكل»).
+- **«النواقص بحسب الجهة المُصدِرة»** (`GET /missing`, `POST /requests`): what has to be obtained under your company (generate,
+  draft, upload — nobody is asked), the authority, each active substance's manufacturer and other parties; **«طلب واحد من هذه
+  الجهة»** makes one letter for the items ticked (all of them for the authority or a manufacturer; for «جهات أخرى» the person
+  ticks what one party issues), each item then waiting on its issuer with the same due day. The open points whose documents
+  are here are said in one line, with station 6.
+- Documents are added **the proposed tree's way**: «إضافة مستندات» leads there, a file dropped on the board goes there, and
+  the tree takes files from Google Drive too. The board's classify-and-place dialog and its waiting box are gone.
+
+**With the stations** (stage 3d):
+- **A newer copy as its document's new version** (the proposed tree): a file going into an item that holds a document asks
+  «إضافته بجانبه» or «نسخة أحدث من …: تحل محله، ويُحفظ السابق»; the program proposes the newer copy where both are certificates
+  or the authority's documents and the file is valid later, and says why (`_newer_of`, `/place` with `replaces`).
+- **«التنفيذ التلقائي»** (his «سيبها عليّ»), on the tree and on the product card («اعتماد البطاقة والتنفيذ التلقائي»): every
+  file whose place the program is sure of — or the person chose — and that asks nothing goes into its item, every document is
+  prepared, and station 6 says what is left. It decides nothing for the person (a file beside a document, an item that needs
+  its details, a place not sure stay on the tree) and changes nothing in a document beyond what the preparation already does.
+- **The target submission date on the product card** (`envelope.target_date`).
+- **The validity date Claude read on a scan in «القراءة والفرز» goes with the file** (`wizDates` → `/unplaced`, kept as
+  `meta.claude_valid_until`) and becomes the document's date at its preparation **only where its own reading gives none**
+  (`store.take_claude_date`). Where the document's text gives another date, the text's stands and the condition says both
+  («وقرأ Claude على صفحاته تاريخًا آخر: … — اكتب التاريخ الصحيح إن كان غير هذا»). Only Claude's dates go with a file.
+
+**Found while building, and fixed** (each with a test):
+- **found by his real files** (Wouncure through «ملف جديد», field by field against version 53): the first way of carrying
+  Claude's date made it the document's own date, so the date the document's text gave at its preparation was not read — four
+  certificates that version 53 found expired from their text (`DOC-EXPIRED`) passed as valid on the stand-in's date. The
+  text's date now comes first (above); and a date read from the text, which was said to be the person's («أكّدتَه أنت»), now
+  says «من نص المستند»;
+- after a change made from the reader, «رجوع» closed the item's panel instead of showing it: the vault is drawn from
+  `/prepare` alone, and the page's copy of the board was not asked for again (`boardNow`, `paintPrepare`);
+- «تجهيز الكل» prepared again, at every press, each PDF whose file improvement had given nothing, only to try it once more —
+  the button never stopped being the main one: the try is kept with the digest of the bytes tried (`meta.improve_tried`);
+- a point stayed open under a «ready» document for a cross-document finding, and nothing said why: counted, and said;
+- «طلب من الجهة المُصدِرة» with the signatory left empty was answered with a validator's list (422): the engine's own words;
+- the search fields were the browser's grey box; one phrase for «needs you» (يحتاج إجراءً منك) on stations 4, 6 and 7;
+- counted wording: the places found in a document, the pages of a strip, a document cut from one page, and the suite page
+  («الأيام المتبقية: n», «أيام التأخير: n», «مدة بالأشهر: n», «عدد مستنداته: n») — the formal-Arabic test now reads it too;
+- **found by the click sweep** (every button of every screen, in Arabic): «warning: 2 FS.syncfs operations in flight at once»
+  after «إضافة مستندات». The browser edition's saves to the browser's storage could run two or three at once — the save the
+  timer starts after a request, the wizard's own call once its files are posted, the tab being left each started one,
+  whatever was running: the work done twice, and the large-file layer's lists of what to read back shared (the second save
+  emptied the first's). Now one save at a time (`web/bigfs.js`): one asked for while another runs waits for it and then runs
+  for what was written meanwhile; those asked while one waits share it. And a save asked for before the engine is up (the
+  tab left while the program opens) threw an error in the page («Cannot read properties of null»): it now waits for the
+  engine (`DBWEB.sync`). Both fail on the build before, in both of the page's engines (worker and page).
+
+Tests: `tests/test_stage3_engine.py` (11), `tests/test_ui_vault.py` (6), `tests/test_ui_board_points.py` (5),
+`tests/test_ui_stage3d.py` (6), `tests/test_pack_how_ar.py` (2), `tests/test_web_storage_sync.py` (3: the order of the saves,
+run by node on the large-file layer itself; and the page, in both engines); the tests of the pages that changed were brought
+to them.
+
+**His real files against version 53** (Dramrin: 9 files, one a RAR of 5; Wouncure: 26 — in the scratchpad, never committed;
+claude.ai's model stood in by the same mock, so this tests the program around the reading, not the reading), on the build
+delivered (`made_on` in each result):
+- *Through «ملف جديد»*: the same questions to Claude (two pairs of Wouncure's asked in another order: files read at once), the
+  same item for every document (13 of Dramrin's, 26 of Wouncure's), the same findings and the same dossier data; the four
+  certificates version 53 found expired from their own text still are. What changed: the scans whose text gives no validity
+  date (3 of Dramrin's, 16 of Wouncure's) take the date Claude read in the wizard instead of asking for it (with the stand-in,
+  its own made-up date); and the note that the file improvement was tried.
+- *Through the tree's own box*: for both, the same questions word for word, the same files left waiting, the same item,
+  findings and data for every document; what changed is the note that the file improvement was tried.
+- The 152-page file's contact sheets differ in a few of their eight pictures from any run to the next (here: none through
+  «ملف جديد», two through the tree's box).
+- The first run of this comparison, on the build before the date fix, is what found it (above); the four runs were made
+  again on the build delivered, after the storage fix: the same as on the build before it, but for the order of the files
+  read at once and the contact-sheet pictures.
+What cannot be tested from here: Claude's own reading on his account, claude.ai's save step (the letters and files a page
+gives), the Drive connector.
+
+Delivered as **version 54** of the artifact (16/11/2026, the commits `053e916` to `c12c8ac`; version id `1794860738-d95b`;
+the page, `suite.html`, `assets/engine.worker.js` and `assets/engine.zip.b64.txt` republished, the other 136 files carried
+forward): the whole suite on the build published (907 passed, 2 skipped — the two are the click sweep, run by itself: both
+languages, nothing but refusals that give their reason), his real files through both doors as above, the opening time (first
+opening 5.11 s → 4.99 s, later 4.30 s → 4.26 s: medians of ten paired rounds against version 53), the four republished files
+read back byte for byte, and the browser edition's tests on the page as served (24 passed, 2 skipped — the storage test
+among them, in both engines).
+
 ## Countries and authorities (November 2026) — «تختار الدولة ويعمل على أساسها موديول ١»
 
 A dossier is built for one country. The wizard opens with «where will this dossier be submitted?»; the country gives the

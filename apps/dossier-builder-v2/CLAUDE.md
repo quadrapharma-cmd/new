@@ -674,6 +674,52 @@ When a part is done or an open item is closed, update «What exists» and «Open
   difference in where a file lands or what is said of it explained — the whole suite with `-rs`, the click sweep by itself,
   the opening time, the read-back, the served page.
 
+- **16/11/2026, eBOX stage 3 built** (`053e916` engine, `d7d4832` station 6, `71a8ead` station 7, `19e5f61` the rest,
+  `1db84ae` the date, `c12c8ac` the storage; the old program's README, «eBOX, stage 3», has the whole of it). As designed
+  above, with these differences, decided while building:
+  · The vault's card is headed by **the file's own name**, with «اسمه في الملف» under it (the tree's way); its small pages stand
+  under the name, not in a column beside it (on a phone the text had no room, and the live panel of a reading opened inside it).
+  · The sign of station 6 has a line the design did not: **the blocking findings of the cross-document checks on its documents**
+  (a point stays open for them under a «ready» document), leading to «التحقق».
+  · «كيفية الحصول عليه» stood in English in the Arabic page: **`rulepacks/eda.ctd.nta065.v5/how.ar.yaml`** says it in Arabic,
+  item by item (nothing the English does not say; the tool's old «sheets» named as the program's data); `tests/test_pack_how_ar.py`
+  asks for a line for every item that has one.
+  · **«التنفيذ التلقائي» decides nothing for the person**: a file going beside a document already in its item (beside, or a
+  newer copy?) and an item that needs the document's details stay on the tree with the files whose place is not sure.
+  · **An optional item is not a point**: under station 7's «المفتوحة» only what is required; the optional items are under «الكل»
+  (two tests that opened one from the default view were changed to open «الكل»).
+  · The path bar's station 6 is reckoned as the station's own sign reckons it; station 7's count is the points'.
+  · Found and fixed: the page's copy of the board was not asked for again after a change (the vault is drawn from `/prepare`
+  alone: «رجوع» from the reader closed the item's panel); «تجهيز الكل» prepared again, at each press, every PDF whose improvement
+  had given nothing (`meta.improve_tried`, with the digest of the bytes tried); the empty signatory of a request answered with a
+  validator's list (`str | None`).
+  · **His real files found a regression of mine before he could** (`1db84ae`): the wizard's validity date, carried as the
+  document's own date (the design above: «`meta.valid_until`, said to come from that reading»), stood over the date the
+  document's text gave at its preparation — four of Wouncure's certificates that version 53 found expired from their text
+  passed as valid on the stand-in's date. Now the document's own reading comes first (`meta.claude_valid_until`,
+  `store.take_claude_date`, `prepare._validity`). **The commit message of `1db84ae` says «five»: it is four** (the test's
+  docstring and `store.py`'s were corrected in `c12c8ac`). The design's sentence above is superseded.
+  · **The click sweep found what no other test had**: two or three saves to the browser's storage at once (`web/bigfs.js`
+  now runs one at a time), and a save asked for before the engine is up threw (`DBWEB.sync` waits) —
+  `tests/test_web_storage_sync.py`, failing on the build before in both engines.
+  · `tests/test_ui_stage3d.py` went into the station 7 commit (`71a8ead`) by mistake, before the code it tests (`19e5f61`):
+  between those two commits it fails. Nothing else depends on that order.
+  · **A build is frozen and published as tested, byte for byte**: the engine's archive carries each file's time, so a file
+  saved again unchanged (an edit and its undo) gives an archive with other bytes. The tested build is kept with
+  `cp -rl web/dist <scratchpad>/<name>` (the build removes `web/dist` before writing, so the links keep the tested bytes) and
+  its bytes are the ones published (as plain copies: below); a change after the tests means a new build and the tests again.
+- **16/11/2026, eBOX stage 3 delivered: version 54** (`c12c8ac`; version id `1794860738-d95b`; the page, `suite.html`,
+  `assets/engine.worker.js` and `assets/engine.zip.b64.txt` republished, the other 136 files carried forward). What it is: the
+  README's section «eBOX, stage 3». What it was tested with, on the build published: the whole suite (907 passed, 2 skipped:
+  the click sweep, run by itself — both languages, only refusals that give their reason), his real files through BOTH doors
+  against version 53 (`wiz-s3c-*.json`, `same-s3c-*.json`; the README says what differs and why), the opening time (first
+  opening 5.11 s → 4.99 s, later 4.30 s → 4.26 s, ten paired rounds), the published files read back byte for byte and the
+  browser edition's tests on the page as served (24 passed, 2 skipped — the storage test among them, in both engines).
+  · **A publish refuses a hard link**: the frozen copy made with `cp -rl` leaves `web/dist`'s files with two links, and the
+  Artifact tool will not publish such a file. Publish plain copies of the tested files (`cp`, then `cmp` against the frozen
+  build) from a folder in the scratchpad (`root` there).
+  **Next: stage 4** (التحقق → التصدير → ما بعد التقديم) — only when he says go.
+
 ## Open items (propose when relevant; do when he asks)
 - Old program, next pieces (one at a time, each on his real files first): the 14/11 update and measuring Claude's reading (need
   the API key: `ANTHROPIC_API_KEY` in the environment's settings, added by him), «شروط الشكل لكل دولة», the Assistant on his
