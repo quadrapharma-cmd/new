@@ -1621,6 +1621,84 @@ def create_app(workspace, auth_enabled=None):
         lines, state = _verdict(did, doc)
         return {'document': doc, 'conditions': lines, 'state': state}
 
+    def _waiting(did):
+        """The files waiting to be placed, each with what was read of it and the item the program would put it in (unplaced_list)."""
+        out = []
+        for u in unplaced_list(did):
+            doc = st.document(u['id'])
+            rd = _reading(doc['filename'], st.blob_path(doc['sha256']).read_bytes())
+            md = ((doc.get('meta') or {}).get('model') or {}).get('doc') or {}
+            out.append({**u, 'reading': {k: v for k, v in rd.items() if k not in ('rules', 'text')}, 'model': md or None,
+                        'model_wanted': not md and bool(rd.get('scanned') and not rd.get('chars')),
+                        'split_from': (doc.get('meta') or {}).get('split_from'), 'pages_of': (doc.get('meta') or {}).get('pages'),
+                        'split_title': (doc.get('meta') or {}).get('split_title')})
+        return out
+
+    def _tree(did, place=None):
+        """Station 5, «الشجرة المقترحة» (the owner, 16/11/2026: the documents «shown as tree points before the file is made»): the
+        dossier's items with the documents placed in them, and every waiting file with what was read of it, the item it would go to
+        (the program's own proposal, or the person's choice in `place`: {doc_id: slot_id, '' for none}) and the name it would carry
+        there — the CTD writer's own naming, asked without writing anything. Nothing is placed here."""
+        d = st.dossier(did)
+        board = st.board(did)
+        waiting = _waiting(did)
+        place = place if isinstance(place, dict) else {}
+        active = {s['slot_id'] for s in board['slots'] if s.get('level') in ('R', 'O')}
+        for w in waiting:
+            want = place.get(w['id'], w.get('auto')) or None
+            w['place'] = want if want in active else None
+            kn = _extract.KIND_NAMES.get(w.get('kind') or '')
+            w['kind_name'] = kn if kn and w.get('kind') != 'other' else None
+        slots = st.slots(did)
+        files, of = {}, {}
+        for s in slots:
+            for doc in st.documents(did, s.slot_id) if s.active else []:
+                files.setdefault(s.slot_id, []).append({'file': doc['id'], 'title': doc['title'], **doc['meta']})
+        for w in waiting:
+            if w['place']:
+                doc = st.document(w['id'])
+                title = None if doc.get('title') == doc['filename'] else doc.get('title')       # as place_document names it
+                files.setdefault(w['place'], []).append({'file': doc['id'], 'title': title,
+                                                         **{k: v for k, v in (doc.get('meta') or {}).items() if k not in ('text',)}})
+        try:
+            plan = ctd.write('/nonexistent', d['name'], slots, files, dry_run=True)
+            for sid, paths in plan['plan'].items():
+                for f, path in zip(files[sid], paths):
+                    of[f['file']] = f"{plan['root']}/{path}"
+        except Exception:                                  # noqa: BLE001 — a name that cannot be made yet: the tree is still shown
+            of = {}
+        for w in waiting:
+            w['name'] = of.get(w['id'])
+        gen = {v['req'] for v in letters.SCHEMAS.values() if v.get('req')}
+        out = []
+        for s in board['slots']:
+            if s.get('level') not in ('R', 'O'):
+                continue
+            docs = [x for x in s.get('documents') or [] if not (x.get('meta') or {}).get('external')]
+            out.append({'slot_id': s['slot_id'], 'req_id': s['req_id'], 'ctd': s.get('ctd'), 'module': s.get('module'), 'level': s['level'],
+                        'doc_class': s.get('doc_class'), 'title': s.get('title'), 'item': s.get('item'), 'generable': s['req_id'] in gen,
+                        'external': bool(s.get('external')) or any((x.get('meta') or {}).get('external') for x in s.get('documents') or []),
+                        'documents': [{'id': x['id'], 'filename': x['filename'], 'version': x.get('version'), 'check_status': x.get('check_status'),
+                                       'name': of.get(x['id'])} for x in docs],
+                        'proposed': [w['id'] for w in waiting if w['place'] == s['slot_id']]})
+        req = [s for s in out if s['level'] == 'R']
+        from .. import pdfcraft as _pc
+        return {'slots': out, 'waiting': waiting,
+                'counts': {'required': len(req), 'have': sum(1 for s in req if s['documents'] or s['external']),
+                           'filled': sum(1 for s in req if s['documents'] or s['external'] or s['proposed']),
+                           'waiting': len(waiting), 'proposed': sum(1 for w in waiting if w['place']),
+                           'unplaced': sum(1 for w in waiting if not w['place'])},
+                'engine': _pc.status(), 'ocr': _pc.ocr_info(), 'model': 'server' if _ai_key() else None}
+
+    @app.get('/api/dossiers/{did}/tree')
+    def tree_get(did: str):
+        return _tree(did)
+
+    @app.post('/api/dossiers/{did}/tree')
+    def tree_with(did: str, body: dict = None):
+        """The proposed tree with the person's own choices: {place: {doc_id: slot_id, or '' for «no place yet»}}."""
+        return _tree(did, (body or {}).get('place'))
+
     @app.get('/api/dossiers/{did}/prepare')
     def prepare_overview(did: str):
         """The preparation stage at a glance: the items still asking for a document, the files waiting to be placed (each read — a scan
@@ -1630,15 +1708,7 @@ def create_app(workspace, auth_enabled=None):
         names = _names(did)
         requested = [{'slot_id': s['slot_id'], 'ctd': s.get('ctd'), 'title': s.get('title'), 'level': s.get('level'), 'doc_class': s.get('doc_class')}
                      for s in board['slots'] if s.get('level') == 'R' and not s.get('documents') and s.get('status') not in ('not_applicable',)]
-        waiting = []
-        for u in unplaced_list(did):
-            doc = st.document(u['id'])
-            rd = _reading(doc['filename'], st.blob_path(doc['sha256']).read_bytes())
-            md = ((doc.get('meta') or {}).get('model') or {}).get('doc') or {}
-            waiting.append({**u, 'reading': {k: v for k, v in rd.items() if k not in ('rules', 'text')}, 'model': md or None,
-                            'model_wanted': not md and bool(rd.get('scanned') and not rd.get('chars')),
-                            'split_from': (doc.get('meta') or {}).get('split_from'), 'pages_of': (doc.get('meta') or {}).get('pages'),
-                            'split_title': (doc.get('meta') or {}).get('split_title')})
+        waiting = _waiting(did)
         placed, ctx = [], _prep_ctx(did)
         for s in board['slots']:
             for doc in s.get('documents') or []:

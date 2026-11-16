@@ -532,6 +532,29 @@ When a part is done or an open item is closed, update «What exists» and «Open
   Drive connector (no call to it was made in this session).
   **Next: stage 2** (الدولة → الرفع → القراءة والفرز → بطاقة المنتج → الشجرة المقترحة) — only when he says go, after he has
   seen stage 1 and the names of the choices (the list was given to him in the chat with version 51).
+- **16/11/2026, he said «كمل» (no remark on the names: they stand): stage 2 started.** The design, decided before building
+  (the wizard and the prepare page were read whole first):
+  · **The wizard (`#/new`) is stations 2, 3, 4 and the product card**, one screen each: step 0 «الدولة» (the country, its
+  authority, its Module 1 laid out, its record in the library); step 1 «الرفع» (one box for anything first; the typed cards
+  stay below it, optional, with their kind rule); step 2 «القراءة والفرز» (what was read, the files sorted by kind, problems
+  first); step 3 «بطاقة المنتج» (product, the answers that decide the items, the actives, the submission — today's steps 1–4
+  on one screen, each value with its source; confirmed once). **Reading is not touched**: the same `readFiles`, rules then
+  the model, the same merge.
+  · **Confirming the card makes the dossier and puts every file in its waiting box** (`/unplaced`, with the kind and text the
+  wizard read) — nothing is placed yet. Before stage 2 the wizard placed its files itself (`classify/text`) and a combined file
+  went whole into one item; the prepare page's own upload cut it first. Now there is one way in.
+  · **Station 5 «الشجرة المقترحة» is a page of the dossier** (`#/d/{id}/tree`, engine `GET|POST /api/dossiers/{id}/tree`):
+  combined files cut and unknown scans read on arrival (`prepModelWaiting`, as the prepare page did), then the items by
+  module with each waiting file under the item proposed for it and **the name it will carry there** (the CTD writer's own
+  naming, a dry run), the files with no sure place, the items still missing; a file's item can be changed; «اعتماد الشجرة»
+  places them (`/documents/{id}/place` — no fixes: the preparation is station 6's) and goes to station 6. The same page is
+  the box that is always open: a file added later walks the same way.
+  · **The prepare page** keeps the placed documents, their conditions and tools; its upload box and waiting list move to the
+  tree page (a note with a link when files wait). Stage 3 re-orders the rest of it (the vault).
+  · Left for stage 3, said to him: «سيبها عليّ» (stations 4–6 by itself), a newer copy of a certificate offered as a new
+  version, the library's side panel beside every station.
+  Before a publish: his real files through the new way against version 51 — the reading must be the same, and every
+  difference in where a file lands must be explained (the cut of combined files is one that is expected).
 
 ## Open items (propose when relevant; do when he asks)
 - Old program, next pieces (one at a time, each on his real files first): the 14/11 update and measuring Claude's reading (need
