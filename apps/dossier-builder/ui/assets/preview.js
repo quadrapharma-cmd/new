@@ -117,7 +117,7 @@
       const n = r.count || total || r.got.length;
       el.dataset.pvpages = String(n);
       strip.innerHTML = r.got.filter(g => !n || g.page <= n).map(g => `<img class="pv-th" data-pvpage="${g.page}" alt="${esc(say('صفحة ' + g.page, 'Page ' + g.page))}" src="${g.url}">`).join('')
-        + (n > STRIP ? `<span class="pv-more">+${n - STRIP} ${say('صفحة', n - STRIP === 1 ? 'page' : 'pages')}</span>` : '');
+        + (n > STRIP ? `<span class="pv-more">${say('صفحات أخرى: ' + (n - STRIP), '+' + (n - STRIP) + (n - STRIP === 1 ? ' page' : ' pages'))}</span>` : '');
       strip.querySelectorAll('img').forEach(i => { i.onerror = () => { strip.innerHTML = kindTile(name); }; });   // a page the engine could not draw
     } catch (e) { strip.innerHTML = kindTile(name); }
   }

@@ -419,12 +419,18 @@ def create_app(workspace, auth_enabled=None):
         state in `prep`), with the one count every screen shows: `points` {required, closed, open}."""
         b = st.board(did)
         pts = _points(did, b)
+        d = st.dossier(did)
+        au = _authority(d['pack'], d['envelope']).get('name')
         for x in b['slots']:
             pt = pts.get(x['slot_id']) or {}
             x['point'], x['open_why'] = pt.get('point'), pt.get('why') or []
             for doc in x.get('documents') or []:
                 doc['prep'] = (pt.get('docs') or {}).get(doc['id'])
+            if x.get('level') in ('R', 'O'):                 # who issues its document (station 7 lists what is missing under each)
+                key, kind, name = _party(d, x, au)
+                x['party'] = {'key': key, 'kind': kind, 'name': name}
         b['points'] = _point_counts(b['slots'])
+        b['target_date'] = (d.get('envelope') or {}).get('target_date')
         return b
 
     @app.put('/api/dossiers/{did}/target-date')
@@ -1829,9 +1835,9 @@ def create_app(workspace, auth_enabled=None):
                     why.append('external')
                 if any(not v['prepared'] or v['fix'] for v in docs.values()):
                     why.append('not_prepared')
-                if any(v['needs_you'] for v in docs.values()):
+                if any(v['prepared'] and v['needs_you'] for v in docs.values()):      # said once the document has been read: before that it is «not prepared»
                     why.append('needs_you')
-                if any(v['check'] for v in docs.values()):
+                if any(v['prepared'] and v['check'] for v in docs.values()):
                     why.append('to_check')
                 if any(f.get('severity') == 'block' for f in x.get('cross') or []):
                     why.append('cross')
@@ -1902,16 +1908,22 @@ def create_app(workspace, auth_enabled=None):
                                'extracted': (meta.get('extracted') or {}).get('found', []),
                                'ocr_quality': (meta.get('extracted') or {}).get('ocr_quality'),
                                'optimized': meta.get('optimized'),
-                               'improvable': bool(_pc.available() and doc['filename'].lower().endswith('.pdf') and not meta.get('optimized'))})
+                               'improvable': bool(_pc.available() and doc['filename'].lower().endswith('.pdf') and not meta.get('optimized')
+                                                  and (meta.get('improve_tried') or {}).get('sha256') != doc.get('sha256'))})
         open_conf = [c for c in ((ctx[0].get('data') or {}).get('conflicts') or []) if isinstance(c, dict)]
         pts = _points(did, board, states)
         for x in placed:
             x['point'] = (pts.get(x['slot_id']) or {}).get('point')
         n = {k: sum(1 for x in placed if x['bucket'] == k) for k in ('ready', 'needs_you', 'not_prepared')}
+        held = {x['slot_id'] for x in placed}
         counts = {'documents': len(placed), **n, 'waiting': len(waiting), 'conflicts': len(open_conf),
+                  # the blocking findings of the cross-document checks that touch a document of the vault: its point stays open for
+                  # them though the document itself is ready — the sign says so, and where they are looked at (station 8)
+                  'cross': sum(1 for f in board.get('cross') or [] if f.get('severity') == 'block' and held & set(f.get('slots') or [])),
                   'missing': sum(1 for sl in board['slots'] if sl.get('level') == 'R' and 'missing' in (pts.get(sl['slot_id']) or {}).get('why', []))}
         return {'requested': requested, 'waiting': waiting, 'placed': placed, 'engine': _pc.status(), 'ocr': _pc.ocr_info(),
                 'model': 'server' if _ai_key() else None, 'conflicts': open_conf, 'counts': counts,
+                'points': {x['slot_id']: {'point': (pts.get(x['slot_id']) or {}).get('point'), 'why': (pts.get(x['slot_id']) or {}).get('why') or []} for x in placed},
                 'ready': bool(placed) and n['ready'] == len(placed) and not waiting and not open_conf,
                 'target_date': (ctx[0].get('envelope') or {}).get('target_date')}
 
@@ -1927,13 +1939,14 @@ def create_app(workspace, auth_enabled=None):
         pages = st.text_pages(d)
         return {'id': cur, 'filename': d['filename'], 'pages': pages, 'chars': sum(len(x or '') for x in pages)}
 
-    def _party(d, x):
+    def _party(d, x, au=None):
         """Who issues an item's document: the company itself, the authority the dossier is for, the manufacturer of one active
-        substance, or another party (each of those is named by the item's own «how to get it»)."""
+        substance, or another party (each of those is named by the item's own «how to get it»). `au`: the authority's name, when
+        the caller has asked for it already."""
         cls = x.get('doc_class')
         if cls == 'eda_document':
-            au = _authority(d['pack'], d['envelope'])
-            return 'authority', 'authority', au.get('name') or {'en': 'The authority', 'ar': 'الجهة الرقابية'}
+            au = au or _authority(d['pack'], d['envelope']).get('name')
+            return 'authority', 'authority', au or {'en': 'The authority', 'ar': 'الجهة الرقابية'}
         if cls == 'third_party_certificate':
             it = x.get('item') or {}
             if it.get('manufacturer'):
@@ -1952,12 +1965,13 @@ def create_app(workspace, auth_enabled=None):
         pts = _points(did, b)
         gen = {v['req'] for v in letters.SCHEMAS.values() if v.get('req')}
         order, groups = ['company', 'authority', 'api', 'other'], {}
+        au = _authority(d['pack'], d['envelope']).get('name')
         for x in b['slots']:
             pt = pts.get(x['slot_id']) or {}
             x['point'], x['open_why'] = pt.get('point'), pt.get('why') or []
             if x.get('level') != 'R' or pt.get('point') != 'open':
                 continue
-            key, kind, name = _party(d, x)
+            key, kind, name = _party(d, x, au)
             g = groups.setdefault(key, {'key': key, 'kind': kind, 'name': name, 'items': []})
             rq = x.get('request')
             g['items'].append({'slot_id': x['slot_id'], 'req_id': x['req_id'], 'ctd': x.get('ctd'), 'module': x.get('module'), 'title': x.get('title'),
@@ -2088,6 +2102,8 @@ def create_app(workspace, auth_enabled=None):
             if imp.get('document'):
                 doc = st.keep_reading(did, imp['document']['id'], keep)
                 steps.append({'improved': {'before': imp['before'], 'after': imp['after']}})
+            elif imp.get('why') != 'not here':
+                doc = st.document(doc['id'])                              # tried, nothing gained: said on the document (not tried again on the same bytes)
         if body.get('split', True):
             cut = st.split_large(did, doc['id'])                          # over 100 MB still: cut into parts that fit, in the same item
             if cut['parts']:

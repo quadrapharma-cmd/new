@@ -207,6 +207,6 @@ def test_a_page_picture_is_shown_where_there_is_no_server(site, tmp_path):
         v3 = page.evaluate("async id => (await (await fetch(`/api/dossiers/${id}/board`)).json()).slots.flatMap(s => s.documents).map(d => [d.id, d.version])", did)
         assert len(v3) == 1 and v3[0][1] == 3 and page.get_attribute('#offList [data-offdoc]', 'data-offdoc') == v3[0][0]
         assert page.evaluate('() => location.hash').endswith('/office') and page.locator('#prepOut').count() == 1
-        assert page.inner_text('#view h1').strip() == 'تجهيز المستندات'
+        assert page.inner_text('#view h1').strip() == 'التجهيز والمراجعة'
         assert asked == [] and errors == [], (asked, errors)
         b.close()

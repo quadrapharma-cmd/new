@@ -128,7 +128,9 @@ def test_files_show_their_pages_and_what_claude_is_given_and_the_office_edits_th
         assert page.locator('.dbprog').count() == 0
         page.wait_for_function("() => !S.prepBusy && !S.prepDoing && S.prep.placed.length === 2 && S.prep.placed.every(d => d.prepared) && document.querySelectorAll('[data-offdoc]').length === 2 && !document.querySelector('.pv-now')", timeout=240000)
         page.evaluate("() => document.getElementById('office').scrollIntoView()")
-        page.wait_for_function("() => [...document.querySelectorAll('#offList img[data-pvthumb]')].every(i => i.src && i.src.startsWith('blob:'))", timeout=60000)
+        # each card carries its document's own small pages (the scan's page; the Word file's kind, which has no pages to draw here)
+        page.wait_for_function("""() => { const s = [...document.querySelectorAll('#offList [data-pdoc] [data-pv]')];
+            return s.length === 2 && s.every(x => x.dataset.pvname.endsWith('.pdf') ? [...x.querySelectorAll('img.pv-th')].some(i => i.src.startsWith('blob:')) : !!x.querySelector('.pv-kind')); }""", timeout=60000)
         rows = page.evaluate("() => [...document.querySelectorAll('[data-offdoc]')].map(r => ({text: r.innerText, edit: !!r.querySelector('[data-offedit]')}))")
         scan = next(r for r in rows if 'made-up-scan.pdf' in r['text'])
         word = next(r for r in rows if 'made-up-cover.docx' in r['text'])
@@ -141,10 +143,11 @@ def test_files_show_their_pages_and_what_claude_is_given_and_the_office_edits_th
         page.wait_for_selector('.dbprog', state='detached', timeout=10000)
         assert page.evaluate('() => location.hash').endswith('/prepare')
         page.wait_for_selector('[data-offdoc]', timeout=30000)
-        # from the menu, the office comes first (above the files waiting and placed)
+        # the address «المكتب» had still opens station 6, with «الخزنة» in sight, and the menu marks the station (its one entry)
         page.evaluate('id => { location.hash = `#/d/${id}/office`; }', did)
         page.wait_for_function("() => document.querySelectorAll('[data-offdoc]').length === 2", timeout=60000)
-        assert page.evaluate("() => document.getElementById('office').getBoundingClientRect().top < document.getElementById('prepOut').getBoundingClientRect().top")
-        assert page.evaluate("() => document.querySelector('#navOffice').classList.contains('on') || document.querySelector('#navOffice').getAttribute('aria-current') === 'page'")
+        assert page.inner_text('#view h1').strip() == 'التجهيز والمراجعة' and page.locator('#navOffice').count() == 0
+        page.wait_for_function("() => { const r = document.getElementById('office').getBoundingClientRect(); return r.top < innerHeight && r.bottom > 0; }", timeout=30000)
+        assert page.evaluate("() => { const a = document.querySelector('#nav a[data-r=\"prepare\"]'); return a.classList.contains('on') || a.getAttribute('aria-current') === 'page'; }")
         b.close()
     assert not [e for e in errors if 'Invalid or unexpected token' not in e], errors   # (that one is the fonts' link, web/build.py: known)

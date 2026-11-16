@@ -247,7 +247,9 @@ def test_a_certificate_is_judged_on_the_target_submission_date(tmp_path):
     assert v['status'] == 'needs_you' and v['action'] == 're_obtain' and 'target submission date' in v['why']['en'] and 'تاريخ التقديم المستهدف' in v['why']['ar']
     assert c.get(f'/api/dossiers/{did}/prepare', headers=H).json()['target_date'] == target.isoformat()
     assert c.get(f'/api/dossiers/{did}', headers=H).json()['envelope']['target_date'] == target.isoformat()
-    assert 'needs_you' in slot(c, did, '1.2.4.1')['open_why']
+    assert slot(c, did, '1.2.4.1')['open_why'] == ['not_prepared']            # not read yet: that is all that is said of its point
+    c.post(f'/api/dossiers/{did}/prepare/{look()["id"]}', headers=H, json={})
+    assert 'needs_you' in slot(c, did, '1.2.4.1')['open_why'] and 'not_prepared' not in slot(c, did, '1.2.4.1')['open_why']
     # a target date before the certificate's end: nothing is said
     c.put(f'/api/dossiers/{did}/target-date', headers=H, json={'target_date': (date.today() + timedelta(days=100)).isoformat()})
     assert not [x for x in look()['findings'] if x['rule'] == 'DOC-EXPIRES-BEFORE-SUBMISSION'] and valid()['status'] == 'ok'
@@ -299,3 +301,44 @@ def test_a_request_with_the_signatory_left_empty_is_answered_in_the_engines_own_
         d = r.json()['detail']
         assert d['code'] == 'E-MISSING-DATA' and 'signatory' in d['request_data'] and d['ar'], d
     assert c.get(f'/api/dossiers/{did}/requests', headers=H).json() == []      # nothing was opened by a refused request
+
+
+def test_a_document_already_small_is_not_prepared_again_only_to_try_the_same_improvement(tmp_path):
+    """«تجهيز الكل» took every PDF whose improvement had given nothing as still «improvable», and prepared it again on each press, only
+    to try the same thing once more — the button never stopped being the main one (16/11/2026). The try is kept on the document with
+    the digest of the bytes tried: the same bytes are not tried again, other bytes are."""
+    c, did = client(tmp_path)
+    doc = put(c, did, 'P-05', tmp_path, 'made-up-process.pdf', ['A made-up document', 'Dermacure 20 mg cream (made up)', 'Example Pharm'])
+    row = lambda: next(x for x in c.get(f'/api/dossiers/{did}/prepare', headers=H).json()['placed'] if x['slot_id'] == 'P-05')
+    held = lambda: next(d for s in board(c, did)['slots'] if s['slot_id'] == 'P-05' for d in s['documents'])
+    assert row()['improvable'] is True
+    assert c.post(f'/api/dossiers/{did}/prepare/{doc["id"]}', headers=H, json={}).status_code == 200
+    after = row()
+    assert after['prepared'] and not after['improved'] and after['improvable'] is False       # tried: already small — not offered again
+    tried = held()['meta']['improve_tried']
+    assert tried == {'sha256': held()['sha256'], 'why': 'already small'}
+    assert c.post(f'/api/dossiers/{did}/prepare/{after["id"]}', headers=H, json={}).status_code == 200
+    again = row()
+    assert again['id'] == after['id'] and again['version'] == after['version']                  # prepared again by hand: no new version for nothing
+    # other bytes (a page turned): a new version, tried afresh
+    new = c.post(f'/api/dossiers/{did}/documents/{after["id"]}/pages', headers=H, json={'op': 'rotate', 'pages': [1], 'degrees': 90}).json()['document']
+    assert row()['id'] == new['id'] and row()['improvable'] is True
+
+
+def test_the_vault_counts_the_cross_document_findings_that_touch_its_documents(tmp_path):
+    """A point stays open under a document that is itself ready when a blocking finding of the cross-document checks names its item:
+    the sign of station 6 says so (and where they are looked at) from this count — only the findings on documents the vault holds."""
+    c, did = client(tmp_path)
+    assert c.put(f'/api/dossiers/{did}/data', headers=H, json={'batches': [{'no': 'EX0001', 'size': '100,000', 'date': '2026-01', 'site': 'A', 'scale': 'pilot'}]}).status_code == 200
+    found = [f for f in board(c, did)['cross'] if f['id'] == 'NP040-P54']
+    assert found and found[0]['severity'] == 'block' and 'P-16' in found[0]['slots']       # one batch where two are asked
+    ov = c.get(f'/api/dossiers/{did}/prepare', headers=H).json()
+    assert ov['counts']['cross'] == 0                                                       # no document of the vault is touched yet
+    doc = put(c, did, 'P-16', tmp_path, 'made-up-item.pdf', ['A made-up document', 'Dermacure 20 mg cream (made up)', 'Example Pharm'])
+    assert c.post(f'/api/dossiers/{did}/prepare/{doc["id"]}', headers=H, json={}).status_code == 200
+    ov = c.get(f'/api/dossiers/{did}/prepare', headers=H).json()
+    row = next(x for x in ov['placed'] if x['slot_id'] == 'P-16')
+    assert row['bucket'] == 'ready' and ov['points']['P-16'] == {'point': 'open', 'why': ['cross']}
+    held = {x['slot_id'] for x in ov['placed']}
+    assert ov['counts']['cross'] == sum(1 for f in board(c, did)['cross'] if f['severity'] == 'block' and held & set(f['slots'])) >= 1
+    assert ov['ready'] is True                                                              # the documents themselves are ready: what keeps the point open is counted beside

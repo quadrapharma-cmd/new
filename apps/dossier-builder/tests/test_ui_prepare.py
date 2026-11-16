@@ -68,16 +68,21 @@ def test_each_prepared_document_shows_its_pdfcraft_tools_and_what_it_said_is_kep
         page.wait_for_function("() => location.hash.endsWith('/prepare') && document.querySelectorAll('#prepOut [data-pdoc]').length >= 1", timeout=120000)
         page.click('#prepAll')
         page.wait_for_function("() => S.prep && !S.prepBusy && S.prep.waiting.length === 0 && S.prep.placed.length >= 1 && S.prep.placed.every(d => d.prepared) && document.querySelector('.prep-tools')", timeout=300000)
+        assert page.locator('.prep-tools').is_hidden()                                             # the tools have their own fold on the document's card
+        assert page.inner_text('[data-vtools] summary').strip() == 'PdfCraft tools'
+        page.click('[data-vtools] summary')
         tools = page.inner_text('.prep-tools')
-        for word in ('PdfCraft tools', 'Pages', 'Split it', 'As Word', 'Redact for real'):
+        for word in ('Pages', 'Split it', 'As Word', 'Redact for real'):
             assert word in tools, (word, tools)
         doc = page.evaluate('S.prep.placed[0]')
         assert doc['conditions'] and doc['prepared']
         if (doc.get('absorbed') or {}).get('added'):
             assert 'Kept in its place' in page.inner_text('#prepOut')
         page.click('.prep-tools [data-ptview]')
-        page.wait_for_selector('#pgImg', timeout=60000)                                          # PdfCraft draws its pages
+        page.wait_for_selector('#reader:not([hidden]) #pgImg', timeout=60000)                    # PdfCraft draws its pages, over the whole page
+        page.wait_for_function("() => { const i = document.getElementById('pgImg'); return i && i.complete && i.naturalWidth > 0; }", timeout=60000)
         page.click('#pgBack')
-        page.wait_for_selector('.prep-tools', timeout=60000)
+        page.wait_for_function("() => document.getElementById('reader').hidden")
+        page.wait_for_selector('.prep-tools', state='attached', timeout=60000)
         b.close()
     assert not errors, errors

@@ -1,4 +1,5 @@
-"""«المكتب» on the prepare page and the page viewer work on the documents as they are now (16/11/2026, found by the click sweep).
+"""«الخزنة» of station 6 and the reader work on the documents as they are now (16/11/2026, found by the click sweep, when the list
+was «المكتب» below the prepare cards; since stage 3 the two are one list, each document one card, and the reader covers the page).
 Every change to a document makes a new version, with a new id. Three things went wrong around that:
   - «المكتب» kept the list it had asked for before the change («تجهيز الكل» on several files: an answer on its way came back after
     the change and was kept), so its buttons worked on versions no longer current — «الصفحات» answered 422 and showed nothing;
@@ -57,12 +58,11 @@ def test_the_office_list_is_asked_for_again_after_every_change(server, tmp_path)
         b = p.chromium.launch()
         page = open_prepare(b, server, did, errors, bad)
         assert page.evaluate(OFFICE) == sorted([a, b_])
-        # each document's small pages are drawn: one page each, and none asked for that is not there (before: four asked, three
-        # refused, and the file's kind shown in the pages' place)
-        page.wait_for_function("() => { const s = [...document.querySelectorAll('#prepOut .pv-strip')]; return s.length === 2 && s.every(x => x.querySelectorAll('img.pv-th').length === 1 && [...x.querySelectorAll('img.pv-th')].every(i => i.complete && i.naturalWidth > 0)); }", timeout=60000)
+        # each document stands once, and its small pages are drawn on its card: one page each, and none asked for that is not there
+        # (before: four asked, three refused, and the file's kind shown in the pages' place)
+        assert page.locator('#prepOut [data-pdoc]').count() == 2 and page.locator('#offList [data-pdoc]').count() == 2
+        page.wait_for_function("() => { const s = [...document.querySelectorAll('#offList [data-pdoc] .pv-strip')]; return s.length === 2 && s.every(x => x.querySelectorAll('img.pv-th').length === 1 && [...x.querySelectorAll('img.pv-th')].every(i => i.complete && i.naturalWidth > 0)); }", timeout=60000)
         assert page.locator('#prepOut .pv-kind').count() == 0
-        page.evaluate("() => document.getElementById('office').scrollIntoView()")       # «المكتب» draws each document's first page once it is in sight
-        page.wait_for_function("() => [...document.querySelectorAll('#offList img.pv-th')].length === 2 && [...document.querySelectorAll('#offList img.pv-th')].every(i => i.complete && i.naturalWidth > 0)", timeout=60000)
         # the list the page holds is not the documents any more (what an answer that came back late left behind): drawing the page
         # again asks the engine, and does not trust what it holds
         page.evaluate("async () => { S.board.slots.forEach(s => s.documents.forEach(d => { d.id = 'stale-' + d.id; })); await paintPrepare(true); }")
@@ -90,7 +90,7 @@ def test_the_viewer_and_the_item_drawer_work_on_the_current_version_and_keep_the
         page = open_prepare(b, server, did, errors, bad)
         v2 = call(server, f'/api/dossiers/{did}/documents/{a}/pages', {'op': 'rotate', 'pages': [1], 'degrees': 90})['document']['id']
         assert a in page.evaluate(OFFICE) and v2 != a                                    # the page still holds the version before
-        # «الصفحات» on that row: the viewer is shown the document as it is now…
+        # «عرض ومراجعة» on that card: the reader is shown the document as it is now…
         page.click(f'#offList [data-offpages="{a}"]')
         page.wait_for_function(SHOWN, timeout=60000)
         assert 'تعذّر' not in page.inner_text('#pgNo') and page.inner_text('#pgNo').strip().startswith('1')
@@ -103,9 +103,9 @@ def test_the_viewer_and_the_item_drawer_work_on_the_current_version_and_keep_the
         page.wait_for_function(SHOWN, timeout=60000)
         # the page under the viewer is still the prepare page (before: the board was drawn in its place)
         assert page.evaluate('() => location.hash').endswith('/prepare') and page.locator('#prepOut').count() == 1 and page.locator('#offList').count() == 1
-        assert page.inner_text('#view h1').strip() == 'تجهيز المستندات'
+        assert page.inner_text('#view h1').strip() == 'التجهيز والمراجعة'
         page.click('#pgBack')
-        page.wait_for_function("() => document.getElementById('drawer').hidden")
+        page.wait_for_function("() => document.getElementById('reader').hidden && document.getElementById('drawer').hidden")
         # the same from an item's drawer opened on this page: «فتح البند» → «الصفحات» → a page turned → back to the drawer
         page.click(f'#offList [data-offitem="{slots[0]}"]')
         page.wait_for_selector('#drawer [data-pgv]', timeout=30000)
@@ -118,10 +118,11 @@ def test_the_viewer_and_the_item_drawer_work_on_the_current_version_and_keep_the
         assert v4['version'] == 4 and page.evaluate(OFFICE) == sorted([v4['id'], b_])
         page.wait_for_function(SHOWN, timeout=60000)
         page.click('#pgBack')
+        page.wait_for_function("() => document.getElementById('reader').hidden")
         page.wait_for_selector('#drawer [data-pgv]', timeout=30000)                      # the item's drawer again, on the version it has now
         assert page.get_attribute('#drawer [data-pgv]', 'data-pgv') == v4['id']
         assert page.evaluate('() => location.hash').endswith('/prepare') and page.locator('#prepOut').count() == 1
-        assert page.inner_text('#view h1').strip() == 'تجهيز المستندات'
+        assert page.inner_text('#view h1').strip() == 'التجهيز والمراجعة'
         b.close()
     assert not errors, errors
     assert not bad, bad
@@ -153,8 +154,9 @@ def test_the_office_says_why_while_documents_are_being_prepared_and_is_never_sil
         page.click(f'#offList [data-offpages="{a}"]')
         page.wait_for_function(SHOWN, timeout=60000)
         assert 'للعرض فقط' in page.inner_text('#pgLook') and page.locator('#pgTurn').count() == 0 and page.locator('#pgDel').count() == 0
+        assert page.locator('#rdSide [data-pgo]').count() == 0 and page.evaluate("() => document.querySelector('#rdSide [data-rdconds]').inert")   # and its conditions are not answered from here meanwhile
         page.click('#pgBack')
-        page.wait_for_function("() => document.getElementById('drawer').hidden")
+        page.wait_for_function("() => document.getElementById('reader').hidden && document.getElementById('drawer').hidden")
         held[0].continue_()
         page.wait_for_function("() => !S.prepBusy && !S.prepDoing", timeout=120000)
         page.wait_for_function("ids => { const now = [...document.querySelectorAll('#offList [data-offdoc]')].map(x => x.dataset.offdoc).sort(); return now.length === 2 && JSON.stringify(now) === JSON.stringify(ids); }",
@@ -166,7 +168,7 @@ def test_the_office_says_why_while_documents_are_being_prepared_and_is_never_sil
         page.wait_for_function(SHOWN, timeout=60000)
         assert page.locator('#pgTurn').count() == 1 and page.locator('#pgLook').count() == 0
         page.click('#pgBack')
-        page.wait_for_function("() => document.getElementById('drawer').hidden")
+        page.wait_for_function("() => document.getElementById('reader').hidden && document.getElementById('drawer').hidden")
         # the page's copy of the board is away (as it is between a change and the next drawing): the button asks the file, and acts
         page.evaluate('() => { S.board = null; }')
         page.click(f'#offList [data-offitem="{slots[0]}"]')

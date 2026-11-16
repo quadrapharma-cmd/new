@@ -205,6 +205,32 @@ ul.cond{margin:6px 0 0;padding-inline-start:18px;display:grid;gap:3px}ul.cond li
 .docprev .dp-gaps{margin-top:12px;background:#fff4e5;border:1px solid #f0c48a;color:#7a4a00;padding:6px 8px;border-radius:4px;font-size:12px}.docprev .dp-legend{font-size:11px;color:#999;margin-top:8px}
 .docprev .dp-add{margin:4px 0;color:#444;border-color:#ccc;background:#fafafa}.docprev.mock .dp-must{margin:4px 18px;padding:0}.docprev.mock .dp-must li{margin:2px 0;list-style:none}
 .docprev .dp-stamp{float:inline-end;border:2px solid #b42318;color:#b42318;border-radius:50%;padding:14px 10px;font-size:11px;transform:rotate(-8deg);opacity:.75;max-width:120px;text-align:center}
+#reader{position:fixed;inset:0;z-index:34;background:var(--bg);display:flex;flex-direction:column}
+#reader[hidden]{display:none}
+body.reading{overflow:hidden}
+.rd-top{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.rd-body{flex:1;min-height:0;display:flex}
+.rd-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;padding:10px 16px}
+.rd-page{flex:1;min-height:0;overflow:auto;text-align:center;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px}
+.rd-page #pgWrap{position:relative;display:inline-block;max-width:100%;border:1px solid var(--line);background:#fff}
+.rd-page #pgImg{display:block;max-width:100%}
+.rd-page.zoom #pgWrap,.rd-page.zoom #pgImg{max-width:none}
+.rd-text{white-space:pre-wrap;text-align:start;max-width:860px;margin:0 auto;background:#fff;color:#111;padding:28px 32px;border:1px solid #d7d7d7;border-radius:4px;font-size:14px;line-height:1.9;min-height:60%}
+.rd-side{width:min(380px,36vw);border-inline-start:1px solid var(--line);overflow:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--surface)}
+.rd-side>*{flex-shrink:0}
+@media (max-width:860px){.rd-top>.grow{flex-basis:100%}.rd-body{flex-direction:column;overflow:auto}.rd-main{flex:none}.rd-page{min-height:60vh}.rd-side{width:auto;border-inline-start:0;border-top:1px solid var(--line);overflow:visible}}
+.ready-t{font-size:16px;display:inline-flex;gap:8px;align-items:center}
+#readySign.ok{border-color:color-mix(in srgb,var(--ok) 55%,var(--line))}#readySign.ok .ready-t{color:var(--ok)}
+.rs-line{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);font-size:13px}
+.unflip{display:inline-flex;transform:scaleX(-1)}html[dir=rtl] .unflip{transform:none}
+.vmod{font-weight:600;margin-top:10px}
+.vpoint{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 0 4px;border-top:1px solid var(--line);margin-top:8px}
+.vdoc .pvbtn{all:unset;cursor:pointer;display:block;align-self:flex-start;min-width:66px;min-height:86px;max-width:100%;border-radius:6px}
+.chip[data-point]{white-space:normal;border-radius:12px;max-width:100%;min-width:0}
+.vdoc .pvbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.vdoc .pv{margin-top:0}
+.vcond>summary{cursor:pointer}
+.seg.vf button .n{opacity:.7;font-weight:400}
 body[data-role="viewer"] .btn.pri{opacity:.55}
 body[data-role="editor"] .admin-only,body[data-role="viewer"] .admin-only{display:none}
 </style>
@@ -249,6 +275,37 @@ const api = (p, o) => DS.api(p, o, '/api');
 const T = {
   appName:{en:'eBOX',ar:'eBOX'}, appTag:{en:'Unified registration dossiers',ar:'ملفات التسجيل الموحّد'},
   navLib:{en:'Library',ar:'المكتبة'}, navDTools:{en:'Dossier tools',ar:'أدوات الملف'}, navTools:{en:'General tools',ar:'أدوات عامة'}, navFaults:{en:'Faults record',ar:'سجل الأعطال'},
+  vaultT:{en:'The vault',ar:'الخزنة'},
+  vaultSub:{en:'Every document that was read, cut and prepared is kept here: look at it and review it inside the program, with nothing to download.',ar:'كل مستند قُرئ وقُطع وجُهِّز محفوظ هنا: تعرضه وتراجعه داخل البرنامج دون تنزيل.'},
+  readyYes:{en:'The documents are ready for the dossier to be composed',ar:'المستندات جاهزة لتكوين الملف'},
+  readyNo:{en:'Not ready yet for the dossier to be composed',ar:'غير جاهز بعد لتكوين الملف'},
+  readyNone:{en:'No document is in an item yet',ar:'لا يوجد مستند في البنود بعد'},
+  readyNext:{en:'Next: the dossier tree and what is missing',ar:'التالي: شجرة الملف والنواقص'},
+  rsNotPrep:{en:'Not prepared yet: {n}',ar:'لم يُجهَّز بعد: {n}'}, rsNeeds:{en:'Need you: {n}',ar:'تحتاج إجراءً منك: {n}'},
+  rsConf:{en:'Differences in the data for you to choose: {n}',ar:'اختلافات في البيانات تحتاج إلى اختيارك: {n}'},
+  rsMissing:{en:'Required items with no document: {n} — completed at the next station',ar:'بنود مطلوبة بلا مستند: {n} — تُستكمل في المحطة التالية'},
+  rsShow:{en:'Show them',ar:'عرضها'}, rsCross:{en:'Findings of the cross-document checks on these documents: {n} — looked at in «Validation»',ar:'ملاحظات فحوص التطابق بين المستندات على هذه المستندات: {n} — تُراجَع في محطة «التحقق»'}, vIn:{en:'In the vault: {n}',ar:'في الخزنة: {n}'},
+  vfAll:{en:'All',ar:'الكل'}, vfNeeds:{en:'Need you',ar:'تحتاج إجراءً منك'}, vfReady:{en:'Ready',ar:'جاهز'}, vfNot:{en:'Not prepared yet',ar:'لم يُجهَّز بعد'},
+  vNone:{en:'No document matches what you chose.',ar:'لا يوجد مستند يطابق اختيارك.'},
+  vView:{en:'View and review',ar:'عرض ومراجعة'}, vConds:{en:'Conditions',ar:'الشروط'}, vTools:{en:'PdfCraft tools',ar:'أدوات ملف PDF'},
+  vRead_text:{en:'read from its text',ar:'قُرئ من نصه'}, vRead_ocr:{en:'read by the page reader',ar:'قرأه قارئ الصفحات'}, vRead_model:{en:'read by Claude',ar:'قرأه Claude'},
+  vRead_none:{en:'no text could be read from it',ar:'لم يُقرأ منه نص'},
+  vCut:{en:'cut from «{f}», pages {a}–{b}',ar:'مقطوع من «{f}»، الصفحات {a}–{b}'}, vCut1:{en:'cut from «{f}», page {a}',ar:'مقطوع من «{f}»، الصفحة {a}'},
+  vPart:{en:'part {a} of {b} of «{f}» (over the size limit)',ar:'الجزء {a} من {b} من «{f}» (تجاوز الحد الأقصى للحجم)'},
+  vConverted:{en:'a picture made into a PDF',ar:'صورة حُوِّلت إلى PDF'}, vTurned:{en:'turned upright',ar:'عُدِّل اتجاهها'},
+  vFixed:{en:'fixed by the program: {n}',ar:'إصلاحات البرنامج: {n}'},
+  ptClosed:{en:'closed',ar:'مُغلق'}, ptOpen:{en:'open',ar:'مفتوح'},
+  why_missing:{en:'no document',ar:'بلا مستند'}, why_not_prepared:{en:'not prepared yet',ar:'لم يُجهَّز بعد'}, why_needs_you:{en:'a document needs you',ar:'مستند يحتاج إجراءً منك'},
+  why_to_check:{en:'something for you to check',ar:'أمر يحتاج إلى تحقُّقك'}, why_cross:{en:'a finding of the cross-document checks',ar:'ملاحظة من فحوص التطابق بين المستندات'},
+  why_non_conforming:{en:'not conforming',ar:'غير مطابق'}, why_unsigned:{en:'awaiting the signed copy',ar:'بانتظار النسخة الموقَّعة'},
+  why_external:{en:'an external reference',ar:'مرجع خارجي'}, why_waiting:{en:'asked of its issuer',ar:'طُلب من الجهة المُصدِرة'},
+  libBtn:{en:'The item\'s conditions and their source',ar:'شروط البند ومصدرها'},
+  rdClose:{en:'Close',ar:'إغلاق'}, rdPrevDoc:{en:'Previous document',ar:'المستند السابق'}, rdNextDoc:{en:'Next document',ar:'المستند التالي'},
+  rdDocNo:{en:'{i} of {n}',ar:'{i} من {n}'},
+  rdText:{en:'These are the document\'s words; its layout is seen by opening it in its program.',ar:'هذا نص المستند؛ أما شكله فيُرى بفتحه في برنامجه.'},
+  rdNoText:{en:'No words could be read from this file.',ar:'لم يُقرأ نص من هذا الملف.'},
+  rdZoom:{en:'Larger',ar:'تكبير'}, rdFit:{en:'Fit the width',ar:'ملء العرض'}, rdSide:{en:'What was read from it, and its conditions',ar:'ما قُرئ منه، وشروطه'},
+  rdFile:{en:'Open the file itself',ar:'فتح الملف نفسه'},
   stn1:{en:'Home',ar:'الرئيسية'}, stn2:{en:'Country',ar:'الدولة'}, stn3:{en:'Upload',ar:'الرفع'}, stn4:{en:'Reading and sorting',ar:'القراءة والفرز'}, stn5:{en:'Proposed tree',ar:'الشجرة المقترحة'},
   stn6:{en:'Preparation and review',ar:'التجهيز والمراجعة'}, stn7:{en:'Dossier tree and what is missing',ar:'شجرة الملف والنواقص'}, stn8:{en:'Validation',ar:'التحقق'}, stn9:{en:'Export',ar:'التصدير'},
   stn1d:{en:'The regulatory library and your dossiers.',ar:'المكتبة التنظيمية وملفاتك.'},
@@ -276,22 +333,22 @@ const T = {
   fk_engine:{en:'refused by the engine',ar:'رفض من المحرك'}, fk_unexpected:{en:'unexpected error',ar:'خطأ غير متوقع'}, fk_claude:{en:'Claude',ar:'Claude'}, fk_download:{en:'download',ar:'تنزيل'}, fk_program:{en:'editing program',ar:'برنامج تعديل'},
   navHome:{en:'Home',ar:'الرئيسية'}, navDossiers:{en:'My dossiers',ar:'ملفاتي'}, navVars:{en:'Variations',ar:'التغييرات بعد التسجيل'}, navSuite:{en:'Product file',ar:'ملف المنتجات'},
   navCurrent:{en:'Current dossier',ar:'الملف الحالي'}, navGuide:{en:'Next step',ar:'الخطوة التالية'}, navBoard:{en:'Dossier tree and what is missing',ar:'شجرة الملف والنواقص'}, navData:{en:'Product data',ar:'بيانات المنتج'},
-  navPrepare:{en:'Prepare the documents',ar:'تجهيز المستندات'}, navOffice:{en:'Review and edit the documents',ar:'مراجعة المستندات وتعديلها'},
-  offT:{en:'Office — every document of the file',ar:'مراجعة المستندات وتعديلها — كل مستندات الملف'},
-  offSub:{en:'Each document opens here in its program and is edited there: a Word file (.docx) in the Word program, a PDF in the PDF program. What you save becomes a new version; the old one is kept.',ar:'يُفتح كل مستند هنا في برنامجه ويُعدَّل فيه: ملف Word (.docx) في برنامج تعديل Word، وملف PDF في برنامج تعديل PDF. ما تحفظه يصبح نسخة جديدة، وتبقى النسخة السابقة محفوظة.'},
+  navPrepare:{en:'Preparation and review',ar:'التجهيز والمراجعة'}, 
+  
+  
   offEmpty:{en:'No document is in an item of this file yet: add your documents in «Proposed tree».',ar:'لا يوجد مستند في بنود هذا الملف بعد: أضِف مستنداتك من «الشجرة المقترحة».'},
   offBusy:{en:'The documents are being prepared now: open this one when the preparation has ended.',ar:'جارٍ تجهيز المستندات الآن: افتح هذا المستند بعد انتهاء التجهيز.'},
   offChanged:{en:'This document has just changed: the list is up to date now, press again.',ar:'تغيّر هذا المستند للتو: حُدِّثت القائمة، فاضغط مرة أخرى.'},
   pgLook:{en:'To look at only: the documents are being prepared now.',ar:'للعرض فقط: جارٍ تجهيز المستندات الآن.'},
-  offFind:{en:'Find by file name or item',ar:'ابحث باسم المستند أو البند'}, offPages:{en:'Pages',ar:'الصفحات'}, offItem:{en:'Its item',ar:'عرض بنده'},
+  offFind:{en:'Find by file name or item',ar:'ابحث باسم المستند أو البند'}, offItem:{en:'Its item',ar:'عرض بنده'},
   offLocked:{en:'An authority\'s or a third party\'s document: not edited',ar:'مستند صادر من جهة خارجية أو من الهيئة: لا يُعدَّل'},
   offNoProg:{en:'Edit it on your computer (Word, Excel…) and upload it again',ar:'لا يوجد له برنامج تعديل هنا: عدِّله في برنامجه على جهازك ثم ارفع النسخة الجديدة'},
   offVer:{en:'version',ar:'نسخة'},
   pvHalf:{en:'What Claude is reading now: page {p} of {n}, the {part} half',ar:'هذه هي الصورة التي يقرؤها Claude الآن: الصفحة {p} من {n} — النصف {part}'},
   pvTop:{en:'top',ar:'الأعلى'}, pvBottom:{en:'bottom',ar:'الأسفل'}, pvOcr:{en:'The scan reader is reading page {p} of {n}',ar:'قارئ المستندات الممسوحة ضوئيًا يقرأ الصفحة {p} من {n}'},
   pvSheet:{en:'Claude is looking at pages {a}–{b} of {n} to see where each document starts',ar:'يفحص Claude الصفحات {a}–{b} من {n} ليحدد أين يبدأ كل مستند'},
-  prepSub:{en:'Every file, one by one: read (a scan by Claude from its page pictures), put in its item, held to that item\'s conditions — its form (a searchable PDF and the PDF rules) and its content (dated, valid, signed and stamped, legalised…) — and fixed where the program can. Each condition shows ✓ or what is needed.',
-           ar:'يُعالَج كل مستند على حدة: يُقرأ (والمستند الممسوح ضوئيًا يقرؤه Claude من صور صفحاته)، ويوضع في بنده، ويُقاس على شروط هذا البند — شكله (PDF قابل للبحث وقواعد ملفات PDF) ومحتواه (مؤرَّخ، سارٍ، موقَّع ومختوم، موثَّق…) — ويُصلَح إن استطاع البرنامج ذلك. أمام كل شرط علامة ✓ أو المطلوب لاستيفائه.'},
+  prepSub:{en:'Each document is prepared to the conditions of its item — its form and its content — and fixed where the program can. You look at it and review it here, and each condition shows ✓ or what is needed.',
+    ar:'يُجهَّز كل مستند وفق شروط بنده — شكله ومحتواه — ويُصلَح إن استطاع البرنامج ذلك. تعرضه وتراجعه هنا، وأمام كل شرط علامة ✓ أو المطلوب لاستيفائه.'},
   prepByPage:{en:'Scans are read by Claude from their page pictures (claude.ai).',ar:'المستندات الممسوحة ضوئيًا يقرؤها Claude من صور صفحاتها (claude.ai).'},
   prepByServer:{en:'Scans are read by Claude from their pages (your key); OCR writes the text layer.',ar:'المستندات الممسوحة ضوئيًا يقرؤها Claude من صفحاتها (بمفتاحك)، والقراءة الضوئية (OCR) تكتب طبقة النص.'},
   prepNoModel:{en:'No Claude here: scans are read by OCR only, and the conditions only eyes can check are asked of you.',ar:'Claude غير متاح هنا: تُقرأ المستندات الممسوحة ضوئيًا بالقراءة الضوئية (OCR) فقط، والشروط التي تحتاج إلى معاينة بالعين تُسأل عنها أنت.'},
@@ -310,7 +367,7 @@ const T = {
   prepKept:{en:'Kept in its place',ar:'حُفظ في موضعه'}, prepDiff:{en:'The data says «{have}» — this document says «{read}»',ar:'في البيانات «{have}» — وفي هذا المستند «{read}»'},
   prepKeepHave:{en:'Keep what is written',ar:'إبقاء القيمة المسجَّلة'}, prepTakeRead:{en:'Take the document’s',ar:'اعتماد قيمة المستند'}, prepDiffsT:{en:'Differences to choose',ar:'اختلافات تحتاج إلى اختيارك'},
   prepDrop:{en:'Choose the files (or drop them here)',ar:'اختر المستندات (أو اسحبها إلى هنا)'}, prepAll:{en:'Prepare them all',ar:'تجهيز الكل'},
-  prepAsked:{en:'Still asked for',ar:'ما زال مطلوبًا'}, prepPlaced:{en:'In their items',ar:'موضوعة في بنودها'},
+  
   prepRead:{en:'read',ar:'قُرئ'}, prepReadOcr:{en:'read by OCR',ar:'قُرئ بالقراءة الضوئية (OCR)'}, prepReadNone:{en:'nothing read',ar:'لم يُقرأ'},
   prepGo:{en:'Prepare',ar:'تجهيز'}, prepPick:{en:'This document has no item yet: give it its place in «Proposed tree».',ar:'هذا المستند بلا بند بعد: حدِّد موضعه في «الشجرة المقترحة».'},
   prepNewName:{en:'Its name in the dossier',ar:'اسمه في الملف'}, prepFound:{en:'Kept from it',ar:'حُفظ منه'}, prepFixN:{en:'{n} fix(es) the program can make',ar:'إصلاحات يستطيع البرنامج إجراءها: {n}'},
@@ -320,7 +377,7 @@ const T = {
   wst0:{en:'Country',ar:'الدولة'}, wst1:{en:'Upload',ar:'الرفع'}, wst2:{en:'Reading and sorting',ar:'القراءة والفرز'}, wst3:{en:'Product card',ar:'بطاقة المنتج'},
   wizSub0:{en:'Choose the country the dossier will be submitted in: the program builds Module 1 for its authority.',ar:'اختر الدولة التي سيُقدَّم فيها الملف: على جهتها الرقابية يبني البرنامج Module 1.'},
   wizSub1:{en:'Upload what you have, of any kind. The program reads each file as it arrives; nothing is put in the dossier before you have seen where it goes.',ar:'ارفع ما لديك من مستندات، من أي نوع. يقرأ البرنامج كل ملف فور وصوله، ولا يوضع شيء في الملف قبل أن ترى موضعه.'},
-  wizSub2:{en:'What the program read from each document, sorted by what it is. What needs you comes first.',ar:'ما قرأه البرنامج من كل مستند، مرتبًا بحسب نوعه. وما يحتاج إليك يظهر أولًا.'},
+  wizSub2:{en:'What the program read from each document, sorted by what it is. What needs you comes first.',ar:'ما قرأه البرنامج من كل مستند، مرتبًا بحسب نوعه. وما يحتاج إجراءً منك يظهر أولًا.'},
   wizSub3:{en:'The product as your documents describe it. Look at it once and complete what is missing: it decides which items the dossier needs.',ar:'بيانات المنتج كما وردت في مستنداتك. راجِعها مرة واحدة وأكمِل الناقص: عليها تتحدد البنود المطلوبة في الملف.'},
   auM1T:{en:'Module 1 for this authority',ar:'Module 1 لهذه الجهة'}, auM1Sub:{en:'These are the items the program lays out; some depend on the product and are settled by its card.',ar:'هذه هي البنود التي يرتّبها البرنامج؛ وبعضها يتوقف على المنتج ويُحسم في بطاقته.'},
   upT:{en:'Upload the documents',ar:'رفع المستندات'},
@@ -330,8 +387,8 @@ const T = {
   upCardsSub:{en:'— optional: the program then tells you if a file is not the document its place asks for.',ar:'— اختياري: ينبّهك البرنامج عندئذ إن كان الملف ليس المستند المطلوب في خانته.'},
   sortBusy:{en:'Still reading: {files}.',ar:'ما زالت القراءة جارية: {files}.'},
   sortNone:{en:'No document was uploaded: the product card is filled by hand.',ar:'لم يُرفع أي مستند: تُملأ بطاقة المنتج يدويًّا.'},
-  sortSum:{en:'Read: {a} · Need you: {b}',ar:'قُرئ: {a} · يحتاج إليك: {b}'},
-  sortBad:{en:'Documents that need you',ar:'مستندات تحتاج إليك'}, sortOther:{en:'Other documents',ar:'مستندات أخرى'},
+  sortSum:{en:'Read: {a} · Need you: {b}',ar:'قُرئ: {a} · يحتاج إجراءً منك: {b}'},
+  sortBad:{en:'Documents that need you',ar:'مستندات تحتاج إجراءً منك'}, sortOther:{en:'Other documents',ar:'مستندات أخرى'},
   sortNo:{en:'No.',ar:'رقمه'}, sortIssuer:{en:'Issued by',ar:'الجهة المُصدِرة'}, sortValid:{en:'Valid until',ar:'سارٍ حتى'},
   cardAnswers:{en:'What decides the dossier\'s items',ar:'ما تتحدد به بنود الملف'},
   cardAnswersSub:{en:'Each answer adds or removes items: the list beside this card changes as you answer.',ar:'كل إجابة تضيف بنودًا أو تحذفها: القائمة المعروضة بجانب البطاقة تتغيّر مع إجاباتك.'},
@@ -367,7 +424,7 @@ const T = {
   treeNeedsStudy:{en:'At approval you will be asked which study it belongs to.',ar:'عند الاعتماد ستُسأل عن الدراسة التي يتبعها.'},
   treeNeedsCountry:{en:'At approval you will be asked which country it is filed under.',ar:'عند الاعتماد ستُسأل عن الدولة التي يُقدَّم تحتها.'},
   treeSkip:{en:'Skip it for now',ar:'تخطّيه الآن'},
-  prepWaitNote:{en:'Waiting for a place: {docs}. Look at them and approve them in «Proposed tree».',ar:'بانتظار تحديد الموضع: {docs}. راجِعها واعتمدها في «الشجرة المقترحة».'},
+  prepWaitNote:{en:'Waiting for a place: {docs}. Reviewed and approved in «Proposed tree».',ar:'بانتظار تحديد الموضع: {docs}. المراجعة والاعتماد في «الشجرة المقترحة».'},
   prepWaitGo:{en:'Open the proposed tree',ar:'فتح الشجرة المقترحة'}, prepAddGo:{en:'Add documents',ar:'إضافة مستندات'},
   prepSecond:{en:'The second reader put right',ar:'صحّحه القارئ الثاني'}, prepImproved:{en:'File improved (PdfCraft\'s optimizer): {a} → {b}, the pages the same',ar:'حُسِّن الملف: {a} ← {b}، والصفحات كما هي'}, prepSplit:{en:'Over 100 MB (the eCTD limit a file): cut into {n} parts that fit, in the same item — the pages unchanged',ar:'أكبر من 100 ميغابايت (الحد الأقصى للملف الواحد في eCTD): قُسِّم إلى {n} أجزاء كلٌّ منها دون الحد، في البند نفسه — والصفحات كما هي'}, prepDoubt:{en:'Numbers to check against the page',ar:'أرقام تُراجَع على الصفحة'},
   prepWeak:{en:'Pages hard to read: {p} — if a page is skewed or sideways, turn it in the viewer and prepare it again',ar:'صفحات صعبة القراءة: {p} — إن كانت الصفحة مائلة أو أفقية فأدِرها من عارض الصفحات ثم أعد تجهيز المستند'}, prepWorking:{en:'Preparing {i} of {n}…',ar:'جارٍ تجهيز {i} من {n}…'},
@@ -497,7 +554,7 @@ const T = {
   onePdf:{en:'One PDF to review or print (bookmarks for every item)',ar:'ملف PDF واحد للمراجعة أو الطباعة (إشارة مرجعية لكل بند)'}, onePdfAll:{en:'The whole dossier',ar:'الملف كله'},
   notesT:{en:'Team notes',ar:'ملاحظات الفريق'}, notePh:{en:'A note for the team (not sent to the authority)',ar:'ملاحظة للفريق (لا تُرسَل إلى الهيئة)'}, noteResolve:{en:'Resolved',ar:'حُلَّت'},
   noteReopen:{en:'Reopen',ar:'إعادة فتحها'}, notesOpenL:{en:'Open team notes (a note, not a stop)',ar:'ملاحظات فريق مفتوحة (تنبيه لا يمنع التصدير)'},
-  pcPages:{en:'Pages',ar:'الصفحات'}, pcFind:{en:'Find in this document',ar:'ابحث في هذا المستند'}, pcHits:{en:'{n} place(s)',ar:'{n} موضع'},
+  pcPages:{en:'Pages',ar:'الصفحات'}, pcFind:{en:'Find in this document',ar:'ابحث في هذا المستند'}, pcHits:{en:'Places found: {n}',ar:'المواضع: {n}'},
   pcTurn:{en:'Turn this page',ar:'تدوير هذه الصفحة'}, pcDel:{en:'Remove this page',ar:'حذف هذه الصفحة'}, pcFirst:{en:'Make it the first page',ar:'جعلها الصفحة الأولى'},
   pcNotesPdf:{en:'Notes on the pages (PDF)',ar:'الملاحظات على الصفحات (PDF)'},
   pcPrev:{en:'Previous page',ar:'الصفحة السابقة'}, pcNext:{en:'Next page',ar:'الصفحة التالية'}, pcOf:{en:'of',ar:'من'},
@@ -517,7 +574,7 @@ const T = {
   fromWhich:{en:'From the dossier',ar:'من الملف'}, fromApi:{en:'Only the active substances\' sections (3.2.S), matched by substance and manufacturer',ar:'أقسام المواد الفعالة فقط (3.2.S)، للمادة والمصنّع نفسيهما'},
   fromAll:{en:'All of Modules 2–5',ar:'Module 2–5 كاملة'}, fromGo:{en:'Copy',ar:'نسخ'}, fromNone:{en:'No other dossier yet.',ar:'لا يوجد ملف آخر بعد.'},
   fromDone:{en:'{n} documents copied · {k} items kept their own',ar:'المستندات المنسوخة: {n} · بنود بقيت بمستنداتها: {k}'},
-  closeItem:{en:'Close the item',ar:'إغلاق البند'}, closeItemQ:{en:'Withdraw the {n} documents of this item at once? In the next eCTD sequence each becomes a «delete»; the files stay in the history.',ar:'هل تريد سحب مستندات هذا البند الـ {n} دفعة واحدة؟ في تسلسل eCTD التالي يصبح كلٌّ منها «delete»؛ وتبقى الملفات في السجل.'},
+  closeItem:{en:'Withdraw all its documents',ar:'سحب مستندات البند كلها'}, closeItemQ:{en:'Withdraw the {n} documents of this item at once? In the next eCTD sequence each becomes a «delete»; the files stay in the history.',ar:'هل تريد سحب مستندات هذا البند الـ {n} دفعة واحدة؟ في تسلسل eCTD التالي يصبح كلٌّ منها «delete»؛ وتبقى الملفات في السجل.'},
   closedItem:{en:'{n} documents withdrawn.',ar:'المستندات المسحوبة: {n}.'},
   envFromLast:{en:'Filled from the sequence before it — change it if this one has its own number.',ar:'معبَّأ من التسلسل السابق — غيِّره إن كان لهذا التسلسل رقم آخر.'},
   frzState:{en:'Submitted',ar:'هل قُدِّم؟'}, frzDone:{en:'submitted',ar:'قُدِّم'}, frzNot:{en:'not submitted',ar:'لم يُقدَّم بعد'}, frzMark:{en:'It was submitted',ar:'قُدِّم'},
@@ -836,7 +893,7 @@ const NAV_USERS = ['users','#/users','users','navUsers'];
 const navTools = () => (S.auth && (S.auth.can_enable || (S.me && S.me.auth && S.me.role==='admin'))) ? NAV_TOOLS.concat([NAV_USERS]) : NAV_TOOLS;
 const navItems = () => NAV_MAIN.filter(x=>!x[4]).concat(navTools());            // the pages of this program (the narrow screen's list)
 /* the dossier's pages: [route, icon, text, station] — a station's pages carry its number, the tools none */
-const DNAV = [['tree','tree','navTree',5],['prepare','scan','navPrepare',6],['office','folder','navOffice',6],['board','checklist','navBoard',7],['checks','shield','navChecks',8],['review','stamp','navReview',8],['export','package','navExport',9],
+const DNAV = [['tree','tree','navTree',5],['prepare','scan','navPrepare',6],['board','checklist','navBoard',7],['checks','shield','navChecks',8],['review','stamp','navReview',8],['export','package','navExport',9],
               ['guide','compass','navGuide',0],['data','database','navData',0],['publisher','tree','navPublisher',0],['search','search','navSearch',0],['audit','history','navAudit',0]];
 function paintNav(){
   const g=([r,h,i,k,ext])=>`<a href="${h}" data-r="${r}"${ext?' target="_blank" rel="noopener"':''}>${icon(i)}<span data-t="${k}"></span></a>`;
@@ -919,6 +976,7 @@ function pathLazy(){ const id=S.dossier&&S.dossier.id; if(!id||S.pathBusy===id) 
   loadJourney().then(({J})=>{ if(S.dossier&&S.dossier.id===id) paintPath(J); }).catch(()=>{}).then(()=>{ S.pathBusy=null; }); }
 async function route(){
   const tok = ++S.rt;
+  readerEnd();                                              // «عرض ومراجعة» belongs to the screen it was opened on
   const h = location.hash.replace(/^#/,'') || '/';
   const m = h.match(/^\/d\/([^/]+)\/(guide|tree|prepare|office|board|data|publisher|checks|search|export|audit|review)(?:\/([a-z]+))?$/);
   asstFab(m?m[1]:null);
@@ -932,7 +990,7 @@ async function route(){
     if(!m){ S.dossier=null; nav('home'); return home(tok); }
     if(!S.dossier || S.dossier.id!==m[1]) S.dossier = await api(`/dossiers/${m[1]}`);
     if(tok!==S.rt) return;
-    nav(m[2]);
+    nav(m[2]==='office'?'prepare':m[2]);
     if(m[2]==='guide') return guideView(tok);
     if(m[2]==='board') return board(tok);
     if(m[2]==='export') return exportView(tok);
@@ -1265,39 +1323,94 @@ const isEG = () => !S.dossier || !S.dossier.authority || S.dossier.authority.egy
 const isEU = () => !!(S.dossier && S.dossier.authority && S.dossier.authority.ectd_region==='eu');
 const pcOn = () => !!(S.caps && S.caps.pdf_engine && S.caps.pdf_engine.available);          // PdfCraft reads and changes the PDFs here
 const markIn = (line, word) => { const i=line.indexOf(word); return i<0?esc(line):esc(line.slice(0,i))+'<mark>'+esc(word)+'</mark>'+esc(line.slice(i+word.length)); };
-async function pageViewer(docId, back, own, look){
-  /* PdfCraft draws each page; a search lights its places up on the page (rectangles in points from the page's top-left). Turning a
-     page is for every document; removing or moving one, for the company's own. Each makes a new version, and the viewer follows it. */
-  let base=`/dossiers/${S.dossier.id}/documents/${docId}`; const dpi=110; let page=1, pages=null, hits=[];
-  openDrawer(t('pcPages'), `<div class="row gap-s"><input type="search" id="pgQ" dir="auto" class="grow" placeholder="${esc(t('pcFind'))}"><span class="small muted" id="pgHits"></span></div>
-    <div class="row gap-s"><button class="btn sm" id="pgPrev">${esc(t('pcPrev'))}</button><span class="small" id="pgNo"></span><button class="btn sm" id="pgNext">${esc(t('pcNext'))}</button><span class="grow"></span><button class="btn sm ghost" id="pgBack">${esc(t('back'))}</button></div>
-    <div class="row gap-s small">${look?`<span class="small muted" id="pgLook">${esc(t('pgLook'))}</span>`:`<button class="btn sm ghost" id="pgTurn">${icon('repeat',14)} ${esc(t('pcTurn'))}</button>`}${own?`<button class="btn sm ghost" id="pgFirst">${icon('arrow',14)} ${esc(t('pcFirst'))}</button><button class="btn sm ghost" id="pgDel">${icon('trash',14)} ${esc(t('pcDel'))}</button>`:''}<a class="btn sm ghost" id="pgNotes" href="/api${base}/notes.pdf" download>${icon('pen',14)} ${esc(t('pcNotesPdf'))}</a></div>
-    <div id="pgWrap" style="position:relative;display:inline-block;max-width:100%;border:1px solid var(--line)"><img id="pgImg" alt="" style="display:block;max-width:100%"></div>`, true);
+/* «عرض ومراجعة» — a document looked at inside the program, over the whole page (eBOX stage 3, 16/11/2026: the owner wants every file
+   «اشوفها و اطلع عليها داخل البرنامج بدون تنزيل»; before it this was one page at a time in the side panel). PdfCraft draws each page; a
+   search lights its places up on the page (rectangles in points from the page's top-left). Turning a page is for every document;
+   removing or moving one, for the company's own: each makes a new version, and the reader follows it. A file with no pages to draw
+   here (Word, Excel) shows its words (opt.text). Opened from the vault (opt.vault), what was read from the document and its conditions
+   stand beside its pages, answered there, and the document before and after it are one press away (opt.list, opt.go). */
+function readerLayer(){ let el=$('#reader'); if(!el){ el=document.createElement('div'); el.id='reader'; el.setAttribute('role','dialog'); el.setAttribute('aria-modal','true'); document.body.appendChild(el); }
+  el.hidden=false; document.body.classList.add('reading'); return el; }
+function readerEnd(){ const el=$('#reader'); if(el&&!el.hidden){ el.hidden=true; el.innerHTML=''; } document.body.classList.remove('reading');
+  if(S.readerKey){ document.removeEventListener('keydown', S.readerKey, true); S.readerKey=null; } }
+async function pageViewer(docId, back, own, look, opt){
+  opt=opt||{}; const did=S.dossier.id, asText=!!opt.text, DPI=110, ZDPI=170;
+  let base=`/dossiers/${did}/documents/${docId}`, page=1, pages=null, hits=[], zoom=false, words=null;
+  const vd=()=>opt.vault?(((S.prep||{}).placed||[]).find(x=>x.id===docId)||null):null;      // the vault's own record of this document, as it is now
+  const d0=vd(), list=opt.list||[], at=list.indexOf(docId), el=readerLayer();
+  if(S.readerKey) document.removeEventListener('keydown', S.readerKey, true);
+  const end=()=>{ readerEnd(); if(back) back(); };
+  const leaf=d0?(d0.original_name||d0.filename):(opt.name||t('pcPages'));
+  el.setAttribute('aria-label', t('vView'));
+  el.innerHTML=`<div class="rd-top"><div class="grow" style="min-width:0"><b id="rdName"><bdi>${esc(leaf)}</bdi></b>
+        <div class="small muted" id="rdSub" dir="auto">${d0?`<span class="code">${esc(d0.ctd||'')}</span> ${esc(L(d0.item||{en:'',ar:''}))}${docLeaf(d0)?` · ${esc(t('prepNewName'))}: <bdi>${esc(docLeaf(d0))}</bdi>`:''}`:''}</div></div>
+      <span id="rdState"></span>
+      ${list.length>1&&at>=0?`<button class="btn sm ghost" id="rdPrevDoc" ${at>0?'':'disabled'} title="${esc(t('rdPrevDoc'))}"><span class="unflip">${icon('arrow',14)}</span> ${esc(t('rdPrevDoc'))}</button>
+        <span class="small muted" id="rdDocNo">${esc(t('rdDocNo').replace('{i}', at+1).replace('{n}', list.length))}</span>
+        <button class="btn sm ghost" id="rdNextDoc" ${at<list.length-1?'':'disabled'} title="${esc(t('rdNextDoc'))}">${esc(t('rdNextDoc'))} <span class="flip">${icon('arrow',14)}</span></button>`:''}
+      <button class="btn sm" id="pgBack">${icon('x',14)} ${esc(t(opt.vault?'rdClose':'back'))}</button></div>
+    <div class="rd-body"><div class="rd-main">
+      <div class="row gap-s" style="flex-wrap:wrap;align-items:center"><button class="btn sm" id="pgPrev">${esc(t('pcPrev'))}</button><span class="small" id="pgNo"></span>
+        <input type="range" id="pgSlide" min="1" max="1" value="1" hidden style="max-width:14em" aria-label="${esc(t('offPage'))}"><button class="btn sm" id="pgNext">${esc(t('pcNext'))}</button>
+        ${asText?'':`<button class="btn sm ghost" id="pgZoom">${icon('search',14)} <span>${esc(t('rdZoom'))}</span></button>`}<span class="grow"></span>
+        ${asText?'':`<input type="search" id="pgQ" dir="auto" placeholder="${esc(t('pcFind'))}" style="max-width:16em"><span class="small muted" id="pgHits"></span>`}</div>
+      <div class="row gap-s small" style="flex-wrap:wrap;align-items:center">${asText?`<span class="small muted" id="pgAsText">${esc(t('rdText'))}</span>`
+        :look?`<span class="small muted" id="pgLook">${esc(t('pgLook'))}</span>`:`<button class="btn sm ghost" id="pgTurn">${icon('repeat',14)} ${esc(t('pcTurn'))}</button>`}${own&&!asText?`<button class="btn sm ghost" id="pgFirst">${icon('arrow',14)} ${esc(t('pcFirst'))}</button><button class="btn sm ghost" id="pgDel">${icon('trash',14)} ${esc(t('pcDel'))}</button>`:''}
+        ${opt.prog&&!look?`<button class="btn sm ghost" id="rdProg">${icon('pen',14)} ${esc(t('progOpen').replace('{p}', DBPROG.title(opt.prog, S.lang)))}</button>`:''}
+        ${asText?`<a class="btn sm ghost" id="rdFile" target="_blank" rel="noopener" href="/api${base}/file">${icon('external',14)} ${esc(t('rdFile'))}</a>`:`<a class="btn sm ghost" id="pgNotes" href="/api${base}/notes.pdf" download>${icon('pen',14)} ${esc(t('pcNotesPdf'))}</a>`}</div>
+      <div class="rd-page" id="rdPage"><div id="pgWrap" ${asText?'hidden':''}><img id="pgImg" alt=""></div><div id="pgText" class="rd-text" dir="auto" ${asText?'':'hidden'}></div></div></div>
+      <aside class="rd-side" id="rdSide" hidden></aside></div>`;
   /* the page's picture is fetched and shown from memory: an <img> given the engine's address asks the network for it, and the
      browser edition has no server there (the viewer opened empty inside claude.ai) */
   let seq=0, shown=null;
-  const paint=async()=>{ const img=$('#pgImg'), my=++seq; if(!img) return; $('#pgNo').textContent=`${page}${pages?' '+t('pcOf')+' '+pages:''}`;
+  const follow=cur=>{ if(cur&&cur!==docId){ docId=cur; base=`/dossiers/${did}/documents/${docId}`; const n=$('#pgNotes'); if(n) n.href=`/api${base}/notes.pdf`; const f=$('#rdFile'); if(f) f.href=`/api${base}/file`; } };
+  const count=()=>{ const no=$('#pgNo'); if(no) no.textContent=`${page}${pages?' '+t('pcOf')+' '+pages:''}`; const sl=$('#pgSlide'); if(sl){ sl.hidden=!(pages>1); if(pages){ sl.max=pages; sl.value=page; } }
+    const pv=$('#pgPrev'), nx=$('#pgNext'); if(pv) pv.disabled=page<=1; if(nx) nx.disabled=!!pages&&page>=pages; };
+  const paint=async()=>{ const my=++seq; if(!$('#reader')||$('#reader').hidden) return; count();
+    if(asText){ const box=$('#pgText');
+      if(!words){ try{ const r=await api(`${base}/text`); follow(r.id); words=r.pages||[]; pages=Math.max(1, words.length); }catch(e){ if(my===seq&&box) box.textContent=e.message; return; } }
+      if(my!==seq||!$('#pgText')) return; const w=(words[page-1]||'').trim(); box.textContent=w||t('rdNoText'); box.classList.toggle('muted', !w); count(); return; }
+    const img=$('#pgImg'); if(!img) return;
     let blob=null;
-    try{ const r=await fetch(`/api${base}/pages/${page}.png?dpi=${dpi}`,{headers:{'X-DB':'1'}});
-      if(r.ok){ blob=await r.blob(); const cur=r.headers.get('X-Doc-Id');                 // the engine shows the document as it is now: follow its id
-        if(cur&&cur!==docId){ docId=cur; base=`/dossiers/${S.dossier.id}/documents/${docId}`; const n=$('#pgNotes'); if(n) n.href=`/api${base}/notes.pdf`; } } }catch(e){}
+    try{ const r=await fetch(`/api${base}/pages/${page}.png?dpi=${zoom?ZDPI:DPI}`,{headers:{'X-DB':'1'}});
+      if(r.ok){ blob=await r.blob(); follow(r.headers.get('X-Doc-Id')); } }catch(e){}                 // the engine shows the document as it is now: follow its id
     if(my!==seq||!$('#pgImg')) return;
     if(!blob){ if(page>1){ pages=page-1; page--; return paint(); }                    // past the last page
       $('#pgNo').textContent=L({ar:'تعذّر عرض هذه الصفحة.',en:'This page could not be shown.'}); return; }
     if(shown) URL.revokeObjectURL(shown); shown=URL.createObjectURL(blob);
-    img.onload=()=>{ $$('.pghit', $('#pgWrap')).forEach(x=>x.remove()); const k=img.clientWidth/img.naturalWidth*dpi/72;
+    img.onload=()=>{ $$('.pghit', $('#pgWrap')).forEach(x=>x.remove()); const k=img.clientWidth/img.naturalWidth*(zoom?ZDPI:DPI)/72;
       hits.filter(h=>h.page===page).forEach(h=>(h.rects||[]).forEach(r=>{ const m=document.createElement('div'); m.className='pghit';
         Object.assign(m.style,{position:'absolute',left:r[0]*k+'px',top:r[1]*k+'px',width:(r[2]-r[0])*k+'px',height:(r[3]-r[1])*k+'px',background:'rgba(255,214,0,.45)',outline:'1px solid #c90'}); $('#pgWrap').appendChild(m); })); };
     img.src=shown; };
-  $('#pgPrev').onclick=()=>{ if(page>1){ page--; paint(); } }; $('#pgNext').onclick=()=>{ if(!pages||page<pages){ page++; paint(); } };
-  $('#pgBack').onclick=back;
-  const pageOp=async(body)=>{ try{ const r=await api(`${base}/pages`,{method:'POST',json:body}); docId=r.document.id; base=`/dossiers/${S.dossier.id}/documents/${docId}`;
-      $('#pgNotes').href=`/api${base}/notes.pdf`; toast(t('pcDone')); S.board=null; await refreshCurrent();
-      if(body.op==='delete'&&pages) pages=pages-1; if(body.op==='move') page=1; paint(); }catch(e){ toast(e.message); } };
+  const go=n=>{ if(n<1||(pages&&n>pages)||n===page) return; page=n; paint(); };
+  /* what was read from the document and its conditions, beside its pages: answered here, as on its card */
+  const side=()=>{ const sd=$('#rdSide'); if(!sd) return; const d=vd(); if(!d){ sd.hidden=true; return; }
+    sd.hidden=false; sd.innerHTML=readerSide(d, look); $('#rdState').innerHTML=prepState(d);
+    if(!look) prepWire(sd, async()=>{ await paintPrepare(); if($('#reader')&&!$('#reader').hidden){ await paint(); side(); } }); };
+  $('#pgPrev').onclick=()=>go(page-1); $('#pgNext').onclick=()=>go(page+1); $('#pgSlide').oninput=e=>go(+e.target.value||1);
+  $('#pgBack').onclick=end;
+  if($('#rdPrevDoc')) $('#rdPrevDoc').onclick=()=>{ if(at>0&&opt.go) opt.go(list[at-1]); };
+  if($('#rdNextDoc')) $('#rdNextDoc').onclick=()=>{ if(at<list.length-1&&opt.go) opt.go(list[at+1]); };
+  if($('#pgZoom')) $('#pgZoom').onclick=()=>{ zoom=!zoom; $('#rdPage').classList.toggle('zoom', zoom); $('#pgZoom').querySelector('span').textContent=t(zoom?'rdFit':'rdZoom'); paint(); };
+  const pageOp=async(body)=>{ try{ const r=await api(`${base}/pages`,{method:'POST',json:body}); follow(r.document.id);
+      toast(t('pcDone')); S.board=null; await refreshCurrent();
+      if(body.op==='delete'&&pages) pages=pages-1; if(body.op==='move') page=1; if(page>(pages||page)) page=pages; await paint(); side(); }catch(e){ toast(e.message); } };
   if($('#pgTurn')) $('#pgTurn').onclick=()=>pageOp({op:'rotate', pages:[page], degrees:90});
-  if(own){ $('#pgFirst').onclick=()=>pageOp({op:'move', pages:[page], to:1}); $('#pgDel').onclick=()=>pageOp({op:'delete', pages:[page]}); }
-  $('#pgQ').onchange=async()=>{ const q=$('#pgQ').value.trim(); if(q.length<2){ hits=[]; $('#pgHits').textContent=''; paint(); return; }
-    try{ hits=(await api(`${base}/find?q=${encodeURIComponent(q)}`)).matches||[]; $('#pgHits').textContent=t('pcHits').replace('{n}',hits.length); if(hits.length){ page=hits[0].page; } paint(); }catch(e){ toast(e.message); } };
+  if($('#pgFirst')){ $('#pgFirst').onclick=()=>pageOp({op:'move', pages:[page], to:1}); $('#pgDel').onclick=()=>pageOp({op:'delete', pages:[page]}); }
+  if($('#rdProg')) $('#rdProg').onclick=()=>{ if(opt.edit) opt.edit(docId, async()=>{ words=null; await paintPrepare(); if($('#reader')&&!$('#reader').hidden){ await paint(); side(); } }); };
+  if($('#pgQ')){ let asked=null;
+    const find=async()=>{ const q=$('#pgQ').value.trim(); if(q===asked) return; asked=q; if(q.length<2){ hits=[]; $('#pgHits').textContent=''; paint(); return; }
+      try{ hits=(await api(`${base}/find?q=${encodeURIComponent(q)}`)).matches||[]; if(!$('#pgHits')) return; $('#pgHits').textContent=t('pcHits').replace('{n}',hits.length); if(hits.length){ page=hits[0].page; } paint(); }catch(e){ asked=null; toast(e.message); } };
+    $('#pgQ').onchange=find; $('#pgQ').onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); find(); } }; }
+  const rtl=document.documentElement.dir==='rtl';
+  S.readerKey=e=>{ const rd=$('#reader'); if(!rd||rd.hidden||e.defaultPrevented) return; if(/^(INPUT|TEXTAREA|SELECT)$/.test((e.target&&e.target.tagName)||'')) return;
+    if(e.key==='Escape'){ e.preventDefault(); end(); }
+    else if(e.key==='PageDown'||e.key===(rtl?'ArrowLeft':'ArrowRight')){ e.preventDefault(); go(page+1); }
+    else if(e.key==='PageUp'||e.key===(rtl?'ArrowRight':'ArrowLeft')){ e.preventDefault(); go(page-1); } };
+  document.addEventListener('keydown', S.readerKey, true);
+  $('#pgBack').focus();
+  side();
+  if(!asText){ api(`${base}/pages`).then(r=>{ if(r&&r.pages&&$('#reader')&&!$('#reader').hidden&&(!pages||pages>r.pages)){ pages=r.pages; count(); } }).catch(()=>{}); }
   paint(); }
 const isGCC = () => !!(S.dossier && S.dossier.authority && S.dossier.authority.ectd_region==='gcc');
 const euV = () => (S.dossier && S.dossier.authority && S.dossier.authority.ectd_values) || {};
@@ -2766,7 +2879,7 @@ async function refreshCurrent(selSlot){
   if(h.endsWith('/publisher')){ if(selSlot) S.sel=selSlot; await publisherView(); }
   else if(h.endsWith('/guide')) await guideView();
   else if(h.endsWith('/checks')) await checksView();
-  else if(h.endsWith('/prepare')||h.endsWith('/office')) await paintPrepare(true);
+  else if(h.endsWith('/prepare')||h.endsWith('/office')) await paintPrepare();
   else if(h.endsWith('/tree')) await paintTree();
   else if(h.endsWith('/board')) await board();
   else await route();
@@ -3266,22 +3379,32 @@ async function treeApprove(){
     await paintTree(); pathLazy();
   } finally { S.treeBusy=false; const g=$('#treeGo'); if(g) g.disabled=false; }
 }
+/* ---------------- station 6, «التجهيز والمراجعة» (eBOX stage 3, 16/11/2026 — the owner: «عايز خزنة للملفات اللي اتقرت و اتقطعت و اتجهزت
+   اشوفها و اطلع عليها داخل البرنامج بدون تنزيل و ابقي شايف قبل ما ندخل علي التكوين اني جاهز»). One page: the sign — the documents are ready for
+   the dossier to be composed, or what is left, each line leading to it — and «الخزنة»: every document of the dossier once, under its
+   tree point, with what was done to it, its state, «عرض ومراجعة», its program and its conditions. Before stage 3 the same documents
+   stood twice on this page (a card each, then «مراجعة المستندات وتعديلها» below); `/office` is still an address of this page. */
 function prepareView(tok, office){
   if(!fresh(tok)) return;
   S.prepOffice=!!office;
-  $('#view').innerHTML=`<div class="head"><div class="title"><h1>${esc(t('navPrepare'))}</h1><p class="sub">${esc(t('prepSub'))}</p></div></div>
-    <section class="card pad stack gap-s" id="prepBar"><div class="row gap-s" style="flex-wrap:wrap"><button class="btn pri" id="prepAll">${icon('zap',16)} ${esc(t('prepAll'))}</button>
-      <a class="btn" id="prepAdd" href="#/d/${S.dossier.id}/tree">${icon('upload',16)} ${esc(t('prepAddGo'))}</a><span class="small muted grow" id="prepMsg" aria-live="polite"></span></div><div class="small muted" id="prepOcr"></div></section>
-    <div class="stack" style="margin-top:12px"><div id="prepOut" class="stack" style="${office?'order:2':''}"></div>
-    <section class="card pad stack gap-s" id="office" style="${office?'order:1':''}"><div class="hd row gap-s" style="flex-wrap:wrap"><h3 class="grow">${icon('folder',16)} ${esc(t('offT'))} <span class="tag" id="offN"></span> <span class="small muted" id="offProgs" role="status" style="font-weight:400"></span></h3>
-      <input type="search" id="offQ" dir="auto" placeholder="${esc(t('offFind'))}" style="max-width:20em"></div><p class="small muted">${esc(t('offSub'))}</p><div id="offList" class="stack gap-s"></div></section></div>`;
+  const did=S.dossier.id;
+  $('#view').innerHTML=`<div class="head"><div class="title"><h1>${esc(t('stn6'))}</h1><p class="sub">${esc(t('prepSub'))}</p></div></div>
+    <section class="card glow pad stack gap-s" id="readySign"><div class="row gap-s" style="flex-wrap:wrap;align-items:center">
+        <div class="grow" style="min-width:14em"><b id="readyT" class="ready-t">…</b><div class="small muted" id="readyStats"></div></div>
+        <button class="btn pri" id="prepAll">${icon('zap',16)} ${esc(t('prepAll'))}</button>
+        <a class="btn" id="prepAdd" href="#/d/${did}/tree">${icon('upload',16)} ${esc(t('prepAddGo'))}</a>
+        <a class="btn pri" id="readyNext" href="#/d/${did}/board" hidden>${esc(t('readyNext'))} <span class="flip">${icon('arrow',14)}</span></a></div>
+      <div id="readyLines" class="stack gap-s"></div>
+      <div class="small" id="prepMsg" aria-live="polite" style="color:var(--accent)"></div><div class="small muted" id="prepOcr"></div></section>
+    <div id="prepOut" class="stack" style="margin-top:12px"><div class="skeleton" style="height:160px"></div></div>`;
   $('#prepAll').onclick=prepAll;
   paintPrepare();
 }
 const PREP_ICON={ok:'✓', fixed:'✓', fix:'⚙', needs_you:'✗', check:'?'};
 const PREP_COLOR={ok:'var(--ok)', fixed:'var(--accent)', fix:'var(--warn)', needs_you:'var(--bad)', check:'var(--warn)'};
 function prepCond(d, x){
-  const how=x.how?` <span class="muted">· ${esc(t('how_'+x.how))}</span>`:'';
+  const howText=x.how?esc(t('how_'+x.how)):'', how=howText?` <span class="muted">· ${howText}</span>`:'';
+  const same=L(x.why||{}).trim()===L(x.label||{}).trim();                           // a rule's finding is its own wording: said once
   const btns=x.status==='check'&&['attest'].includes(x.action)?(['letterhead','legalized'].includes(x.id)
       ?`<button class="btn sm" data-pslotans="${esc(d.slot_id)}" data-ans="yes">${esc(t('prepYes'))}</button><button class="btn sm ghost" data-pslotans="${esc(d.slot_id)}" data-ans="no">${esc(t('prepNo'))}</button>`
       :`<button class="btn sm" data-pconf="${esc(d.id)}" data-cond="${esc(x.id)}" data-ans="yes">${esc(t('prepYes'))}</button><button class="btn sm ghost" data-pconf="${esc(d.id)}" data-cond="${esc(x.id)}" data-ans="no">${esc(t('prepNo'))}</button>`)
@@ -3289,7 +3412,7 @@ function prepCond(d, x){
   return `<div class="prepcond" data-st="${esc(x.status)}" style="display:flex;gap:8px;align-items:flex-start;padding:4px 0;border-top:1px dashed var(--line)">
     <b style="color:${PREP_COLOR[x.status]||'inherit'};min-width:1.2em;text-align:center" aria-hidden="true">${PREP_ICON[x.status]||'·'}</b>
     <div class="grow" style="min-width:0"><div class="small"><b>${esc(L(x.label))}</b> <span class="chip ${x.status==='needs_you'?'c-bad':x.status==='ok'||x.status==='fixed'?'c-ok':'c-warn'}" style="vertical-align:middle"><i></i>${esc(t('cond_'+x.status))}</span></div>
-    <div class="small" style="color:${x.status==='needs_you'?'var(--bad)':'var(--muted)'}" dir="auto">${esc(L(x.why))}${how}</div>
+    ${same?(howText?`<div class="small muted">${howText}</div>`:''):`<div class="small" style="color:${x.status==='needs_you'?'var(--bad)':'var(--muted)'}" dir="auto">${esc(L(x.why))}${how}</div>`}
     ${btns?`<div class="row gap-s" style="margin-top:4px;flex-wrap:wrap">${btns}</div>`:''}</div></div>`; }
 function prepState(d){
   if(!d.prepared) return `<span class="chip c-na"><i></i>${esc(t('prepNotYet'))}</span>`;
@@ -3303,8 +3426,7 @@ function prepTools(d){
   const locked=LOCKED.includes(d.doc_class), id=esc(d.id);
   const b=(attr, ic, label, why)=>`<button class="btn sm ghost" ${attr}="${id}" title="${esc(why||label)}">${icon(ic,13)} ${esc(label)}</button>`;
   const grp=(name, items)=>items.filter(Boolean).length?`<span class="small muted" style="margin-inline-start:6px">${esc(name)}:</span>${items.filter(Boolean).join('')}`:'';
-  return `<div class="row gap-s prep-tools" style="flex-wrap:wrap;align-items:center;margin-top:6px;padding-top:6px;border-top:1px solid var(--line)">
-    <span class="small"><b>${esc(L({ar:'أدوات ملف PDF',en:'PdfCraft tools'}))}</b></span>
+  return `<div class="row gap-s prep-tools" style="flex-wrap:wrap;align-items:center;margin-top:6px">
     ${grp(L({ar:'عرض',en:'View'}), [b('data-ptview','eye',t('pcPages'),t('pcFind')), `<a class="btn sm ghost" target="_blank" rel="noopener" href="/api/dossiers/${S.dossier.id}/documents/${id}/file">${icon('external',13)} ${esc(t('view'))}</a>`])}
     ${grp(L({ar:'صفحات',en:'Pages'}), [b('data-ptsplit','scan',t('splitBtn'),t('splitT')), b('data-ptview','repeat',L({ar:'تدوير صفحة / حذفها',en:'Turn / remove a page'}))])}
     ${grp(L({ar:'جودة الملف',en:'File quality'}), [d.improved?'':b('data-ptimp','zap',L({ar:'تحسين الملف',en:'Improve the file'}),t('prepImproved').replace('{a}','').replace('{b}','')), locked?'':b('data-ptred','download',t('pcReduce'))])}
@@ -3313,58 +3435,141 @@ function prepTools(d){
     ${(d.version||1)>1?grp(L({ar:'مقارنة',en:'Compare'}), [b('data-ptcmp','repeat',t('cmpV'))]):''}</div>`; }
 function prepToolsWire(out){
   const back=()=>{ closeDrawer(); paintPrepare(); };
-  $$('[data-ptview]', out).forEach(x=>x.onclick=()=>{ const d=(S.prep.placed||[]).find(y=>y.id===x.dataset.ptview)||{}; pageViewer(x.dataset.ptview, back, !LOCKED.includes(d.doc_class)); });
-  $$('[data-ptsplit]', out).forEach(x=>x.onclick=()=>splitDoc(x.dataset.ptsplit));
-  $$('[data-ptimp]', out).forEach(x=>x.onclick=async()=>{ x.disabled=true; try{ const r=await api(`/dossiers/${S.dossier.id}/documents/${x.dataset.ptimp}/improve`,{method:'POST'});
+  $$('[data-ptview]', out).forEach(x=>x.onclick=()=>vaultOpen(x.dataset.ptview));
+  $$('[data-ptsplit]', out).forEach(x=>x.onclick=()=>{ if(vaultBusy()) return; splitDoc(x.dataset.ptsplit); });
+  $$('[data-ptimp]', out).forEach(x=>x.onclick=async()=>{ if(vaultBusy()) return; x.disabled=true; try{ const r=await api(`/dossiers/${S.dossier.id}/documents/${x.dataset.ptimp}/improve`,{method:'POST'});
       toast(r.document?t('prepImproved').replace('{a}', mbs(r.before)).replace('{b}', mbs(r.after)):L({ar:'الملف محسَّن من قبل: لا يمكن تصغيره أكثر دون تغيير الصفحات',en:'Already at its best: nothing to make smaller without changing the pages'})); }catch(e){ toast(e.message); } paintPrepare(); });
-  $$('[data-ptred]', out).forEach(x=>x.onclick=async()=>{ x.disabled=true; try{ const r=await api(`/dossiers/${S.dossier.id}/documents/${x.dataset.ptred}/reduce`,{method:'POST'});
+  $$('[data-ptred]', out).forEach(x=>x.onclick=async()=>{ if(vaultBusy()) return; x.disabled=true; try{ const r=await api(`/dossiers/${S.dossier.id}/documents/${x.dataset.ptred}/reduce`,{method:'POST'});
       toast(t('pcReduced').replace('{a}', mbs(r.reduced[0])).replace('{b}', mbs(r.reduced[1]))); }catch(e){ toast(e.message); } paintPrepare(); });
-  $$('[data-ptredact]', out).forEach(x=>x.onclick=()=>{ openDrawer(t('pcRedact'), `<p class="small muted">${esc(t('pcRedactSub'))}</p><textarea id="redW" rows="5" dir="auto" placeholder="${esc(t('pcRedactPh'))}"></textarea>
+  $$('[data-ptredact]', out).forEach(x=>x.onclick=()=>{ if(vaultBusy()) return; openDrawer(t('pcRedact'), `<p class="small muted">${esc(t('pcRedactSub'))}</p><textarea id="redW" rows="5" dir="auto" placeholder="${esc(t('pcRedactPh'))}"></textarea>
       <div class="row gap-s"><button class="btn pri" id="redGo">${icon('shield',14)} ${esc(t('pcRedactGo'))}</button><button class="btn ghost" id="redBack">${esc(t('back'))}</button></div>`);
     $('#redBack').onclick=back;
     $('#redGo').onclick=async()=>{ const words=$('#redW').value.split('\n').map(w=>w.trim()).filter(Boolean); if(!words.length) return;
       try{ await api(`/dossiers/${S.dossier.id}/documents/${x.dataset.ptredact}/redact`,{method:'POST',json:{words}}); toast(t('pcDone')); S.board=null; back(); }catch(e){ toast(e.message); } }; });
-  $$('[data-ptcmp]', out).forEach(x=>x.onclick=async()=>{ let r; try{ r=await api(`/dossiers/${S.dossier.id}/documents/${x.dataset.ptcmp}/compare`); }catch(e){ toast(e.message); return; }
+  $$('[data-ptcmp]', out).forEach(x=>x.onclick=async()=>{ if(vaultBusy()) return; let r; try{ r=await api(`/dossiers/${S.dossier.id}/documents/${x.dataset.ptcmp}/compare`); }catch(e){ toast(e.message); return; }
     openDrawer(t('cmpV'), `<p class="small muted">${bdi(r.old.filename)} (${esc(t('version'))} ${r.old.version}) → ${bdi(r.new.filename)} (${esc(t('version'))} ${r.new.version})</p>
       ${r.same?`<div class="alert ok"><p class="small">${esc(t('cmpSame'))}</p></div>`:`<div class="stack gap-s">${r.changes.map(c=>`<div class="small cmp-${c.op}"><span class="tag">${esc(t(c.op==='added'?'cmpAdd':'cmpDel'))} · ${esc(t('srchPage'))} ${c.page}</span> <span dir="auto">${c.line?markIn(c.line,c.text):`<b>${esc(c.text)}</b>`}</span></div>`).join('')}</div>`}
       <div class="row gap-s">${r.marked?`<a class="btn" target="_blank" rel="noopener" href="/api/dossiers/${S.dossier.id}/documents/${x.dataset.ptcmp}/compare.pdf">${icon('eye',14)} ${esc(t('pcMarked'))}</a>`:''}<button class="btn ghost" id="cmpBack">${esc(t('back'))}</button></div>`, true);
     $('#cmpBack').onclick=back; });
 }
-function prepCard(d){
+/* a tree point said closed or open — the same words on stations 5, 6 and 7 */
+function pointChip(point, why){
+  if(point==='closed') return `<span class="chip c-ok" data-point="closed"><i></i>${esc(t('ptClosed'))}</span>`;
+  if(point==='open') return `<span class="chip c-warn" data-point="open"><i></i>${esc(t('ptOpen'))}${(why||[]).length?': '+esc(why.map(w=>t('why_'+w)).join(S.lang==='ar'?'، ':', ')):''}</span>`;
+  return ''; }
+/* what was done to a document on its way here: how it was read, what it was cut from, what the program fixed */
+function vaultDid(d){
+  const out=d.reader?[`<span class="chip ${d.reader!=='none'?'c-ok':'c-na'}" data-vread="${esc(d.reader)}"><i></i>${esc(t('vRead_'+d.reader))}</span>`]:[];      // not prepared yet: its state says so, once
+  const c=d.cut;
+  if(c&&c.pages) out.push(`<span class="tag" data-vcut>${icon('scan',11)} <bdi>${esc(t(c.pages[0]===c.pages[1]?'vCut1':'vCut').replace('{f}', c.from||'…').replace('{a}', c.pages[0]).replace('{b}', c.pages[1]))}</bdi></span>`);
+  else if(c&&c.part) out.push(`<span class="tag" data-vcut>${icon('scan',11)} <bdi>${esc(t('vPart').replace('{f}', c.from||'…').replace('{a}', c.part[0]).replace('{b}', c.part[1]))}</bdi></span>`);
+  const cv=d.converted||[];
+  if(cv.includes('image_to_pdf')) out.push(`<span class="tag" data-vconv>${icon('file',11)} ${esc(t('vConverted'))}${cv.some(x=>String(x).startsWith('turned_upright'))?' · '+esc(t('vTurned')):''}</span>`);
+  const fixed=(d.conditions||[]).filter(x=>x.status==='fixed').map(x=>L(x.label));
+  if(fixed.length) out.push(`<span class="tag" data-vfixed title="${esc(fixed.join(' · '))}">${icon('wrench',11)} ${esc(t('vFixed').replace('{n}', fixed.length))}</span>`);
+  return out.join(' '); }
+/* what the reading gave: what Claude saw on its pages, the fields found, what a second reading changed, what was kept in the data */
+function vaultRead(d){
+  const md=d.model, q=d.ocr_quality;
+  return (md?`<div class="small" style="color:var(--ok)">${esc(t('prepModelSaw'))}: ${esc([md.kind, md.title, md.number, md.issuer, md.valid_until?('→ '+md.valid_until):''].filter(Boolean).join(' · '))}</div>`:'')
+    + (d.extracted&&d.extracted.length?`<div class="small" style="color:var(--ok)">${esc(t('prepFound'))}: ${esc(foundNames(d.extracted).join('، '))}</div>`:'')
+    + (q&&(q.changed||[]).length?`<div class="small" style="color:var(--ok)">${esc(t('prepSecond'))}: ${q.changed.slice(0,4).map(c=>`<bdi>${esc(c.was)}</bdi> ← <bdi><b>${esc(c.now)}</b></bdi>`).join('، ')}</div>`:'')
+    + (d.absorbed&&(d.absorbed.added||[]).length?`<div class="small" style="color:var(--ok)">${icon('check',12)} ${esc(t('prepKept'))}: ${esc([...new Set(d.absorbed.added.map(a=>L({en:a.en,ar:a.ar})))].slice(0,10).join('، '))}</div>`:''); }
+function vaultConds(d){
   const form=(d.conditions||[]).filter(x=>x.kind==='form'), content=(d.conditions||[]).filter(x=>x.kind==='content');
-  const md=d.model; const saw=md?`<div class="small" style="color:var(--ok)">${esc(t('prepModelSaw'))}: ${esc([md.kind, md.title, md.number, md.issuer, md.valid_until?('→ '+md.valid_until):''].filter(Boolean).join(' · '))}</div>`:'';
-  const qual=q=>!q?'':[(q.changed||[]).length?`<div class="small" style="color:var(--ok)">${esc(t('prepSecond'))}: ${q.changed.slice(0,4).map(c=>`<bdi>${esc(c.was)}</bdi> ← <bdi><b>${esc(c.now)}</b></bdi>`).join('، ')}</div>`:''].join('');
-  return `<div class="finding ${(d.state||{}).needs_you?'block':''}" data-pdoc="${esc(d.id)}"><div class="row gap-s" style="flex-wrap:wrap"><span class="code">${esc(d.ctd||'')}</span><b>${esc(L(d.item||{en:'',ar:''}))}</b>${prepState(d)}</div>
-    <div class="pv" data-pv="${esc(d.id)}" data-pvname="${esc(d.filename||d.original_name||'')}" data-pvpages="${d.pages||0}"><div class="pv-strip"></div></div>
-    <div class="small"><bdi>${esc(d.original_name)}</bdi> → <b>${esc(t('prepNewName'))}:</b> <bdi>${esc((d.names.ectd32||d.names.ctd||'').split('/').pop()||'—')}</bdi></div>
-    <div class="small" data-pnow="${esc(d.id)}" style="color:var(--accent)" aria-live="polite"></div>
-    ${saw}${d.extracted&&d.extracted.length?`<div class="small" style="color:var(--ok)">${esc(t('prepFound'))}: ${esc(foundNames(d.extracted).join('، '))}</div>`:''}${qual(d.ocr_quality)}
-    ${d.absorbed&&(d.absorbed.added||[]).length?`<div class="small" style="color:var(--ok)">${icon('check',12)} ${esc(t('prepKept'))}: ${esc([...new Set(d.absorbed.added.map(a=>L({en:a.en,ar:a.ar})))].slice(0,10).join('، '))}</div>`:''}
-    ${form.length?`<div class="small muted" style="margin-top:6px"><b>${esc(t('prepForm'))}</b></div>${form.map(x=>prepCond(d,x)).join('')}`:''}
-    ${content.length?`<div class="small muted" style="margin-top:6px"><b>${esc(t('prepContent'))}</b></div>${content.map(x=>prepCond(d,x)).join('')}`:''}
-    ${!d.prepared||(d.state||{}).fix||d.model_wanted?`<div class="row gap-s" style="margin-top:6px"><button class="btn sm pri" data-pgo="${esc(d.id)}">${icon('zap',14)} ${esc(t('prepGo'))}</button></div>`:''}${prepTools(d)}</div>`; }
-async function paintPrepare(wait){                                                      // wait: until «المكتب» has its documents too (what comes next reads them)
-  const out=$('#prepOut'); if(!out) return; let r;
+  return (form.length?`<div class="small muted" style="margin-top:6px"><b>${esc(t('prepForm'))}</b></div>${form.map(x=>prepCond(d,x)).join('')}`:'')
+    + (content.length?`<div class="small muted" style="margin-top:6px"><b>${esc(t('prepContent'))}</b></div>${content.map(x=>prepCond(d,x)).join('')}`:''); }
+const prepWants = d => !d.prepared||!!(d.state||{}).fix||(!!d.model_wanted&&!!S.prepModel);      // Claude's look only where Claude is: without it the same preparation would only run again
+/* the name a document carries in the dossier, as the proposed tree showed it: the CTD folders' own (the eCTD's is said beside it) */
+const docLeaf = d => ((d.names||{}).ctd||(d.names||{}).ectd32||'').split('/').pop()||'';
+/* one document of the vault */
+function prepCard(d){
+  const id=esc(d.id), slot=esc(d.slot_id), locked=LOCKED.includes(d.doc_class), pdf=/\.pdf$/i.test(d.filename||''), app=!locked&&window.DBPROG&&DBPROG.forFile(d.filename);
+  const leaf=docLeaf(d), e3=((d.names||{}).ectd32||'').split('/').pop(), nconds=(d.conditions||[]).length;
+  return `<div class="vdoc finding ${d.bucket==='needs_you'?'block':''}" data-offdoc="${id}" data-pdoc="${id}" data-vslot="${slot}" data-bucket="${esc(d.bucket||'')}">
+        <div class="row gap-s" style="flex-wrap:wrap"><b data-vname><bdi>${esc(d.original_name||d.filename)}</bdi></b>${prepState(d)}</div>
+        <div class="small muted">${leaf?`<b>${esc(t('prepNewName'))}:</b> <bdi data-vleaf>${esc(leaf)}</bdi> · `:''}${e3&&e3!==leaf?`<span data-vectd>eCTD: <bdi>${esc(e3)}</bdi></span> · `:''}${esc(t('offVer'))} ${d.version||1}</div>
+        <div class="pv" data-pv="${id}" data-pvname="${esc(d.filename||d.original_name||'')}" data-pvpages="${d.pages||0}"><button class="pvbtn" data-vthumb="${id}" title="${esc(t('vView'))}" aria-label="${esc(t('vView'))}: ${esc(d.original_name||d.filename||'')}"><div class="pv-strip"></div></button></div>
+        <div class="small vdid" style="margin-top:3px">${vaultDid(d)}</div>
+        <div class="small" data-pnow="${id}" style="color:var(--accent)" aria-live="polite"></div>
+        ${vaultRead(d)}
+        <div class="row gap-s vacts" style="margin-top:6px;flex-wrap:wrap;align-items:center">
+          <button class="btn sm ${prepWants(d)?'':'pri'}" data-offpages="${id}" data-slot="${slot}">${icon('eye',14)} ${esc(t('vView'))}</button>
+          ${prepWants(d)?`<button class="btn sm pri" data-pgo="${id}">${icon('zap',14)} ${esc(t('prepGo'))}</button>`:''}
+          ${app?`<button class="btn sm" data-offedit="${id}" data-slot="${slot}">${icon('pen',14)} ${esc(t('progOpen').replace('{p}',DBPROG.title(app,S.lang)))}</button>`
+            :`<span class="small muted" data-offwhy>${esc(t(locked?'offLocked':'offNoProg'))}</span>`}
+          ${pdf&&!locked&&progOn('photocraft')?`<span class="row gap-s" style="align-items:center"><label class="small muted">${esc(t('offPage'))} <input type="number" min="1" value="1" data-offpg="${id}" style="width:58px"></label><button class="btn sm ghost" data-offphoto="${id}" data-slot="${slot}">${icon('scan',14)} ${esc(t('offPhoto'))}</button></span>`:''}
+          ${pdf&&DESIGN_ITEMS.includes(d.req_id)&&progOn('designcraft')?`<button class="btn sm ghost" data-offdesign="${id}" data-slot="${slot}">${icon('pen',14)} ${esc(t('offDesign'))}</button>`:''}</div>
+        <details class="vcond" data-vcond="${id}" ${d.bucket==='needs_you'||S.vaultOpen&&S.vaultOpen[d.id]?'open':''}><summary class="small"><b>${esc(t('vConds'))}</b> <span class="muted">(${nconds})</span></summary>
+          ${vaultConds(d)}</details>
+        ${prepTools(d)?`<details class="vcond vtools" data-vtools="${id}" ${S.vaultOpen&&S.vaultOpen['t:'+d.id]?'open':''}><summary class="small"><b>${esc(t('vTools'))}</b></summary>${prepTools(d)}</details>`:''}</div>`; }
+/* the same, beside the document's pages in «عرض ومراجعة» */
+function readerSide(d, look){
+  return `<div class="small muted"><b>${esc(t('rdSide'))}</b></div><div class="small vdid">${vaultDid(d)}</div>${vaultRead(d)}
+    ${!look&&prepWants(d)?`<div><button class="btn sm pri" data-pgo="${esc(d.id)}">${icon('zap',14)} ${esc(t('prepGo'))}</button></div>`:''}
+    <div data-rdconds ${look?'inert':''}>${vaultConds(d)}</div>`; }
+/* the sign: ready for the dossier to be composed, or what is left — each line leads to what it counts */
+function paintSign(r){
+  const el=$('#readySign'); if(!el) return; const c=r.counts||{}, did=S.dossier.id, ready=!!r.ready;
+  el.classList.toggle('ok', ready); el.dataset.ready=ready?'yes':'no';
+  $('#readyT').innerHTML=ready?`${icon('check',18)} ${esc(t('readyYes'))}`:esc(t(c.documents?'readyNo':'readyNone'));
+  $('#readyStats').textContent=[t('vIn').replace('{n}', c.documents||0), `${t('vfReady')}: ${c.ready||0}`, `${t('vfNeeds')}: ${c.needs_you||0}`, `${t('vfNot')}: ${c.not_prepared||0}`].join(' · ');
+  const line=(k, text, act)=>`<div class="rs-line" data-rs="${k}" ${k==='waiting'?'id="prepWaitNote"':''}><span class="grow">${text}</span>${act}</div>`;
+  $('#readyLines').innerHTML=[
+    c.not_prepared?line('not_prepared', esc(t('rsNotPrep').replace('{n}', c.not_prepared)), `<button class="btn sm" data-rsf="not_prepared">${esc(t('rsShow'))}</button>`):'',
+    c.needs_you?line('needs_you', esc(t('rsNeeds').replace('{n}', c.needs_you)), `<button class="btn sm" data-rsf="needs_you">${esc(t('rsShow'))}</button>`):'',
+    c.waiting?line('waiting', esc(t('prepWaitNote').replace('{docs}', nOf(c.waiting,'doc'))), `<a class="btn sm" href="#/d/${did}/tree">${esc(t('prepWaitGo'))}</a>`):'',
+    c.conflicts?line('conflicts', esc(t('rsConf').replace('{n}', c.conflicts)), `<button class="btn sm" data-rsgo="prepDiffs">${esc(t('rsShow'))}</button>`):'',
+    c.cross?line('cross', esc(t('rsCross').replace('{n}', c.cross)), `<a class="btn sm" href="#/d/${did}/checks">${esc(t('navChecks'))}</a>`):'',
+    c.missing?line('missing', esc(t('rsMissing').replace('{n}', c.missing)), `<a class="btn sm" href="#/d/${did}/board">${esc(t('stn7'))}</a>`):''].join('');
+  $$('[data-rsf]', el).forEach(b=>b.onclick=()=>{ S.vaultF=b.dataset.rsf; paintVault(); const o=$('#office'); if(o) o.scrollIntoView({block:'start'}); });
+  $$('[data-rsgo]', el).forEach(b=>b.onclick=()=>{ const x=document.getElementById(b.dataset.rsgo); if(x) x.scrollIntoView({block:'start'}); });
+  const todo=(r.placed||[]).some(d=>prepWants(d)||d.improvable);
+  $('#prepAll').classList.toggle('pri', todo||!ready); $('#readyNext').hidden=!ready;
+}
+let prepSeq=0, prepLast=null;
+/* the page's copy of the board as the file holds it now: asked for when it is not held (it is dropped after every change), or
+   afresh when what comes next acts on it or draws from it */
+async function boardNow(fresh){
+  const did=S.dossier&&S.dossier.id; if(!did) return null;
+  if(!fresh&&S.board&&S.board.__did===did) return S.board;
+  const b=await api(`/dossiers/${did}/board`); b.__did=did; if(!S.dossier||S.dossier.id!==did) return null; S.board=b; return b; }
+/* Station 6 is drawn again after every change made on it. When this returns, the vault AND the page's copy of the board are the file
+   as it is now: an item's panel opened next reads that copy (stage 3: the vault is drawn from /prepare alone, nothing asked for the
+   board again, and «رجوع» from the reader closed the item's panel instead of showing it). Asked for twice close together: the
+   caller waits for the later drawing, not for the one it overtook. */
+async function paintPrepare(){ let p=prepLast=prepDraw(); await p; while(prepLast!==p){ p=prepLast; await p; } }
+async function prepDraw(){
+  let out=$('#prepOut'); if(!out||!S.dossier) return; const did=S.dossier.id, my=++prepSeq; let r;
   const capsP=S.caps?null:caps().catch(()=>null);                                     // opened straight from a link: PdfCraft's tools need to know it is here (asked alongside, not before)
-  try{ r=await api(`/dossiers/${S.dossier.id}/prepare`); }catch(e){ out.innerHTML=`<div class="alert bad"><p class="small">${esc(e.message)}</p></div>`; return; }
-  S.prep=r; if(!S.prepBusy) $('#prepMsg').textContent='';
-  const inPage=!!(window.DBAI&&await window.DBAI.available()); S.prepModel=inPage?'page':r.model;
-  $('#prepOcr').textContent=t(inPage?'prepByPage':r.model==='server'?'prepByServer':'prepNoModel')+' '+(r.ocr?t('prepOcrOn').replace('{l}', r.ocr.language==='ar+en'?L({en:'Arabic and English',ar:'عربي وإنجليزي'}):r.ocr.language):window.DBOCR?'':t('prepOcrOff'));
+  const boardP=(S.prepBusy||S.prepDoing)?null:boardNow(true).catch(()=>null);          // afresh, as the vault itself is. Not while documents are being prepared: nothing reads it then, and the drawing at the end asks
+  try{ r=await api(`/dossiers/${did}/prepare`); }catch(e){ if(my===prepSeq&&$('#prepOut')) $('#prepOut').innerHTML=`<div class="alert bad"><p class="small">${esc(e.message)}</p></div>`; return; }
+  const inPage=!!(window.DBAI&&await window.DBAI.available());
   if(capsP) await capsP;
-  /* the files still waiting for a place are the proposed tree's (station 5): this page says so, and leads there */
-  const waitNote=r.waiting.length?`<div class="alert info" id="prepWaitNote">${icon('info')}<p class="small">${esc(t('prepWaitNote').replace('{docs}', nOf(r.waiting.length,'doc')))} <a class="btn sm" href="#/d/${S.dossier.id}/tree">${esc(t('prepWaitGo'))}</a></p></div>`:'';
-  const asked=r.requested.map(x=>`<span class="tag" title="${esc(L(x.title||{en:'',ar:''}))}">${esc(x.ctd||x.slot_id)}</span>`).join(' ');
+  if(boardP) await boardP;
+  if(my!==prepSeq||!$('#prepOut')||!S.dossier||S.dossier.id!==did) return;                // drawn again since: that answer is the newer one
+  out=$('#prepOut');
+  S.prep=r; S.prepModel=inPage?'page':r.model; if(!S.prepBusy&&$('#prepMsg')) $('#prepMsg').textContent='';
+  if(S.vaultF&&S.vaultF!=='all'&&!(r.counts||{})[S.vaultF]) S.vaultF='all';                 // the documents the person was looking at have all moved on (prepared, answered): the list is not left empty
+  const po=$('#prepOcr'); if(po) po.textContent=t(inPage?'prepByPage':r.model==='server'?'prepByServer':'prepNoModel')+' '+(r.ocr?t('prepOcrOn').replace('{l}', r.ocr.language==='ar+en'?L({en:'Arabic and English',ar:'عربي وإنجليزي'}):r.ocr.language):window.DBOCR?'':t('prepOcrOff'));
+  paintSign(r);
   const diffs=(r.conflicts||[]).map((c,i)=>`<div class="finding" data-pdiff="${i}"><div class="small"><b>${esc(L(FOUND_NAMES[c.field]||{en:c.field,ar:c.field}))}</b> <span class="muted">· ${bdi(c.filename||'')}</span></div>
       <div class="small" dir="auto">${esc(t('prepDiff').replace('{have}', String(c.have)).replace('{read}', String(c.read)))}</div>
       <div class="row gap-s" style="margin-top:4px"><button class="btn sm" data-pchoose="${i}" data-use="have">${esc(t('prepKeepHave'))}</button><button class="btn sm pri" data-pchoose="${i}" data-use="read">${esc(t('prepTakeRead'))}</button></div></div>`).join('');
-  out.innerHTML=waitNote+(diffs?`<section class="card pad" id="prepDiffs"><div class="hd"><h3>${esc(t('prepDiffsT'))} <span class="tag">${r.conflicts.length}</span></h3></div>${diffs}</section>`:'')+`
-    <section class="card pad"><div class="hd"><h3>${esc(t('prepPlaced'))} <span class="tag">${r.placed.length}</span></h3></div>${r.placed.map(prepCard).join('')}</section>
-    <section class="card pad"><div class="hd"><h3>${esc(t('prepAsked'))} <span class="tag">${r.requested.length}</span></h3></div><div class="row gap-s" style="flex-wrap:wrap">${asked}</div></section>`;
-  prepWire(out);
-  if(window.DBPV){ DBPV.mount(out, S.dossier.id); DBPV.restore(out); }
-  const office=paintOffice(true);
-  if(wait) await office;
+  const keepQ=($('#offQ')||{}).value||'';
+  out.innerHTML=(diffs?`<section class="card pad" id="prepDiffs"><div class="hd"><h3>${esc(t('prepDiffsT'))} <span class="tag">${r.conflicts.length}</span></h3></div>${diffs}</section>`:'')+`
+    <section class="card pad stack gap-s" id="office"><div class="hd row gap-s" style="flex-wrap:wrap"><h3 class="grow">${icon('lock',16)} ${esc(t('vaultT'))} <span class="tag" id="offN"></span> <span class="small muted" id="offProgs" role="status" style="font-weight:400"></span></h3>
+        <input type="search" id="offQ" dir="auto" placeholder="${esc(t('offFind'))}" style="max-width:20em"></div>
+      <p class="small muted">${esc(t('vaultSub'))}</p><div class="seg vf" role="group" id="vaultF"></div><div id="offList" class="stack gap-s"></div></section>`;
+  $('#offQ').value=keepQ; $('#offQ').oninput=()=>paintVault();
+  $$('[data-pchoose]', out).forEach(b=>b.onclick=async()=>{ if(vaultBusy()) return; const c=(S.prep.conflicts||[])[+b.dataset.pchoose]; if(!c) return;
+    try{ await api(`/dossiers/${S.dossier.id}/data/choose`,{method:'POST',json:{field:c.field, value:b.dataset.use==='read'?c.read:c.have, doc_id:b.dataset.use==='read'?c.doc_id:null}}); S.board=null; }catch(e){ toast(e.message); } paintPrepare(); });
+  paintVault();
+  if(S.prepOffice){ S.prepOffice=false; const o=$('#office'); if(o) o.scrollIntoView({block:'start'}); }
 }
+/* while documents are being prepared, a document's own buttons wait — and say so (seen in stage 2: they acted in the middle of
+   «تجهيز الكل», on a version that was about to be replaced). «عرض ومراجعة» still opens, to look only. */
+function vaultBusy(){ if(S.prepBusy||S.prepDoing){ toast(t('offBusy')); return true; } return false; }
 /* a button of «المكتب» acts on the document as the file holds it now. While documents are being prepared each may get a new version
    (and this page's copy of the board is dropped after each one): said, not done — and not left in silence, as it was (16/11/2026).
    how: 'edit' — the document is about to be changed: the file is asked how it stands now, and it must be the current version;
@@ -3376,48 +3581,70 @@ async function officeDoc(docId, slotId, how){
   const busy=!!(S.prepBusy||S.prepDoing), did=S.dossier.id;
   if(busy) { if(how==='look') return {sl:null, id:docId, busy}; toast(t('offBusy')); return null; }
   if(how!=='look'||!S.board||S.board.__did!==did){
-    try{ const b=await api(`/dossiers/${did}/board`); b.__did=did; if(!S.dossier||S.dossier.id!==did) return null; S.board=b; }
-    catch(e){ toast(e.message); return null; } }
+    try{ if(!await boardNow(how!=='look')) return null; }catch(e){ toast(e.message); return null; } }       // about to act on it: asked afresh
   const sl=slotById(slotId), d=sl&&(sl.documents||[]).find(x=>x.id===docId);
   if(!sl||(how==='edit'&&!d)){ toast(t('offChanged')); paintOffice(); return null; }        // the list is drawn again from what was just asked
   return {sl, id:docId, busy};
 }
-/* «المكتب»: every current document of the file, its first page, opened in its program where there is one (ui/assets/programs.js) */
-/* fresh: the documents as they are now. This page is drawn again after every change made on it (a file improved, made smaller,
-   placed, edited in its program: each makes a new version), and the list must not keep the version before — its buttons would then
-   work on a document that is no longer the current one. Typing in the search box filters the list it already holds. */
-let offSeq=0;
-async function paintOffice(fresh){
-  let box=$('#offList'); if(!box||!S.dossier) return; const did=S.dossier.id;
-  let b=(!fresh&&S.board&&S.board.__did===did)?S.board:null;
-  if(!b){ const my=++offSeq;
-    try{ b=await api(`/dossiers/${did}/board`); b.__did=did; }catch(e){ if(my===offSeq&&$('#offList')) $('#offList').innerHTML=`<div class="alert bad"><p class="small">${esc(e.message)}</p></div>`; return; }
-    box=$('#offList'); if(my!==offSeq||!box||!S.dossier||S.dossier.id!==did) return;     // asked again since: that answer is the newer one
-    S.board=b; }
-  const rows=[]; for(const s of b.slots) for(const d of (s.documents||[])) rows.push({s,d});
-  $('#offN').textContent=rows.length;
-  const q=(($('#offQ')||{}).value||'').trim().toLowerCase();
-  const shown=rows.filter(({s,d})=>!q||[d.filename, s.ctd, L(s.title)].join(' ').toLowerCase().includes(q));
-  const mods=[...new Set(shown.map(x=>x.s.module))];
-  const row=({s,d})=>{ const locked=LOCKED.includes(s.doc_class), ext=d.meta&&d.meta.external, app=!locked&&!ext&&window.DBPROG&&DBPROG.forFile(d.filename), pdf=/\.pdf$/i.test(d.filename);
-    return `<div class="row gap-s" style="align-items:flex-start;flex-wrap:nowrap" data-offdoc="${esc(d.id)}">${ext?'':`<img class="pv-th" alt="" data-pvthumb="${esc(d.id)}" data-pvname="${esc(d.filename)}">`}
-      <div class="grow" style="min-width:0"><div class="small"><span class="code">${esc(s.ctd||'')}</span> ${esc(L(s.title)).slice(0,90)}${itemLabel(s)}</div><div><bdi>${esc(d.filename)}</bdi> <span class="small muted">· ${esc(t('offVer'))} ${d.version}</span> ${chip(d.check_status)}</div>
-      <div class="row gap-s" style="margin-top:4px;flex-wrap:wrap">${app?`<button class="btn sm pri" data-offedit="${esc(d.id)}" data-slot="${esc(s.slot_id)}">${icon('pen',14)} ${esc(t('progOpen').replace('{p}',DBPROG.title(app,S.lang)))}</button>`
-        :`<span class="small muted">${esc(t(locked?'offLocked':ext?'extRef':'offNoProg'))}</span>`}${pdf&&!ext?`<button class="btn sm ghost" data-offpages="${esc(d.id)}" data-slot="${esc(s.slot_id)}">${icon('eye',14)} ${esc(t('offPages'))}</button>`:''}
-        ${pdf&&!ext&&!locked&&progOn('photocraft')?`<span class="row gap-s" style="align-items:center"><label class="small muted">${esc(t('offPage'))} <input type="number" min="1" value="1" data-offpg="${esc(d.id)}" style="width:58px"></label><button class="btn sm ghost" data-offphoto="${esc(d.id)}" data-slot="${esc(s.slot_id)}">${icon('scan',14)} ${esc(t('offPhoto'))}</button></span>`:''}
-        ${pdf&&!ext&&DESIGN_ITEMS.includes(s.req_id)&&progOn('designcraft')?`<button class="btn sm ghost" data-offdesign="${esc(d.id)}" data-slot="${esc(s.slot_id)}">${icon('pen',14)} ${esc(t('offDesign'))}</button>`:''}
-        <button class="btn sm ghost" data-offitem="${esc(s.slot_id)}">${icon('arrow',14)} ${esc(t('offItem'))}</button></div></div></div>`; };
-  box.innerHTML=rows.length?mods.map(m=>`<div class="small muted" style="margin-top:6px"><b>Module ${m}</b></div>`+shown.filter(x=>x.s.module===m).map(row).join('')).join(''):`<p class="small muted">${esc(t('offEmpty'))}</p>`;
+/* «الخزنة»: the documents of the dossier as they are now (S.prep, asked again after every change made on this page: each makes a
+   new version, and a list that kept the version before would work on a document that is no longer the current one). Filtering and
+   searching draw the list it already holds. */
+function vaultOpen(id){
+  const d=((S.prep||{}).placed||[]).find(x=>x.id===id); if(!d) return;
+  const busy=!!(S.prepBusy||S.prepDoing), locked=LOCKED.includes(d.doc_class), pdf=/\.pdf$/i.test(d.filename||''), app=!locked&&window.DBPROG&&DBPROG.forFile(d.filename);
+  pageViewer(id, ()=>{ if(!S.prepBusy&&!S.prepDoing) paintPrepare(); }, !busy&&!locked, busy,
+    {vault:true, list:S.vaultShown||[], go:vaultOpen, text:!(pdf&&pcOn()), prog:app||null,
+     edit:async(cur, after)=>{ if(await officeDoc(cur, d.slot_id, 'edit')) openInProgram(cur, d.slot_id, {onClose:after}); }});
+}
+function paintVault(){
+  const box=$('#offList'); if(!box||!S.prep||!S.dossier) return; const did=S.dossier.id, r=S.prep, P=r.placed||[];
+  $('#offN').textContent=P.length;
+  const q=(($('#offQ')||{}).value||'').trim().toLowerCase(), f=S.vaultF||'all', n=r.counts||{};
+  const shown=P.filter(d=>(f==='all'||d.bucket===f)&&(!q||[d.filename, d.original_name, d.ctd, L(d.item||{en:'',ar:''}), (d.names||{}).ctd||''].join(' ').toLowerCase().includes(q)));
+  $('#vaultF').innerHTML=[['all','vfAll',P.length],['needs_you','vfNeeds',n.needs_you||0],['ready','vfReady',n.ready||0],['not_prepared','vfNot',n.not_prepared||0]]
+    .map(([k,tk,c])=>`<button data-vf="${k}" class="${f===k?'on':''}" aria-pressed="${f===k}">${esc(t(tk))} <span class="n">${c}</span></button>`).join('');
+  $$('[data-vf]', $('#vaultF')).forEach(b=>b.onclick=()=>{ S.vaultF=b.dataset.vf; paintVault(); });
+  S.vaultOpen=S.vaultOpen||{}; $$('details[data-vcond]', box).forEach(x=>{ S.vaultOpen[x.dataset.vcond]=x.open; });       // the conditions the person opened stay open
+  $$('details[data-vtools]', box).forEach(x=>{ S.vaultOpen['t:'+x.dataset.vtools]=x.open; });
+  const mods=[...new Set(shown.map(d=>d.module))];
+  box.innerHTML=!P.length?`<p class="small muted" id="vaultEmpty">${esc(t('offEmpty'))}</p>`:!shown.length?`<p class="small muted" id="vaultNone">${esc(t('vNone'))}</p>`
+    :mods.map(m=>{ const rows=shown.filter(d=>d.module===m), slots=[...new Set(rows.map(d=>d.slot_id))];
+      return `<div class="vmod" data-vmod="${m}"><bdi>Module ${m}</bdi></div>`+slots.map(sid=>{ const ds=rows.filter(d=>d.slot_id===sid), d0=ds[0], pt=(r.points||{})[sid]||{};
+        return `<div class="vpoint" data-vpoint="${esc(sid)}"><span class="code">${esc(d0.ctd||'')}</span><b>${esc(L(d0.item||{en:'',ar:''}))}</b>${d0.slot_item?`<span class="small muted">· ${bdi(d0.slot_item.name||'')}${d0.slot_item.manufacturer?' — '+bdi(d0.slot_item.manufacturer):''}</span>`:''}${pointChip(pt.point, pt.why)}
+            <span class="grow"></span><button class="btn sm ghost" data-lib="${esc(sid)}">${icon('book',14)} ${esc(t('libBtn'))}</button><button class="btn sm ghost" data-offitem="${esc(sid)}">${icon('arrow',14)} ${esc(t('offItem'))}</button></div>`
+          +ds.map(prepCard).join(''); }).join(''); }).join('');
+  S.vaultShown=$$('[data-pdoc]', box).map(x=>x.dataset.pdoc);                                        // «المستند التالي» follows the list as it stands on the page
+  prepWire(box);
+  $$('[data-offpages]',box).forEach(x=>x.onclick=()=>vaultOpen(x.dataset.offpages));                 // while documents are being prepared: to look at only
+  $$('[data-vthumb]',box).forEach(x=>x.onclick=()=>vaultOpen(x.dataset.vthumb));
   $$('[data-offedit]',box).forEach(x=>x.onclick=async()=>{ if(await officeDoc(x.dataset.offedit, x.dataset.slot, 'edit')) openInProgram(x.dataset.offedit, x.dataset.slot, {onClose:()=>paintPrepare()}); });
-  $$('[data-offpages]',box).forEach(x=>x.onclick=async()=>{ const o=await officeDoc(x.dataset.offpages, x.dataset.slot, 'look');      // while documents are being prepared: to look at only
-    if(o) pageViewer(o.id, ()=>closeDrawer(), !o.busy&&!LOCKED.includes(o.sl.doc_class), o.busy); });
   $$('[data-offphoto]',box).forEach(x=>x.onclick=async()=>{ if(await officeDoc(x.dataset.offphoto, x.dataset.slot, 'edit')) pageInPhoto(x.dataset.offphoto, x.dataset.slot, +(($(`[data-offpg="${CSS.escape(x.dataset.offphoto)}"]`,box)||{}).value||1), {onClose:()=>paintPrepare()}); });
   $$('[data-offdesign]',box).forEach(x=>x.onclick=async()=>{ if(await officeDoc(x.dataset.offdesign, x.dataset.slot, 'edit')) docInDesign(x.dataset.offdesign, x.dataset.slot, {onClose:()=>paintPrepare()}); });
   $$('[data-offitem]',box).forEach(x=>x.onclick=async()=>{ if(await officeDoc('', x.dataset.offitem, 'item')) openWhy(x.dataset.offitem); });
-  const f=$('#offQ'); if(f&&!f.dataset.w){ f.dataset.w='1'; f.oninput=()=>paintOffice(); }
-  if(window.DBPV) DBPV.mount(box, did);
-  if(S.prepOffice){ S.prepOffice=false; const o=$('#office'); if(o) o.scrollIntoView({block:'start'}); }
-  warmPrograms(rows);
+  $$('[data-lib]',box).forEach(x=>x.onclick=()=>openLib(x.dataset.lib));
+  if(window.DBPV){ DBPV.mount(box, did); DBPV.restore(box); }
+  warmPrograms(P.map(d=>({s:{req_id:d.req_id}, d:{filename:d.filename, meta:{}}})));
+}
+const paintOffice=paintVault;
+/* the library beside the stations (eBOX stage 3): an item's conditions, each with its source, why it is required, how its document is
+   obtained, and its record in the library — in the side panel, without leaving the station */
+async function openLib(slotId){
+  const did=S.dossier.id;
+  try{ if(!await boardNow()) return; }catch(e){ toast(e.message); return; }
+  const s=slotById(slotId); if(!s){ toast(t('offChanged')); return; }
+  const reasons=s.reasons.map(r=>r.note?`<div class="alert" data-levelnote>${icon('info')}<p class="small">${esc(r[S.lang]||r.en)}</p></div>`:`<div class="finding"><div>${esc(r[S.lang]||r.en)}</div><div class="code small muted">${esc(r.source||'')}</div></div>`).join('');
+  openDrawer(t('libBtn'), `<div class="row gap-s" style="flex-wrap:wrap" id="libHead"><span class="code">${esc(s.ctd||'')}</span><b>${esc(L(s.title))}</b>${itemLabel(s)?`<span class="small muted">${itemLabel(s)}</span>`:''}${pointChip(s.point, s.open_why)}<span class="chip ${s.level==='R'?'c-rec':'c-na'}"><i></i>${esc(t(LEVEL[s.level]))}</span></div>
+    <details class="cond" id="itemCond" open><summary><b>${esc(t('condT'))}</b></summary><div class="skeleton" style="height:40px"></div></details>
+    <h3>${esc(t('reasons'))}</h3>${reasons||'<p class="small muted">—</p>'}
+    ${s.acceptance?`<h3>${esc(t('acceptT'))}</h3><div class="finding small" dir="auto">${esc(s.acceptance)}</div>`:''}
+    ${s.how||s.produced_by?`<div class="small">${s.produced_by?`<b>${esc(t('byT'))}:</b> ${bdi(s.produced_by)}`:''}${s.how?`<br><b>${esc(t('howT'))}:</b> <span dir="auto">${esc(s.how)}</span>`:''}</div>`:''}
+    ${s.sources&&s.sources.length?`<div class="small muted"><b>${esc(t('sourcesT'))}:</b> <span class="code">${esc(s.sources.join(' · '))}</span>${s.provenance?` · ${prov(s.provenance)}`:''}</div>`:''}
+    <div class="row gap-s" style="flex-wrap:wrap">${s.library?`<a class="btn sm" id="libItem" href="${esc(libHref(s.library))}" target="_blank" rel="noopener" title="${esc(t('libWhy'))}">${icon('book',14)} ${esc(t('libOpen'))}</a>`:''}
+      <button class="btn sm ghost" id="libToItem">${icon('arrow',14)} ${esc(t('offItem'))}</button></div>`, true);
+  const body=$('#dBody');
+  condFor(condKeyD()).then(cv=>{ const el=$('#itemCond', body); if(el) el.innerHTML=`<summary><b>${esc(t('condT'))}</b></summary>${condHtml(cv.items[s.req_id])||`<p class="small muted">—</p>`}`; })
+    .catch(()=>{ const el=$('#itemCond', body); if(el) el.remove(); });
+  $('#libToItem').onclick=()=>openWhy(slotId);
 }
 /* the editing programs these documents open in are got ready in the background (ui/assets/programs.js warm), one after the other,
    so that opening one does not wait: the office says when they are ready. Not on a line the person asked to spare. */
@@ -3434,15 +3661,14 @@ function warmPrograms(rows){
     for(const a of want){ if(st.done[a]) continue; const ok=await DBPROG.warm(a); if(ok) st.done[a]=true; else break; say(); }
     st.busy=false; say(); })();
 }
-function prepWire(out){
+function prepWire(out, after){
+  after=after||(()=>paintPrepare());
   prepToolsWire(out);
-  $$('[data-pgo]', out).forEach(b=>b.onclick=async()=>{ b.disabled=true; await prepOne(b.dataset.pgo); await paintPrepare(); });
-  $$('[data-pchoose]', out).forEach(b=>b.onclick=async()=>{ const c=(S.prep.conflicts||[])[+b.dataset.pchoose]; if(!c) return;
-    try{ await api(`/dossiers/${S.dossier.id}/data/choose`,{method:'POST',json:{field:c.field, value:b.dataset.use==='read'?c.read:c.have, doc_id:b.dataset.use==='read'?c.doc_id:null}}); }catch(e){ toast(e.message); } paintPrepare(); });
-  $$('[data-pconf]', out).forEach(b=>b.onclick=async()=>{ try{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.pconf}/confirm`,{method:'POST',json:{cond:b.dataset.cond, answer:b.dataset.ans}}); }catch(e){ toast(e.message); } paintPrepare(); });
-  $$('[data-pslotans]', out).forEach(b=>b.onclick=async()=>{ try{ await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(b.dataset.pslotans)}/attest`,{method:'POST',json:{answer:b.dataset.ans}}); toast(t('attestSaved')); S.board=null; }catch(e){ toast(e.message); } paintPrepare(); });
-  $$('[data-pdatego]', out).forEach(b=>b.onclick=async()=>{ const v=($(`[data-pdate="${CSS.escape(b.dataset.pdatego)}"]`)||{}).value; if(!v) return;
-    try{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.pdatego}/validity`,{method:'PUT',json:{valid_until:v}}); }catch(e){ toast(e.message); } paintPrepare(); });
+  $$('[data-pgo]', out).forEach(b=>b.onclick=async()=>{ if(vaultBusy()) return; b.disabled=true; await prepOne(b.dataset.pgo); await after(); });
+  $$('[data-pconf]', out).forEach(b=>b.onclick=async()=>{ if(vaultBusy()) return; try{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.pconf}/confirm`,{method:'POST',json:{cond:b.dataset.cond, answer:b.dataset.ans}}); S.board=null; }catch(e){ toast(e.message); } after(); });
+  $$('[data-pslotans]', out).forEach(b=>b.onclick=async()=>{ if(vaultBusy()) return; try{ await api(`/dossiers/${S.dossier.id}/slots/${encodeURIComponent(b.dataset.pslotans)}/attest`,{method:'POST',json:{answer:b.dataset.ans}}); toast(t('attestSaved')); S.board=null; }catch(e){ toast(e.message); } after(); });
+  $$('[data-pdatego]', out).forEach(b=>b.onclick=async()=>{ if(vaultBusy()) return; const v=($(`[data-pdate="${CSS.escape(b.dataset.pdatego)}"]`, out)||{}).value; if(!v) return;
+    try{ await api(`/dossiers/${S.dossier.id}/documents/${b.dataset.pdatego}/validity`,{method:'PUT',json:{valid_until:v}}); S.board=null; }catch(e){ toast(e.message); } after(); });
 }
 function mbs(n){ return n>=1048576?(n/1048576).toFixed(n>=10485760?0:1)+' MB':Math.max(1,Math.round(n/1024))+' KB'; }
 /* where one document's work is, on the document itself (and in the line at the top while «Prepare them all» runs) */
@@ -3548,14 +3774,17 @@ async function prepOne(id){
   finally{ const was=S.prepDoing; S.prepDoing=null; prepNow(id, ''); if(was&&was.id!==id) prepNow(was.id, ''); }
 }
 async function prepAll(){
-  if(S.prepWaitP){ $('#prepMsg').textContent=t('prepStepModel'); await S.prepWaitP.catch(()=>{}); S.prepWaitP=null; }   // Claude is still reading the files just added: their items come from it
+  if(S.prepBusy||S.prepDoing){ toast(t('offBusy')); return; }
+  const say=x=>{ const m=$('#prepMsg'); if(m) m.textContent=x; };
+  if(S.prepWaitP){ say(t('prepStepModel')); await S.prepWaitP.catch(()=>{}); S.prepWaitP=null; }   // Claude is still reading the files just added: their items come from it
   const r=S.prep||await api(`/dossiers/${S.dossier.id}/prepare`);
-  const todo=r.placed.filter(d=>!d.prepared||(d.state||{}).fix||d.model_wanted||d.improvable).map(d=>d.id);      // the documents in their items: a waiting file gets its place on the proposed tree first
+  const todo=r.placed.filter(d=>prepWants(d)||d.improvable).map(d=>d.id);      // the documents in their items: a waiting file gets its place on the proposed tree first
   let i=0;
-  for(const id of todo){ i++; const x=r.placed.find(y=>y.id===id)||{};
-    S.prepBusy=t('prepWorking').replace('{i}',i).replace('{n}',todo.length)+` ${x.filename||''}`; $('#prepMsg').textContent=S.prepBusy;
-    await prepOne(id); }
-  S.prepBusy=null; $('#prepMsg').textContent=''; await paintPrepare();
+  try{
+    for(const id of todo){ i++; const x=r.placed.find(y=>y.id===id)||{};
+      S.prepBusy=t('prepWorking').replace('{i}',i).replace('{n}',todo.length)+` ${x.filename||''}`; say(S.prepBusy);
+      await prepOne(id); }
+  } finally { S.prepBusy=null; say(''); await paintPrepare(); }
 }
 /* ---------------- search the text of every document (each file read once, page by page, and kept) */
 function searchView(tok){

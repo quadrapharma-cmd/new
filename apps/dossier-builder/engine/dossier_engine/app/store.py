@@ -1593,17 +1593,17 @@ class Store:
             return {'document': None, 'why': 'not here'}
         path = self.blob_path(d['sha256'])
         if fixes.is_signed(path):
-            return {'document': None, 'why': 'signed'}
+            return self._improve_tried(d, {'document': None, 'why': 'signed'})
         data = path.read_bytes()
         locked = d['doc_class'] in LOCKED
         try:
             new, rep = pdfcraft.optimize(data, lossless=locked, links=not locked, pdf20=data[:16].startswith(b'%PDF-2'))
         except pdfcraft.PdfCraftError as e:
-            return {'document': None, 'why': str(e)[:200]}
+            return self._improve_tried(d, {'document': None, 'why': str(e)[:200]})
         if not pdfcraft.smaller_enough(data, new):
-            return {'document': None, 'why': 'already small', 'before': len(data)}
+            return self._improve_tried(d, {'document': None, 'why': 'already small', 'before': len(data)})
         if locked and not pdfcraft.same_pixels(data, new):
-            return {'document': None, 'why': 'pages would change', 'before': len(data)}
+            return self._improve_tried(d, {'document': None, 'why': 'pages would change', 'before': len(data)})
         doc = self.add_document(did, d['slot_id'], d['filename'], new, d['title'],
                                 {**d['meta'], 'fixed_from': doc_id, 'fixes': list(d['meta'].get('fixes') or []) + ['optimize'],
                                  'optimized': {'before': len(data), 'after': len(new), 'resampled': rep.get('images_resampled') or 0,
@@ -1711,6 +1711,16 @@ class Store:
         self.db.commit()
         self.audit(did, 'document.condition_confirmed', doc=doc_id, cond=cond, answer=answer)
         return self.document(doc_id)
+
+    def _improve_tried(self, d, out):
+        """The improvement was tried on these very bytes and gave nothing (already small, signed, a third party's pages would change,
+        the PDF engine refused it): kept on the document (meta «improve_tried», with the digest of the bytes tried). Without it the
+        document stayed «improvable» for good, and «تجهيز الكل» prepared every such document again on each press, only to try the same
+        thing once more (seen 16/11/2026: the button never stopped being the main one). A new version has other bytes: tried afresh."""
+        meta = dict(d['meta'], improve_tried={'sha256': d['sha256'], 'why': out.get('why')})
+        self.db.execute('update document set meta=? where id=?', (json.dumps(meta, ensure_ascii=False), d['id']))
+        self.db.commit()
+        return out
 
     def keep_fix_refused(self, did, doc_id, refused):
         """The fixes the program tried on a document and could not make, with why (meta «fix_refused»): the preparation stage then shows

@@ -379,7 +379,7 @@ def test_a_new_artwork_made_in_the_design_program_is_the_items_document(site, tm
 
 
 def test_the_programs_a_dossiers_documents_need_are_fetched_in_the_background(site, tmp_path):
-    """«مراجعة المستندات وتعديلها» fetches the editing programs its documents need while the person looks at the list (16/11/2026: he
+    """«الخزنة» (station 6; «مراجعة المستندات وتعديلها» until stage 3) fetches the editing programs its documents need while the person looks at the list (16/11/2026: he
     met «لازم ننزل حجات علشان اشتغل» the first time each program opened): the parts are fetched off the page's thread, checked and
     kept in the browser («db-programs»), and the page says when they are ready; a program opened after that fetches no part again."""
     word, pdf = letter(tmp_path / 'made-up.docx'), made_up_pdf(tmp_path / 'made-up-certificate.pdf')
