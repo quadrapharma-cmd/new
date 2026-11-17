@@ -64,6 +64,9 @@ def test_checks_autofix_fixes_and_search_finds_the_page(server, tmp_path):
         page = page_of(b, server)
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.goto(f'{server}/#/d/{did}/checks')
+        page.wait_for_selector('#valDocs')
+        if not page.evaluate("document.getElementById('valDocs').open"):
+            page.click('#valDocs summary')                                         # station 8: the documents' checks, in a fold
         page.wait_for_selector('[data-cfix]')
         page.click('[data-cfix][data-slot="M1-11"]')
         page.wait_for_function("() => !document.querySelector('[data-cfix][data-slot=\"M1-11\"]')", timeout=60000)   # fixed: the row has nothing left to fix

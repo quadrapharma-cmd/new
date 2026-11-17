@@ -372,6 +372,10 @@ def test_guide_and_live_preview(server, browser, tmp_path):
     nxt = page.inner_text('.next')
     assert 'Generate' in nxt or 'Upload' in nxt                                            # data started -> documents
     page.goto(f'{server}/#/d/{did}/checks')
+    page.wait_for_selector('#valDocs')
+    assert 'cross-document findings' in page.inner_text('#valDocs summary')          # its counts said on the fold
+    if not page.evaluate("document.getElementById('valDocs').open"):
+        page.click('#valDocs summary')                                             # station 8: the documents' checks, in a fold
     page.wait_for_selector('.kpis')
     assert 'Cross-document' in page.inner_text('#view')
     assert errors == []

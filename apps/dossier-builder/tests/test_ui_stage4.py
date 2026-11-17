@@ -82,7 +82,8 @@ def test_station_8_builds_and_validates_and_station_9_downloads_what_was_validat
         page.wait_for_selector('#valSign[data-state="v8SignTodo"]')
         assert page.locator('#view a[download]').count() == 0                     # nothing is downloaded at the validation
         assert page.locator('#valReview #valRevNone').count() == 1                  # the second door: the assessor's review (none yet)
-        assert page.locator('#valDocs').count() == 1
+        assert page.locator('#valDocs').count() == 1 and not page.evaluate("document.getElementById('valDocs').open")   # in a fold: nothing there stops the build
+        assert 'مستندات عليها ملاحظات:' in page.inner_text('#valDocs summary')
         page.check('#ack')
         page.click('#go')
         page.wait_for_selector('#valSign[data-state="v8SignOk"]', timeout=240000)

@@ -324,6 +324,7 @@ const T = {
   v8NoRules:{en:'No validation rules run on this format: what is checked is that every required item is in its place (above).',ar:'لا تُشغَّل قواعد تحقق على هذه الصيغة؛ ما يُفحص هو اكتمال البنود المطلوبة في مواضعها (أعلاه).'},
   v8DocsT:{en:'Checks of the documents before the build',ar:'فحوص المستندات قبل البناء'},
   v8DocsSub:{en:'each document by its own conditions, and the documents against one another',ar:'كل مستند وفق شروطه، والمستندات بعضها مع بعض'},
+  v8DocsSum:{en:'— documents with findings: {d} · cross-document findings: {x}',ar:'— مستندات عليها ملاحظات: {d} · ملاحظات التطابق: {x}'},
   v8RevNone:{en:'No review has been run yet.',ar:'لم تُجرَ مراجعة بعد.'},
   v8RevGo:{en:"Open the assessor's desk",ar:'فتح مكتب المقيِّم'},
   v8RevOpen:{en:'Open findings: {n}',ar:'الملاحظات المفتوحة: {n}'},
@@ -4225,7 +4226,8 @@ async function checksView(tok){
       ${rv&&rv.run?`<div class="row gap-s small" style="flex-wrap:wrap" id="valRevRun"><span>${esc(t('v8RevWhen').replace('{d}', buildWhen(rv.run)))}</span>${rDChip(rv.run.verdict)}<span>${esc(t('v8RevOpen').replace('{n}', (rv.findings||[]).filter(rOpen).length))}</span></div>`:`<p class="small muted" id="valRevNone">${esc(t('v8RevNone'))}</p>`}</section>` : '';
   const html = `${stripHtml(J)}<div class="head"><div class="title"><h1>${esc(t('stn8'))}</h1><p class="sub">${esc(t('v8Sub'))}</p></div></div>
     ${sign}${door1}${buildBlock(bs.submission,'sub')}${buildBlock(bs.working,'work')}${door2}
-    <details class="card" id="valDocs" ${nDocProblems||rows.length||(b.cross||[]).length?'open':''}><summary class="pad"><b>${esc(t('v8DocsT'))}</b> <span class="small muted">${esc(t('v8DocsSub'))}</span></summary><div class="pad stack">${docsHtml}</div></details>`;
+    <details class="card" id="valDocs" ${nDocProblems?'open':''}><summary class="pad"><b>${esc(t('v8DocsT'))}</b> <span class="small muted">${esc(t('v8DocsSub'))}</span>
+      <span class="small" data-docsum>${esc(t('v8DocsSum').replace('{d}', rows.length).replace('{x}', (b.cross||[]).length))}</span></summary><div class="pad stack">${docsHtml}</div></details>`;      // open by itself only when something there stops the build
   if(!show(tok, html)) return;
   bindNext($('#view')); const rb=$('#rulesBtn'); if(rb) rb.onclick=openRules;
   const here=()=>S.dossier&&S.dossier.id===id&&/\/checks$/.test(location.hash);          // a build ends after its page was left and drawn again
