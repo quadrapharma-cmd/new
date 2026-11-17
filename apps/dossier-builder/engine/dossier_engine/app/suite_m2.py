@@ -139,10 +139,12 @@ class M2:
         out['product'] = self._product_name(out['product_id'])
         return out
 
-    def letters(self, product=None):
+    def letters(self, product=None, dossier=None):
         q, args = 'select id from letter', []
         if product:
             q, args = q + ' where product_id=?', [product]
+        elif dossier:                                    # «ما بعد التقديم»: the authority's letters of one dossier
+            q, args = q + ' where dossier_id=?', [dossier]
         out = []
         for r in self.db.execute(q + ' order by coalesce(received, dated, created) desc', args).fetchall():
             x = self.letter(r['id'])
@@ -319,8 +321,8 @@ def install(app, st, err):
         return JSONResponse(status_code=404 if e.code == 'E-NOT-FOUND' else 422, content={'detail': {'code': e.code, 'en': e.en, 'ar': e.ar}})
 
     @app.get('/api/suite/letters')
-    def letters(product: str = None):
-        return m2.letters(product)
+    def letters(product: str = None, dossier: str = None):
+        return m2.letters(product, dossier)
 
     @app.post('/api/suite/letters', status_code=201)
     async def add_letter(meta: str = Form(...), file: UploadFile = File(None)):

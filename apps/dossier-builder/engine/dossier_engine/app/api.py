@@ -2151,6 +2151,13 @@ def create_app(workspace, auth_enabled=None):
         except exporter.ExportError as e:
             err(e.status, e.code, e.en, e.ar, **e.extra)
 
+    @app.get('/api/dossiers/{did}/builds')
+    def builds(did: str):
+        """Station 8 and 9: the last build for submission and the last working copy, whether the dossier still holds what went into
+        each (else what changed), and their rules with their provenance and the documents they name."""
+        st.dossier(did)
+        return exporter.builds(st, did)
+
     @app.get('/api/dossiers/{did}/submissions')
     def submissions(did: str):
         return {o: [{k: h[k] for k in ('seq', 'activity', 'envelope', 'created', 'receipt', 'frozen')} | {'documents': len(h['leaves'])}

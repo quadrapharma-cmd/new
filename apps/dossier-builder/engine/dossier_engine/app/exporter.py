@@ -109,7 +109,7 @@ def _working_ectd(st, did, d, slots, base, exp_id, sub, p40, ig_zip, note):
     eff = {k: v for k, v in files_e.items() if not k.startswith('M1-44')}
     x = SimpleNamespace(d=d, env=env, pr=pr, prof=prof, product=product, region=region, slots=slots, files_e=files_e,
                         docs_ectd=list(docs_for(slots, prof, eff)[0]), current_ids={y.doc_id for y in docs_all})
-    res = {'region': region, 'downloads': {}, 'sequences': {}, 'reports': {}, 'skipped': {}, 'left_out': left_out}
+    res = {'region': region, 'downloads': {}, 'sequences': {}, 'reports': {}, 'skipped': {}, 'left_out': left_out, 'leaves': {}}
     for o in outs:
         docs, r = list(x.docs_ectd), None
         for attempt in (1, 2):
@@ -137,6 +137,7 @@ def _working_ectd(st, did, d, slots, base, exp_id, sub, p40, ig_zip, note):
             res['downloads'].update(r['zips'])
             res['sequences'].update(r['seqinfo'])
             res['reports'].update(r['reports'])
+            res['leaves'].update({out: hist for out, _s, _a, _u, _e, hist, _p in r['done']})
     shutil.rmtree(work, ignore_errors=True)
     shutil.rmtree(base / '_probe', ignore_errors=True)
     return res
@@ -217,6 +218,9 @@ def _working_copy(st, did, g, sub=None, p40=None, ig_zip=None):
     st.db.commit()
     st.audit(did, 'export.working', id=exp_id, documents=n_docs, missing_required=missing,
              ectd={o: v['sequence'] for o, v in sequences.items()})
+    _record_build(st, did, base, exp_id, working=True, outputs=list(downloads), sub=sub or {}, ack=False, sequences=sequences,
+                  downloads=downloads, reports=reports, leaves=(ectd or {}).get('leaves') or {}, label=note['en'], label_ar=note['ar'],
+                  missing_required=missing)
     return {'id': exp_id, 'working': True, 'downloads': downloads, 'documents': n_docs,
             'missing_required': missing, 'non_conforming': len(g.get('non_conforming') or []), 'unsigned': len(g.get('unsigned') or []),
             'sequences': sequences,
@@ -224,6 +228,148 @@ def _working_copy(st, did, g, sub=None, p40=None, ig_zip=None):
             'report': f'/api/dossiers/{did}/exports/{exp_id}/validation-report.html' if reports else None,
             'ectd': {k: ectd[k] for k in ('region', 'left_out', 'skipped')} if ectd else None,
             'ctd_only': [], 'label': note['en'], 'label_ar': note['ar']}
+
+
+# ---------------- what a build was made of, and whether the dossier still holds it (stage 4: validated before it is downloaded)
+DOC_KEYS = ('node', 'pi_type', 'lang', 'study', 'doc_type', 'control', 'indication', 'excipient', 'uuid', 'name', 'eu_country',
+            'reference', 'external')                     # what the writers take from a document's meta (assemble.docs_for, the exporter)
+OFFICIAL = {'ICH': 'ich', 'ICH-XML': 'ich', 'ICH-FILE': 'ich', 'ICH-EXTRA': 'ich', 'EU-IN-FORCE': 'ema', 'GCC-M1-1.5': 'gcc',
+            'EU NeeS guidance': 'nees'}
+DRAFT = {'EG-DRAFT': 'eda_draft', 'EU-DERIVED': 'eu_derived', 'ASSUMPTION': 'assumption'}     # EG-PROVISIONAL-PROFILE-v0, README §2
+
+
+def snapshot(st, did):
+    """What a build of this dossier is made of now: each current document of an active item (its file's digest, its name, what the
+    writers read from it), the product, the envelope, the profile, and the sequences recorded (a sequence withdrawn frees its number)."""
+    d = st.dossier(did)
+    active = sorted(s.slot_id for s in st.slots(did) if s.active)
+    docs = {}
+    for r in st.db.execute("select id, slot_id, filename, sha256, title, meta from document where dossier_id=? and state='current'", (did,)).fetchall():
+        if r['slot_id'] not in active:
+            continue
+        meta = json.loads(r['meta'] or '{}')
+        docs[r['id']] = [r['slot_id'], r['filename'], r['sha256'], r['title'] or '', {k: meta[k] for k in DOC_KEYS if meta.get(k)}]
+    seqs = sorted([o, str(h['seq'])] for o in ('ectd32', 'ectd40') for h in st.history(did, o))
+    return {'documents': docs, 'active': active, 'product': d.get('product') or {}, 'envelope': d.get('envelope') or {},
+            'profile': d.get('profile') or {}, 'sequences': seqs}
+
+
+def digest_of(snap):
+    import hashlib
+    return hashlib.sha256(json.dumps(snap, sort_keys=True, ensure_ascii=False).encode('utf-8')).hexdigest()
+
+
+def changes(old, new):
+    """What changed between two snapshots, said item by item: [{kind, slot_id?, name?}], kind one of added, replaced, withdrawn,
+    changed (the same document, another file or other details), items (an item made required or not), product, envelope, profile,
+    sequences."""
+    out = []
+    od, nd = old.get('documents') or {}, new.get('documents') or {}
+    gone = {i: v for i, v in od.items() if i not in nd}
+    came = {i: v for i, v in nd.items() if i not in od}
+    for i, v in came.items():
+        out.append({'kind': 'replaced' if any(g[0] == v[0] for g in gone.values()) else 'added', 'slot_id': v[0], 'name': v[1]})
+    for i, v in gone.items():
+        if not any(c[0] == v[0] for c in came.values()):
+            out.append({'kind': 'withdrawn', 'slot_id': v[0], 'name': v[1]})
+    for i in sorted(set(od) & set(nd)):
+        if od[i] != nd[i]:
+            out.append({'kind': 'changed', 'slot_id': nd[i][0], 'name': nd[i][1]})
+    for k in ('active', 'product', 'envelope', 'profile', 'sequences'):
+        if old.get(k) != new.get(k):
+            out.append({'kind': 'items' if k == 'active' else k})
+    return out
+
+
+def _record_build(st, did, base, exp_id, working, outputs, sub, ack, sequences, downloads, reports, leaves, label, label_ar=None,
+                  missing_required=None):
+    """build.json beside the build: what it was made of (the snapshot and its digest), what was asked, what it gave. The leaves of
+    each sequence (href → document) let a rule that names a file lead to its document."""
+    snap = snapshot(st, did)
+    rec = {'id': exp_id, 'working': working, 'created': time.time(), 'outputs': list(outputs), 'submission': sub or {}, 'ack': bool(ack),
+           'digest': digest_of(snap), 'snapshot': snap, 'sequences': sequences, 'downloads': downloads,
+           'report': f'/api/dossiers/{did}/exports/{exp_id}/validation-report.html' if reports else None,
+           'validation': {k: {'ok': r['ok'], 'counts': r['counts'], 'coverage': r['coverage'], 'label': r['label']} for k, r in reports.items()},
+           'leaves': {o: [[x.get('href'), x.get('doc_id')] for x in (h or []) if x.get('href')] for o, h in (leaves or {}).items()},
+           'label': label, 'label_ar': label_ar, 'missing_required': missing_required}
+    (base / 'build.json').write_text(json.dumps(rec, ensure_ascii=False), encoding='utf-8')
+    return rec
+
+
+def _out_of(report_name):
+    n = report_name.lower()
+    return 'ectd40' if '4.0' in n else 'ectd32' if '3.2.2' in n else 'nees' if 'nees' in n else n
+
+
+def provenance_kind(p):
+    """official (ICH, the EMA in force, the SFDA's GCC Module 1, the EU NeeS guidance) or one of the provisional Egyptian kinds."""
+    p = p or ''
+    if p in OFFICIAL:
+        return 'official', OFFICIAL[p]
+    if p in DRAFT:
+        return 'draft', DRAFT[p]
+    return ('official', 'ich') if p.startswith('ICH') else ('draft', 'other')
+
+
+def rules_of(base, rec, docs_by_id):
+    """The rules of a build's validation report: those failed and warned in full (with their provenance and the documents their
+    failures name), those passed and not run listed short."""
+    p = base / 'validation-report.json'
+    if not p.is_file():
+        return {}
+    reports = json.loads(p.read_text(encoding='utf-8'))
+    out = {}
+    for name, r in reports.items():
+        leaves = (rec.get('leaves') or {}).get(_out_of(name)) or []
+        bad, short = [], []
+        for x in r.get('results') or []:
+            kind, of = provenance_kind(x.get('provenance'))
+            row = {'rule': x.get('rule'), 'status': x.get('status'), 'text': x.get('text'), 'provenance': x.get('provenance'),
+                   'kind': kind, 'of': of, 'source': x.get('source')}
+            if x.get('status') in ('fail', 'warning'):
+                fails = [str(f) for f in (x.get('failures') or [])]
+                named = []
+                for href, doc_id in leaves:
+                    leaf = href.rsplit('/', 1)[-1]
+                    if doc_id and doc_id in docs_by_id and doc_id not in named and any(href in f or (len(leaf) > 8 and leaf in f) for f in fails):
+                        named.append(doc_id)
+                bad.append({**row, 'failures': fails[:12], 'more': max(0, len(fails) - 12), 'reason': x.get('reason'),
+                            'documents': [docs_by_id[i] for i in named]})
+            else:
+                short.append({**row, 'reason': x.get('reason')})
+        bad.sort(key=lambda y: (y['status'] != 'fail', y['rule'] or ''))
+        out[name] = {'ok': r.get('ok'), 'counts': r.get('counts'), 'coverage': r.get('coverage'), 'label': r.get('label'),
+                     'problems': bad, 'others': short}
+    return out
+
+
+def builds(st, did):
+    """The last build for submission and the last working copy: each with what it gave, whether the dossier still holds what went
+    into it (`current`; else `changed`), and its rules (rules_of). A build made before these records says so (`legacy`)."""
+    rows = st.db.execute('select id, path, created from export where dossier_id=? order by created desc', (did,)).fetchall()
+    out = {'submission': None, 'working': None}
+    now = snapshot(st, did)
+    now_digest = digest_of(now)
+    docs_by_id = {}
+    for r in st.db.execute('select id, slot_id, filename, title from document where dossier_id=?', (did,)).fetchall():
+        docs_by_id[r['id']] = {'doc_id': r['id'], 'slot_id': r['slot_id'], 'filename': r['filename'], 'title': r['title']}
+    for r in rows:
+        kind = 'working' if r['id'].endswith('-working') else 'submission'
+        if out[kind] is not None:
+            continue
+        base = Path(r['path'])
+        p = base / 'build.json'
+        if not p.is_file():
+            out[kind] = {'id': r['id'], 'created': r['created'], 'legacy': True, 'working': kind == 'working', 'current': False}
+            continue
+        rec = json.loads(p.read_text(encoding='utf-8'))
+        snap = rec.pop('snapshot', {})
+        rec['current'] = rec.get('digest') == now_digest
+        rec['changed'] = [] if rec['current'] else changes(snap, now)
+        rec['rules'] = rules_of(base, rec, docs_by_id)
+        rec.pop('leaves', None)
+        out[kind] = rec
+    return out
 
 
 def _named(title, filename):
@@ -600,11 +746,14 @@ def export(st, did, outputs, ack, sub, p40, ig_zip, working=False, replace_last=
     st.db.commit()
     st.audit(did, 'export', id=exp_id, outputs=outputs, acknowledged=ack, sequences=seqinfo,
              validation={k: r['counts'] for k, r in reports.items()})
+    label = ('Conforms to EDA drafts + ICH (provisional EG profiles) — not «EDA-valid».' if egypt else
+             'eCTD 3.2.2 with EU Module 1 v3.1.1 (the EMA\'s DTD), checked here against the EU validation criteria v8.2 — run an '
+             'EMA-accepted validator before submission; and the CTD folders.' if region == 'eu' and 'ectd32' in outputs else
+             f"CTD folders in the order of {st.pack(d['pack']).authority['name']['en']}'s Module 1 and the common CTD — the authority's own submission rules (portal, file naming, eCTD) still apply.")
+    _record_build(st, did, base, exp_id, working=False, outputs=outputs, sub=sub, ack=ack, sequences=seqinfo, downloads=zips,
+                  reports=reports, leaves={out: hist for out, _s, _a, _u, _e, hist, _p in seqs['done']}, label=label)
     return {'id': exp_id, 'downloads': zips, 'ctd_only': ctd_only, 'sequences': seqinfo,
             'validation': {k: {'ok': r['ok'], 'counts': r['counts'], 'coverage': r['coverage'], 'label': r['label']}
                            for k, r in reports.items()},
             'report': f'/api/dossiers/{did}/exports/{exp_id}/validation-report.html' if reports else None,
-            'label': 'Conforms to EDA drafts + ICH (provisional EG profiles) — not «EDA-valid».' if egypt else
-                     'eCTD 3.2.2 with EU Module 1 v3.1.1 (the EMA\'s DTD), checked here against the EU validation criteria v8.2 — run an '
-                     'EMA-accepted validator before submission; and the CTD folders.' if region == 'eu' and 'ectd32' in outputs else
-                     f"CTD folders in the order of {st.pack(d['pack']).authority['name']['en']}'s Module 1 and the common CTD — the authority's own submission rules (portal, file naming, eCTD) still apply."}
+            'label': label}
