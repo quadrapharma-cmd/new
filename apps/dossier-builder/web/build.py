@@ -83,6 +83,7 @@ def pdfcraft_parts(gz, out, part=12 * 1000 * 1000):
 
 CRAFT = REPO / 'apps' / 'dossier-builder-v2' / 'vendor' / 'craft'   # the editing programs as built from their source (dossier-builder-v2/tools/craft/build.mjs)
 PROGRAM_APPS = ('wordcraft', 'pdfcraft', 'photocraft', 'designcraft')                          # the ones the page opens (ui/assets/programs.js PROGRAMS)
+FONTS = APP / 'vendor' / 'fonts'                                                                 # fonts of a Word file's measures (README.txt there)
 SEARCH = 'const ret = arg1.search;'
 
 
@@ -117,7 +118,14 @@ def programs_dist(out, part=12 * 1000 * 1000):
         for k, chunk in enumerate(chunks, 1):
             put(dst / f'wasm.gz.b64.{k}.txt', chunk.encode('ascii'))
         apps[app] = {'parts': len(chunks), 'size': len(text), 'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}
-    return {'base': 'assets/programs/', 'apps': apps}
+    fonts = []
+    if 'wordcraft' in apps:     # the fonts of a Word file's measures, for turning it into PDF here (vendor/fonts/README.txt), as base64 text
+        for f in sorted(FONTS.glob('*.ttf')):
+            put(out / 'fonts' / (f.name + '.b64.txt'), base64.b64encode(f.read_bytes()))
+            fonts.append({'file': f.name + '.b64.txt', 'name': f.name})
+        for f in sorted(FONTS.glob('*.txt')):
+            put(out / 'fonts' / f.name, f.read_bytes())
+    return {'base': 'assets/programs/', 'apps': apps, **({'fonts': fonts} if fonts else {})}
 
 
 def ocr_tag():

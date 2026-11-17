@@ -1339,9 +1339,12 @@ class Store:
             raise StoreError('E-SIGN', 'The document could not be signed.', 'لم يُوقَّع المستند.')
         return out['signed.pdf']
 
-    def pdf_of_document(self, did, doc_id):
+    def pdf_of_document(self, did, doc_id, made=None, made_by=None, missing=None):
         """A Word, Excel, PowerPoint or text file turned into its PDF on this machine (LibreOffice): a new version, the source kept
-        (superseded) — or, for the proposed leaflet that 1.1.9 asks in Word, its PDF added beside it (the copy an eCTD takes)."""
+        (superseded) — or, for the proposed leaflet that 1.1.9 asks in Word, its PDF added beside it (the copy an eCTD takes).
+        `made`: the PDF the page made of a .docx itself (the browser edition has no LibreOffice: its Word program's «Export PDF»,
+        ui/assets/programs.js toPdf, 17/11) — kept the same way, with what made it and how much Arabic its source holds (a PDF of
+        the Word program's carries Arabic that does not copy back as whole words: prepare.py says so)."""
         import tempfile
         from .. import extract as _extract
         from ..generate.docx_kit import to_pdf, find_soffice
@@ -1349,9 +1352,26 @@ class Store:
         if d['dossier_id'] != did or d['state'] != 'current':
             raise StoreError('E-NOT-FOUND', 'Document not found.', 'المستند غير موجود.')
         ext = d['filename'].rsplit('.', 1)[-1].lower() if '.' in d['filename'] else ''
-        family = _extract.source_family(d['filename'], self.blob_path(d['sha256']).read_bytes()[:8192]) or ('word' if ext == 'docx' else None)
+        src_bytes = self.blob_path(d['sha256']).read_bytes()
+        family = _extract.source_family(d['filename'], src_bytes[:8192]) or ('word' if ext == 'docx' else None)
         if d['meta'].get('external') or family not in ('word', 'excel', 'powerpoint', 'text'):
             raise StoreError('E-NOT-SOURCE', 'This document is not a Word, Excel, PowerPoint or text file.', 'هذا المستند ليس ملف Word أو Excel أو PowerPoint أو نصًا.')
+        if made is not None:
+            if family != 'word' or _extract.word_kind(src_bytes) != 'docx':
+                raise StoreError('E-NOT-SOURCE', 'Only a Word file (.docx) is turned into PDF on this page.', 'لا يُحوَّل إلى PDF في هذه الصفحة إلا ملف Word (‎.docx).')
+            if not made.startswith(b'%PDF-') or b'%%EOF' not in made[-2048:]:
+                raise StoreError('E-PDF-FAILED', 'What came back is not a whole PDF. Turn it into PDF again, or save it as PDF in Word and upload it.',
+                                 'ما عاد ليس ملف PDF كاملًا. حوِّله إلى PDF مرة أخرى، أو احفظه بصيغة PDF من Word وارفعه.')
+            words = re.findall(r'[\w\u0600-\u06FF]+', _extract.docx_text(src_bytes) or '')
+            arabic = sum(1 for w in words if re.search(r'[\u0600-\u06FF]', w))
+            beside = next((s.req_id for s in self.slots(did) if s.slot_id == d['slot_id']), '') in WORD_ITEMS
+            name = (d['filename'].rsplit('.', 1)[0] if '.' in d['filename'] else d['filename']) + '.pdf'
+            meta = {**d['meta'], 'converted_from': d['filename'], 'converted_by': made_by or 'wordcraft',
+                    'converted_words': len(words), 'converted_arabic': arabic,
+                    'converted_fonts': [m for m in (missing or []) if isinstance(m, dict) and not m.get('metricCompatible')][:20]}
+            new = self.add_document(did, d['slot_id'], name, made, d['title'], meta, supersede=None if beside else doc_id, doc_class=d['doc_class'])
+            self.audit(did, 'document.to_pdf', doc=doc_id, new=new['id'], beside=beside, by=meta['converted_by'])
+            return {'document': new, 'beside': beside}
         if not find_soffice():
             raise StoreError('E-NO-OFFICE', 'This computer has no LibreOffice to turn it into a PDF. In Word: File → Save As → PDF (tick «Create bookmarks '
                              'using headings»), then upload the PDF to this item: it replaces this file.',
@@ -1370,9 +1390,9 @@ class Store:
             shutil.rmtree(tmp, ignore_errors=True)
         beside = next((s.req_id for s in self.slots(did) if s.slot_id == d['slot_id']), '') in WORD_ITEMS                 # 1.1.9 keeps its Word: the PDF goes in next to it
         name = (d['filename'].rsplit('.', 1)[0] if '.' in d['filename'] else d['filename']) + '.pdf'
-        new = self.add_document(did, d['slot_id'], name, pdf, d['title'], {**d['meta'], 'converted_from': d['filename']},
+        new = self.add_document(did, d['slot_id'], name, pdf, d['title'], {**d['meta'], 'converted_from': d['filename'], 'converted_by': 'libreoffice'},
                                 supersede=None if beside else doc_id, doc_class=d['doc_class'])
-        self.audit(did, 'document.to_pdf', doc=doc_id, new=new['id'], beside=beside)
+        self.audit(did, 'document.to_pdf', doc=doc_id, new=new['id'], beside=beside, by='libreoffice')
         return {'document': new, 'beside': beside}
 
     # ---------------- submission history (lifecycle, P3)

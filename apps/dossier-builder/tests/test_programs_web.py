@@ -162,6 +162,75 @@ def test_a_word_file_is_edited_in_the_program_and_kept_as_a_new_version(site, tm
     assert not [e for e in errors if 'Invalid or unexpected token' not in e]   # (that one is the fonts' link, web/build.py: known)
 
 
+def test_a_word_file_becomes_its_pdf_in_the_page_three_ways(site, tmp_path):
+    """17/11, the owner: a Word file where a PDF is asked was only flagged — no PDF made, no button — and the Word program's own
+    «Export PDF» failed (it came back as a save with nothing changed: «nothing to save», the PDF dropped). Now, with no LibreOffice in
+    the page: «تجهيز الكل» turns it into PDF by itself and prepares that PDF; «تحويله إلى PDF» in the item does it at one press; and
+    the program's own «Export PDF» keeps the PDF in the item. Each PDF is a new version (the Word file kept), has the Word file's words,
+    and is drawn with the fonts of the file's measures (python-docx's Calibri → Carlito)."""
+    from pypdf import PdfReader
+    files = [letter(tmp_path / f'made-up-{k}.docx') for k in ('prepared', 'button', 'exported')]
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch(args=GPU)
+        page = b.new_page(viewport={'width': 1280, 'height': 860})
+        errors = []
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
+        did, slots = open_board(page, site, tmp_path, files)
+        cur = lambda slot: page.evaluate("async ([id, slot]) => (await (await fetch(`/api/dossiers/${id}/board`)).json()).slots.find(s => s.slot_id === slot).documents", [did, slot])
+        firsts = [cur(s)[0]['id'] for s in slots]
+        # 1. the preparation: the line offers it, «تجهيز الكل» does it by itself
+        page.evaluate('id => { location.hash = `#/d/${id}/prepare`; }', did)
+        page.wait_for_function("() => S.prep && Array.isArray(S.prep.placed) && document.querySelector('#prepOut section')", timeout=120000)
+        assert page.query_selector(f'[data-ptopdf="{firsts[0]}"]')
+        line = page.evaluate("id => S.prep.placed.find(x => x.id === id).conditions.find(x => x.id === 'pdf')", firsts[0])
+        assert line['status'] == 'needs_you' and line['action'] == 'to_pdf'
+        page.evaluate("async () => { await prepAll(); }")
+        pdfs = {}
+        for slot in slots:
+            docs = cur(slot)
+            assert [d['filename'] for d in docs] == [docs[0]['filename']] and docs[0]['filename'].endswith('.pdf'), docs   # all three: prepAll took them all
+            assert docs[0]['meta']['converted_by'] == 'wordcraft' and docs[0]['meta']['converted_from'].endswith('.docx')
+            pdfs[slot] = docs[0]
+        assert all(page.evaluate("async ([id, doc]) => (await fetch(`/api/dossiers/${id}/documents/${doc}/file`)).status", [did, f]) == 200 for f in firsts)  # the Word files kept
+        # 2. the item's button, on a new Word version of the first item
+        st = page.evaluate("""async ([id, slot, name, data, old]) => { const fd = new FormData(); fd.append('file', new File([new Uint8Array(data)], name)); fd.append('meta', '{}'); fd.append('replaces', old);
+            return (await fetch(`/api/dossiers/${id}/slots/${encodeURIComponent(slot)}/documents`, {method: 'POST', body: fd})).status; }""",
+                           [did, slots[1], 'again.docx', list(files[1].read_bytes()), pdfs[slots[1]]['id']])
+        assert st == 201
+        page.evaluate('id => { location.hash = `#/d/${id}/board`; }', did)
+        page.wait_for_function("() => S.board && S.board.slots", timeout=60000)
+        page.evaluate("async s => { S.board = null; await refreshCurrent(s); openWhy(s); }", slots[1])
+        page.wait_for_selector('[data-topdf]', timeout=60000)
+        page.click('[data-topdf]')
+        page.wait_for_function("async ([id, slot]) => (await (await fetch(`/api/dossiers/${id}/board`)).json()).slots.find(s => s.slot_id === slot).documents.every(d => /\\.pdf$/.test(d.filename))",
+                               arg=[did, slots[1]], timeout=400000)
+        assert cur(slots[1])[0]['filename'] == 'again.pdf'
+        # 3. the Word program's own «Export PDF», nothing changed in the file
+        st = page.evaluate("""async ([id, slot, name, data, old]) => { const fd = new FormData(); fd.append('file', new File([new Uint8Array(data)], name)); fd.append('meta', '{}'); fd.append('replaces', old);
+            const r = await fetch(`/api/dossiers/${id}/slots/${encodeURIComponent(slot)}/documents`, {method: 'POST', body: fd}); return [(r.status), (await r.json()).id]; }""",
+                           [did, slots[2], 'third.docx', list(files[2].read_bytes()), pdfs[slots[2]]['id']])
+        assert st[0] == 201
+        page.evaluate("async ([slot, doc]) => { S.board = null; await refreshCurrent(slot); await openInProgram(doc, slot); }", [slots[2], st[1]])
+        page.wait_for_function("() => { const f = document.querySelector('.dbprog iframe'); return f && f.contentWindow.wordcraft; }", timeout=240000)
+        page.wait_for_function("""async () => { const d = await document.querySelector('.dbprog iframe').contentWindow.wordcraft.docInspect();
+            return (d.blocks || []).some(x => /Dermacure/.test(x.text || '')); }""", timeout=60000)
+        page.evaluate("async () => { await document.querySelector('.dbprog iframe').contentWindow.wordcraft.execute('file.exportPdf', {path: 'third.pdf'}); }")
+        page.wait_for_function("() => /صار ملف PDF|Its PDF/.test(document.querySelector('.dbprog-status').textContent)", timeout=60000)
+        assert 'لا يوجد تعديل' not in status(page)
+        page.click('.dbprog [data-act="close"]')
+        page.wait_for_selector('.dbprog', state='detached', timeout=10000)
+        assert cur(slots[2])[0]['filename'] == 'third.pdf'
+        data = bytes(page.evaluate("async ([id, doc]) => Array.from(new Uint8Array(await (await fetch(`/api/dossiers/${id}/documents/${doc}/file`)).arrayBuffer()))", [did, pdfs[slots[0]]['id']]))
+        b.close()
+    r = PdfReader(io.BytesIO(data))
+    text = ' '.join(pg.extract_text() for pg in r.pages)
+    assert 'Dermacure 20 mg cream' in text and 'Tube of 30 g' in text
+    fonts = {str(f.get_object().get('/BaseFont')) for pg in r.pages for f in (pg['/Resources'].get('/Font') or {}).values()}
+    assert any('Carlito' in f for f in fonts), fonts                                                   # Calibri drawn by its look-alike
+    assert not [e for e in errors if 'Invalid or unexpected token' not in e]
+
+
 def made_up_pdf(path):
     """Two pages written by hand (no library): a made-up certificate."""
     objs = ['<< /Type /Catalog /Pages 2 0 R >>', '<< /Type /Pages /Kids [3 0 R 5 0 R] /Count 2 >>',

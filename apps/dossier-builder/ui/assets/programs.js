@@ -12,20 +12,23 @@
    change made is not kept: the program writes the file anew, and a version that differs from the old one only by that is noise.
    What each program opens was decided on his real files (15/11, apps/dossier-builder/README.md «The Word program»): the Word program
    opens .docx — saved with no change, his .docx files kept every word and their pages; his old .doc files lost table columns and
-   footers, so a .doc is not offered — and its own «Export PDF» is not offered (other fonts, more pages, Arabic that breaks apart
-   when copied, beside LibreOffice's PDF of the same files): the PDF is still made in Word.
+   footers, so a .doc is not offered. Its own «Export PDF» was not offered then (other fonts, more pages, Arabic that breaks apart
+   when copied, beside LibreOffice's PDF of the same files); 17/11 he asked for the Word file to become a PDF here, by itself or at
+   one press: with fonts of the same measures (toPdf) its PDF of his English files has LibreOffice's pages and every word, and a
+   PDF it exports comes back to the page (onExport) instead of being taken for a save with nothing changed and dropped.
    window.DB_PROGRAMS = {base, apps: {app: {parts, size, bytes, sha256}}} is written by web/build.py; no list, no program
    (the desktop and server editions, a build without them).
 
    DBPROG.forFile(name) → app | null          the program that opens this file in this edition
    DBPROG.title(app, lang) → 'برنامج الـ Word'
-   DBPROG.open(app, {name, bytes, lang, onSave({name, bytes}), onClose()}) → {execute, inspect, close, save, ready, edited} */
+   DBPROG.open(app, {name, bytes, lang, onSave({name, bytes}), onExport({name, bytes}), onClose()}) → {execute, inspect, close, save, ready, edited}
+   DBPROG.toPdf({name, bytes, lang}) → {name, bytes, missing}  a .docx turned into PDF by the Word program (fonts of the same measures) */
 (function (root) {
   'use strict';
   const PROGRAMS = {
     wordcraft: { ar: 'برنامج تعديل Word', en: 'the Word program', canvas: 'wordcraft_canvas', loading: 'wordcraft_loading', host: 'page',
                  query: '?webgl&control', files: /\.docx$/i,
-                 afterSave: { ar: 'أما نسخة PDF منه فتُعدّ من Word على جهازك (ملف ← حفظ باسم ← PDF) ثم تُرفع إلى البند.', en: 'Make its PDF in Word on your computer, as before.' } },
+                 afterSave: { ar: 'ونسخة PDF منه: «تحويله إلى PDF» في البند.', en: 'Its PDF: «Turn it into PDF» in the item.' } },
     // PdfCraft's own scan reader is not started (no <meta name="pdfcraft-ocr-worker">): English-only models; the page has its own.
     pdfcraft: { ar: 'برنامج تعديل PDF', en: 'the PDF program', canvas: 'pdfcraft', loading: 'pdfcraft_loading', host: 'page',
                 query: '?webgl&control', files: /\.pdf$/i },
@@ -43,6 +46,7 @@
   const forFile = name => Object.keys(PROGRAMS).find(a => available(a) && PROGRAMS[a].files && PROGRAMS[a].files.test(String(name || ''))) || null;
   const title = (app, lang) => (PROGRAMS[app] ? PROGRAMS[app][lang === 'en' ? 'en' : 'ar'] : app);
   const abs = rel => new URL(rel, document.baseURI).href;
+  const kind = name => ((String(name || '').match(/\.([a-z0-9]+)$/i) || [])[1] || '').toLowerCase();
 
   const T = {
     loading: { ar: 'جارٍ تحميل {p}…', en: 'Loading {p}…' },
@@ -64,6 +68,10 @@
     back: { ar: 'العودة إلى الملف', en: 'Back to the file' },
     place: { ar: 'وضع الملف في التصميم', en: 'Place the file in the design' },
     placed: { ar: 'وُضع الملف في الصفحة المفتوحة في البرنامج.', en: 'The file was placed on the page open in the program.' },
+    exporting: { ar: 'جارٍ حفظ ملف PDF في البند…', en: 'Keeping the PDF in the item…' },
+    exportFail: { ar: 'تعذّر حفظ ملف PDF: {e}', en: 'Could not keep the PDF: {e}' },
+    converting: { ar: 'جارٍ تحويل الملف إلى PDF…', en: 'Turning the file into PDF…' },
+    convertSlow: { ar: 'لم يُكمل {p} التحويل إلى PDF خلال 5 دقائق.', en: '{p} did not finish the PDF within 5 minutes.' },
   };
 
   // ── what runs inside the frame: the relay between the program and the page, and the program's loader ──────────────────────
@@ -293,6 +301,13 @@
       else if (msg.type === 'executed' || msg.type === 'inspected') {
         const q = pending.get(msg.id);
         if (q) { pending.delete(msg.id); msg.error ? q.no(new Error(msg.error)) : q.ok(msg.result); }
+      } else if (msg.type === 'save' && msg.bytes && opts.onExport && kind(msg.name) && kind(msg.name) !== kind(opts.name)) {
+        // a file of another kind than the one opened: the program's own «Export PDF» (it comes back as a «save» named .pdf) — never
+        // a save of the document, and never «nothing to save» (15–17/11: a .docx opened and exported unchanged lost its PDF so)
+        status(say('exporting'));
+        Promise.resolve().then(() => opts.onExport({ name: msg.name, bytes: new Uint8Array(msg.bytes) }))
+          .then(said => { if (typeof said === 'string') status(said, 'good'); },
+                e => status(say('exportFail', { e: (e && e.message) || e }), 'bad'));
       } else if (msg.type === 'save' && msg.bytes) {
         if (!unsaved && p.host === 'page') { status(say('nothing')); return; }   // Ctrl+S with nothing changed: the file as it is stays
         status(say('saving')); saveBtn().disabled = true;
@@ -462,5 +477,59 @@
     return job;
   }
 
-  root.DBPROG = { PROGRAMS, available, forFile, title, open, frameDoc, picture, warm };
+  /* ── a Word file turned into PDF by the Word program (its own «Export PDF»), where the page has no LibreOffice (17/11) ───────────
+     The fonts a Word file names (Times New Roman, Arial, Calibri, Cambria, Courier New) are not on the page: the program draws them
+     with fonts made to the same measures (Liberation, Carlito, Caladea — SIL Open Font License, built beside the programs as
+     base64 text, fetched only now), so lines and pages break where they break in Word; without them its own fonts made the SPC
+     4 pages instead of 3 and the file index 3 instead of 2. Then file.exportPdf: the PDF comes back as a «save» named .pdf.
+     → {name, bytes, missing} (missing: the fonts the program could not match, as file.missing says them) */
+  const fontData = new Map();
+  async function addFonts(h) {
+    const fl = (root.DB_PROGRAMS && root.DB_PROGRAMS.fonts) || [], base = abs((root.DB_PROGRAMS && root.DB_PROGRAMS.base) || 'assets/programs/');
+    for (const f of fl) {
+      try {
+        if (!fontData.has(f.file)) { const r = await fetch(base + 'fonts/' + f.file); if (!r.ok) continue; fontData.set(f.file, (await r.text()).replace(/\s+/g, '')); }
+        await h.execute('font.add', { data: fontData.get(f.file), name: f.name });
+      } catch (e) { /* a font not added: the program's own stands in for it */ }
+    }
+  }
+  const pause = ms => new Promise(r => setTimeout(r, ms));
+  async function shown(h, name) {                       // the opened file is the program's active document (not its first blank one)
+    const stem = String(name || '').replace(/\.[^.]+$/, '').toLowerCase();
+    for (let i = 0; i < 300; i++) {
+      try {
+        const r = await h.execute('view.switchWindows', {});
+        const a = ((r && r.documents) || []).find(d => d.active);
+        if (a && String((a.path || '') + ' ' + (a.title || '')).toLowerCase().includes(stem)) return true;
+      } catch (e) { /* not answering yet */ }
+      await pause(200);
+    }
+    return false;
+  }
+  function toPdf(o) {
+    const lang = o.lang === 'en' ? 'en' : 'ar', p = PROGRAMS.wordcraft;
+    return new Promise((resolve, reject) => {
+      let h = null, done = false, missing = null;
+      const finish = (err, val) => {
+        if (done) return; done = true; clearTimeout(timer);
+        try { if (h) h.close(true); } catch (e) { /* closed already */ }
+        if (err) reject(err); else resolve(Object.assign(val, { missing }));
+      };
+      const timer = setTimeout(() => finish(new Error(T.convertSlow[lang].split('{p}').join(p[lang]))), 300000);
+      try {
+        h = open('wordcraft', { name: o.name, bytes: o.bytes, lang, hint: T.converting[lang], onSave() {},
+                                onExport: f => { finish(null, f); return T.converting[lang]; }, onClose: () => finish(new Error('closed')) });
+      } catch (e) { finish(e); return; }
+      (async () => {
+        for (let i = 0; i < 3000 && !h.ready && !done; i++) await pause(100);   // the program's own 300 s say why it did not start
+        if (done) return;
+        if (!(await shown(h, o.name))) throw new Error('the file did not open in ' + p.en);
+        await addFonts(h);
+        try { const m = await h.execute('font.missing', {}); missing = (m && m.missing) || []; } catch (e) { missing = null; }
+        await h.execute('file.exportPdf', { path: String(o.name || 'document').replace(/\.[^.]+$/, '') + '.pdf' });
+      })().catch(e => finish(e));
+    });
+  }
+
+  root.DBPROG = { PROGRAMS, available, forFile, title, open, frameDoc, picture, warm, toPdf };
 })(window);

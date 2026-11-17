@@ -86,6 +86,69 @@ def test_without_libreoffice_the_step_by_hand_and_a_pdf_is_no_source(c, did, mon
     assert 'office_pdf' in c.get('/api/capabilities').json()
 
 
+def test_the_pdf_the_page_made_of_a_word_file_is_its_new_version_without_libreoffice(c, did, monkeypatch, tmp_path):
+    """The browser edition has no LibreOffice: its Word program makes the PDF and hands it here (17/11, the owner: «a Word file the
+    program said must become a PDF, and it neither did it nor gave me a button»). Kept as LibreOffice's PDF is — a new version, the
+    Word file superseded and kept — with what made it, how many words its source has and how many of them are Arabic, and the fonts
+    the program could not match; what is not a whole PDF, or a source that is not a .docx, is refused."""
+    import dossier_engine.generate.docx_kit as kit
+    monkeypatch.setattr(kit, 'find_soffice', lambda: None)
+    doc = up(c, did, 'P-16', word('Stability summary and conclusions', 'ملخص الثبات: ثلاث تشغيلات عند ٢٥ درجة'), 'stability.docx')
+    from fixtures_pdf import make_pdf_lines
+    pdf = make_pdf_lines(tmp_path / 's.pdf', ['Stability summary and conclusions'], 'Stability').read_bytes()
+    bad = c.post(f'/api/dossiers/{did}/documents/{doc["id"]}/pdf', files={'file': ('stability.pdf', b'<html>not a pdf</html>', 'application/pdf')},
+                 data={'made_by': 'wordcraft'}, headers=H)
+    assert bad.status_code == 422 and bad.json()['detail']['code'] == 'E-PDF-FAILED'
+    missing = [{'font': 'Calibri', 'metricCompatible': True, 'shownAs': ['Carlito']}, {'font': 'Tahoma', 'metricCompatible': False, 'shownAs': ['Liberation Sans']}]
+    r = c.post(f'/api/dossiers/{did}/documents/{doc["id"]}/pdf', files={'file': ('stability.pdf', pdf, 'application/pdf')},
+               data={'made_by': 'wordcraft', 'missing': json.dumps(missing)}, headers=H)
+    assert r.status_code == 201, r.text
+    new = r.json()['document']
+    m = new['meta']
+    assert new['filename'] == 'stability.pdf' and not r.json()['beside'] and m['converted_from'] == 'stability.docx'
+    assert m['converted_by'] == 'wordcraft' and m['converted_words'] == 11 and m['converted_arabic'] == 7     # «٢٥» is Arabic too
+    assert [f['font'] for f in m['converted_fonts']] == ['Tahoma']                                  # only the one not matched
+    assert [d['filename'] for d in current(c, did, 'P-16')] == ['stability.pdf']                    # the Word file superseded, kept
+    assert c.get(f'/api/dossiers/{did}/documents/{doc["id"]}/file').status_code == 200
+    ev = [e for e in c.get(f'/api/dossiers/{did}/audit').json() if e.get('event') == 'document.to_pdf']
+    assert ev[-1]['detail']['by'] == 'wordcraft' and ev[-1]['detail']['new'] == new['id']
+    r = c.post(f'/api/dossiers/{did}/documents/{new["id"]}/pdf', files={'file': ('again.pdf', pdf, 'application/pdf')}, headers=H)
+    assert r.status_code == 422 and r.json()['detail']['code'] == 'E-NOT-SOURCE'                   # a PDF is no source
+
+
+def test_the_preparation_offers_the_pdf_of_a_word_file_and_says_what_a_converted_arabic_one_lacks(c, did, monkeypatch, tmp_path):
+    """A .docx where a PDF is asked: «Turn it into PDF» (to_pdf), no more only «save it as PDF in Word». Its PDF made by the Word
+    program, from a file with Arabic, is a «check»: drawn right, but the Arabic it gives back when copied is in pieces (measured 17/11
+    on his leaflet: 318 of 610 words whole) — accepted as it is with one press, or replaced by Word's own PDF."""
+    import dossier_engine.generate.docx_kit as kit
+    monkeypatch.setattr(kit, 'find_soffice', lambda: None)
+    arabic = ' '.join(['احفظ الدواء بعيدًا عن متناول الأطفال في درجة حرارة الغرفة'] * 4)
+    doc = up(c, did, 'P-16', word('Stability summary', arabic), 'stability.docx')
+    def line(d):                                        # → (the document as prepared — a fix makes a new version —, its PDF line)
+        r = c.post(f'/api/dossiers/{did}/prepare/{d}', json={}, headers=H).json()
+        return r['document']['id'], next(x for x in r['conditions'] if x['id'] == 'pdf')
+    _, x = line(doc['id'])
+    assert x['status'] == 'needs_you' and x['action'] == 'to_pdf' and '«تحويله إلى PDF»' in x['why']['ar']
+    from fixtures_pdf import make_pdf_lines
+    pdf = make_pdf_lines(tmp_path / 's.pdf', ['Stability summary'], 'Stability').read_bytes()
+    new = c.post(f'/api/dossiers/{did}/documents/{doc["id"]}/pdf', files={'file': ('stability.pdf', pdf, 'application/pdf')},
+                 data={'made_by': 'wordcraft'}, headers=H).json()['document']
+    cur, x = line(new['id'])
+    assert x['status'] == 'check' and x['action'] == 'accept' and 'كلماتٍ سليمة' in x['why']['ar'] and 'اقبله كما هو' in x['why']['ar']
+    r = c.post(f'/api/dossiers/{did}/documents/{cur}/confirm', json={'cond': 'pdf', 'answer': 'yes'}, headers=H)
+    assert r.status_code in (200, 201), r.text
+    _, x = line(cur)
+    assert x['status'] == 'ok' and x['how'] == 'person'                                             # accepted as it is
+    eng = up(c, did, 'P-16', word('Stability summary', 'Three batches at 25 °C'), 'english.docx')  # an English file: nothing to say
+    new = c.post(f'/api/dossiers/{did}/documents/{eng["id"]}/pdf', files={'file': ('english.pdf', pdf, 'application/pdf')},
+                 data={'made_by': 'wordcraft'}, headers=H).json()['document']
+    assert line(new['id'])[1]['status'] == 'ok'
+    old = c.post(f'/api/dossiers/{did}/slots/P-16/documents', files={'file': ('old.doc', b'\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1' + b'\0' * 600, 'application/msword')},
+                 data={'meta': '{}'}, headers=H)
+    if old.status_code == 201:                                                                   # an old .doc: by hand, as before
+        assert line(old.json()['id'])[1]['action'] in ('replace', None)
+
+
 def test_folder_names_end_on_whole_clauses():
     from dossier_engine.writers.ctd import clean
     assert clean('09 1.1.9 Leaflet — One Submission: proposed SmPC & PIL (EN + AR, Word) + most updated reference SmPC & PIL', 44) == '09 1.1.9 Leaflet - One Submission'

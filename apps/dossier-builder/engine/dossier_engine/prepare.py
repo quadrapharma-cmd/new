@@ -89,9 +89,23 @@ def _form_lines(doc):
 def _searchable(c, doc, reading):
     meta = doc.get('meta') or {}
     name = (doc.get('filename') or '').lower()
+    if name.endswith('.docx') and c['id'] == 'pdf':    # turned into PDF here (LibreOffice, or the browser edition's Word program, 17/11)
+        return _line(c, 'needs_you', 'A Word file where a PDF is asked: «Turn it into PDF» makes its PDF here (the Word file is kept) — or save it '
+                     'as PDF in Word (signed and stamped where needed) and add it.',
+                     'ملف Word والمطلوب PDF: «تحويله إلى PDF» يصنع ملف PDF منه هنا (ويبقى ملف Word محفوظًا)، أو احفظه بصيغة PDF من Word '
+                     '(موقَّعًا ومختومًا إن لزم) وأضفه.', action='to_pdf')
     if name.endswith(('.doc', '.docx')) and c['id'] == 'pdf':
         return _line(c, 'needs_you', 'A Word file where a PDF is asked: save it as PDF (signed and stamped where needed) and add the PDF.',
                      'ملف Word والمطلوب PDF: احفظه بصيغة PDF (موقَّعًا ومختومًا إن لزم) وأضف ملف PDF.', action='replace')
+    ar_n, all_n = meta.get('converted_arabic') or 0, meta.get('converted_words') or 0
+    if meta.get('converted_by') == 'wordcraft' and (ar_n >= 20 or (all_n and ar_n >= 0.1 * all_n)):
+        # measured 17/11 on his leaflet and source file: the Word program draws Arabic right, but a copy (or a search) of it comes
+        # back in pieces — 318 of the leaflet's 610 words whole (LibreOffice's PDF: 567)
+        return _line(c, 'check', 'Turned into PDF here from a Word file with Arabic: its pages are drawn right, but Arabic copied from it or '
+                     'searched in it does not come back as whole words. For the submission, save it as PDF in Word on your computer and add '
+                     'it as a new version — or accept it as it is.',
+                     'حُوِّل إلى PDF هنا من ملف Word فيه نص عربي: صفحاته مرسومة سليمة، لكن النص العربي المنسوخ منه أو المبحوث فيه لا يرجع '
+                     'كلماتٍ سليمة. للتقديم: احفظه بصيغة PDF من Word على جهازك وأضفه نسخةً جديدة، أو اقبله كما هو.', action='accept')
     if 'make_searchable' in (meta.get('fixes') or []):
         return _line(c, 'fixed', 'Its pages were read and their text written invisibly under them: searchable now, the pages unchanged.',
                      'قُرئت صفحاته وكُتب نصها تحتها مخفيًّا: صار قابلًا للبحث، والصفحات كما هي.')

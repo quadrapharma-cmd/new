@@ -746,9 +746,15 @@ def create_app(workspace, auth_enabled=None):
         return st.search(did, q, max(0.5, min(budget, 20.0)))
 
     @app.post('/api/dossiers/{did}/documents/{doc_id}/pdf', status_code=201)
-    def to_pdf_doc(did: str, doc_id: str):
-        """Word / Excel / PowerPoint / text → its PDF, on a computer with LibreOffice (a new version; 1.1.9's leaflet gets it beside)."""
-        return st.pdf_of_document(did, doc_id)
+    def to_pdf_doc(did: str, doc_id: str, file: UploadFile = File(None), made_by: str = Form(None), missing: str = Form(None)):
+        """Word / Excel / PowerPoint / text → its PDF, on a computer with LibreOffice (a new version; 1.1.9's leaflet gets it beside);
+        or, with `file`, the PDF the page made of a .docx itself (the browser edition's Word program)."""
+        made = file.file.read() if file is not None else None
+        try:
+            gone = json.loads(missing) if missing else None
+        except ValueError:
+            gone = None
+        return st.pdf_of_document(did, doc_id, made=made, made_by=made_by, missing=gone if isinstance(gone, list) else None)
 
     @app.post('/api/dossiers/{did}/documents/{doc_id}/fix')
     def fix(did: str, doc_id: str):
