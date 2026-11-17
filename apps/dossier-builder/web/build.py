@@ -212,7 +212,8 @@ def engine_zip(out):
     with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as z:
         for rel in BUNDLE:
             p = REPO / rel
-            files = [p] if p.is_file() else sorted(x for x in p.rglob('*') if x.is_file() and '__pycache__' not in x.parts)
+            files = [p] if p.is_file() else sorted(x for x in p.rglob('*') if x.is_file() and '__pycache__' not in x.parts
+                                                   and 'combined' not in x.parts)     # the combined-dossier program needs OCR and Chromium: not in the page
             for f in files:
                 z.write(f, str(f.relative_to(REPO)))
         if OCR.is_dir():                                 # the engine offers the scan reader's fixes only where the page has it (extract.reads_in_browser)
