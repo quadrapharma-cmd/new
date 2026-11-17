@@ -91,7 +91,7 @@ def test_import_says_what_is_wrong_with_a_file_that_holds_no_sequence(server, tm
         b = p.chromium.launch()
         page = page_of(b, server)
         page.on('pageerror', lambda e: errors.append(str(e)))
-        page.goto(f'{server}/#/d/{did}/export')
+        page.goto(f'{server}/#/d/{did}/after')                                     # «ما بعد التقديم»: the sequences, earlier ones imported
         page.wait_for_selector('#importSeq')
         with page.expect_file_chooser() as fc:
             page.click('#importSeq')

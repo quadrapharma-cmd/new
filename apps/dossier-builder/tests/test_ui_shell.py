@@ -128,7 +128,7 @@ def test_the_menu_follows_the_path(server, browser):
     assert page.is_visible('#navD')
     # the dossier's pages carry the number of their station; the tools that are on no station come after, without one
     stations = {a.get_attribute('data-r'): a.locator('.stn').inner_text() for a in page.locator('#navD a').all() if a.locator('.stn').count()}
-    assert stations == {'tree': '5', 'prepare': '6', 'board': '7', 'checks': '8', 'review': '8', 'export': '9'}, stations   # one entry for station 6 (stage 3: «الخزنة» is on its page)
+    assert stations == {'tree': '5', 'prepare': '6', 'board': '7', 'checks': '8', 'review': '8', 'export': '9', 'after': '9'}, stations   # one entry for station 6 (stage 3: «الخزنة» is on its page); «ما بعد التقديم» under 9 (stage 4)
     tools = [a.get_attribute('data-r') for a in page.locator('#navD a').all() if not a.locator('.stn').count()]
     assert tools == ['guide', 'data', 'publisher', 'search', 'audit'], tools
     names = {a.get_attribute('data-r'): a.inner_text().split('\n')[-1].strip() for a in page.locator('#navD a').all()}

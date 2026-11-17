@@ -119,3 +119,13 @@ def test_the_authoritys_letters_are_listed_by_dossier(c, tmp_path):
     got = c.get('/api/suite/letters', params={'dossier': a}).json()
     assert [x['subject'] for x in got] == ['Comments on the made-up dossier A'] and got[0]['dossier_id'] == a
     assert len(c.get('/api/suite/letters').json()) == 2                           # unfiltered: all of them, as before
+
+
+def test_the_path_bar_asks_only_whether_each_build_is_current_and_passed(c, tmp_path):
+    did = new(c)
+    assert c.get(f'/api/dossiers/{did}/builds', params={'brief': 1}).json() == {'submission': None, 'working': None}
+    up(c, did, 'M1-31', make_pdf(tmp_path / 'c.pdf', 'Composition').read_bytes())
+    r = c.post(f'/api/dossiers/{did}/export', json={'working': True, 'outputs': ['ctd']}).json()
+    b = c.get(f'/api/dossiers/{did}/builds', params={'brief': 1}).json()
+    assert b['submission'] is None and b['working'] == {'id': r['id'], 'created': b['working']['created'], 'working': True, 'current': True,
+                                                        'ok': all(v['ok'] for v in r['validation'].values())}

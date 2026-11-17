@@ -220,7 +220,7 @@ def _working_copy(st, did, g, sub=None, p40=None, ig_zip=None):
              ectd={o: v['sequence'] for o, v in sequences.items()})
     _record_build(st, did, base, exp_id, working=True, outputs=list(downloads), sub=sub or {}, ack=False, sequences=sequences,
                   downloads=downloads, reports=reports, leaves=(ectd or {}).get('leaves') or {}, label=note['en'], label_ar=note['ar'],
-                  missing_required=missing)
+                  missing_required=missing, documents=n_docs, left_out=(ectd or {}).get('left_out') or [], skipped=(ectd or {}).get('skipped') or {})
     return {'id': exp_id, 'working': True, 'downloads': downloads, 'documents': n_docs,
             'missing_required': missing, 'non_conforming': len(g.get('non_conforming') or []), 'unsigned': len(g.get('unsigned') or []),
             'sequences': sequences,
@@ -282,7 +282,7 @@ def changes(old, new):
 
 
 def _record_build(st, did, base, exp_id, working, outputs, sub, ack, sequences, downloads, reports, leaves, label, label_ar=None,
-                  missing_required=None):
+                  missing_required=None, **said):
     """build.json beside the build: what it was made of (the snapshot and its digest), what was asked, what it gave. The leaves of
     each sequence (href → document) let a rule that names a file lead to its document."""
     snap = snapshot(st, did)
@@ -291,7 +291,8 @@ def _record_build(st, did, base, exp_id, working, outputs, sub, ack, sequences, 
            'report': f'/api/dossiers/{did}/exports/{exp_id}/validation-report.html' if reports else None,
            'validation': {k: {'ok': r['ok'], 'counts': r['counts'], 'coverage': r['coverage'], 'label': r['label']} for k, r in reports.items()},
            'leaves': {o: [[x.get('href'), x.get('doc_id')] for x in (h or []) if x.get('href')] for o, h in (leaves or {}).items()},
-           'label': label, 'label_ar': label_ar, 'missing_required': missing_required}
+           'label': label, 'label_ar': label_ar, 'missing_required': missing_required,
+           **said}                                       # a working copy: its documents, what its eCTD left out and why, an output not written
     (base / 'build.json').write_text(json.dumps(rec, ensure_ascii=False), encoding='utf-8')
     return rec
 
@@ -343,16 +344,18 @@ def rules_of(base, rec, docs_by_id):
     return out
 
 
-def builds(st, did):
+def builds(st, did, brief=False):
     """The last build for submission and the last working copy: each with what it gave, whether the dossier still holds what went
-    into it (`current`; else `changed`), and its rules (rules_of). A build made before these records says so (`legacy`)."""
+    into it (`current`; else `changed`), and its rules (rules_of). A build made before these records says so (`legacy`).
+    brief (the path bar on every page): only whether each is current and passed — no rules read."""
     rows = st.db.execute('select id, path, created from export where dossier_id=? order by created desc', (did,)).fetchall()
     out = {'submission': None, 'working': None}
+    if not rows:
+        return out
     now = snapshot(st, did)
     now_digest = digest_of(now)
-    docs_by_id = {}
-    for r in st.db.execute('select id, slot_id, filename, title from document where dossier_id=?', (did,)).fetchall():
-        docs_by_id[r['id']] = {'doc_id': r['id'], 'slot_id': r['slot_id'], 'filename': r['filename'], 'title': r['title']}
+    docs_by_id = {} if brief else {r['id']: {'doc_id': r['id'], 'slot_id': r['slot_id'], 'filename': r['filename'], 'title': r['title']}
+                                   for r in st.db.execute('select id, slot_id, filename, title from document where dossier_id=?', (did,)).fetchall()}
     for r in rows:
         kind = 'working' if r['id'].endswith('-working') else 'submission'
         if out[kind] is not None:
@@ -365,6 +368,10 @@ def builds(st, did):
         rec = json.loads(p.read_text(encoding='utf-8'))
         snap = rec.pop('snapshot', {})
         rec['current'] = rec.get('digest') == now_digest
+        rec['ok'] = all(v.get('ok') for v in (rec.get('validation') or {}).values())
+        if brief:
+            out[kind] = {k: rec.get(k) for k in ('id', 'created', 'working', 'current', 'ok')}
+            continue
         rec['changed'] = [] if rec['current'] else changes(snap, now)
         rec['rules'] = rules_of(base, rec, docs_by_id)
         rec.pop('leaves', None)

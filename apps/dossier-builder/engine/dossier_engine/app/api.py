@@ -2152,11 +2152,11 @@ def create_app(workspace, auth_enabled=None):
             err(e.status, e.code, e.en, e.ar, **e.extra)
 
     @app.get('/api/dossiers/{did}/builds')
-    def builds(did: str):
+    def builds(did: str, brief: bool = False):
         """Station 8 and 9: the last build for submission and the last working copy, whether the dossier still holds what went into
         each (else what changed), and their rules with their provenance and the documents they name."""
         st.dossier(did)
-        return exporter.builds(st, did)
+        return exporter.builds(st, did, brief=brief)
 
     @app.get('/api/dossiers/{did}/submissions')
     def submissions(did: str):

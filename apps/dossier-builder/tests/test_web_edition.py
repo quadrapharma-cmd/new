@@ -572,20 +572,23 @@ def test_the_working_copy_gives_its_ectd_xml_inside_the_browser(site, tmp_path):
               const r = await fetch('/api/dossiers/' + d.id + '/slots/' + slot + '/documents', {method: 'POST', body: fd, headers: {'X-DB': '1'}});
               if (r.status !== 201) throw new Error(slot + ' ' + r.status + ' ' + await r.text()); }
             return d.id; }""", [base64.b64encode(pdf.read_bytes()).decode(), base64.b64encode((tmp_path / 'fps.docx').read_bytes()).decode()])
-        page.evaluate('id => { location.hash = `#/d/${id}/export`; }', did)
+        page.evaluate('id => { location.hash = `#/d/${id}/checks`; }', did)            # station 8: validated before anything is downloaded
         page.wait_for_selector('#wkGo', timeout=60000)
         page.click('#wkGo')
-        page.wait_for_selector('[data-wk="ectd32-working"]', timeout=240000)
-        res = ' '.join(page.inner_text('#wkRes').split())
-        assert 'eCTD 3.2.2 — XML' in res and 'ectd32-working.zip' in res and 'التسلسل 0000' in res and '(fps.docx)' in res, res   # the Word file named
-        names = page.evaluate("""async () => { const a = document.querySelector('[data-wk="ectd32-working"]');
+        page.wait_for_selector('#valWork [data-wkleft]', timeout=240000)
+        assert '(fps.docx)' in page.inner_text('#valWork [data-wkleft]')                # the Word file named, with what to do
+        page.evaluate('id => { location.hash = `#/d/${id}/export`; }', did)            # station 9: its files
+        page.wait_for_selector('#expWork [data-dl="ectd32-working"]', timeout=60000)
+        res = ' '.join(page.inner_text('#expWork').split())
+        assert 'ectd32-working.zip' in res and 'التسلسل 0000' in res and '(fps.docx)' in res, res
+        names = page.evaluate("""async () => { const a = document.querySelector('#expWork [data-dl="ectd32-working"]');
             const u = new Uint8Array(await (await fetch(a.getAttribute('href'))).arrayBuffer());
             let s = ''; for (let i = 0; i < u.length; i += 8192) s += String.fromCharCode.apply(null, u.subarray(i, i + 8192)); return s; }""")
         assert '0000/index.xml' in names and '0000/m1/eg/eg-regional.xml' in names and '00-WORKING-COPY-NOT-FOR-SUBMISSION.txt' in names
         assert '.docx' not in names                                                     # an eCTD takes PDF only
-        page.click('[data-wk="ectd32-working"]')
+        page.click('#expWork [data-dl="ectd32-working"]')
         page.wait_for_function('() => window.__saved.length >= 1', timeout=60000)
-        page.click('#wkRep')
+        page.click('#expWork [data-vreport]')
         page.wait_for_function('() => window.__saved.length >= 2', timeout=60000)
         saved = page.evaluate('window.__saved')
         assert [s['filename'] for s in saved] == ['ectd32-working.zip', 'validation-report.html'] and saved[0]['size'] > 2000, saved

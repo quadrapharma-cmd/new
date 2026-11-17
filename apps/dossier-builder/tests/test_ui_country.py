@@ -103,7 +103,7 @@ def test_the_wizard_starts_with_the_country_and_builds_for_its_authority(server)
         page.goto(f'{server}/#/d/{did}/publisher')
         page.wait_for_selector('[data-out="ectd32"]')
         assert page.locator('[data-out="ectd40"]').count() == 0
-        page.goto(f'{server}/#/d/{did}/export')
+        page.goto(f'{server}/#/d/{did}/checks')                                             # station 8: the formats, where they are validated
         page.wait_for_selector('input[data-out="ectd32"]')                                     # the Gulf: its own eCTD (GCC M1 v1.5), CTD and NeeS
         assert page.locator('input[data-out]').count() == 3 and page.locator('#ctdOnly').count() == 0 and 'GCC M1 1.5' in page.inner_text('#view')
         page.screenshot(path=f'{OUT}/country-export.png')

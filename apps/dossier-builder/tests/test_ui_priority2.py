@@ -284,14 +284,19 @@ def test_a_sequence_is_recorded_as_submitted_and_frozen_from_the_export_page(ser
         b = p.chromium.launch()
         page = page_of(b, server, 'ar')
         page.on('pageerror', lambda e: errors.append(str(e)))
-        page.goto(f'{server}/#/d/{did}/export')
+        page.goto(f'{server}/#/d/{did}/checks')                                                   # station 8: a new build takes its number
+        page.wait_for_selector('#replLast')
+        assert page.is_checked('#replLast') and 'eCTD 3.2.2 — التسلسل 0000' in page.inner_text('#valTech')   # the last one never went: replaced by default
+        page.goto(f'{server}/#/d/{did}/after')                                                    # «ما بعد التقديم»: the sequences and their submission
         page.wait_for_selector('[data-frz="ectd32|0000"]')
-        assert page.is_checked('#replLast')                                                       # the last one never went: replaced by default
         page.click('[data-frz="ectd32|0000"]')
         page.fill('#frzTrack', 'P-MAA-0001')
         page.click('#frzGo')
         page.wait_for_selector('text=P-MAA-0001')
-        assert page.locator('[data-frz]').count() == 0 and page.locator('#replLast').count() == 0   # frozen: nothing to replace
+        assert page.locator('[data-frz]').count() == 0
+        page.goto(f'{server}/#/d/{did}/checks')
+        page.wait_for_selector('#nextSeqCard')                                                    # frozen: nothing to replace, the next is 0001
+        assert page.locator('#replLast').count() == 0 and 'eCTD 3.2.2 — التسلسل 0001' in page.inner_text('#valTech')
         b.close()
     assert not errors, errors
 

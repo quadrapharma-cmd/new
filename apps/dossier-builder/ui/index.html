@@ -273,6 +273,112 @@ body[data-role="editor"] .admin-only,body[data-role="viewer"] .admin-only{displa
 const {$, $$, esc, bdi, icon, store, toast, openDrawer, closeDrawer, ring, meter, fmtDate, fmtTs, pct} = DS;
 const api = (p, o) => DS.api(p, o, '/api');
 const T = {
+  /* stage 4: station 8 «التحقق», station 9 «التصدير», «ما بعد التقديم» */
+  v8Sub:{en:'The dossier is built in the formats you choose and checked the way the authority checks it — before anything is downloaded.',ar:'يُبنى الملف بالصيغ التي تختارها ويُفحص كما تفحصه الجهة الرقابية، قبل أن يُنزَّل أي شيء.'},
+  v8Door1:{en:'Technical validation of the package',ar:'التحقق الفني من الحزمة'},
+  v8Door1Sub:{en:"The package is built as it will be exported, and every rule of the authority's validation is run on its files.",ar:'تُبنى الحزمة كما ستُصدَّر، وتُشغَّل على ملفاتها كل قواعد التحقق لدى الجهة الرقابية.'},
+  v8Door2Sub:{en:"The dossier reviewed the way the authority's assessor reviews it.",ar:'مراجعة الملف كما يراجعه مقيِّم الجهة الرقابية.'},
+  v8FormatsSub:{en:'what is validated here is what the next station downloads',ar:'ما يُتحقق منه هنا هو ما يُنزَّل في المحطة التالية'},
+  v8Go:{en:'Build for submission and validate',ar:'بناء نسخة للتقديم والتحقق منها'},
+  v8Wk:{en:'Validate a working copy',ar:'التحقق من نسخة عمل'},
+  v8WkSub:{en:'A working copy is not for submission: it is built from what the dossier holds now, in every format this country takes, and is never recorded — it shows early what the validation says.',ar:'نسخة العمل ليست للتقديم: تُبنى بما يحويه الملف الآن وبكل الصيغ التي تقبلها هذه الدولة، ولا تُسجَّل؛ وإنما تبيّن نتيجة التحقق مبكرًا.'},
+  v8WkMissing:{en:'Documents in place: {d} · required items still missing: {n}',ar:'المستندات في مواضعها: {d} · البنود المطلوبة الناقصة: {n}'},
+  v8GoBlocked:{en:'A build for submission waits until these are done:',ar:'لا تُبنى نسخة للتقديم قبل استكمال ما يلي:'},
+  v8Busy:{en:'Building and validating… (it may take a minute)',ar:'جارٍ البناء والتحقق… (قد يستغرق دقيقة)'},
+  v8Built:{en:'Built and validated.',ar:'اكتمل البناء والتحقق.'},
+  v8NoFormat:{en:'Choose at least one format.',ar:'اختر صيغة واحدة على الأقل.'},
+  v8SignOk:{en:'The dossier passed the validation — ready for export',ar:'اجتاز الملف التحقق — جاهز للتصدير'},
+  v8SignFail:{en:'The dossier did not pass the validation',ar:'لم يجتز الملف التحقق'},
+  v8SignStale:{en:'The dossier changed after its validation: validate it again',ar:'تغيّر الملف بعد التحقق منه: أعد التحقق'},
+  v8SignLegacy:{en:'The last build was made before this version, with no record of what went into it: build and validate it again.',ar:'بُنيت آخر نسخة قبل هذا الإصدار دون سجل لما دخل فيها: أعد بناءها والتحقق منها.'},
+  v8SignTodo:{en:'Not validated yet: build it for submission and validate it',ar:'لم يُتحقق من الملف بعد: ابنِ نسخة للتقديم وتحقق منها'},
+  v8SignBlocked:{en:'Not ready to be built for submission',ar:'غير جاهز لبناء نسخة للتقديم'},
+  v8Next:{en:'Next: Export',ar:'التالي: التصدير'},
+  v8FailN:{en:'Rules not passed: {n}',ar:'القواعد التي لم يجتزها: {n}'},
+  v8DocsN:{en:'Points in the documents to deal with before the build: {n}',ar:'نقاط في المستندات تُعالَج قبل البناء: {n}'},
+  v8SubT:{en:'Build for submission',ar:'نسخة التقديم'},
+  v8WkT:{en:'Working copy — not for submission',ar:'نسخة عمل — ليست للتقديم'},
+  v8When:{en:'Validated on {d}',ar:'تاريخ التحقق: {d}'},
+  v8Passed:{en:'Passed',ar:'اجتاز التحقق'},
+  v8Failed:{en:'Did not pass',ar:'لم يجتز التحقق'},
+  v8StaleChip:{en:'No longer matches the dossier',ar:'لم يعد مطابقًا للملف'},
+  v8Counts:{en:'passed: {p} · failed: {f} · warnings: {w} · not run: {n}',ar:'ناجحة: {p} · لم تُجتَز: {f} · تحذيرات: {w} · لم تُشغَّل: {n}'},
+  v8Fail:{en:'Failed',ar:'لم تُجتَز'}, v8Warn:{en:'Warning',ar:'تحذير'}, v8Pass:{en:'Passed',ar:'ناجحة'}, v8NotRun:{en:'Not run',ar:'لم تُشغَّل'},
+  v8Others:{en:'Rules passed and not run ({n})',ar:'القواعد الناجحة وغير المشغَّلة ({n})'},
+  v8Docs:{en:'In:',ar:'في:'},
+  v8More:{en:'More: {n}',ar:'المزيد: {n}'},
+  v8Changed:{en:'What changed after the validation:',ar:'ما تغيّر بعد التحقق:'},
+  v8ch_added:{en:'added',ar:'أُضيف'}, v8ch_replaced:{en:'a new version',ar:'نسخة جديدة'}, v8ch_withdrawn:{en:'withdrawn',ar:'سُحب'}, v8ch_changed:{en:'its details changed',ar:'تغيّرت بياناته'},
+  v8ch_items:{en:'The required items changed',ar:'تغيّرت البنود المطلوبة'}, v8ch_product:{en:"The product's data changed",ar:'تغيّرت بيانات المستحضر'},
+  v8ch_envelope:{en:'The submission details changed',ar:'تغيّرت بيانات التقديم'}, v8ch_profile:{en:"The dossier's description changed",ar:'تغيّر وصف الملف'},
+  v8ch_sequences:{en:'The recorded sequences changed (one was withdrawn or added)',ar:'تغيّرت التسلسلات المسجَّلة (سُحب تسلسل أو أُضيف)'},
+  v8Again:{en:'Validate again',ar:'أعد التحقق'},
+  v8p_ich:{en:'Official — ICH',ar:'رسمية — ICH'}, v8p_ema:{en:'Official — the EMA\'s criteria in force',ar:'رسمية — معايير الوكالة الأوروبية السارية'},
+  v8p_gcc:{en:'Official — GCC Module 1 (SFDA)',ar:'رسمية — Module 1 الخليجي (SFDA)'}, v8p_nees:{en:'Official — EU NeeS guidance',ar:'رسمية — إرشادات NeeS الأوروبية'},
+  v8p_eda_draft:{en:"From EDA's draft",ar:'من مسودة الهيئة'}, v8p_eu_derived:{en:"Taken from the EU's criteria (provisional)",ar:'مأخوذة من المعايير الأوروبية (مؤقتة)'},
+  v8p_assumption:{en:'A provisional assumption',ar:'افتراض مؤقت'}, v8p_other:{en:'Provisional',ar:'مؤقتة'},
+  v8NoteEG:{en:"Egypt's rules here are EDA's drafts (EDA has published no validator of its own): a pass means «conforms to EDA's drafts and ICH», not «approved by EDA».",ar:'قواعد مصر هنا من مسودات الهيئة (لم تنشر الهيئة أداة تحقق خاصة بها)؛ فالاجتياز يعني «مطابق لمسودات الهيئة و ICH»، لا «معتمد من الهيئة».'},
+  v8NoteEU:{en:"The EU's rules are the EMA's validation criteria, checked here: run an EMA-accepted validator before you submit.",ar:'قواعد الاتحاد الأوروبي هي معايير التحقق لدى الوكالة الأوروبية، فُحصت هنا؛ شغِّل أداة تحقق تقبلها الوكالة قبل التقديم.'},
+  v8NoteGCC:{en:'The Gulf rules are those of GCC Module 1 v1.5 (SFDA), checked here: run the authority\'s own validator before you submit.',ar:'قواعد الخليج هي قواعد Module 1 الخليجي 1.5 (SFDA)، فُحصت هنا؛ شغِّل أداة التحقق لدى الجهة قبل التقديم.'},
+  v8NoteCTD:{en:"This authority takes CTD folders: what is checked is that every required item is in its place; its own submission rules (portal, file naming) still apply.",ar:'هذه الجهة تستلم مجلدات CTD: يُفحص اكتمال البنود المطلوبة في مواضعها، وتبقى قواعد التقديم لدى الجهة نفسها (البوابة، تسمية الملفات) واجبة التطبيق.'},
+  v8NoRules:{en:'No validation rules run on this format: what is checked is that every required item is in its place (above).',ar:'لا تُشغَّل قواعد تحقق على هذه الصيغة؛ ما يُفحص هو اكتمال البنود المطلوبة في مواضعها (أعلاه).'},
+  v8DocsT:{en:'Checks of the documents before the build',ar:'فحوص المستندات قبل البناء'},
+  v8DocsSub:{en:'each document by its own conditions, and the documents against one another',ar:'كل مستند وفق شروطه، والمستندات بعضها مع بعض'},
+  v8RevNone:{en:'No review has been run yet.',ar:'لم تُجرَ مراجعة بعد.'},
+  v8RevGo:{en:"Open the assessor's desk",ar:'فتح مكتب المقيِّم'},
+  v8RevOpen:{en:'Open findings: {n}',ar:'الملاحظات المفتوحة: {n}'},
+  v8RevWhen:{en:'Last review: {d}',ar:'آخر مراجعة: {d}'},
+  v8FromResp:{en:'(set as a response from «After submission»)',ar:'(مضبوط ردًّا من «ما بعد التقديم»)'},
+  x9Sub:{en:'The dossier is downloaded as it was validated at station 8 — the same files.',ar:'يُنزَّل الملف كما تحقق منه البرنامج في المحطة 8، بالملفات نفسها.'},
+  x9None:{en:'No build for submission yet: build and validate it at station 8.',ar:'لم تُبنَ نسخة للتقديم بعد؛ ابنِها وتحقق منها في المحطة 8.'},
+  x9ToVal:{en:'To the validation',ar:'الانتقال إلى التحقق'},
+  x9ToFix:{en:'What did not pass, at station 8',ar:'ما لم يُجتَز، في المحطة 8'},
+  x9Ok:{en:'Validated on {d}, and it passed: download it as it was validated.',ar:'تحقق منها البرنامج في {d} واجتازت التحقق؛ نزِّلها كما هي.'},
+  x9Fail:{en:'Validated on {d}, and it did not pass (rules not passed: {n}). Fix them at station 8 first.',ar:'تحقق منها البرنامج في {d} ولم تجتز التحقق (القواعد التي لم تجتزها: {n}). عالِجها في المحطة 8 أولًا.'},
+  x9Stale:{en:'The dossier changed after this build was validated, so it is not downloaded:',ar:'تغيّر الملف بعد التحقق من هذه النسخة، فلا تُنزَّل:'},
+  x9Legacy:{en:'This build was made before this version, with no record of what went into it: build and validate it again at station 8.',ar:'بُنيت هذه النسخة قبل هذا الإصدار دون سجل لما دخل فيها؛ أعد بناءها والتحقق منها في المحطة 8.'},
+  x9DlQ:{en:'Download a package that did not pass?',ar:'تنزيل حزمة لم تجتز التحقق؟'},
+  x9DlAnyway:{en:'This package did not pass the validation (rules not passed: {n}). The authority may refuse it. Download it all the same?',ar:'لم تجتز هذه الحزمة التحقق (القواعد التي لم تجتزها: {n})، وقد ترفضها الجهة الرقابية. هل تنزّلها مع ذلك؟'},
+  x9DlYes:{en:'Download',ar:'تنزيل'},
+  x9After:{en:'Once it is submitted to the authority: record the submission',ar:'بعد تقديمه إلى الجهة الرقابية: سجِّل التقديم'},
+  x9WkStale:{en:'The dossier changed after this working copy.',ar:'تغيّر الملف بعد نسخة العمل هذه.'},
+  x9_ctd:{en:'CTD folders',ar:'مجلدات CTD'},
+  navAfter:{en:'After submission',ar:'ما بعد التقديم'},
+  afSub:{en:"What follows the submission: recording it, the authority's letters and questions with their replies, and a response sequence.",ar:'ما يلي تقديم الملف: تسجيل التقديم، وخطابات الجهة الرقابية وأسئلتها والرد عليها، وتسلسل الرد.'},
+  afSeqT:{en:'Sequences built',ar:'التسلسلات المبنية'},
+  afSeqNone:{en:'No sequence has been built for submission yet (station 8).',ar:'لم يُبنَ أي تسلسل للتقديم بعد (المحطة 8).'},
+  afSeqCtd:{en:'This authority takes CTD folders: they carry no sequence numbers.',ar:'هذه الجهة تستلم مجلدات CTD، وليس لها أرقام تسلسل.'},
+  afLetT:{en:"The authority's letters",ar:'خطابات الجهة الرقابية'},
+  afLetSub:{en:"A letter added is read: its numbered questions, and a time it gives («within 30 days») as the reply's due date — correct them if needed.",ar:'يُقرأ الخطاب عند إضافته: أسئلته المرقَّمة، والمهلة التي يذكرها («خلال 30 يومًا») موعدًا للرد؛ صحِّحها إن لزم.'},
+  afLetAdd:{en:'Add a letter received',ar:'إضافة خطاب وارد'},
+  afLetFile:{en:'The letter (PDF or Word)',ar:'الخطاب (PDF أو Word)'},
+  afLetRec:{en:'Received on',ar:'تاريخ الاستلام'},
+  afLetSubj:{en:'Subject (read from the letter when left empty)',ar:'الموضوع (يُقرأ من الخطاب إن تُرك فارغًا)'},
+  afLetGo:{en:'Add the letter',ar:'إضافة الخطاب'},
+  afLetNeed:{en:'Choose the letter, or write its subject.',ar:'اختر الخطاب، أو اكتب موضوعه.'},
+  afLetAdded:{en:'The letter was added — questions read from it: {q}',ar:'أُضيف الخطاب — الأسئلة المقروءة منه: {q}'},
+  afLetNone:{en:'No letter from the authority yet.',ar:'لا توجد خطابات من الجهة الرقابية بعد.'},
+  afLetOpen:{en:"The letter's file",ar:'ملف الخطاب'},
+  afDue:{en:'Reply by {d}',ar:'موعد الرد: {d}'},
+  afLeft:{en:'days left: {n}',ar:'الأيام المتبقية: {n}'},
+  afLate:{en:'days late: {n}',ar:'أيام التأخير: {n}'},
+  afOpenQ:{en:'Questions still open: {n}',ar:'الأسئلة التي لم يُرَدّ عليها: {n}'},
+  afAns:{en:'The answer',ar:'الرد'},
+  afAnsSave:{en:'Save the answer',ar:'حفظ الرد'},
+  afAnsSaved:{en:'The answer was saved.',ar:'حُفظ الرد.'},
+  afAnswered:{en:'answered',ar:'رُدَّ عليه'},
+  afQAdd:{en:'Add a question',ar:'إضافة سؤال'},
+  afQAddPh:{en:"The authority's question as written",ar:'نص سؤال الجهة الرقابية كما ورد'},
+  afNoQ:{en:'No numbered question was read from this letter: add its questions.',ar:'لم تُقرأ من هذا الخطاب أسئلة مرقَّمة؛ أضف أسئلته.'},
+  afReply:{en:'The reply letter (Word)',ar:'خطاب الرد (Word)'},
+  afReplyWait:{en:'The reply letter is written once every question is answered.',ar:'يُكتب خطاب الرد بعد الرد على كل الأسئلة.'},
+  afRespT:{en:'A response sequence',ar:'تسلسل رد'},
+  afRespSub:{en:'The documents the reply changes go in as a new sequence: add or replace them (stations 6 and 7), then validate the response sequence at station 8.',ar:'تدخل المستندات التي يغيّرها الرد في تسلسل جديد: أضفها أو استبدلها (المحطتان 6 و7)، ثم تحقق من تسلسل الرد في المحطة 8.'},
+  afRespGo:{en:'Prepare a response sequence',ar:'تحضير تسلسل رد'},
+  afRespSet:{en:'The next sequence is set as a response; its documents first, then validate it.',ar:'ضُبط التسلسل التالي ليكون ردًّا؛ أضف مستنداته أولًا ثم تحقق منه.'},
+  afVarT:{en:'A change after registration',ar:'تغيير بعد التسجيل'},
+  afVarSub:{en:'A change to the registered product (a variation) is classified and planned in «Post-registration changes».',ar:'يُصنَّف التغيير في المستحضر المسجَّل ويُخطَّط له في «التغييرات بعد التسجيل».'},
+  afVarGo:{en:'Post-registration changes',ar:'التغييرات بعد التسجيل'},
   appName:{en:'eBOX',ar:'eBOX'}, appTag:{en:'Unified registration dossiers',ar:'ملفات التسجيل الموحّد'},
   navLib:{en:'Library',ar:'المكتبة'}, navDTools:{en:'Dossier tools',ar:'أدوات الملف'}, navTools:{en:'General tools',ar:'أدوات عامة'}, navFaults:{en:'Faults record',ar:'سجل الأعطال'},
   vaultT:{en:'The vault',ar:'الخزنة'},
@@ -577,8 +683,8 @@ const T = {
   closeItem:{en:'Withdraw all its documents',ar:'سحب مستندات البند كلها'}, closeItemQ:{en:'Withdraw the {n} documents of this item at once? In the next eCTD sequence each becomes a «delete»; the files stay in the history.',ar:'هل تريد سحب مستندات هذا البند الـ {n} دفعة واحدة؟ في تسلسل eCTD التالي يصبح كلٌّ منها «delete»؛ وتبقى الملفات في السجل.'},
   closedItem:{en:'{n} documents withdrawn.',ar:'المستندات المسحوبة: {n}.'},
   envFromLast:{en:'Filled from the sequence before it — change it if this one has its own number.',ar:'معبَّأ من التسلسل السابق — غيِّره إن كان لهذا التسلسل رقم آخر.'},
-  frzState:{en:'Submitted',ar:'هل قُدِّم؟'}, frzDone:{en:'submitted',ar:'قُدِّم'}, frzNot:{en:'not submitted',ar:'لم يُقدَّم بعد'}, frzMark:{en:'It was submitted',ar:'قُدِّم'},
-  frzDrop:{en:'Discard',ar:'حذفه'}, frzReceipt:{en:'receipt',ar:'الإيصال'}, frzSub:{en:'Once you record that a sequence went to the authority it is frozen: it is never replaced or discarded, and any change goes in a new sequence.',ar:'عند تسجيل أن التسلسل قُدِّم إلى الهيئة يُجمَّد: فلا يُستبدل ولا يُحذف، وأي تعديل يكون في تسلسل جديد.'},
+  frzState:{en:'Submitted',ar:'هل قُدِّم؟'}, frzDone:{en:'submitted',ar:'قُدِّم'}, frzNot:{en:'not submitted',ar:'لم يُقدَّم بعد'}, frzMark:{en:'Record the submission',ar:'تسجيل التقديم'},
+  frzDrop:{en:'Delete the sequence',ar:'حذف التسلسل'}, frzReceipt:{en:'receipt',ar:'الإيصال'}, frzSub:{en:'Once you record that a sequence went to the authority it is frozen: it is never replaced or discarded, and any change goes in a new sequence.',ar:'عند تسجيل أن التسلسل قُدِّم إلى الهيئة يُجمَّد: فلا يُستبدل ولا يُحذف، وأي تعديل يكون في تسلسل جديد.'},
   frzDay:{en:'Day it was submitted',ar:'يوم التقديم'}, frzTrack:{en:'Tracking number',ar:'رقم المتابعة'}, frzAck:{en:'Technical acceptance',ar:'القبول الفني'}, frzDecision:{en:'Decision',ar:'القرار'},
   frzGo:{en:'Record and freeze',ar:'تسجيل وتجميد'}, frzSaved:{en:'Recorded: the sequence is frozen.',ar:'سُجِّل: جُمِّد التسلسل.'}, frzDropQ:{en:'This sequence never went to the authority: take it off the history? The next export takes its number.',ar:'هذا التسلسل لم يُقدَّم إلى الهيئة: هل يُزال من السجل؟ التصدير التالي يأخذ رقمه.'},
   frzDropped:{en:'Taken off the history.',ar:'أُزيل من السجل.'}, frzRepl:{en:'The last sequence was not submitted: this export replaces it (the same number).',ar:'آخر تسلسل لم يُقدَّم بعد: هذا التصدير يحل محله (بالرقم نفسه).'},
@@ -918,7 +1024,7 @@ const NAV_USERS = ['users','#/users','users','navUsers'];
 const navTools = () => (S.auth && (S.auth.can_enable || (S.me && S.me.auth && S.me.role==='admin'))) ? NAV_TOOLS.concat([NAV_USERS]) : NAV_TOOLS;
 const navItems = () => NAV_MAIN.filter(x=>!x[4]).concat(navTools());            // the pages of this program (the narrow screen's list)
 /* the dossier's pages: [route, icon, text, station] — a station's pages carry its number, the tools none */
-const DNAV = [['tree','tree','navTree',5],['prepare','scan','navPrepare',6],['board','checklist','navBoard',7],['checks','shield','navChecks',8],['review','stamp','navReview',8],['export','package','navExport',9],
+const DNAV = [['tree','tree','navTree',5],['prepare','scan','navPrepare',6],['board','checklist','navBoard',7],['checks','shield','navChecks',8],['review','stamp','navReview',8],['export','package','navExport',9],['after','mail','navAfter',9],
               ['guide','compass','navGuide',0],['data','database','navData',0],['publisher','tree','navPublisher',0],['search','search','navSearch',0],['audit','history','navAudit',0]];
 function paintNav(){
   const g=([r,h,i,k,ext])=>`<a href="${h}" data-r="${r}"${ext?' target="_blank" rel="noopener"':''}>${icon(i)}<span data-t="${k}"></span></a>`;
@@ -960,16 +1066,20 @@ function nav(r){
 /* ---------------- the path: nine stations, fixed above every screen. In «ملف جديد» the wizard's steps sit on stations 2–5; for an
    open dossier the first five are behind it and the last four carry their state, from the same reckoning as the guide
    (journey()). One «التالي»: to the station after this screen's (from a tool's screen, to the first station not finished). */
-const ST_ROUTE={tree:5, prepare:6, office:6, board:7, checks:8, review:8, export:9}, ST_PAGE={3:'tree', 4:'tree', 5:'tree', 6:'prepare', 7:'board', 8:'checks', 9:'export'};
+const ST_ROUTE={tree:5, prepare:6, office:6, board:7, checks:8, review:8, export:9, after:9}, ST_PAGE={3:'tree', 4:'tree', 5:'tree', 6:'prepare', 7:'board', 8:'checks', 9:'export'};
 function pathStates(J){
   if(!J) return {};
   const st=k=>J.stages.find(x=>x.key===k)||{}, ck=st('checks'), ex=st('export');
   const total=J.required||0, done=J.have||0, anyDocs=!!J.anyDocs;
+  const bsub=(J.builds||{}).submission, h=J.hist||{ectd32:[],ectd40:[]};
+  const st8=!bsub?(J.gateOk?'now':'todo'):(bsub.legacy||!bsub.current)?'now':bsub.ok?'done':'bad';
+  const lasts=['ectd32','ectd40'].map(o=>h[o]||[]).filter(a=>a.length).map(a=>a[a.length-1]), sent=lasts.length&&lasts.every(x=>x.frozen);
+  const st9=bsub&&bsub.current&&bsub.ok?(lasts.length&&!sent?'now':'done'):(ex.state==='done'&&!bsub?'done':'todo');      // downloaded and, for an eCTD, recorded as submitted
   return {5:{state: J.unplaced?'now':'done', count: J.unplaced?String(J.unplaced):''},      // files still waiting for their place in the proposed tree
           6:{state: J.s6||(J.blocking.length?'bad':(ck.attn||[]).length?'warn':anyDocs?'done':'todo')},      // as the station's own sign says it
           7:{state: total&&done===total?'done':anyDocs||done?'now':'todo', count: total?`${done}/${total}`:''},
-          8:{state: (J.xb.length||J.unsigned.length||J.external.length)?'bad':J.gateOk?'done':'todo'},
-          9:{state: ex.state||'todo'}};
+          8:{state: (J.xb.length||J.unsigned.length||J.external.length)?'bad':st8},      // as station 8's sign says it: the last build for submission
+          9:{state: st9}};
 }
 function paintPath(J){
   const el=$('#pathbar'); if(!el) return;
@@ -1003,7 +1113,7 @@ async function route(){
   const tok = ++S.rt;
   readerEnd();                                              // «عرض ومراجعة» belongs to the screen it was opened on
   const h = location.hash.replace(/^#/,'') || '/';
-  const m = h.match(/^\/d\/([^/]+)\/(guide|tree|prepare|office|board|data|publisher|checks|search|export|audit|review)(?:\/([a-z]+))?$/);
+  const m = h.match(/^\/d\/([^/]+)\/(guide|tree|prepare|office|board|data|publisher|checks|search|export|after|audit|review)(?:\/([a-z]+))?$/);
   asstFab(m?m[1]:null);
   try{
     if(h==='/new'){ S.dossier=null; nav('dossiers'); return wizard(); }
@@ -1019,6 +1129,7 @@ async function route(){
     if(m[2]==='guide') return guideView(tok);
     if(m[2]==='board') return board(tok);
     if(m[2]==='export') return exportView(tok);
+    if(m[2]==='after') return afterView(tok);
     if(m[2]==='publisher') return publisherView(tok);
     if(m[2]==='data') return dataView(tok);
     if(m[2]==='checks') return checksView(tok);
@@ -2485,7 +2596,8 @@ function nextAction(J, b){
   return {k:'na_export', d:'na_exportD', act:{go:'export'}};
 }
 function stripHtml(J){ paintPath(J); return ''; }            // the journey's state goes to the path bar above the screen (it was a strip on each page)
-async function loadJourney(){ const [b, data, hist] = await Promise.all([api(`/dossiers/${S.dossier.id}/board`), api(`/dossiers/${S.dossier.id}/data`), api(`/dossiers/${S.dossier.id}/submissions`)]); S.board=b; return {b, data, hist, J: journey(b, data, hist)}; }
+async function loadJourney(){ const [b, data, hist, builds] = await Promise.all([api(`/dossiers/${S.dossier.id}/board`), api(`/dossiers/${S.dossier.id}/data`), api(`/dossiers/${S.dossier.id}/submissions`), api(`/dossiers/${S.dossier.id}/builds?brief=1`).catch(()=>null)]);
+  S.board=b; const J=journey(b, data, hist); J.builds=builds; J.hist=hist; return {b, data, hist, J}; }
 function flashSlot(sid){ const b=document.querySelector(`#view [data-why="${CSS.escape(sid)}"]`); const row=b&&(b.closest('tr')||b.closest('.card')); if(!row) return;
   row.scrollIntoView({block:'center', behavior:'smooth'}); row.classList.remove('flash'); void row.offsetWidth; row.classList.add('flash'); }
 async function fixDoc(b){                         // the auto-fix itself, wherever its button is (the item drawer, the checks page)
@@ -3393,7 +3505,10 @@ function treeArrived(){
   const p=S.prepWaitP=prepModelWaiting().catch(e=>console.warn('arrived', e)).then(()=>{ if(S.prepWaitP===p) S.prepWaitP=null; const m=$('#prepMsg'); if(m&&location.hash.endsWith('/tree')&&!S.treeBusy) m.textContent=''; });
 }
 let treeSeq=0;
-async function paintTree(){
+/* the tree drawn again (after a choice: a place, a newer copy or beside it); «اعتماد الشجرة» waits for the drawing in flight, so that it
+   places by the choice just made, not the one before (found 17/11/2026, on a busy machine: the approval came before the new answer) */
+async function paintTree(){ const p=paintTree0(); S.treePaintP=p; try{ return await p; } finally{ if(S.treePaintP===p) S.treePaintP=null; } }
+async function paintTree0(){
   const out=$('#treeOut'); if(!out||!S.dossier) return; const did=S.dossier.id, my=++treeSeq; let r;
   const capsP=S.caps?null:caps().catch(()=>null);
   try{ r=await api(`/dossiers/${did}/tree`,{method:'POST',json:{place:treeChoices(did), replaces:treeRps(did)}}); }
@@ -3474,6 +3589,7 @@ async function treeApprove(){
   S.treeBusy=true;
   try{
     if(S.prepWaitP){ say(t('treeWorking')); await S.prepWaitP; await paintTree(); }           // what was added is still being read: its place comes from that
+    while(S.treePaintP) await S.treePaintP.catch(()=>{});                                        // a choice just made: its drawing first
     const r=S.tree; if(!r||!S.dossier||S.dossier.id!==did) return;
     const byId=Object.fromEntries(r.slots.map(sl=>[sl.slot_id, sl])), todo=r.waiting.filter(w=>w.place&&byId[w.place]), failed=[]; let n=0, i=0;
     for(const w of todo){ i++; const sl=byId[w.place]; let meta={};
@@ -3983,11 +4099,56 @@ function packageView(tok){
     catch(e){ $('#cmpOut').innerHTML=`<div class="alert bad"><p class="small">${esc(e.message)}</p></div>`; }
     both(); };
 }
+/* ---------------- station 8 «التحقق» (stage 4): one page, two doors. Door 1: the package is built in the formats chosen here and
+   validated the way the authority validates it — before anything is downloaded (station 9 downloads what was validated, as it
+   was). Door 2: the assessor's review. The documents' own checks and the cross-document checks before the build stay, in a fold. */
+const PROV_KEY = {ich:'v8p_ich', ema:'v8p_ema', gcc:'v8p_gcc', nees:'v8p_nees', eda_draft:'v8p_eda_draft', eu_derived:'v8p_eu_derived', assumption:'v8p_assumption', other:'v8p_other'};
+const VST = {fail:'v8Fail', warning:'v8Warn', pass:'v8Pass', not_run:'v8NotRun'};
+const provTag = x => `<span class="chip ${x.kind==='official'?'c-ok':'c-wait'}" data-prov="${esc(x.of||'other')}" title="${esc([x.provenance, x.source].filter(Boolean).join(' · '))}"><i></i>${esc(t(PROV_KEY[x.of]||'v8p_other'))}</span>`;
+function slotLabel(sid){ const s=((S.board&&S.board.slots)||[]).find(x=>x.slot_id===sid); return s?`<span class="code">${esc(s.ctd||'')}</span> ${esc(L(s.title||{}))}`:esc(sid||''); }
+function buildWhen(bd){ if(!bd||!bd.created) return ''; const d=new Date(bd.created*1000), p=n=>String(n).padStart(2,'0');
+  return `${dateL(`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`)} ${p(d.getHours())}:${p(d.getMinutes())}`; }
+function changedList(ch){ return `<ul class="small" data-changed style="margin:4px 0 0;padding-inline-start:18px">${(ch||[]).map(x=>`<li data-ch="${esc(x.kind)}">${x.slot_id?`${slotLabel(x.slot_id)} — ${bdi(x.name||'')} · <b>${esc(t('v8ch_'+x.kind))}</b>`:esc(t('v8ch_'+x.kind))}</li>`).join('')}</ul>`; }
+const vCounts = c => t('v8Counts').replace('{p}', (c||{}).pass||0).replace('{f}', (c||{}).fail||0).replace('{w}', (c||{}).warning||0).replace('{n}', (c||{}).not_run||0);
+function rulesHtml(rules){
+  const names=Object.keys(rules||{});
+  if(!names.length) return `<p class="small muted" data-norules>${esc(t('v8NoRules'))}</p>`;
+  return names.map(name=>{ const r=rules[name], others=r.others||[];
+    const prob=(r.problems||[]).map(x=>`<div class="finding ${x.status==='fail'?'block':''}" data-rule="${esc(x.rule||'')}" data-st="${esc(x.status)}">
+        <div class="row gap-s" style="flex-wrap:wrap"><span class="chip ${x.status==='fail'?'c-bad':'c-warn'}"><i></i>${esc(t(VST[x.status]))}</span><span class="code">${esc(x.rule||'')}</span>${provTag(x)}</div>
+        <div class="small" dir="ltr" style="text-align:start">${esc(x.text||'')}</div>${x.source?`<div class="small muted code" dir="ltr" style="text-align:start">${esc(x.source)}</div>`:''}
+        ${(x.failures||[]).length?`<ul class="small" dir="ltr" style="text-align:start;margin:2px 0;padding-inline-start:18px">${x.failures.slice(0,4).map(f=>`<li>${esc(f)}</li>`).join('')}</ul>${x.failures.length>4||x.more?`<details class="small"><summary>${esc(t('v8More').replace('{n}', Math.max(0,x.failures.length-4)+(x.more||0)))}</summary><ul dir="ltr" style="text-align:start;padding-inline-start:18px">${x.failures.slice(4).map(f=>`<li>${esc(f)}</li>`).join('')}</ul></details>`:''}`:''}
+        ${(x.documents||[]).length?`<div class="row gap-s small" style="flex-wrap:wrap"><span class="muted">${esc(t('v8Docs'))}</span>${x.documents.map(d=>`<button class="btn sm" ${d.slot_id?`data-why="${esc(d.slot_id)}"`:'disabled'} data-vdoc="${esc(d.doc_id)}" title="${esc(d.slot_id||'')}">${icon('eye',12)} ${bdi(d.filename||'')}</button>`).join('')}</div>`:''}
+        ${x.reason?`<div class="small muted" dir="ltr" style="text-align:start">${esc(x.reason)}</div>`:''}</div>`).join('');
+    return `<div class="stack gap-s vrep" data-rep="${esc(name)}"><div class="row gap-s" style="flex-wrap:wrap"><b>${esc(name)}</b><span class="chip ${r.ok?'c-ok':'c-bad'}"><i></i>${esc(t(r.ok?'v8Passed':'v8Failed'))}</span><span class="small muted">${esc(vCounts(r.counts))}</span></div>
+      ${prob}${others.length?`<details class="vothers"><summary class="small">${esc(t('v8Others').replace('{n}', others.length))}</summary><div class="tablewrap"><table class="small"><tbody>${others.map(x=>`<tr data-orule="${esc(x.rule||'')}"><td class="code">${esc(x.rule||'')}</td><td>${esc(t(VST[x.status]||'v8NotRun'))}</td><td dir="ltr" style="text-align:start">${esc(x.text||'')}</td><td>${provTag(x)}</td></tr>`).join('')}</tbody></table></div></details>`:''}</div>`; }).join('');
+}
+function buildBlock(bd, kind){
+  if(!bd) return '';
+  const id=kind==='sub'?'valSub':'valWork', title=t(kind==='sub'?'v8SubT':'v8WkT');
+  if(bd.legacy) return `<section class="card pad stack gap-s" id="${id}" data-state="legacy"><h3 style="margin:0">${esc(title)}</h3><div class="alert warn">${icon('alert')}<p class="small">${esc(t('v8SignLegacy'))}</p></div></section>`;
+  const st=!bd.current?'stale':bd.ok?'ok':'fail';
+  return `<section class="card pad stack gap-s" id="${id}" data-state="${st}"><div class="row gap-s" style="flex-wrap:wrap"><h3 style="margin:0">${esc(title)}</h3>
+      <span class="chip ${st==='ok'?'c-ok':st==='fail'?'c-bad':'c-warn'}"><i></i>${esc(t(st==='ok'?'v8Passed':st==='fail'?'v8Failed':'v8StaleChip'))}</span><span class="small muted">${esc(t('v8When').replace('{d}', buildWhen(bd)))}</span>
+      ${Object.entries(bd.sequences||{}).map(([k,v])=>`<span class="tag">${k==='ectd32'?'eCTD 3.2.2':'eCTD 4.0'} · ${esc(t('seqDone'))} <span class="code">${esc(v.sequence)}</span></span>`).join(' ')}
+      <span class="grow"></span>${bd.report?`<a class="btn sm soft" href="${esc(bd.report)}" target="_blank" rel="noopener" data-vreport>${icon('shield',14)} ${esc(t('vReport'))}</a>`:''}</div>
+    ${!bd.current?`<div class="alert warn">${icon('alert')}<div class="grow"><p class="small"><b>${esc(t('v8Changed'))}</b></p>${changedList(bd.changed)}</div></div>`:''}
+    ${wkSaid(bd)}${rulesHtml(bd.rules)}</section>`;
+}
+/* a working copy says what it holds, what its eCTD left out and why (a Word file: its PDF goes in the item), an output not written */
+function wkSaid(bd){ if(!bd||!bd.working) return '';
+  return `${bd.missing_required!=null?`<p class="small muted" data-wkmiss>${esc(t('v8WkMissing').replace('{d}', bd.documents||0).replace('{n}', bd.missing_required))}</p>`:''}
+    ${(bd.left_out||[]).length?`<div class="small" data-wkleft><b>${esc(t('wkLeft'))}:</b><ul style="margin:4px 0 0;padding-inline-start:18px">${bd.left_out.map(x=>`<li>${bdi(x.name)} — ${esc(S.lang==='ar'?x.why.ar:x.why.en)}</li>`).join('')}</ul></div>`:''}
+    ${Object.entries(bd.skipped||{}).map(([k,v])=>`<div class="alert bad" data-wkskip="${esc(k)}"><p class="small"><b>${esc(t('wkSkip'))} — ${esc(k==='ectd32'?'eCTD 3.2.2':k==='ectd40'?'eCTD 4.0':'eCTD')}</b>: ${esc(S.lang==='ar'?v.ar:v.en)}</p></div>`).join('')}`; }
 async function checksView(tok){
   await loadGens();
-  const {b, data, J} = await loadJourney();
+  const id=S.dossier.id;
+  const [{b, data, hist, J}, g, bs] = await Promise.all([loadJourney(), api(`/dossiers/${id}/gate`), api(`/dossiers/${id}/builds`)]);
+  const eg=isEG(), eu=isEU(), au=S.dossier.authority||{};
+  const rv = eg ? await api(`/dossiers/${id}/review/latest`).catch(()=>null) : null;
   if(!fresh(tok)) return;
-  const id=S.dossier.id, st=J.stages.find(s=>s.key==='checks');
+  const st=J.stages.find(s=>s.key==='checks');
+  /* the documents' own checks and the cross-document checks, before the build (the page this station was) */
   const rows = b.slots.flatMap(s=>s.documents.filter(d=>d.findings.length).map(d=>({s,d})));
   const tech = rows.length ? `<div class="tablewrap"><table><thead><tr><th>${esc(t('colSec'))}</th><th>${esc(t('colDoc'))}</th><th>${esc(t('findings'))}</th><th>${esc(t('action'))}</th></tr></thead><tbody>
     ${rows.map(({s,d})=>`<tr><td><span class="code">${esc(s.ctd)}</span><div class="small">${esc(L(s.title))}</div></td><td>${bdi(d.filename)}<div class="small muted">${esc(t('version'))} ${d.version} · ${chip(d.check_status)}</div></td>
@@ -3997,8 +4158,8 @@ async function checksView(tok){
   const cross = (b.cross||[]).length ? b.cross.map(f=>`<div class="finding ${f.severity==='block'?'block':''}"><div>${f.severity==='block'?'●':'○'} ${esc(f[S.lang])} <span class="code muted">${esc(f.id)}</span></div><div class="small muted">${esc(f.source)} · ${esc(t('act_'+f.action)||'')}</div></div>`).join('')
     : `<p class="small muted">✓ ${esc(t('crossNone'))}</p>`;
   const list = (title, arr, cls, extra) => arr.length ? `<div class="card"><div class="hd"><span class="chip ${cls}"><i></i>${arr.length}</span><h3>${esc(title)}</h3></div><div class="pad stack gap-s">${arr.map(s=>`<div class="jitem"><div class="t"><span><span class="code muted">${esc(s.ctd)}</span> ${esc(L(s.title))}</span>${extra?`<span class="small muted">${extra(s)}</span>`:''}</div><button class="btn sm" data-why="${esc(s.slot_id)}">${esc(t('view'))}</button></div>`).join('')}</div></div>` : '';
-  const html = `${stripHtml(J)}<div class="head"><div class="title"><h1>${esc(t('navChecks'))}</h1><p class="sub">${esc(t('checksSub'))}</p></div><div class="row"><button class="btn" id="rulesBtn">${icon('book')} ${esc(t('rulesT'))}</button><a class="btn" href="#/d/${id}/guide">${icon('compass')} ${esc(t('guide'))}</a></div></div>
-   <div class="kpis">
+  const nDocProblems = st.nonconf.length + (b.cross||[]).filter(f=>f.severity==='block').length + st.unsigned.length + st.external.length;
+  const docsHtml = `<div class="kpis">
      <div class="card kpi bad"><span class="n">${st.nonconf.length}</span><span class="l">${esc(t('k_block'))}</span></div>
      <div class="card kpi warn"><span class="n">${st.attn.length}</span><span class="l">${esc(t('k_warn'))}</span></div>
      <div class="card kpi ${J.xb.length?'bad':'ok'}"><span class="n">${(b.cross||[]).length}</span><span class="l">${esc(t('k_cross'))}</span></div>
@@ -4008,8 +4169,92 @@ async function checksView(tok){
    <section class="card"><div class="hd"><span class="ic-tile warn">${icon('scan',16)}</span><h2>${esc(t('techT'))}</h2></div>${tech}</section>
    <div class="grid2"><section class="card"><div class="hd"><span class="ic-tile ok">${icon('link',16)}</span><h2>${esc(t('crossT'))}</h2><a class="btn sm" href="#/d/${id}/data">${esc(t('navData'))}</a></div><div class="pad stack gap-s">${cross}</div></section>
    <div class="stack">${list(t('k_wait'), st.waiting, 'c-wait', s=>s.request?`${esc(t('reqOpen'))} ${esc(s.request.issuer)}`:'')}${list(t('k_unsigned'), st.unsigned, 'c-warn')}${list(t('k_ext'), st.external, 'c-rec')}</div></div>`;
+  /* door 1: the formats, the follow-on's envelope, the acknowledgement — what is validated here is what station 9 downloads */
+  /* the last sequence built and not submitted is replaced by the next build (its number), unless that is unticked: what is shown
+     — the sequence numbers, the follow-on's envelope — is what that build will be */
+  const unsent = [hist.ectd32, hist.ectd40].some(a=>a.length&&!a[a.length-1].frozen), repl = unsent && S.valKeepLast!==id;
+  const eh = o => repl && hist[o].length && !hist[o][hist[o].length-1].frozen ? hist[o].slice(0,-1) : hist[o];
+  const h32 = eh('ectd32'), h40 = eh('ectd40');
+  const follow = h32.length || h40.length;
+  const pl = S.respPlan || S.lastPlan;
+  const n32 = h32.length ? String(+h32[h32.length-1].seq + 1).padStart(4,'0') : '0000';
+  const n40 = h40.length ? +h40[h40.length-1].seq + 1 : 1;
+  const slotOf=Object.fromEntries((b.slots||[]).map(s=>[s.slot_id,s]));
+  const gateName=sid=>{ const s=slotOf[sid]; if(!s) return esc(sid); return `<span title="${esc(sid)}"><span class="code">${esc(s.ctd||'')}</span> ${esc(L(s.title||{}))}${s.item&&s.item.name?` <span class="muted">— ${esc(s.item.name)}</span>`:''}</span>`; };
+  const glist=(k,arr)=>arr.length?`<div><b>${esc(t(k))} (${arr.length})</b><div class="small" style="max-height:236px;overflow:auto;margin-top:4px">${arr.map(sid=>`<div style="padding:1px 0">${gateName(sid)}</div>`).join('')}</div></div>`:'';
+  const euProc=((S.dossier.profile||{}).extra||{}).eu_procedure||'dcp';
+  const lastEnv=hist.ectd32.length?hist.ectd32[hist.ectd32.length-1].envelope||{}:{};
+  const euPicked=lastEnv.countries||[euCode(au.country)];
+  const outs=[['ctd',eg?'CTD One Submission':'CTD',t(eg?'outCtdD':'auCtdD'),eg?'NP.CAPP.065 v5':L(au.matrix||{})],['ectd32',`eCTD 3.2.2${eu?' — EU M1 3.1.1':isGCC()?' — GCC M1 1.5':''} — ${t('seqDone')} ${n32}`,t(eu?'outE3EU':isGCC()?'outE3GC':'outE3D'),eu?'EU M1 3.1.1 · EU VC 8.2':isGCC()?'GCC M1 v1.5 (SFDA) · DTD 1.1':'EG provisional v0'],['ectd40',`eCTD 4.0 — ${t('seqDone')} ${n40}`,t('outE4D'),'EG provisional v0 · ICH IG 1.7'],['nees','NeeS',t('outNeesD'),'EU NeeS guidance · m1-toc … m5-toc · ctd-toc'],['actd','ACTD (ASEAN)',t('outActdD'),'ASEAN ACTD, Organization of the Dossier, Rev. 1']].filter(([k])=>auOuts().includes(k));
+  const units = eu?euV().units||[]:['initial','response','validation-response','additional-info','corrigendum','reformat'];
+  const s8 = bs.submission, k8 = !g.ok?'v8SignBlocked':!s8?'v8SignTodo':s8.legacy?'v8SignLegacy':!s8.current?'v8SignStale':!s8.ok?'v8SignFail':'v8SignOk';
+  const cls8 = k8==='v8SignOk'?'ok':k8==='v8SignFail'?'bad':k8==='v8SignTodo'?'info':'warn';
+  const nFail8 = s8&&s8.rules ? Object.values(s8.rules).reduce((a,r)=>a+((r.counts||{}).fail||0),0) : 0;
+  const signLines = [
+    !g.ok ? `<div class="jitem" data-sl="gate"><div class="t"><span>${esc(t('v8GoBlocked'))}</span></div><a class="btn sm" href="#gateCard" data-jump="gateCard">${esc(t('view'))}</a></div>` : '',
+    s8&&s8.current&&!s8.ok ? `<div class="jitem" data-sl="fail"><div class="t"><span>${esc(t('v8FailN').replace('{n}', nFail8))}</span></div><a class="btn sm" href="#valSub" data-jump="valSub">${esc(t('view'))}</a></div>` : '',
+    s8&&!s8.legacy&&!s8.current ? `<div class="jitem" data-sl="stale"><div class="t"><span>${esc(t('v8Changed'))} ${(s8.changed||[]).length}</span></div><a class="btn sm" href="#valSub" data-jump="valSub">${esc(t('view'))}</a></div>` : '',
+    nDocProblems ? `<div class="jitem" data-sl="docs"><div class="t"><span>${esc(t('v8DocsN').replace('{n}', nDocProblems))}</span></div><a class="btn sm" href="#valDocs" data-jump="valDocs">${esc(t('view'))}</a></div>` : ''].join('');
+  const sign = `<section class="card pad stack gap-s" id="valSign" data-state="${esc(k8)}"><div class="row gap-s" style="flex-wrap:wrap"><span class="ic-tile ${cls8==='ok'?'ok':cls8==='bad'?'bad':'warn'}">${icon(cls8==='ok'?'check':'shield',16)}</span><div class="grow"><b id="valSignT">${esc(t(k8))}</b>
+      ${s8&&!s8.legacy?`<div class="small muted">${esc(t('v8When').replace('{d}', buildWhen(s8)))}</div>`:''}</div>
+      ${k8==='v8SignOk'?`<a class="btn pri" href="#/d/${id}/export" id="valNext">${esc(t('v8Next'))} <span class="flip">${icon('arrow',14)}</span></a>`:''}</div>${signLines}</section>`;
+  const door1 = `<section class="card" id="valTech"><div class="hd"><span class="ic-tile accent">${icon('shield',16)}</span><div class="grow"><h2>${esc(t('v8Door1'))}</h2><div class="small muted">${esc(t('v8Door1Sub'))}</div></div><button class="btn sm" id="rulesBtn">${icon('book',14)} ${esc(t('rulesT'))}</button></div><div class="pad stack gap-s">
+     ${g.ok?'':`<div class="alert warn">${icon('alert')}<p class="small">${esc(t('v8GoBlocked'))}</p></div><div class="card pad stack gap-s" id="gateCard">${glist('missingReq',g.missing_required)}${glist('nonconf',g.non_conforming)}${glist('unsignedL',g.unsigned||[])}${glist('extL',g.external_only||[])}${glist('toConfirm',g.to_confirm||[])}${glist('ectdBlockL',g.ectd_blocking||[])}${glist('notesOpenL',g.notes_open||[])}${(g.cross_blocking||[]).length?`<div><b>${esc(t('crossT'))} (${g.cross_blocking.length})</b>${g.cross_blocking.map(f=>`<div class="small">● ${esc(f[S.lang])}</div>`).join('')}</div>`:''}
+       <div class="row"><a class="btn sm" href="#/d/${id}/board">${esc(t('navBoard'))}</a><a class="btn sm" href="#/d/${id}/prepare">${esc(t('navPrepare'))}</a></div></div>`}
+     ${(g.ectd_indication||[]).length?`<div class="alert warn" id="indCard">${icon('alert')}<div class="grow stack gap-s"><p class="small"><b>${esc(t('indT'))}</b> — ${esc(t('indSub').replace('{n}', g.ectd_indication.length))}</p><div class="small">${g.ectd_indication.map(sid=>`<div>${gateName(sid)}</div>`).join('')}</div><div class="row gap-s" style="flex-wrap:wrap"><input type="text" dir="auto" id="indText" placeholder="${esc(t('indPh'))}" style="flex:1;min-width:200px"><button class="btn sm pri" id="indSave">${esc(t('indSave'))}</button></div></div></div>`:''}
+     <div><b>${esc(t('outputsT'))}</b> <span class="small muted">— ${esc(t('v8FormatsSub'))}</span></div>
+     ${outs.map(([k,l,d,src])=>`<label class="opt"><input type="checkbox" data-out="${k}" checked><span><b>${esc(l)}</b><span>${esc(d)}</span><span class="code muted">${esc(src)}</span></span></label>`).join('')}
+     ${eg||eu||isGCC()?'':`<div class="alert info" id="ctdOnly">${icon('info')}<p class="small">${esc(t('auCtdOnly'))}</p></div>`}<div id="ctyRow"></div>
+     ${eu?`<div class="card" id="euEnv"><div class="hd"><span class="ic-tile">${icon('globe',16)}</span><h3>${esc(t('euEnvT'))}</h3></div><div class="pad stack gap-s">
+       ${['dcp','mrp'].includes(euProc)?`<div><b class="small">${esc(t('euCountries'))}</b><div class="row gap-s" style="flex-wrap:wrap;margin-top:6px" id="euCs">${euCountries().map(c=>`<label class="small" style="display:inline-flex;align-items:center;gap:4px;min-width:58px;cursor:pointer"><input type="checkbox" value="${c}" ${euPicked.includes(c)?'checked':''}> <span class="code">${c.toUpperCase()}</span></label>`).join('')}</div></div>`:''}
+       ${follow?'':`<label class="f"><span>${esc(t('euTrack'))}</span><input type="text" dir="ltr" id="euTrack" placeholder="${euProc==='cp'?'EMEA/H/C/000123':euProc==='np'?'2131577':'DE/H/0126/001/DC'}"></label>`}
+       <p class="small muted">${esc(t('euCheck'))}</p></div></div>`:''}
+     ${follow?`<div class="card" id="nextSeqCard"><div class="hd"><span class="ic-tile accent">${icon('repeat',16)}</span><h3>${esc(t('nextSeq'))}</h3></div><div class="pad stack">
+       <p class="small muted">${esc(t('onlyChanges'))}${pl?' '+esc(t(S.respPlan?'v8FromResp':'fromPlan')):''}</p><div class="form">
+       <label class="f"><span>${esc(t('subType'))}</span><select id="sqType">${(eu?euV().submission_types||[]:['var-pac-n','var-pac-a','var-pac-b','var-pac-ii','renewal','5yr','pacstab','paccadc','withdrawal','none']).map(o=>`<option ${pl&&pl.submission_type===o?'selected':''}>${o}</option>`).join('')}</select></label>
+       <label class="f"><span>${esc(t('unit'))}</span><select id="sqUnit">${units.map(o=>`<option ${pl&&pl.unit===o?'selected':''}>${o}</option>`).join('')}</select></label>
+       <label class="f"><span>${esc(t('mode'))}</span><select id="sqMode">${(eu?euV().modes||[]:['single','grouping','parallel-single','parallel-grouping']).map(o=>`<option ${pl&&pl.mode===o?'selected':''}>${o}</option>`).join('')}</select></label>
+       <label class="f"><span>${esc(t(eu?'euTrack':'trackNo'))}</span><input type="text" dir="auto" id="sqTrack" value="${esc(lastEnv.tracking&&lastEnv.tracking!=='to be advised'?lastEnv.tracking:'')}" placeholder="${eu?'EMA/VR/0000123456':'P-VAR-PAC-B-0001'}" title="${esc(t('envFromLast'))}"></label>
+       <label class="f"><span>${esc(t('descr'))}</span><input type="text" dir="auto" id="sqDesc" value="${esc(pl?(pl.description||(pl.items||[]).map(i=>i.request).join('; ')).slice(0,200):'')}"></label></div></div></div>`:''}
+     ${unsent?`<label class="row gap-s small" style="margin:4px 0"><input type="checkbox" id="replLast" ${repl?'checked':''}> ${esc(t('frzRepl'))}</label>`:''}
+     <label class="alert" style="cursor:pointer" ${eg?'':'hidden'}><input type="checkbox" id="ack" style="margin-top:3px"> <p class="small">${esc(t('ack'))}</p></label>
+     <div class="row gap-s" style="flex-wrap:wrap"><button class="btn pri" id="go" ${g.ok?'':'disabled'} title="${esc(g.ok?'':t('v8GoBlocked'))}">${icon('shield')} ${esc(t('v8Go'))}</button><button class="btn" id="wkGo">${icon('scan')} ${esc(t('v8Wk'))}</button></div>
+     <p class="small muted">${esc(t('v8WkSub'))}</p><div id="valMsg"></div>
+     <p class="small muted" id="valNote">${esc(t(eg?'v8NoteEG':eu?'v8NoteEU':isGCC()?'v8NoteGCC':'v8NoteCTD'))}</p></div></section>`;
+  const door2 = eg ? `<section class="card pad stack gap-s" id="valReview"><div class="row gap-s" style="flex-wrap:wrap"><span class="ic-tile">${icon('stamp',16)}</span><div class="grow"><h2 style="margin:0">${esc(t('navReview'))}</h2><div class="small muted">${esc(t('v8Door2Sub'))}</div></div><a class="btn" href="#/d/${id}/review/desk" id="valRevGo">${icon('stamp',14)} ${esc(t('v8RevGo'))}</a></div>
+      ${rv&&rv.run?`<div class="row gap-s small" style="flex-wrap:wrap" id="valRevRun"><span>${esc(t('v8RevWhen').replace('{d}', buildWhen(rv.run)))}</span>${rDChip(rv.run.verdict)}<span>${esc(t('v8RevOpen').replace('{n}', (rv.findings||[]).filter(rOpen).length))}</span></div>`:`<p class="small muted" id="valRevNone">${esc(t('v8RevNone'))}</p>`}</section>` : '';
+  const html = `${stripHtml(J)}<div class="head"><div class="title"><h1>${esc(t('stn8'))}</h1><p class="sub">${esc(t('v8Sub'))}</p></div></div>
+    ${sign}${door1}${buildBlock(bs.submission,'sub')}${buildBlock(bs.working,'work')}${door2}
+    <details class="card" id="valDocs" ${nDocProblems||rows.length||(b.cross||[]).length?'open':''}><summary class="pad"><b>${esc(t('v8DocsT'))}</b> <span class="small muted">${esc(t('v8DocsSub'))}</span></summary><div class="pad stack">${docsHtml}</div></details>`;
   if(!show(tok, html)) return;
   bindNext($('#view')); const rb=$('#rulesBtn'); if(rb) rb.onclick=openRules;
+  const here=()=>S.dossier&&S.dossier.id===id&&/\/checks$/.test(location.hash);          // a build ends after its page was left and drawn again
+  $$('[data-jump]').forEach(a=>a.onclick=e=>{ e.preventDefault(); const el=document.getElementById(a.dataset.jump); if(!el) return; if(el.tagName==='DETAILS') el.open=true; el.scrollIntoView({block:'start', behavior:'smooth'}); });
+  if($('#indSave')) $('#indSave').onclick=async()=>{ const v=$('#indText').value.trim(); if(!v){ $('#indText').focus(); return; }
+    try{ await api(`/dossiers/${id}/indication`,{method:'PUT',json:{indication:v}}); S.dossier.product=Object.assign({}, S.dossier.product||{}, {indication:v}); toast(t('indSaved')); route(); }catch(e){ toast(e.message); } };
+  if($('#replLast')) $('#replLast').onchange=e=>{ S.valKeepLast = e.target.checked ? null : id; route(); };      // the numbers and the envelope shown follow it
+  (async()=>{ if(!$('#ctyRow')) return; let tb; try{ tb=await api('/countries'); }catch(e){ return; }      /* what this country takes: the countries table */
+    const cc=((S.dossier.envelope||{}).country||(au.country||'')).toUpperCase(), row=tb.countries.find(r=>r.code===cc||(r.countries||[]).includes(cc));
+    if(!row||!$('#ctyRow')) return;
+    $('#ctyRow').innerHTML=`<div class="small stack gap-s" style="margin-top:8px"><b>${esc(t('ctyT'))} · ${esc(row.authority)}</b><div class="row gap-s" style="flex-wrap:wrap">${Object.entries(row.formats).map(([k,v])=>`<span class="tag">${esc(k)}: ${esc(v)}</span>`).join('')}</div>${row.note?`<span class="muted">${esc(row.note)}</span>`:''}</div>`; })();
+  const gatherSub=()=>{ const sub=follow?{type:$('#sqType').value, unit:$('#sqUnit').value, mode:$('#sqMode').value, tracking:$('#sqTrack').value.trim()||null, description:$('#sqDesc').value.trim()||null}:{};
+    if(eu){ const cs=$$('#euCs input:checked').map(i=>i.value); if(cs.length) sub.countries=cs;
+      if(!follow&&$('#euTrack')&&$('#euTrack').value.trim()) sub.tracking=$('#euTrack').value.trim(); }
+    return sub; };
+  const busy=on=>{ $('#go').disabled = on || !g.ok; $('#wkGo').disabled = on; S.valBusy = on;
+    $('#valMsg').innerHTML = on?`<p class="small muted" id="valBusy">${icon('clock',14)} ${esc(t('v8Busy'))}</p>`:''; };
+  const failed=e=>{ S.valBusy=false; if(!here()) return; busy(false); $('#valMsg').innerHTML=`<div class="alert bad">${icon('alert')}<p>${esc(e.message)}</p></div>`; };
+  if(S.valBusy) busy(true);                                 // a build still running: its buttons wait, and say so
+  $('#go').onclick=async()=>{ if(S.valBusy) return; const outsSel=$$('[data-out]:checked').map(c=>c.dataset.out); if(!outsSel.length){ toast(t('v8NoFormat')); return; }
+    busy(true);
+    try{ const sub=gatherSub();
+      await api(`/dossiers/${id}/export`,{method:'POST',json:{outputs:outsSel, acknowledge_provisional:!!($('#ack')&&$('#ack').checked), submission:Object.keys(sub).length?sub:null, replace_last:!!($('#replLast')&&$('#replLast').checked)}});
+      S.respPlan=null; S.valBusy=false; toast(t('v8Built')); if(here()) route(); }
+    catch(e){ failed(e); } };
+  $('#wkGo').onclick=async()=>{ if(S.valBusy) return; busy(true);
+    try{ const sub=gatherSub(); await api(`/dossiers/${id}/export`,{method:'POST',json:{working:true, outputs:['ctd'], submission:Object.keys(sub).length?sub:null}});
+      S.valBusy=false; toast(t('v8Built')); if(here()) route(); }
+    catch(e){ failed(e); } };
 }
 
 /* ---------------- structured product data */
@@ -4105,77 +4350,88 @@ async function varsView(tok){
 }
 
 /* ---------------- export */
+/* ---------------- station 9 «التصدير» (stage 4): what station 8 validated, downloaded as it was validated — the same files. A build
+   the dossier no longer matches (a document added, replaced or withdrawn; the product's data; the envelope) is not downloaded: the page
+   says what changed and leads back to station 8. A build that did not pass is downloaded only when the person confirms it. */
+function dlGo(u){ const a=document.createElement('a'); a.href=u; a.setAttribute('download',''); a.hidden=true; document.body.appendChild(a); a.click(); setTimeout(()=>a.remove(), 1500); }
+const nFails = bd => Object.values(bd.validation||{}).reduce((a,v)=>a+((v.counts||{}).fail||0),0);
+function dlLabel(k, bd){ const o=k.replace('-working',''), sq=(bd.sequences||{})[o];
+  return k==='ctd'?t('x9_ctd'):k==='ctd-working'?t('wkCtdZ'):o==='ectd32'?`eCTD 3.2.2${sq?` — ${t('seqDone')} ${sq.sequence}`:''}`:o==='ectd40'?`eCTD 4.0${sq?` — ${t('seqDone')} ${sq.sequence}`:''}`:o==='nees'?'NeeS':o==='actd'?'ACTD':k; }
+function dlRow(bd, guard){ return `<div class="dl">${Object.entries(bd.downloads||{}).map(([k,u],i)=>guard
+    ? `<button class="btn ${i?'':'pri'}" data-gdl="${esc(u)}" data-dl="${esc(k)}">${icon('download')} ${esc(dlLabel(k,bd))} · <span class="code">${esc(k)}.zip</span></button>`
+    : `<a class="btn ${i?'':'pri'}" href="${esc(u)}" download data-dl="${esc(k)}">${icon('download')} ${esc(dlLabel(k,bd))} · <span class="code">${esc(k)}.zip</span></a>`).join('')}
+  ${bd.report?`<a class="btn soft" href="${esc(bd.report)}" target="_blank" rel="noopener" data-vreport>${icon('shield')} ${esc(t('vReport'))}</a>`:''}</div>`; }
+function valSummary(bd){ return Object.entries(bd.validation||{}).map(([k,v])=>`<div class="row gap-s small" style="flex-wrap:wrap" data-vsum="${esc(k)}"><b>${esc(k)}</b><span class="chip ${v.ok?'c-ok':'c-bad'}"><i></i>${esc(t(v.ok?'v8Passed':'v8Failed'))}</span><span class="muted">${esc(vCounts(v.counts))}</span></div>`).join(''); }
 async function exportView(tok){
-  const [g, hist, b, data] = await Promise.all([api(`/dossiers/${S.dossier.id}/gate`), api(`/dossiers/${S.dossier.id}/submissions`), api(`/dossiers/${S.dossier.id}/board`), api(`/dossiers/${S.dossier.id}/data`)]);
+  const id=S.dossier.id;
+  const [{b, J}, bs] = await Promise.all([loadJourney(), api(`/dossiers/${id}/builds`)]);
   if(!fresh(tok)) return;
-  S.board=b; const J=journey(b, data, hist), id=S.dossier.id;
-  const follow = hist.ectd32.length || hist.ectd40.length;
-  const pl = S.lastPlan;
-  const n32 = hist.ectd32.length ? String(+hist.ectd32[hist.ectd32.length-1].seq + 1).padStart(4,'0') : '0000';
-  const n40 = hist.ectd40.length ? +hist.ectd40[hist.ectd40.length-1].seq + 1 : 1;
-  const slotOf=Object.fromEntries((b.slots||[]).map(s=>[s.slot_id,s]));
-  const gateName=sid=>{ const s=slotOf[sid]; if(!s) return esc(sid); return `<span title="${esc(sid)}"><span class="code">${esc(s.ctd||'')}</span> ${esc(L(s.title||{}))}${s.item&&s.item.name?` <span class="muted">— ${esc(s.item.name)}</span>`:''}</span>`; };
-  const list=(k,arr)=>arr.length?`<div><b>${esc(t(k))} (${arr.length})</b><div class="small" style="max-height:236px;overflow:auto;margin-top:4px">${arr.map(sid=>`<div style="padding:1px 0">${gateName(sid)}</div>`).join('')}</div></div>`:'';
-  const eg=isEG(), au=S.dossier.authority||{};
-  const eu=isEU(), euProc=((S.dossier.profile||{}).extra||{}).eu_procedure||'dcp';
-  const lastEnv=hist.ectd32.length?hist.ectd32[hist.ectd32.length-1].envelope||{}:{};
-  const euPicked=lastEnv.countries||[euCode(au.country)];
-  const outs=[['ctd',eg?'CTD One Submission':'CTD',t(eg?'outCtdD':'auCtdD'),eg?'NP.CAPP.065 v5':L(au.matrix||{})],['ectd32',`eCTD 3.2.2${eu?' — EU M1 3.1.1':isGCC()?' — GCC M1 1.5':''} — ${t('seqDone')} ${n32}`,t(eu?'outE3EU':isGCC()?'outE3GC':'outE3D'),eu?'EU M1 3.1.1 · EU VC 8.2':isGCC()?'GCC M1 v1.5 (SFDA) · DTD 1.1':'EG provisional v0'],['ectd40',`eCTD 4.0 — ${t('seqDone')} ${n40}`,t('outE4D'),'EG provisional v0 · ICH IG 1.7'],['nees','NeeS',t('outNeesD'),'EU NeeS guidance · m1-toc … m5-toc · ctd-toc'],['actd','ACTD (ASEAN)',t('outActdD'),'ASEAN ACTD, Organization of the Dossier, Rev. 1']].filter(([k])=>auOuts().includes(k));
-  $('#view').innerHTML=`${stripHtml(J)}<div class="head"><div class="title"><h1>${esc(t('export'))}</h1><p class="sub">${esc(t(eg?'exportSub':eu?'euExportSub':'auExportSub'))}</p></div><a class="btn" href="#/d/${id}/guide">${icon('compass')} ${esc(t('guide'))}</a></div>
-   ${g.ok?`<div class="alert ok">${icon('check')}<p>✓ ${esc(t('gateOk'))}</p></div>`:`<div class="alert bad">${icon('alert')}<p>${esc(t('gateBad'))}</p></div><div class="card pad stack gap-s" id="gateCard">${list('missingReq',g.missing_required)}${list('nonconf',g.non_conforming)}${list('unsignedL',g.unsigned||[])}${list('extL',g.external_only||[])}${list('toConfirm',g.to_confirm||[])}${list('ectdBlockL',g.ectd_blocking||[])}${list('notesOpenL',g.notes_open||[])}${(g.cross_blocking||[]).length?`<div><b>${esc(t('crossT'))} (${g.cross_blocking.length})</b>${g.cross_blocking.map(f=>`<div class="small">● ${esc(f[S.lang])}</div>`).join('')}</div>`:''}
-     <div class="row"><a class="btn sm" href="#/d/${id}/board">${esc(t('navBoard'))}</a><a class="btn sm" href="#/d/${id}/checks">${esc(t('navChecks'))}</a></div></div>`}
-   ${(g.ectd_indication||[]).length?`<div class="alert warn" id="indCard">${icon('alert')}<div class="grow stack gap-s"><p class="small"><b>${esc(t('indT'))}</b> — ${esc(t('indSub').replace('{n}', g.ectd_indication.length))}</p><div class="small">${g.ectd_indication.map(sid=>`<div>${gateName(sid)}</div>`).join('')}</div><div class="row gap-s" style="flex-wrap:wrap"><input type="text" dir="auto" id="indText" placeholder="${esc(t('indPh'))}" style="flex:1;min-width:200px"><button class="btn sm pri" id="indSave">${esc(t('indSave'))}</button></div></div></div>`:''}
-   <div class="card glow pad stack gap-s" id="wkCard"><div class="row gap-s"><span class="ic-tile accent">${icon('package',16)}</span><div class="grow"><b>${esc(t('wkBtn'))}</b><div class="small muted">${esc(t('wkSub'))}</div></div>
-     <button class="btn ${g.ok?'':'pri'}" id="wkGo">${icon('download')} ${esc(t('wkBtn'))}</button></div><div id="wkRes"></div>
-     <div class="row gap-s small" style="flex-wrap:wrap" id="onePdf"><span class="muted">${esc(t('onePdf'))}:</span><a class="btn sm" href="/api/dossiers/${id}/single.pdf" download>${esc(t('onePdfAll'))}</a>${[1,2,3,4,5].filter(m=>b.slots.some(s=>s.module===m&&(s.documents||[]).some(d=>/\.pdf$/i.test(d.filename||'')&&!(d.meta&&d.meta.external)))).map(m=>`<a class="btn sm ghost" href="/api/dossiers/${id}/single.pdf?module=${m}" download>${esc(t('module'))} ${m}</a>`).join('')}${pcOn()?`<a class="btn sm ghost" href="/api/dossiers/${id}/single.pdf?watermark=${encodeURIComponent('Reading copy - not for submission')}" download>${esc(t('pcWm'))}</a>`:''}</div></div>
-   <div class="card"><div class="hd"><span class="ic-tile">${icon('package',16)}</span><h2>${esc(t('outputsT'))}</h2></div><div class="pad stack gap-s">
-     ${outs.map(([k,l,d,src])=>`<label class="opt"><input type="checkbox" data-out="${k}" checked><span><b>${esc(l)}</b><span>${esc(d)}</span><span class="code muted">${esc(src)}</span></span></label>`).join('')}
-     ${eg||eu||isGCC()?'':`<div class="alert info" id="ctdOnly">${icon('info')}<p class="small">${esc(t('auCtdOnly'))}</p></div>`}<div id="ctyRow"></div></div></div>
-     ${eu?`<div class="card" id="euEnv"><div class="hd"><span class="ic-tile">${icon('globe',16)}</span><h2>${esc(t('euEnvT'))}</h2></div><div class="pad stack gap-s">
-       ${['dcp','mrp'].includes(euProc)?`<div><b class="small">${esc(t('euCountries'))}</b><div class="row gap-s" style="flex-wrap:wrap;margin-top:6px" id="euCs">${euCountries().map(c=>`<label class="small" style="display:inline-flex;align-items:center;gap:4px;min-width:58px;cursor:pointer"><input type="checkbox" value="${c}" ${euPicked.includes(c)?'checked':''}> <span class="code">${c.toUpperCase()}</span></label>`).join('')}</div></div>`:''}
-       ${follow?'':`<label class="f"><span>${esc(t('euTrack'))}</span><input type="text" dir="ltr" id="euTrack" placeholder="${euProc==='cp'?'EMEA/H/C/000123':euProc==='np'?'2131577':'DE/H/0126/001/DC'}"></label>`}
-       <p class="small muted">${esc(t('euCheck'))}</p></div></div>`:''}
-     ${follow?`<div class="card"><div class="hd"><span class="ic-tile accent">${icon('repeat',16)}</span><h2>${esc(t('nextSeq'))}</h2></div><div class="pad stack">
-       <p class="small muted">${esc(t('onlyChanges'))}${pl?' '+esc(t('fromPlan')):''}</p><div class="form">
-       <label class="f"><span>${esc(t('subType'))}</span><select id="sqType">${(eu?euV().submission_types||[]:['var-pac-n','var-pac-a','var-pac-b','var-pac-ii','renewal','5yr','pacstab','paccadc','withdrawal','none']).map(o=>`<option ${pl&&pl.submission_type===o?'selected':''}>${o}</option>`).join('')}</select></label>
-       <label class="f"><span>${esc(t('unit'))}</span><select id="sqUnit">${(eu?euV().units||[]:['initial','response','validation-response','additional-info','corrigendum','reformat']).map(o=>`<option>${o}</option>`).join('')}</select></label>
-       <label class="f"><span>${esc(t('mode'))}</span><select id="sqMode">${(eu?euV().modes||[]:['single','grouping','parallel-single','parallel-grouping']).map(o=>`<option ${pl&&pl.mode===o?'selected':''}>${o}</option>`).join('')}</select></label>
-       <label class="f"><span>${esc(t(eu?'euTrack':'trackNo'))}</span><input type="text" dir="auto" id="sqTrack" value="${esc(lastEnv.tracking&&lastEnv.tracking!=='to be advised'?lastEnv.tracking:'')}" placeholder="${eu?'EMA/VR/0000123456':'P-VAR-PAC-B-0001'}" title="${esc(t('envFromLast'))}"></label>
-       <label class="f"><span>${esc(t('descr'))}</span><input type="text" dir="auto" id="sqDesc" value="${esc(pl?pl.items.map(i=>i.request).join('; ').slice(0,200):'')}"></label></div></div></div>
-     <div class="card"><div class="hd"><h2>${esc(t('history'))}</h2><button class="btn sm right" id="viewsBtn">${icon('tree',14)} ${esc(t('viewsT'))}</button></div><div class="tablewrap"><table><thead><tr><th>eCTD</th><th>${esc(t('seqDone'))}</th><th>${esc(t('subType'))}</th><th>${esc(t('unit'))}</th><th>${esc(t('descr'))}</th><th>${esc(t('frzState'))}</th></tr></thead><tbody>
-       ${[['3.2.2',hist.ectd32,'ectd32'],['4.0',hist.ectd40,'ectd40']].flatMap(([k,a,o])=>a.map((h,i)=>`<tr><td>${k}</td><td class="code">${esc(h.seq)}</td><td class="code">${esc(h.envelope.type)}</td><td>${esc(h.envelope.unit)}</td><td>${bdi(h.envelope.description||'')}</td>
+  const s=bs.submission, w=bs.working, eg=isEG(), eu=isEU();
+  const toVal=k=>`<a class="btn pri" href="#/d/${id}/checks" id="expToVal">${icon('shield',14)} ${esc(t(k))}</a>`;
+  const subHtml = !s ? `<div class="card empty" id="expNone">${icon('shield',36)}<div>${esc(t('x9None'))}</div>${toVal('x9ToVal')}</div>`
+    : s.legacy ? `<section class="card pad stack gap-s" id="expSub" data-state="legacy"><div class="alert warn">${icon('alert')}<p class="small">${esc(t('x9Legacy'))}</p></div><div>${toVal('x9ToVal')}</div></section>`
+    : !s.current ? `<section class="card pad stack gap-s" id="expSub" data-state="stale"><div class="alert bad">${icon('alert')}<div class="grow"><p class="small"><b>${esc(t('x9Stale'))}</b></p>${changedList(s.changed)}</div></div><div>${toVal('v8Again')}</div></section>`
+    : `<section class="card pad stack gap-s" id="expSub" data-state="${s.ok?'ok':'fail'}"><div class="row gap-s" style="flex-wrap:wrap"><h2 style="margin:0">${esc(t('v8SubT'))}</h2>${Object.entries(s.sequences||{}).map(([k,v])=>`<span class="tag">${k==='ectd32'?'eCTD 3.2.2':'eCTD 4.0'} · ${esc(t('seqDone'))} <span class="code">${esc(v.sequence)}</span></span>`).join(' ')}</div>
+        <div class="alert ${s.ok?'ok':'warn'}" id="expState">${icon(s.ok?'check':'alert')}<p class="small">${esc((s.ok?t('x9Ok'):t('x9Fail').replace('{n}', nFails(s))).replace('{d}', buildWhen(s)))}</p></div>
+        ${valSummary(s)}${dlRow(s, !s.ok)}${s.ok?'':`<div>${toVal('x9ToFix')}</div>`}
+        <p class="small muted">${esc(t(eg?'v8NoteEG':eu?'v8NoteEU':isGCC()?'v8NoteGCC':'v8NoteCTD'))}</p>
+        ${s.report?`<div class="stack gap-s" id="crBox"><label class="small row gap-s" style="flex-wrap:wrap"><b>${esc(t('crT'))}</b><span class="muted">${esc(t('crSub'))}</span></label><input type="file" id="crFile" accept=".pdf,.xlsx,.csv,.html,.htm,.xml,.txt"><div id="crOut"></div></div>`:''}
+        <div><a class="btn" href="#/d/${id}/after" id="expAfter">${icon('mail',14)} ${esc(t('x9After'))}</a></div></section>`;
+  const workHtml = w && !w.legacy ? `<section class="card pad stack gap-s" id="expWork" data-state="${w.current?'current':'stale'}"><div class="row gap-s" style="flex-wrap:wrap"><h3 style="margin:0">${esc(t('v8WkT'))}</h3><span class="small muted">${esc(t('v8When').replace('{d}', buildWhen(w)))}</span></div>
+      ${w.current?'':`<p class="small muted">${esc(t('x9WkStale'))}</p>`}${wkSaid(w)}${valSummary(w)}${dlRow(w, false)}</section>` : '';
+  const pdfMods=[1,2,3,4,5].filter(m=>b.slots.some(s=>s.module===m&&(s.documents||[]).some(d=>/\.pdf$/i.test(d.filename||'')&&!(d.meta&&d.meta.external))));
+  const one = `<section class="card pad stack gap-s" id="onePdfCard"><div class="row gap-s small" style="flex-wrap:wrap" id="onePdf"><span class="muted">${esc(t('onePdf'))}:</span><a class="btn sm" href="/api/dossiers/${id}/single.pdf" download>${esc(t('onePdfAll'))}</a>${pdfMods.map(m=>`<a class="btn sm ghost" href="/api/dossiers/${id}/single.pdf?module=${m}" download>${esc(t('module'))} ${m}</a>`).join('')}${pcOn()?`<a class="btn sm ghost" href="/api/dossiers/${id}/single.pdf?watermark=${encodeURIComponent('Reading copy - not for submission')}" download>${esc(t('pcWm'))}</a>`:''}</div></section>`;
+  const html = `${stripHtml(J)}<div class="head"><div class="title"><h1>${esc(t('export'))}</h1><p class="sub">${esc(t('x9Sub'))}</p></div><a class="btn" href="#/d/${id}/guide">${icon('compass')} ${esc(t('guide'))}</a></div>
+    ${subHtml}${workHtml}${one}`;
+  if(!show(tok, html)) return;
+  $$('[data-gdl]').forEach(x=>x.onclick=async()=>{          /* it did not pass: downloaded only when the person says so */
+    if(!await DS.confirmBox(t('x9DlQ'), `<p>${esc(t('x9DlAnyway').replace('{n}', nFails(s)))}</p>`, t('x9DlYes'), {cancel:t('cancel')})) return;
+    dlGo(x.dataset.gdl); });
+  const cr=$('#crFile'); if(cr) cr.onchange=async()=>{ const f=cr.files[0]; if(!f) return; const fd=new FormData(); fd.append('file', f); $('#crOut').innerHTML=`<p class="small muted">…</p>`;
+    try{ const d=await api(`/dossiers/${id}/exports/${s.id}/compare-report`,{method:'POST',body:fd});
+      $('#crOut').innerHTML=`<div class="row gap-s small"><span class="chip c-ok"><i></i>${esc(t('crAgree'))}: ${d.counts.agree}</span><span class="chip ${d.counts.differ?'c-bad':''}"><i></i>${esc(t('crDiffer'))}: ${d.counts.differ}</span></div>
+        <div class="tablewrap"><table id="crTable"><thead><tr><th>${esc(t('crRule'))}</th><th>${esc(t('crTheirs'))}</th><th>${esc(t('crOurs'))}</th><th>${esc(t('crWhy'))}</th></tr></thead><tbody>${d.rows.filter(x=>!x.agree).map(x=>`<tr><td class="code">${esc(x.rule)}</td><td>${esc(x.theirs||'—')}</td><td>${esc(x.ours||'—')}</td><td class="small">${esc(S.lang==='ar'?x.why_ar||x.why:x.why)}</td></tr>`).join('')}</tbody></table></div>`; }
+    catch(e){ $('#crOut').innerHTML=`<div class="alert bad">${icon('alert')}<p>${esc(e.message)}</p></div>`; } };
+}
+
+/* ---------------- «ما بعد التقديم» (stage 4): the sequences built and their submission, the authority's letters of this dossier with
+   their questions and the reply, a response sequence, a change after registration. */
+const dueState = due => { if(!due) return ''; const days=Math.round((new Date(due+'T00:00:00') - new Date(new Date().toISOString().slice(0,10)+'T00:00:00'))/86400000);
+  return `<span class="chip ${days<0?'c-bad':days<=14?'c-warn':'c-ok'}" data-days="${days}"><i></i>${esc(t('afDue').replace('{d}', dateL(due)))} · ${esc(t(days<0?'afLate':'afLeft').replace('{n}', Math.abs(days)))}</span>`; };
+async function afterView(tok){
+  const id=S.dossier.id;
+  const [{hist, J}, letters] = await Promise.all([loadJourney(), api(`/suite/letters?dossier=${encodeURIComponent(id)}`).catch(()=>[])]);
+  if(!fresh(tok)) return;
+  const seqs=[['3.2.2',hist.ectd32,'ectd32'],['4.0',hist.ectd40,'ectd40']], any=hist.ectd32.length||hist.ectd40.length;
+  const seqHtml = `<section class="card" id="aftSeq"><div class="hd"><span class="ic-tile">${icon('package',16)}</span><h2>${esc(t('afSeqT'))}</h2>${any?`<button class="btn sm right" id="viewsBtn">${icon('tree',14)} ${esc(t('viewsT'))}</button>`:''}</div>
+    ${any?`<div class="tablewrap"><table><thead><tr><th>eCTD</th><th>${esc(t('seqDone'))}</th><th>${esc(t('subType'))}</th><th>${esc(t('unit'))}</th><th>${esc(t('descr'))}</th><th>${esc(t('frzState'))}</th></tr></thead><tbody>
+       ${seqs.flatMap(([k,a,o])=>a.map((h,i)=>`<tr data-seq="${o}|${esc(h.seq)}"><td>${k}</td><td class="code">${esc(h.seq)}</td><td class="code">${esc(h.envelope.type)}</td><td>${esc(h.envelope.unit)}</td><td>${bdi(h.envelope.description||'')}</td>
          <td class="small">${h.frozen?`<span class="chip c-ok"><i></i>${esc(t('frzDone'))} ${esc(dateL(h.receipt.submitted))}</span>${h.receipt.tracking?` <span class="code">${esc(h.receipt.tracking)}</span>`:''}${h.receipt.receipt_sha?` <a href="/api/dossiers/${id}/submissions/${o}/${esc(h.seq)}/receipt" target="_blank" rel="noopener">${esc(t('frzReceipt'))}</a>`:''}`
-           :`<span class="chip c-na"><i></i>${esc(t('frzNot'))}</span> <button class="btn sm" data-frz="${o}|${esc(h.seq)}">${esc(t('frzMark'))}</button>${i===a.length-1?` <button class="btn sm ghost" data-frzdel="${o}|${esc(h.seq)}">${icon('trash',12)} ${esc(t('frzDrop'))}</button>`:''}`}</td></tr>`)).join('')}</tbody></table></div></div>`:''}
-     ${[hist.ectd32, hist.ectd40].some(a=>a.length&&!a[a.length-1].frozen)?`<label class="row gap-s small" style="margin:8px 0"><input type="checkbox" id="replLast" checked> ${esc(t('frzRepl'))}</label>`:''}
-     <div class="row gap-s small" style="margin:6px 0"><button class="btn sm ghost" id="importSeq">${icon('upload',14)} ${esc(t('impT'))}</button><span class="muted">${esc(t('impSub'))}</span></div>
-     <div class="card pad stack">
-     <label class="alert" style="cursor:pointer" ${eg?'':'hidden'}><input type="checkbox" id="ack" style="margin-top:3px"> <p class="small">${esc(t('ack'))}</p></label>
-     <div><button class="btn pri lg" id="go" ${g.ok?'':'disabled'}>${icon('package')} ${esc(t('doExport'))}</button></div></div><div id="res"></div>`;
-  if($('#indSave')) $('#indSave').onclick=async()=>{ const v=$('#indText').value.trim(); if(!v){ $('#indText').focus(); return; }
-    try{ await api(`/dossiers/${id}/indication`,{method:'PUT',json:{indication:v}}); S.dossier.product=Object.assign({}, S.dossier.product||{}, {indication:v}); toast(t('indSaved')); route(); }catch(e){ toast(e.message); } };
-  $('#wkGo').onclick=async()=>{ const b=$('#wkGo'); b.disabled=true; b.textContent=t('exporting');
-    const sub = follow? {type:$('#sqType').value, unit:$('#sqUnit').value, mode:$('#sqMode').value, tracking:$('#sqTrack').value.trim()||null, description:$('#sqDesc').value.trim()||null} : {};
-    if(eu){ const cs=$$('#euCs input:checked').map(i=>i.value); if(cs.length) sub.countries=cs;      /* the working eCTD takes what the real one would */
-      if(!follow&&$('#euTrack')&&$('#euTrack').value.trim()) sub.tracking=$('#euTrack').value.trim(); }
-    try{ const r=await api(`/dossiers/${S.dossier.id}/export`,{method:'POST',json:{working:true,outputs:['ctd'],submission:Object.keys(sub).length?sub:null}});
-      const lab={'ctd-working':t('wkCtdZ'),'ectd32-working':'eCTD 3.2.2 — XML','ectd40-working':'eCTD 4.0 — XML'}, ec=r.ectd;
-      const sq=Object.entries(r.sequences||{}).map(([k,v])=>`<span class="tag">${k==='ectd32'?'eCTD 3.2.2':'eCTD 4.0'} · ${esc(t('seqDone'))} <span class="code">${esc(v.sequence)}</span></span>`).join(' ');
-      const val=Object.entries(r.validation||{}).map(([k,v])=>`<div class="alert ${v.ok?'ok':'bad'}"><p><b>${esc(k)}</b> — ${bdi(v.label)}<br><span class="small">${esc(t('vPass'))} ${v.counts.pass} · ${esc(t('vFail'))} ${v.counts.fail} · ${esc(t('vWarn'))} ${v.counts.warning} · ${esc(t('vNotRun'))} ${v.counts.not_run}</span></p></div>`).join('');
-      $('#wkRes').innerHTML=`<div class="alert ok">${icon('check')}<p><b>${esc(t('wkDone'))}</b> — ${r.documents} ${esc(t('wkDocs'))} · ${r.missing_required} ${esc(t('wkMiss'))}<br><span class="small">${esc(S.lang==='ar'&&r.label_ar?r.label_ar:r.label)}</span></p></div>
-        <div class="dl">${Object.entries(r.downloads).map(([k,u],i)=>`<a class="btn ${i?'':'pri'}" href="${esc(u)}" download ${i?`data-wk="${esc(k)}"`:'id="wkDl"'}>${icon('download')} ${esc(lab[k]||k)} · <span class="code">${esc(k)}.zip</span></a>`).join('')}
-          ${r.report?`<a class="btn soft" href="${esc(r.report)}" target="_blank" rel="noopener" id="wkRep">${icon('shield')} ${esc(t('vReport'))}</a>`:''}</div>
-        ${sq?`<div class="row gap-s small" style="flex-wrap:wrap">${sq}</div>`:''}${val}
-        ${ec?'':`<p class="small muted">${esc(t('wkNoEctd'))}</p>`}
-        ${ec&&(ec.left_out||[]).length?`<div class="small" id="wkLeft"><b>${esc(t('wkLeft'))}:</b><ul style="margin:4px 0 0;padding-inline-start:18px">${ec.left_out.map(x=>`<li>${bdi(x.name)} — ${esc(S.lang==='ar'?x.why.ar:x.why.en)}</li>`).join('')}</ul></div>`:''}
-        ${ec?Object.entries(ec.skipped||{}).map(([k,v])=>`<div class="alert bad"><p class="small"><b>${esc(t('wkSkip'))} — ${esc(k==='ectd32'?'eCTD 3.2.2':k==='ectd40'?'eCTD 4.0':'eCTD')}</b>: ${esc(S.lang==='ar'?v.ar:v.en)}</p></div>`).join(''):''}`;
-    }catch(e){ $('#wkRes').innerHTML=`<div class="alert bad">${icon('alert')}<p>${esc(e.message)}</p></div>`; }
-    finally{ b.disabled=false; b.innerHTML=`${icon('download')} ${esc(t('wkBtn'))}`; } };
+           :`<span class="chip c-na"><i></i>${esc(t('frzNot'))}</span> <button class="btn sm" data-frz="${o}|${esc(h.seq)}">${esc(t('frzMark'))}</button>${i===a.length-1?` <button class="btn sm ghost" data-frzdel="${o}|${esc(h.seq)}">${icon('trash',12)} ${esc(t('frzDrop'))}</button>`:''}`}</td></tr>`)).join('')}</tbody></table></div>`
+      :`<div class="pad"><p class="small muted" id="aftNoSeq">${esc(t(isEG()||isEU()||isGCC()?'afSeqNone':'afSeqCtd'))}</p></div>`}
+    <div class="pad row gap-s small" style="flex-wrap:wrap"><button class="btn sm ghost" id="importSeq">${icon('upload',14)} ${esc(t('impT'))}</button><span class="muted">${esc(t('impSub'))}</span></div></section>`;
+  const letHtml = `<section class="card" id="aftLetters"><div class="hd"><span class="ic-tile accent">${icon('mail',16)}</span><div class="grow"><h2>${esc(t('afLetT'))}</h2><div class="small muted">${esc(t('afLetSub'))}</div></div></div><div class="pad stack gap-s">
+    <details id="aftAdd"><summary class="btn sm">${icon('plus',14)} ${esc(t('afLetAdd'))}</summary><div class="form" style="margin-top:8px">
+      <label class="f"><span>${esc(t('afLetFile'))}</span><input type="file" id="aftLetFile" accept=".pdf,.docx,.doc,.txt"></label>
+      <label class="f"><span>${esc(t('afLetRec'))}</span><input type="date" id="aftLetRec" value="${new Date().toISOString().slice(0,10)}"></label>
+      <label class="f" style="grid-column:1/-1"><span>${esc(t('afLetSubj'))}</span><input type="text" dir="auto" id="aftLetSubj"></label></div>
+      <div class="row gap-s"><button class="btn pri" id="aftLetGo">${icon('plus',14)} ${esc(t('afLetGo'))}</button></div></details>
+    ${letters.length?letters.map(l=>{ const open=l.questions.filter(q=>q.status!=='answered').length, all=l.questions.length&&l.questions.every(q=>(q.answer||'').trim());
+      return `<div class="card pad stack gap-s" data-let="${esc(l.id)}"><div class="row gap-s" style="flex-wrap:wrap"><b>${bdi(l.subject)}</b>${l.ref_no?`<span class="code small">${esc(l.ref_no)}</span>`:''}<span class="small muted">${esc(dateL(l.received||l.dated||''))}</span>${l.status!=='open'?`<span class="chip c-ok"><i></i>${esc(t('afAnswered'))}</span>`:dueState(l.due)}<span class="grow"></span>
+          ${l.sha256?`<a class="btn sm ghost" href="/api/suite/letters/${esc(l.id)}/file" target="_blank" rel="noopener">${icon('eye',12)} ${esc(t('afLetOpen'))}</a>`:''}</div>
+        ${l.questions.length?`<div class="small muted">${esc(t('afOpenQ').replace('{n}', open))}</div>${l.questions.map(q=>`<div class="stack gap-s" data-q="${esc(q.id)}" data-qst="${esc(q.status)}"><div class="small"><b>${q.n}.</b> ${bdi(q.text)}</div>
+            <textarea rows="2" dir="auto" data-qans="${esc(q.id)}" placeholder="${esc(t('afAns'))}">${esc(q.answer||'')}</textarea><div class="row gap-s"><button class="btn sm" data-qsave="${esc(q.id)}">${esc(t('afAnsSave'))}</button>${q.status==='answered'?`<span class="chip c-ok small"><i></i>${esc(t('afAnswered'))}</span>`:''}</div></div>`).join('')}`
+          :`<p class="small muted" data-noq>${esc(t('afNoQ'))}</p>`}
+        <div class="row gap-s" style="flex-wrap:wrap"><input type="text" dir="auto" data-qnew="${esc(l.id)}" placeholder="${esc(t('afQAddPh'))}" style="flex:1;min-width:200px"><button class="btn sm ghost" data-qadd="${esc(l.id)}">${icon('plus',12)} ${esc(t('afQAdd'))}</button></div>
+        <div class="row gap-s small" style="flex-wrap:wrap">${all?`<a class="btn sm pri" href="/api/suite/letters/${esc(l.id)}/reply.docx?lang=${S.lang}" download data-reply="${esc(l.id)}">${icon('download',14)} ${esc(t('afReply'))}</a>`:`<span class="muted">${esc(t('afReplyWait'))}</span>`}
+          <button class="btn sm ghost" data-resp="${esc(l.id)}" ${any?'':'disabled'}>${icon('repeat',12)} ${esc(t('afRespGo'))}</button></div></div>`; }).join('')
+      :`<p class="small muted" id="aftNoLet">${esc(t('afLetNone'))}</p>`}</div></section>`;
+  const respHtml = `<section class="card pad stack gap-s" id="aftResp"><div class="row gap-s" style="flex-wrap:wrap"><span class="ic-tile">${icon('repeat',16)}</span><div class="grow"><h2 style="margin:0">${esc(t('afRespT'))}</h2><div class="small muted">${esc(t('afRespSub'))}</div></div><button class="btn" id="aftRespGo" ${any?'':'disabled'}>${icon('repeat',14)} ${esc(t('afRespGo'))}</button></div></section>
+    <section class="card pad stack gap-s" id="aftVar"><div class="row gap-s" style="flex-wrap:wrap"><span class="ic-tile">${icon('branch',16)}</span><div class="grow"><h2 style="margin:0">${esc(t('afVarT'))}</h2><div class="small muted">${esc(t('afVarSub'))}</div></div><a class="btn" href="#/variations" id="aftVarGo">${icon('branch',14)} ${esc(t('afVarGo'))}</a></div></section>`;
+  const html = `${stripHtml(J)}<div class="head"><div class="title"><h1>${esc(t('navAfter'))}</h1><p class="sub">${esc(t('afSub'))}</p></div></div>${seqHtml}${letHtml}${respHtml}`;
+  if(!show(tok, html)) return;
   const vb=$('#viewsBtn'); if(vb) vb.onclick=()=>openViews(hist.ectd32.length?'ectd32':'ectd40');
-  (async()=>{ if(!$('#ctyRow')) return; let tb; try{ tb=await api('/countries'); }catch(e){ return; }      /* what this country takes: the countries table */
-    const cc=((S.dossier.envelope||{}).country||(au.country||'')).toUpperCase(), row=tb.countries.find(r=>r.code===cc||(r.countries||[]).includes(cc));
-    if(!row||!$('#ctyRow')) return;
-    $('#ctyRow').innerHTML=`<div class="small stack gap-s" style="margin-top:8px"><b>${esc(t('ctyT'))} · ${esc(row.authority)}</b><div class="row gap-s" style="flex-wrap:wrap">${Object.entries(row.formats).map(([k,v])=>`<span class="tag">${esc(k)}: ${esc(v)}</span>`).join('')}</div>${row.note?`<span class="muted">${esc(row.note)}</span>`:''}<span class="muted">${esc(t('ctySrc'))}: <span class="code">${esc(row.source)}</span> · ${esc(t('ev_'+row.evidence)||row.evidence)}</span></div>`; })();
-  const ib=$('#importSeq'); if(ib) ib.onclick=()=>{ const p=$('#picker'); p.multiple=false; p.value=''; p.onchange=async()=>{ const f=p.files[0]; if(!f) return;
+  $('#importSeq').onclick=()=>{ const p=$('#picker'); p.multiple=false; p.value=''; p.onchange=async()=>{ const f=p.files[0]; if(!f) return;
       const fd=new FormData(); fd.append('file', f); toast(t('impBusy'));
       try{ const r=await api(`/dossiers/${id}/import-ectd`,{method:'POST',body:fd}); toast(t('impDone').replace('{s}', r.sequences.map(x=>x.sequence).join('، ')).replace('{n}', r.placed).replace('{u}', r.unplaced.length)); route(); }
       catch(e){ toast(e.message); } }; p.click(); };
@@ -4193,25 +4449,22 @@ async function exportView(tok){
   $$('[data-frzdel]').forEach(b=>b.onclick=async()=>{ const [o,seq]=b.dataset.frzdel.split('|');
     if(!await DS.confirmBox(t('frzDrop')+' · '+seq, `<p>${esc(t('frzDropQ'))}</p>`, t('frzDrop'), {danger:true, cancel:t('cancel')})) return;
     try{ await api(`/dossiers/${id}/submissions/${o}/${seq}`,{method:'DELETE'}); toast(t('frzDropped')); route(); }catch(e){ toast(e.message); } });
-  $('#go').onclick=async()=>{ const outsSel=$$('[data-out]:checked').map(c=>c.dataset.out);
-    $('#go').disabled=true; $('#go').textContent=t('exporting');
-    const sub = follow? {type:$('#sqType').value, unit:$('#sqUnit').value, mode:$('#sqMode').value, tracking:$('#sqTrack').value.trim()||null, description:$('#sqDesc').value.trim()||null} : {};
-    if(eu){ const cs=$$('#euCs input:checked').map(i=>i.value); if(cs.length) sub.countries=cs;
-      if(!follow&&$('#euTrack')&&$('#euTrack').value.trim()) sub.tracking=$('#euTrack').value.trim(); }
-    try{ const r=await api(`/dossiers/${S.dossier.id}/export`,{method:'POST',json:{outputs:outsSel,acknowledge_provisional:$('#ack').checked,
-        submission: Object.keys(sub).length? sub : null, replace_last: !!($('#replLast')&&$('#replLast').checked)}});
-      const val = Object.entries(r.validation||{}).map(([k,v])=>`<div class="alert ${v.ok?'ok':'bad'}"><p><b>${esc(k)}</b> — ${esc(v.label)}<br><span class="small">${esc(t('vPass'))} ${v.counts.pass} · ${esc(t('vFail'))} ${v.counts.fail} · ${esc(t('vWarn'))} ${v.counts.warning} · ${esc(t('vNotRun'))} ${v.counts.not_run}</span></p></div>`).join('');
-      const sq = Object.entries(r.sequences||{}).map(([k,v])=>`<div class="small"><b>${k==='ectd32'?'eCTD 3.2.2':'eCTD 4.0'}</b> · ${esc(t('seqDone'))} <span class="code">${esc(v.sequence)}</span> · ${esc(t('opsL'))}: ${v.operations.new} / ${v.operations.replace} / ${v.operations.delete}</div>${v.links?`<div class="small" data-links="${k}">${esc(t('lnkDone').replace('{n}', v.links.rewritten))}${v.links.unresolved.length?`<div class="alert" style="margin-top:4px">${icon('alert')}<div><b>${esc(t('lnkBad'))}</b>${v.links.unresolved.map(u=>`<div class="code small" dir="ltr">${esc(u.file.split('/').pop())} → ${esc(u.link)}</div>`).join('')}</div></div>`:''}</div>`:''}`).join('');
-      $('#res').innerHTML=`<div class="card glow pad stack"><h2>${esc(t('downloads'))}</h2>${sq}<div class="dl">${Object.entries(r.downloads).map(([k,u])=>`<a class="btn" href="${esc(u)}" download>${icon('download')} ${esc(k)}.zip</a>`).join('')}
-        ${r.report?`<a class="btn soft" href="${esc(r.report)}" target="_blank" rel="noopener">${icon('shield')} ${esc(t('vReport'))}</a>`:''}</div>${val}<p class="small muted">${esc(r.label)}</p>
-        ${r.report?`<div class="stack gap-s" id="crBox"><label class="small row gap-s" style="flex-wrap:wrap"><b>${esc(t('crT'))}</b><span class="muted">${esc(t('crSub'))}</span></label><input type="file" id="crFile" accept=".pdf,.xlsx,.csv,.html,.htm,.xml,.txt"><div id="crOut"></div></div>`:''}</div>`;
-      const cr=$('#crFile'); if(cr) cr.onchange=async()=>{ const f=cr.files[0]; if(!f) return; const fd=new FormData(); fd.append('file', f); $('#crOut').innerHTML=`<p class="small muted">…</p>`;
-        try{ const d=await api(`/dossiers/${id}/exports/${r.id}/compare-report`,{method:'POST',body:fd});
-          $('#crOut').innerHTML=`<div class="row gap-s small"><span class="chip c-ok"><i></i>${esc(t('crAgree'))}: ${d.counts.agree}</span><span class="chip ${d.counts.differ?'c-bad':''}"><i></i>${esc(t('crDiffer'))}: ${d.counts.differ}</span></div>
-            <div class="tablewrap"><table id="crTable"><thead><tr><th>${esc(t('crRule'))}</th><th>${esc(t('crTheirs'))}</th><th>${esc(t('crOurs'))}</th><th>${esc(t('crWhy'))}</th></tr></thead><tbody>${d.rows.filter(x=>!x.agree).map(x=>`<tr><td class="code">${esc(x.rule)}</td><td>${esc(x.theirs||'—')}</td><td>${esc(x.ours||'—')}</td><td class="small">${esc(x.why)}${x.their_line?`<div class="muted" dir="ltr">${esc(x.their_line)}</div>`:''}</td></tr>`).join('')}</tbody></table></div>`; }
-        catch(e){ $('#crOut').innerHTML=`<div class="alert bad">${icon('alert')}<p>${esc(e.message)}</p></div>`; } };
-    }catch(e){ $('#res').innerHTML=`<div class="alert bad">${icon('alert')}<p>${esc(e.message)}</p></div>`; }
-    finally{ $('#go').disabled=false; $('#go').innerHTML=`${icon('package')} ${esc(t('doExport'))}`; } };
+  $('#aftLetGo').onclick=async()=>{ const f=$('#aftLetFile').files[0], subj=$('#aftLetSubj').value.trim();
+    if(!f && !subj){ toast(t('afLetNeed')); $('#aftLetFile').focus(); return; }
+    const fd=new FormData(); fd.append('meta', JSON.stringify({dossier_id:id, direction:'in', received:$('#aftLetRec').value||null, subject:subj||null, authority:isEG()?'EDA':(((S.dossier.authority||{}).name||{}).en||null)}));
+    if(f) fd.append('file', f);
+    $('#aftLetGo').disabled=true;
+    try{ const r=await api('/suite/letters',{method:'POST',body:fd}); toast(t('afLetAdded').replace('{q}', (r.read||{}).questions||0)); route(); }
+    catch(e){ toast(e.message); $('#aftLetGo').disabled=false; } };
+  $$('[data-qsave]').forEach(b=>b.onclick=async()=>{ const q=b.dataset.qsave, v=$(`[data-qans="${CSS.escape(q)}"]`).value.trim();
+    try{ await api(`/suite/questions/${encodeURIComponent(q)}`,{method:'PUT',json:v?{answer:v, status:'answered'}:{answer:'', status:'open'}}); toast(t('afAnsSaved')); route(); }catch(e){ toast(e.message); } });
+  $$('[data-qadd]').forEach(b=>b.onclick=async()=>{ const l=b.dataset.qadd, inp=$(`[data-qnew="${CSS.escape(l)}"]`), v=inp.value.trim(); if(!v){ inp.focus(); return; }
+    try{ await api(`/suite/letters/${encodeURIComponent(l)}/questions`,{method:'POST',json:{text:v}}); route(); }catch(e){ toast(e.message); } });
+  const respond=(subject)=>{ const last=[...hist.ectd32].pop()||[...hist.ectd40].pop();
+    S.respPlan={unit:'response', submission_type:(last&&last.envelope.type)||null, description:`Response to: ${subject||(last?`sequence ${last.seq}`:'')}`.slice(0,200)};      // the envelope's own words
+    toast(t('afRespSet')); location.hash=`#/d/${id}/checks`; };
+  $('#aftRespGo').onclick=()=>respond('');
+  $$('[data-resp]').forEach(b=>b.onclick=()=>{ const l=letters.find(x=>x.id===b.dataset.resp); respond(l?l.subject:''); });
 }
 
 /* ---------------- audit */

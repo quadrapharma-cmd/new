@@ -48,6 +48,27 @@ def gmp_with_a_newer_copy(server, tmp_path):
     return did, old['id'], new, later
 
 
+
+def test_approving_right_after_a_choice_places_by_that_choice(server, tmp_path):
+    """«إضافته بجانبه» chosen, then «اعتماد الشجرة» pressed before the tree is drawn again for that choice (found 17/11/2026 by the
+    whole suite on a busy machine): the approval waits for the drawing in flight and places the file beside the document, as chosen
+    — it took the choice before (the program's proposal: a newer copy) and replaced the document."""
+    did, old, new, later = gmp_with_a_newer_copy(server, tmp_path)
+    errors, bad = [], []
+    with pw.sync_playwright() as p:
+        b = p.chromium.launch()
+        page = open_tree(b, server, did, errors, bad)
+        page.locator(f'[data-tbeside="{new}"]').wait_for(timeout=60000)
+        assert page.is_checked(f'[data-trp="{new}"][value="{old}"]')                  # the proposal: a newer copy
+        page.evaluate("""n => { const r = document.querySelector(`[data-trp="${n}"][value=""]`); r.checked = true;
+            r.dispatchEvent(new Event('change', {bubbles: true})); document.getElementById('treeGo').click(); }""", new)   # chosen and approved at once
+        page.wait_for_function("() => location.hash.endsWith('/prepare')", timeout=60000)
+        docs = next(s for s in board(server, did)['slots'] if s['slot_id'] == 'M1-37')['documents']
+        assert sorted(d['filename'] for d in docs) == ['made-up-gmp-new.pdf', 'made-up-gmp-old.pdf'], docs     # beside it, as chosen
+        b.close()
+    assert not errors, errors
+    assert not bad, bad
+
 def test_a_newer_copy_is_offered_as_the_new_version_of_its_document(server, tmp_path):
     did, old, new, later = gmp_with_a_newer_copy(server, tmp_path)
     errors, bad = [], []

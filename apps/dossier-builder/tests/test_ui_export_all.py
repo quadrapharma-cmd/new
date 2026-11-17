@@ -83,21 +83,24 @@ def test_the_export_button_gives_every_format_of_the_authority(server, tmp_path,
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
         page.add_init_script("localStorage.setItem('db.lang','ar')")
-        page.goto(f'{server}/#/d/{did}/export')
+        page.goto(f'{server}/#/d/{did}/checks')                                     # station 8: the formats are chosen where they are validated
         page.wait_for_selector('#go')
-        assert not page.locator('#go').is_disabled(), 'the gate is open: the real export is offered'
+        assert not page.locator('#go').is_disabled(), 'the gate is open: a build for submission is offered'
         assert sorted(page.eval_on_selector_all('[data-out]:checked', 'xs => xs.map(x => x.dataset.out)')) == sorted(outputs)
         if page.locator('#ack').is_visible():
             page.check('#ack')                                                       # Egypt: the provisional EG profiles acknowledged
         page.click('#go')
-        page.wait_for_selector('#res .dl a', timeout=240000)
-        res = page.inner_text('#res')
+        page.wait_for_selector('#valSub', timeout=240000)
+        assert page.inner_text('#valMsg').strip() == '' and page.get_attribute('#valSub', 'data-state') == 'ok', page.inner_text('#valSub')
+        page.goto(f'{server}/#/d/{did}/export')                                     # station 9: downloaded as it was validated
+        page.wait_for_selector('#expSub[data-state="ok"] .dl a')
+        res = page.inner_text('#expSub')
         assert 'Unprocessable' not in res and 'فشل التصدير' not in res, res
-        links = page.eval_on_selector_all('#res .dl a[download]', 'xs => xs.map(x => x.getAttribute("href"))')
+        links = page.eval_on_selector_all('#expSub .dl a[download]', 'xs => xs.map(x => x.getAttribute("href"))')
         assert sorted(u.rsplit('/', 1)[-1] for u in links) == sorted(f'{o}.zip' for o in outputs), links
         for u in links:
             with page.expect_download(timeout=60000) as dl:
-                page.click(f'#res .dl a[href="{u}"]')
+                page.click(f'#expSub .dl a[href="{u}"]')
             out = tmp_path / dl.value.suggested_filename
             dl.value.save_as(out)
             names = zipfile.ZipFile(out).namelist()
@@ -133,7 +136,7 @@ def test_the_export_page_asks_for_the_indication_and_the_export_then_goes(server
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
         page.add_init_script("localStorage.setItem('db.lang','ar')")
-        page.goto(f'{server}/#/d/{did}/export')
+        page.goto(f'{server}/#/d/{did}/checks')                                     # station 8 asks for it, where the eCTD is built
         page.wait_for_selector('#indCard')
         assert 'دواعي استعمال' in page.inner_text('#indCard') and '5.3.5' in page.inner_text('#indCard')
         page.fill('#indText', 'الألم الخفيف والمتوسط')
@@ -143,8 +146,10 @@ def test_the_export_page_asks_for_the_indication_and_the_export_then_goes(server
         if page.locator('#ack').is_visible():
             page.check('#ack')
         page.click('#go')
-        page.wait_for_selector('#res .dl a', timeout=240000)
-        links = page.eval_on_selector_all('#res .dl a[download]', 'xs => xs.map(x => x.getAttribute("href"))')
+        page.wait_for_selector('#valSub', timeout=240000)
+        page.goto(f'{server}/#/d/{did}/export')
+        page.wait_for_selector('#expSub .dl a')
+        links = page.eval_on_selector_all('#expSub .dl a[download]', 'xs => xs.map(x => x.getAttribute("href"))')
         assert sorted(u.rsplit('/', 1)[-1] for u in links) == ['ctd.zip', 'ectd32.zip', 'ectd40.zip'], links
         b.close()
     assert not errors, errors

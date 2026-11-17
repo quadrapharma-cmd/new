@@ -46,26 +46,30 @@ def test_a_working_copy_from_the_export_page(server, tmp_path):
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.route('https://fonts.googleapis.com/**', lambda r: r.abort())
         page.add_init_script("localStorage.setItem('db.lang','ar')")
-        page.goto(f'{server}/#/d/{did}/export')
+        page.goto(f'{server}/#/d/{did}/checks')                                     # station 8: validated before anything is downloaded
         page.wait_for_selector('#wkGo')
-        assert page.locator('#go').is_disabled() and 'ليست للتقديم' in page.inner_text('#wkCard')       # the real export waits; the working copy does not
-        gate = page.inner_text('#gateCard')                                                             # what stops the export, in the dossier's own words
+        assert page.locator('#go').is_disabled() and 'ليست للتقديم' in page.inner_text('#valTech')      # the build for submission waits; the working copy does not
+        gate = page.inner_text('#gateCard')                                                             # what stops it, in the dossier's own words
         assert '1.1.1' in gate and 'نموذج الطلب' in gate and 'Neomycin sulphate' in gate and 'M1-01' not in gate and '@' not in gate
         page.click('#wkGo')
-        page.wait_for_selector('#wkDl', timeout=60000)
-        assert '1 مستند في موضعه' in page.inner_text('#wkRes')
+        page.wait_for_selector('#valWork', timeout=120000)
+        work = ' '.join(page.inner_text('#valWork').split())
+        assert 'المستندات في مواضعها: 1' in work and 'التسلسل 0000' in work and 'eCTD 3.2.2' in work and 'اجتاز التحقق' in work, work
+        page.goto(f'{server}/#/d/{did}/export')                                     # station 9: no build for submission yet; the working copy's files
+        page.wait_for_selector('#expWork [data-dl="ctd-working"]')
+        assert page.locator('#expNone').count() == 1
         with page.expect_download(timeout=60000) as dl:
-            page.click('#wkDl')
+            page.click('#expWork [data-dl="ctd-working"]')
         out = tmp_path / 'w.zip'
         dl.value.save_as(out)
         names = zipfile.ZipFile(out).namelist()
         assert any(n.endswith('00-MISSING.txt') for n in names) and any('/Module 1/' in n and n.endswith('.pdf') for n in names)
         # and its eCTD with the XML (the owner, 15/11/2026: «خلي نسخة العمل تطلع بالـ XML»), the program's checks, nothing recorded
-        res = ' '.join(page.inner_text('#wkRes').split())
-        assert 'eCTD 3.2.2 — XML' in res and 'ectd32-working.zip' in res and 'eCTD 4.0 — XML' in res and 'التسلسل 0000' in res
-        assert page.locator('#wkRep').count() == 1 and 'ناجح' in res
+        res = ' '.join(page.inner_text('#expWork').split())
+        assert 'ectd32-working.zip' in res and 'ectd40-working.zip' in res and 'eCTD 3.2.2 — التسلسل 0000' in res and 'eCTD 4.0 — التسلسل 1' in res, res
+        assert page.locator('#expWork [data-vreport]').count() == 1 and 'اجتاز التحقق' in res
         with page.expect_download(timeout=60000) as dl:
-            page.click('[data-wk="ectd32-working"]')
+            page.click('#expWork [data-dl="ectd32-working"]')
         assert dl.value.suggested_filename == 'ectd32-working.zip'
         out = tmp_path / 'e.zip'
         dl.value.save_as(out)

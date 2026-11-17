@@ -52,7 +52,7 @@ def test_the_eu_leaflet_details_and_the_eu_export(server):
         assert countries[0] == '' and {'de', 'fr', 'el'} <= set(countries) and 'ema' not in countries
         page.select_option('#mCountry', 'de')
         assert page.evaluate("metaOf('pi')") == {'pi_type': 'spc', 'lang': 'en', 'eu_country': 'de'}
-        page.goto(f'{server}/#/d/{did}/export')
+        page.goto(f'{server}/#/d/{did}/checks')                                     # station 8: the formats and the envelope where they are validated
         page.wait_for_selector('#euEnv')
         outs = page.inner_text('#view')
         assert 'EU M1 3.1.1' in outs and page.locator('input[data-out="ectd40"]').count() == 0   # no eCTD 4.0 output for the EU (the countries note may name it)

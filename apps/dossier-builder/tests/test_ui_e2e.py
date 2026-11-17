@@ -99,14 +99,14 @@ def test_journey(server, browser, tmp_path):
     n4 = page.evaluate("S.board.slots.flatMap(s => s.documents || []).flatMap(d => d.findings || []).find(f => f.rule === 'NTA065-N4')")
     assert n4['severity'] == 'block' and 'searchable PDF' in n4['en']                         # the reason and what to do
     assert page.locator('tbody tr', has_text='Toll manufacturer licence').count() == 1          # still to do
-    # export gate blocked
-    page.click('#navExport')
-    page.wait_for_selector('text=Export is blocked')
-    assert page.locator('#go').is_disabled()
+    # a build for submission waits (station 8, where it is built and validated)
+    page.click('#navChecks')
+    page.wait_for_selector('text=A build for submission waits until these are done:')
+    assert page.locator('#go').is_disabled() and page.get_attribute('#valSign', 'data-state') == 'v8SignBlocked'
     # Arabic + phone width: no horizontal overflow
     page.click('#lang-ar')
     page.set_viewport_size({'width': 390, 'height': 844})
-    page.goto(page.url.replace('/export', '/board'))
+    page.goto(page.url.replace('/checks', '/board'))
     page.wait_for_selector('h1:has-text("شجرة الملف والنواقص")')
     sw = page.evaluate('document.documentElement.scrollWidth')
     assert sw <= 390, sw
