@@ -720,6 +720,41 @@ When a part is done or an open item is closed, update «What exists» and «Open
   build) from a folder in the scratchpad (`root` there).
   **Next: stage 4** (التحقق → التصدير → ما بعد التقديم) — only when he says go.
 
+- **17/11/2026, he said «الرابعة»: stage 4 started** (التحقق → التصدير → ما بعد التقديم). The design, decided before building (the
+  checks page, the export page with its history and working copy, the exporter, the validators' reports, the review desk's
+  entry and the suite's letters were read whole first):
+  · **Station 8 «التحقق» is one page with two doors** (`#/d/{id}/checks`). A sign first («اجتاز الملف التحقق — جاهز للتصدير», or
+  what is left, each line leading to it). **Door 1, «التحقق الفني»: the package is built and validated the way the authority
+  validates it, before anything is downloaded** — his «يتحقق منه بعد بنائه بمدقق زي مدقق الهيئات». The formats are chosen here (the
+  ones the country takes: moved from station 9, since what is validated is what is exported), with the follow-on sequence's
+  envelope and the acknowledgement of the provisional Egyptian profiles. Two ways: «بناء نسخة للتقديم والتحقق منها» (when nothing
+  blocks: the export's own build, its sequence recorded and not submitted as today — a new validation takes its number while it
+  is not submitted) and «التحقق من نسخة عمل» (what the dossier holds now, never recorded, «ليست للتقديم»: early, before everything
+  is in). The results, output by output: the rules failed and warned first — number, text, **its source and whether it is official
+  (ICH, the EMA) or a draft (EDA's provisional profiles)**, the documents it names, each with the way to it (its item, «عرض
+  ومراجعة») —; the rules passed and not run counted, listed in a fold. The documents' own checks and the cross-document checks
+  (today's page) stay, as «فحوص المستندات قبل البناء». **Door 2, «مراجعة المقيِّم»** (Egypt): the latest review's verdict and its
+  open findings, one press to the review desk. Nothing is downloaded here; «التالي: التصدير».
+  · **Station 9 «التصدير» downloads what station 8 validated, as it was validated** — the same files (each output's archive and the
+  validation report), with the day of the validation and its result, and the one-PDF files as today. When anything changed after
+  the validation (a document added, replaced or withdrawn; the product's data; the envelope), the page says what and gives no
+  download: «أعد التحقق». A working copy's files are offered as what they are. The other validator's report is compared here, as
+  today. After the download: «بعد تقديمه إلى الجهة الرقابية: سجِّل التقديم» → «ما بعد التقديم».
+  · **«ما بعد التقديم»** (`#/d/{id}/after`, in the menu under station 9): the sequences built, moved from station 9 — «تسجيل
+  التقديم» (the day, the tracking number, the technical acceptance, the decision, the receipt; then frozen, as today) and the
+  import of earlier sequences; **the authority's letters of this dossier** (the suite's letters, which the engine already ties to
+  a dossier): a letter added is read (its numbered questions, and «خلال n يوم» as the due date, shown to be corrected), each
+  question answered, the reply letter in Word, the days left or late; **a response sequence** («تحضير تسلسل رد»: the next sequence
+  as a response, then stations 6–8); a variation goes to «التغييرات بعد التسجيل».
+  · The path bar: station 8 as its sign says it (passed and current, failed, out of date, not done); station 9 done once the
+  validated build is current and downloaded, or its sequence recorded as submitted.
+  · Said plainly on the page: the Egyptian rules are EDA's drafts (no validator of EDA's own is published), so a pass is
+  «مطابق لمسودات الهيئة و ICH», never «معتمد من الهيئة»; the EU's are the EMA's criteria, checked here (run an EMA-accepted validator
+  before submitting).
+  Before a publish, as stage 3: his real files through both doors to the validation, compared with version 54's export of the
+  same dossiers (the same rules, results and package files), the whole suite with `-rfs`, the click sweep by itself, the opening
+  time, the read-back, the served page.
+
 ## Open items (propose when relevant; do when he asks)
 - Old program, next pieces (one at a time, each on his real files first): the 14/11 update and measuring Claude's reading (need
   the API key: `ANTHROPIC_API_KEY` in the environment's settings, added by him), «شروط الشكل لكل دولة», the Assistant on his
