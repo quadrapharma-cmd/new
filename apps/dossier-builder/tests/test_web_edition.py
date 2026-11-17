@@ -279,7 +279,7 @@ def test_a_dossier_for_another_country_in_the_browser(site):
         page.wait_for_selector('#tplPanel .docprev', timeout=60000)
         assert 'free from alcohol' in page.inner_text('#tplPanel')
         page.keyboard.press('Escape')
-        page.click('#navExport')
+        page.click('#navChecks')                                                        # station 8: the formats, where they are validated
         page.wait_for_selector('input[data-out="ectd32"]', timeout=60000)
         assert page.locator('input[data-out]').count() == 3 and page.locator('input[data-out="nees"]').count() == 1   # the Gulf: its eCTD, CTD and a NeeS
         b.close()
