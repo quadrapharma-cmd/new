@@ -264,7 +264,7 @@ class Planner:
         return c.most_common(1)[0][0] if c else '?'
 
     def substance_name(self, b):
-        """The name a drug substance block gives itself: «( Bulk Pertussis Vaccine, Serum Institute of India Ltd. )»."""
+        """The name a drug substance block gives itself: «( Bulk Zentorine, Example Pharma Ltd. )»."""
         c = Counter()
         for p in range(b['from'], min(b['to'], b['from'] + 30) + 1):
             for m in re.finditer(r'\(\s*([A-Z][^()]{3,80}?),\s*([^()]{3,60}?)\s*\)', ' '.join(clean_lines(self.own(p)))):
@@ -616,7 +616,7 @@ class Planner:
         return bool(said) and self.qos_substance(p) != self.docs[cur_doc].get('substance')
 
     def qos_substance(self, p):
-        """2.3.S «DRUG SUBSTANCE (POOL OF PURIFIED DIPHTHERIA TOXOID, SIIL)»: the drug substance block whose name shares most words."""
+        """2.3.S «DRUG SUBSTANCE (ZENTORINE, EXAMPLE PHARMA)»: the drug substance block whose name shares most words."""
         said_text = self.qos_said(p)
         said = N.norm_words(said_text) if said_text else []
         best, score = None, 0
@@ -666,7 +666,7 @@ class Planner:
             total = sum(sizes.get(p, 0) for p in pg)
             if total <= limit * 0.95 or len(pg) < 2:
                 continue
-            k = -(-total // int(limit * 0.9))
+            k = -(-total // int(limit * 0.95))                              # the fewest parts under the limit, with a margin
             d = self.docs[did]
             bounds, acc, target, cuts = [], 0, total / k, []
             for p in pg:

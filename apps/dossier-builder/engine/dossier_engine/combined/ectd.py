@@ -64,8 +64,8 @@ EU_TO_EG = {'1.3.2': ('m1-3-2-mockup', '13-pi/132-mockup/mockup.pdf'), '1.3.3': 
             '1.4.2': ('m1-4-2-non-clinical', '14-expert/142-nonclinical/nonclinical.pdf'),
             '1.4.3': ('m1-4-3-clinical', '14-expert/143-clinical/clinical.pdf'),
             '1.6': ('m1-6-2-gmo', '16-environrisk/162-gmo/gmo.pdf'), '1.9': ('m1-9-clinical-trials', '19-clinical-trials/clinicaltrials.pdf')}
-NA = re.compile(r'not\s+applicable|\bno\s+(?:\w+\s+){0,3}(?:studies|study)\s+(?:have|has)\s+been\s+(?:performed|conducted|done)'
-                r'|\bno\s+novel\s+excipients?\b|\bnone\s+(?:performed|available)\b', re.I)
+NA = re.compile(r'not\s+applicable|\bno\s+(?:\w+\s+){0,3}(?:studies|study)\s+(?:(?:have|has)\s+been|are|is|were|was)\s+'
+                r'(?:performed|conducted|done|carried\s+out|available)(?:\s+so\s+far)?|\bno\s+novel\s+excipients?\b|\bnone\s+(?:performed|available)\b', re.I)
 
 
 def slug(s, n=60):
@@ -73,12 +73,37 @@ def slug(s, n=60):
     return s[:n].strip('-') or 'document'
 
 
+
+COMPANY_WORDS = {'of', 'the', 'and', 'ltd', 'limited', 'inc', 'co', 'company', 'corp', 'corporation', 'gmbh', 'ag', 'sa', 'llc',
+                 'plc', 'pvt', 'private', 'kg', 'bv', 'nv', 'spa', 'srl', 'sas'}
+
+
+def without_maker(stem, maker, name=''):
+    """A drug substance's folder is «substance-manufacturer» (ICH M2, Appendix 4); its 2.3.S file names the substance only. The
+    manufacturer's part is dropped when the folder ends with it: the short name the dossier writes after the substance
+    («Zentorine (EP)»), or the manufacturer's name before its address, its first word or its initials («example pharma ltd.,
+    some city» gives «example-pharma», «example» and «ep»)."""
+    marks = []
+    short = re.search(r'\(([A-Z][A-Za-z]{1,7})\)\s*$', name or '')
+    if short:
+        marks.append(short.group(1).lower())
+    words = [w for w in re.findall(r'[a-z0-9]+', (maker or '').split(',')[0].lower()) if w not in COMPANY_WORDS]
+    if words:
+        marks += ['-'.join(words), words[0], ''.join(w[0] for w in words)]
+    for mark in marks:
+        if len(mark) >= 2 and stem.endswith('-' + mark) and len(stem) > len(mark) + 1:
+            return stem[:-len(mark) - 1]
+    return stem
+
 class Dtd:
     def __init__(self, profile):
         text = (profile / 'util' / 'dtd' / 'ich-ectd-3-2.dtd').read_text(encoding='utf-8')
         elems = re.findall(r'<!ELEMENT\s+([\w:-]+)\s+(.*?)>', text, re.S)
         self.names = [n for n, _ in elems]
         self.model = {n: re.findall(r'[\w:-]+', m) for n, m in elems}
+        self.attlist = {}
+        for name, body in re.findall(r'<!ATTLIST\s+([\w:-]+)\s+(.*?)>', text, re.S):
+            self.attlist[name] = set(re.findall(r'^\s*([\w:-]+)\s+CDATA', body, re.M))
         eg = (profile / 'util' / 'dtd' / 'eg-regional.dtd').read_text(encoding='utf-8')
         self.eg_model = {n: re.findall(r'[\w:-]+', m) for n, m in re.findall(r'<!ELEMENT\s+([\w:-]+)\s+(.*?)>', eg, re.S)}
 
@@ -202,28 +227,57 @@ class Builder:
             out += [l for l in lines if l not in self.header]
         return ' '.join(out)
 
+    HEADING = re.compile(r'^\(?\s*(?:Module\s*)?\d(?:\.\s?\d+|\.\s?[SPAR])+\.?(?:\s*[-–:]?\s*[A-Z(][A-Za-z ,&/()\-–]{0,90}:?)?$')
+
+    def content_lines(self, pages, title=''):
+        """A document's lines without the running header, its CTD headings (a number, with or without its title), its title
+        repeated, page numbers and rules («____»)."""
+        tw = {w.lower() for w in re.findall(r'[A-Za-z]{2,}', title)}
+        out = []
+        for p in pages:
+            t = self.text[p - 1] if len(self.text[p - 1].strip()) >= 30 else self.ocr[p - 1]
+            for l in t.splitlines():
+                l = ' '.join(l.split())
+                if not l or l in self.header or re.fullmatch(r'[_\\]{1,}|_{3,}', l) or re.fullmatch(r'\d{1,3}', l):
+                    continue
+                if self.HEADING.match(l):
+                    continue                                                # «4.2.3.7.1 Antigenicity», «3.2.A.3 – Excipients:», «4.3»
+                words = {w.lower() for w in re.findall(r'[A-Za-z]{2,}', l)}
+                if words and words <= tw and len(words) <= 8:
+                    continue                                                # the title again («Literature References»)
+                out.append(l)
+        return out
+
     def statement_only(self, d):
-        """A document that only says «not applicable», «no studies have been performed», «none» or «----» (EG-BP-E24)."""
+        """A document that only says «not applicable», «no studies are available» or «----», with no justification after it
+        (EG-BP-E24). A document that points to another section is a cross-reference, and is kept."""
         if len(d['pages']) > 2:
             return None
-        b = self.body(d['pages'])
-        words = re.sub(r'\b\d(?:\.\d+)+\b', ' ', b)
-        if len(words) > 700:
+        rest = ' '.join(self.content_lines(d['pages'], d.get('title', '')))
+        if len(rest) > 700:
             return None
-        if re.fullmatch(r'[\W_]*', re.sub(r'(?i)[A-Za-z][A-Za-z ,()&\-–]{0,90}?(?=-{3,})', '', words)) or re.search(r'-{4,}', words) and len(words) < 160:
+        if re.fullmatch(r'[\s\-–—_]*', rest) and re.search(r'-{3,}', rest):
             return 'empty («----»)'
-        m = NA.search(words)
-        if m:
+        if not rest.strip():
+            return 'a heading only'
+        m = NA.search(rest)
+        if m and len(re.findall(r'[A-Za-z]{2,}', rest[m.end():])) < 15:
             said = m.group(0)
-            return f'«{said[0].upper() + said[1:]}» only' if len(said) < 40 else 'a statement only'
-        return None
+            return f'«{said[0].upper() + said[1:]}» only'
+        return None                                                         # a pointer to another section is a cross-reference: kept
 
-    def heading_only(self, p):
-        """A page holding a Module 1 heading only (perhaps «… is enclosed in the following pages»)."""
-        b = self.body([p])
-        if len(b) > 220:
-            return False
-        return bool(re.match(r'^\s*1\.\d', b)) or bool(re.search(r'enclosed in the following', b, re.I))
+    def heading_only(self, p, key='', title=''):
+        """A typed page of a Module 1 document that holds only its heading, a «not applicable», or one sentence saying that
+        something «is enclosed in the following pages»: left out when the document goes into Egypt's Module 1."""
+        if len(self.text[p - 1].strip()) < 1:
+            return False                                                    # a picture (a mock-up, a scanned page): content
+        lines = self.content_lines([p], title)
+        if not lines:
+            return True
+        rest = ' '.join(lines)
+        if NA.fullmatch(rest.strip(' .')):
+            return True
+        return len(lines) <= 2 and bool(re.fullmatch(r'[^.]{0,120}\benclosed in the following pages?\.?', rest, re.I))
 
     def title_of(self, d):
         t = d['title']
@@ -285,7 +339,7 @@ class Builder:
                 stem = s.get('folder', slug(name or 'substance'))
                 attrs = {'2.3.S': {'substance': s.get('substance', (name or '').lower()), 'manufacturer': manuf}}
                 src = qos.get(d['path'])
-                leaf(d, '2.3.S', 'm2/23-qos', f"drug-substance-{re.sub(r'-sii$', '', stem) if stem.endswith('-sii') else stem}.pdf",
+                leaf(d, '2.3.S', 'm2/23-qos', f"drug-substance-{without_maker(stem, s.get('manufacturer') or manuf, name or '')}.pdf",
                      f"2.3.S Drug substance - {attrs['2.3.S']['substance']}", attrs)
                 if src:
                     self.leaves[-1]['source'] = str(src)
@@ -339,19 +393,22 @@ class Builder:
             elif c == '3.2.R':
                 leaf(d, c, 'm3/32-body-data/32r-reg-info', 'regional-information.pdf', self.title_of(d), {})
             else:
-                leaf(d, c, 'm3/33-lit-ref', slug(d['title']) + '.pdf', self.title_of(d), {})
+                leaf(d, c, 'm3/33-lit-ref', slug(re.sub(r'^\d(?:\.\d+)*\s+', '', d['title'])) + '.pdf', self.title_of(d), {})
         # Modules 4 and 5
         ind = E.get('indication', '')
         islug = E.get('indication_folder', slug(ind, 30) if ind else 'indication-1')
-        for d in sorted((d for d in self.docs if d['path'].startswith(('Module 4/', 'Module 5/'))), key=lambda d: d['pages'][0]):
+        from .ctdnames import order as ctd_order                            # Module 4 before Module 5, each in its CTD order
+        for d in sorted((d for d in self.docs if d['path'].startswith(('Module 4/', 'Module 5/'))),
+                        key=lambda d: (ctd_order(d['ctd']), d['pages'][0])):
             if d['path'] in self.left_out:
                 continue
             c = d['ctd']
             folder = self.folders.get(c, f'm{c[0]}/{slug(c)}').replace('indication-1', islug)
-            fname = Path(self.files[c]).name if c in self.files else slug(d['title']) + '.pdf'
+            fname = Path(self.files[c]).name if c in self.files else slug(re.sub(r'^\d(?:\.\d+)*\s+', '', d['title'])) + '.pdf'
             attrs = {'5.3.5': {'indication': ind}} if c.startswith('5.3.5') else {}
             if c.startswith('5.3.5.') and c not in ('5.3.5.3',):
-                folder += '/' + slug(d['title'], 40)
+                folder += '/' + slug(re.sub(r'^\d(?:\.\d+)*\s+', '', d['title']), 30)        # one folder a study
+                fname = slug(re.sub(r'^\d(?:\.\d+)*\s+', '', d['title']), 40) + '.pdf'
             leaf(d, c, folder, fname, self.title_of(d), attrs)
 
     def shared_file(self, c, fname):
@@ -397,7 +454,7 @@ class Builder:
             new = pikepdf.new()
             xref = {}
             a = d['pages'][0]
-            name = re.sub(r'\s*[–-]\s*', ' - ', self.title_of(d)) if not d['ctd'] == '2.3.P' else '2.3.P Drug product'
+            name = re.sub(r'\s*\([^()]*\)$', '', Path(d['path']).stem)                # «2.3.S Zentorine bulk»
             for r in runs:
                 md, i1 = where[r['m1']]
                 i2 = where[r['m2']][1]
@@ -460,7 +517,7 @@ class Builder:
             o = over.get(d['path'], {})
             if o.get('skip'):
                 continue
-            keep = parse_ranges(o['keep']) if o.get('keep') else [p for p in d['pages'] if not self.heading_only(p)]
+            keep = parse_ranges(o['keep']) if o.get('keep') else [p for p in d['pages'] if not self.heading_only(p, d['ctd'], d['title'])]
             if not keep or self.statement_only({'pages': keep, 'ctd': d['ctd']}):
                 continue
             el, href = EU_TO_EG[d['ctd']]
@@ -624,7 +681,7 @@ class Builder:
             node = root
             for c in dtd.chain(l['code']):
                 el = dtd.elem(c)
-                attrs = l['attrs'].get(c, {})
+                attrs = {k: v for k, v in l['attrs'].get(c, {}).items() if k in dtd.attlist.get(el, set())}
                 key = (el, tuple(sorted(attrs.items())))
                 node = node.setdefault(key, {})
             node.setdefault('__leaves__', []).append(l)

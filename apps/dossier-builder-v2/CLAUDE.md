@@ -20,7 +20,7 @@ library, and tell him plainly what you did and what you found. Read this file at
 | Path | What |
 |---|---|
 | `apps/dossier-builder-v2/` | This program. Your workspace. |
-| `apps/dossier-builder/` | The old program (v1, **eBOX** since 16/11 — «منشئ ملفات التسجيل» before; private artifact https://claude.ai/artifact/RaqU6QLkLmcANCSVsPXjNR). **The program again since 15/11** (rule 11): new pieces go into it one at a time, each tried on his real files first. Its own README and tests (`python3 -m pytest -q apps/dossier-builder/tests`); build `python3 apps/dossier-builder/web/build.py`. |
+| `apps/dossier-builder/` | The old program (v1, **eBOX** since 16/11 — «منشئ ملفات التسجيل» before; private artifact https://claude.ai/artifact/RaqU6QLkLmcANCSVsPXjNR). **The program again since 15/11** (rule 11): new pieces go into it one at a time, each tried on his real files first. Its own README and tests (`python3 -m pytest -q apps/dossier-builder/tests`); build `python3 apps/dossier-builder/web/build.py`. Since 17/11 also `engine/dossier_engine/combined/`: a dossier received as one combined file made ready by one program, in the cloud edition (§4e). |
 | `docs/ctd/sources/` | The copies of the official documents the knowledge cites, and `MANIFEST.json` (file, sha256, size, taken) — the build refuses a copy that differs from its entry. |
 | root `CLAUDE.md` | About **Drugbox**, a different program in the same repository. Do not work on Drugbox unless he asks. |
 
@@ -217,6 +217,30 @@ the readiness report and a checklist). «شغّل لوحدك» runs it all; «خ
   file://: the scan reader and the text layer, Claude through `tests/helpers/fake-api.mjs`, a wrong key against the real API, the
   four programs, a Gulf dossier). Made-up files only. `SHOTS=<dir>` keeps a screenshot when the programs' test fails.
 - Dossiers are kept in the browser's IndexedDB on his computer; «احفظ نسخة» gives one file (`.dossier.zip`) that opens again.
+
+### 4e. A dossier received as one combined file — the program, cloud edition (17/11/2026: «اديني برنامج شغال يديني نفس النتايج بتاعتك بالظبط و سايب ليك اختيار كل حاجة المهم اخد النتيجة ديه»)
+The program is `apps/dossier-builder/engine/dossier_engine/combined/` (README «A combined dossier made ready — one program»). It
+runs here, in this environment (pikepdf, poppler, OCRmyPDF + Tesseract, LibreOffice, Chromium are installed); the browser edition
+cannot hold a file of 600 MB and 5,000 pages, and a desktop build waits for his approval (rule 9).
+1. He sends a Drive link. Copy the files into a new folder in the scratchpad: `<scratchpad>/<product>/received/`, the work folder
+   beside it (`<scratchpad>/<product>/work/`). Never into the repository (rule 2). Check the free disk first (`df -h /`): the
+   work folder grows to about four times the received file (2.5 GB for his 600 MB) and the OCR needs more while it runs (it
+   stopped once on a full disk); delete old work folders you no longer need, never with wildcards.
+2. `cd apps/dossier-builder/engine && python3 -m dossier_engine.combined run <received> <work>` — read, repeats, ocr, split,
+   assemble, checks, fix, ectd, report; a stage already done is skipped. One stage again: `python3 -m dossier_engine.combined
+   <stage> <work>`. The OCR of his 3,849 pages took about 25 minutes here (four workers): run it in the background, tell him.
+3. Read what the program proposed (`plan.json`: every document says `by: program | decision`, with its note; `findings.json`;
+   `validation.json`). What the rules cannot decide goes into `<work>/dossier.json`, each with its reason: `names`, `plan`
+   (page-range edits; `split.record()` writes them from a corrected plan), `notes`, `fixes`, `pi`, `ectd`, `findings`, `report`.
+   Then run again from `split`. The fewer decisions the better: a decision that a rule could make becomes a rule (with a test on a
+   made-up dossier, `tests/combined_fixture.py`).
+4. Before anything reaches him (rule 13): the two reports' PDFs looked at page by page (`pdftoppm`), the validation read, the
+   counts in the reports checked against the JSON files. Send him the two reports (`<work>/report/*.pdf`) and say in plain words
+   what the program decided by itself and what the decisions file holds. The delivery folder (`<work>/deliver/`: the sequence,
+   its working documents, the reports and checks, one ZIP) goes to his Drive only after his yes (rule 2).
+5. The decisions that need the documents read and understood (names, the product information's corrected text, the reviewer's
+   findings) are made by you in the session. For the program to make them without you it needs Claude through the API: his key
+   (`ANTHROPIC_API_KEY`, «The environment»), and the cost said before every run.
 
 ### 5. The open-source eCTD projects and the eCTD timelines (monthly, or when he asks)
 1. Last update of each project the plan uses (`docs/PART-2-PLAN.md` §3.9–3.10):
@@ -754,6 +778,31 @@ When a part is done or an open item is closed, update «What exists» and «Open
   Before a publish, as stage 3: his real files through both doors to the validation, compared with version 54's export of the
   same dossiers (the same rules, results and package files), the whole suite with `-rfs`, the click sweep by itself, the opening
   time, the read-back, the served page.
+- **17/11/2026, stage 4 built, not published** (`4417696` engine, `64f61f3` stations 8–9 and «ما بعد التقديم», `066037b`,
+  `ae0758d`); its step 4c (his real files to the validation against version 54, version 55, read-back) was not done. Then a Word
+  file where a PDF is asked: the page made no PDF and the Word program's «Export PDF» was dropped as «nothing to save» — fixed in
+  `bb5c173` (the program's export kept; «تحويله إلى PDF»), its browser test stopped mid-run when he said to stop. Both wait.
+- **17/11/2026, a new dossier as one combined file, «تشتغله كانسان»** («الملف ده عايز تشتغله كانسان و تشوف كم المشاكل اللي
+  عندك انك مش بتعرف تجهز الملفات اللي تبني بيها ملف»): one PDF of 5,274 pages (600 MB, two whole blocks received twice, half of it
+  pictures) and six RTF files named «.doc». The program failed on it: it showed Claude only the first 96 pages as small pictures
+  and never read the 713 bookmarks, put all 5,274 pages in one Module 1 item, read each of the six files as one page, did not see
+  the 1,425 repeated pages; its browser scan reader refuses a document over 150 pages, it has no .doc/RTF conversion in the
+  browser, no rules for vaccines and biologicals, and does not compare an EU Module 1 with Egypt's. He asked why I could and the
+  program could not («انت عملت كل حاجة كويس و
+  البرنامج معرفش مع انك انت اللي جوا البرنامج ؟؟!»), then: «اعمل انت الملف كامل بدون استعانه بالبرنامج», «ملف ectd جاهز و مراجع
+  و سليم», «عايز xml file», «correct all your observations». Built by hand in the scratchpad: the CTD folder (181 documents), the
+  findings, the corrections, the product information in English and Arabic, the eCTD sequence 0000 with its XML, validated, and
+  the Arabic report.
+- **17/11/2026, «ليه البرنامج ميبقاش كدا يعمل كل اللي انت عملته بالظبط ؟» then «اديني برنامج شغال يديني نفس النتايج بتاعتك
+  بالظبط و سايب ليك اختيار كل حاجة المهم اخد النتيجة ديه».** My choices, told to him: the cloud edition (the file is too big for
+  the browser; a desktop build waits for his approval and cannot be tested on Windows from here); one program,
+  `dossier_engine.combined` (§4e), with the company's choices in each dossier's decisions file, kept in the scratchpad. Measured
+  on his dossier against the hand-built result (the README's table): the same pages left out as repeated (1,425), the same OCR
+  text on all 3,849 kept pages, 181/181 documents and 70/70 pages left out the same (164 placed by the program, 17 by decision;
+  the proposal alone 169 the same), every PDF of the CTD folder the same page for page (182), the same 16 findings (13 by the
+  rules), the same 3 corrections and 5 product-information PDFs pixel for pixel, 148/148 eCTD files the same with the same XML but
+  for the checksums, the same validation (69/1 pass/fail, 20/2 best practice: the EDA tracking number, fonts not embedded as the
+  company made them). Still his to confirm: the applicant, local or tender marketing, the tracking number (EDA's).
 
 ## Open items (propose when relevant; do when he asks)
 - Old program, next pieces (one at a time, each on his real files first): the 14/11 update and measuring Claude's reading (need

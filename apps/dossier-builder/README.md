@@ -1138,6 +1138,64 @@ the `sample` capability, server through the SDK with a key) and suggests verdict
 human confirms them; quoted excerpts are verified against the document text. Everything says «simulation — EDA decides».
 Lint: `python3 -m pytest -q tests/test_review.py` (pack clean and cited, run, responses, letters, sign-off, AI, reliance).
 
+## A combined dossier made ready — one program (cloud edition, 17/11/2026) — «اديني برنامج شغال يديني نفس النتايج بتاعتك بالظبط»
+
+The owner sent a dossier as one combined PDF (5,274 pages, 600 MB, half of it pictures, two whole blocks received twice) with six
+RTF files named «.doc»; the program could not read it, and it was built by hand on 17/11/2026 (CTD folder, corrections, eCTD
+sequence 0000, report). He then asked for a program that gives the same results. `engine/dossier_engine/combined/` is that
+program: the steps of the hand-built dossier, each made general, as stages of one command.
+
+```
+python3 -m dossier_engine.combined run <source folder> <work folder>      # every stage; a stage already done is skipped
+python3 -m dossier_engine.combined <stage> <work folder>                  # one stage: read, repeats, ocr, split, assemble,
+                                                                          # checks, fix, ectd, report
+```
+It runs where its tools are — the cloud edition (this environment) or a computer with pikepdf, poppler, OCRmyPDF + Tesseract,
+LibreOffice and Chromium (Playwright). It is not part of the browser edition (`web/build.py` leaves it out). The work folder holds
+the company's pages: it is kept outside the repository (the scratchpad), never committed.
+
+| Stage | What it does (by itself) | Writes |
+|---|---|---|
+| `read` | every PDF of the source folder numbered page by page; each page's own text (pdftotext), characters, pictures, byte signature, a 24-dpi grey picture; the bookmarks with their pages; Word files recognised by content (an RTF named «.doc» is kept as «.rtf»), made PDF by LibreOffice, kept aside and compared with the PDF's blocks | `read/` |
+| `repeats` | a top block (bookmark or file) whose pages are, 98 % or more and in order, an earlier block's pages (same bytes, or drawn alike at 24 dpi within a few grey levels) is a second copy: left out; identical pages elsewhere are kept and listed | `repeats.json` |
+| `ocr` | the kept pages in parts (pages copied unchanged), OCRmyPDF `--mode skip`, then `--mode redo` on the pages still under 30 characters; English, Arabic added when the text has Arabic | `parts/`, `parts.json`, `read/ocr.txt` |
+| `split` | the proposal: blocks typed by their title (drug substance, product, annexures, appendices, Module N); the CTD heading in a page's first lines (the drug substance and product pages: the first heading; the other modules: the deepest of a chain, filed at its document's level; a heading going back in the CTD order is a line of text); tables of contents at a block's start (Module 3's own when they name several substances), covers, a group's separators and a section's own separator left out; a printed number whose title is another section's filed by its title; annexures by their title pages (placed by their title); literature cut at each publication's title page; a document over the size limit cut into parts. Then the dossier's decisions (`dossier.json → plan`) are laid over it | `plan.json` (with the proposal) |
+| `assemble` | each document its own PDF (pages copied from the parts, title, one bookmark), the pages left out in one PDF «not for submission», the Word files beside it; then every page's pictures compared with its source, byte for byte, the text layer's effect on the look measured, the searchable pages counted | `ctd/<folder>/`, `assembled.json` |
+| `checks` | the findings the rules see: a component's quantity with another mass unit than in 3.2.P.1 (critical) or without its limit sign, shelf life said more than one way, animal-origin materials against a 3.2.A.2 «not applicable», the QOS reproducing Module 3 pages, old pharmacopoeias and WHO TRS, a one-page 3.2.R, old clinical data and empty pharmacovigilance, no GMP certificate or CPP, a Module 1 in another region's layout, a printed heading number, pages still without text, a file over the limit; the reviewer's own findings from the decisions | `findings.json` |
+| `fix` | a phrase corrected inside a PDF by deleting characters only (the page drawn before and after: changed pixels and where); the product information written again from its corrected text — English as Word and PDF, a translation checked block by block (same blocks, same numbers, same composition) and written right to left as Word and PDF | `fixed/`, `pi/`, `fixed.json` |
+| `ectd` | the EG eCTD 3.2.2 sequence: ICH App. 4 folders and names, the DTD's element chain and attributes, tables of contents and «not applicable» statements left out, a document shared by substances stored once, QOS pages copied from Module 3 replaced by a cross-reference page, Module 1 (cover letter, tracking table, product information, mock-ups, specimens, experts, GMO, clinical trials from an EU-layout Module 1 without its heading-only pages), PDFs linearised at 1.4 or later; then the profile's validation criteria, rule by rule | `ectd/out/<sequence>/`, `ectd.json`, `validation.json` |
+| `report` | two reports in formal Arabic (Word and PDF): the dossier (what was received, built, left out, the product card, the findings, Egypt's Module 1, the method and what the program decided by itself, the document list) and the eCTD (content, corrections, product-information changes, what only the company or EDA can complete, values to confirm, translation, validation) | `report/` |
+
+**The decisions file** (`<work>/dossier.json`): what the rules cannot decide, each with its reason — `names` (the drug
+substances' and the product's folder names), `plan` (page-range edits: `{pages, path, ctd, title}` or `{pages, drop: why}`) and
+`notes`, `fixes` (`{doc, page, edits: [[old, new]], note}`), `pi` (the corrected text as blocks, the documents to write),
+`ectd` (`envelope`, `manufacturer`, `product`, `indication`, `substances` with their folders and attributes, `leaves`/`m1`
+overrides of a file name or title, `left_out`/`keep_in`, `cover`), `findings` (the reviewer's) and `report` (the product card,
+Egypt's Module 1 needs, the values to confirm). `split.record(proposal, wanted)` writes the plan's edits from a corrected plan.
+Every document says who placed it (`by: program | decision`), and the report gives the count.
+
+**Measured on the DTP-HB dossier** (his file, in the scratchpad only; the comparison with the hand-built results is in the
+handbook), each stage against the hand-built result:
+
+| Stage | The program | Against the hand-built dossier |
+|---|---|---|
+| `repeats` | 2 blocks received twice, 1,425 pages left out | the same pages |
+| `ocr` | 3,849 pages kept; 15 still without text (pictures only) | the same text on every page; the same 15 |
+| `split` | the proposal alone: 179 documents, 71 pages left out | 169 of the 181 documents the same (pages and place), 5 with the same pages under another name, 7 other; one page more left out |
+| `split` + decisions | 17 page-range edits, 2 names, 22 notes → 181 documents (164 placed by the program, 17 by decision), 70 pages left out | 181/181 documents and 70/70 pages the same |
+| `assemble` | 3,779 pages compared with their source: 0 different, 3,764 searchable | the 182 PDFs of the CTD folder the same, page for page (pictures and text) |
+| `checks` | 16 findings: 1 critical, 11 major, 4 minor — 13 by the rules, 3 the reviewer's (decisions) | the same 16 |
+| `fix` | 3 phrases corrected inside PDFs; 5 product-information PDFs (SmPC, leaflet, outer and immediate labelling in English; the leaflet in Arabic) | the same text; the 5 PDFs the same pixel for pixel |
+| `ectd` | 148 PDFs; decisions: 13 file names or titles, 2 documents left out, 6 Module 1 entries | 148/148 the same (pages, pictures, text; each file written again, so its identifier and MD5 differ); `index.xml` and `eg-regional.xml` the same but for those checksums |
+| validation | 69 passed and 1 failed (pass/fail), 20 met and 2 not (best practice) | the same rules and details: the EDA tracking number empty (one pass/fail and one best-practice rule; only EDA gives it) and 130 PDFs with a font not embedded, as the company made them |
+| `report` | the two reports in formal Arabic, Word and PDF, and the delivery folder (the sequence, its working documents, the reports and checks, one ZIP) | — |
+
+What a person still decides on this dossier is in its decisions file; the reports list it, with the values only the company or
+EDA can give (the applicant's confirmation, local or tender marketing, the EDA tracking number).
+
+Tests: `python3 -m pytest -q tests/test_combined.py` (a made-up dossier, `tests/combined_fixture.py`: the stages from the
+received files to the eCTD sequence and the reports; it needs the tools above).
+
 ## Run the app
 
 **Online (cloud):** see `deploy/DEPLOY-AR.md` (Docker + login + HTTPS).

@@ -3,13 +3,20 @@ was left out and why, the product card, the findings, what Egypt's Module 1 stil
 program decided by itself, the list of documents) and one for the eCTD sequence (its content, the corrections, the changes to
 the product information, what only the company or the authority can complete, the values to confirm, the translation, the
 validation). Everything is read from the stages' files; what a person decided comes from the dossier's decisions file.
-Writes report/ctd-report.{html,pdf,docx}, report/ectd-report.{…} and report.json."""
+Writes report/ctd-report.{html,pdf,docx}, report/ectd-report.{…} and report.json; then the delivery, as the hand-built one
+was given: the dossier's report inside its CTD folder («00 READ FIRST - report (Arabic)»), and deliver/<name>/ with the sequence
+(submission/<sequence>), the Word files of the product information (submission/<sequence>-workingdocuments), «report and
+checks» (the eCTD report, validation-results.csv, source-map.csv) and a zip of the submission folder."""
+import csv
 import html as H
+import os
 import re
+import shutil
+import subprocess
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from .common import Work, ranges, say
+from .common import Work, count, ranges, say
 from .fix import AR, LRM, ZWSP, keep, pieces, print_html
 
 SEV = {'critical': 'حرجة', 'major': 'مهمة', 'minor': 'شكلية'}
@@ -121,18 +128,78 @@ class Doc:
                 head, rows, widths = x
                 t = d.add_table(rows=len(rows) + 1, cols=len(head))
                 t.style = d.styles['Table Grid']
-                t._tbl.tblPr.append(OxmlElement('w:bidiVisual'))
+                fixed_table(t, widths or WIDTHS.get(len(head)) or [1] * len(head))
                 for i, r in enumerate([head] + rows):
                     for j, c in enumerate(r):
                         cell = t.cell(i, j)
-                        if widths:
-                            cell.width = Twips(widths[j])
                         for k, x in enumerate(c if isinstance(c, list) else [c]):
                             p = cell.paragraphs[0] if k == 0 else cell.add_paragraph()
-                            spacing(p, None, 0, align='both' if AR.search(str(x)) else 'right', bidi=True)
+                            spacing(p, None, 0, align='right', bidi=True)    # not justified: LibreOffice loops on a narrow justified
+                                                                              # cell mixing Arabic and Latin
                             runs(p, str(x), 17, i == 0)
                 d.add_paragraph()
         d.save(path)
+
+
+REASONS = [   # why a page or a document was left out, as the stages write it (English), in the report's Arabic
+    (r'^separator page \(the section title only\)$', 'صفحة فاصلة (عنوان القسم وحده)'),
+    (r'^separator page \((.+)\)$', r'صفحة فاصلة (\1)'),
+    (r'^table of contents of this substance.*$', 'فهرس المادة الفعالة (سطوره في فهرس Module 3، البند 3.1)'),
+    (r'^table of contents of (3\.2\.[PA]).*$', r'فهرس \1 (سطوره في فهرس Module 3، البند 3.1)'),
+    (r'^table of contents: the eCTD XML replaces it$', 'فهرس: ملف XML يقوم مقامه'),
+    (r'^cover page of the annexures to Module 3$', 'غلاف ملاحق Module 3'),
+    (r'^cover page of Module (\d).*$', r'غلاف Module \1'),
+    (r'^page after the cover.*$', 'صفحة بعد الغلاف'),
+    (r'^list of the annexures.*$', 'قائمة ملاحق Module 3'),
+    (r'^page without a heading at the start of its (?:block|module)$', 'صفحة بلا عنوان في بداية جزئها'),
+    (r'^page before the first annexure.*$', 'صفحة قبل أول ملحق'),
+    (r'^empty \(«----»\)$', 'فارغ («----»)'),
+    (r'^a heading only$', 'عنوان فقط'),
+    (r'^«(.+)» only$', r'لا يقول إلا «\1»'),
+]
+
+
+def reason_ar(t):
+    for rx, ar in REASONS:
+        if re.match(rx, t):
+            return re.sub(rx, ar, t)
+    return t
+
+
+TEXT_WIDTH = 9026                                   # A4 less two margins of 2.54 cm, in twips
+WIDTHS = {2: [7, 3], 3: [4, 4, 2], 4: [2, 5, 3, 3], 5: [2, 6, 3, 3, 2]}
+
+
+def fixed_table(t, weights):
+    """A right-to-left table of fixed column widths (LibreOffice lays out a table of free widths with long Arabic cells for
+    ever): its width, its grid, each cell's width, «fixed» layout, and w:bidiVisual in its place after the style."""
+    from docx.oxml import parse_xml
+    from docx.oxml.ns import qn
+    ns = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'
+    total = sum(weights)
+    widths = [int(TEXT_WIDTH * x / total) for x in weights]
+    tbl = t._tbl
+    tblpr = tbl.tblPr
+    for tag in ('w:tblW', 'w:tblLayout', 'w:bidiVisual'):
+        for x in tblpr.findall(qn(tag)):
+            tblpr.remove(x)
+    style = tblpr.find(qn('w:tblStyle'))
+    at = list(tblpr).index(style) + 1 if style is not None else 0
+    tblpr.insert(at, parse_xml(f'<w:bidiVisual {ns}/>'))
+    tblpr.insert(at + 1, parse_xml(f'<w:tblW {ns} w:type="dxa" w:w="{sum(widths)}"/>'))
+    look = tblpr.find(qn('w:tblLook'))
+    layout = parse_xml(f'<w:tblLayout {ns} w:type="fixed"/>')
+    if look is not None:
+        look.addprevious(layout)
+    else:
+        tblpr.append(layout)
+    grid = tbl.find(qn('w:tblGrid'))
+    for col, wdt in zip(grid.findall(qn('w:gridCol')), widths):
+        col.set(qn('w:w'), str(wdt))
+    from docx.shared import Twips
+    for row in t.rows:
+        for j, cell in enumerate(row.cells):
+            cell.width = Twips(widths[j])
 
 
 def write(doc, stem, w):
@@ -165,13 +232,14 @@ def ctd_report(w):
     by_program = sum(1 for d in docs if d.get('by') == 'program')
     doc = Doc(R.get('title', 'تقرير الملف'), R.get('subtitle', ''))
     doc.h1('1. الخلاصة')
-    doc.ul([f'وصل {len(files)} ملفًّا؛ فيها {n_pages:,} صفحة PDF.',
-            f'تُرك {sum(x["pages"] for x in rep["dropped"]):,} صفحة لأنها نسخ ثانية من كتل كاملة سبقتها في الملف نفسه.',
-            f'بُني الملف من {len(docs)} مستندًا تضم {placed:,} صفحة، كل صفحة منها طوبقت بأصلها '
-            f'({asm.get("pages_checked", 0) - len(asm.get("wrong", [])):,} من {asm.get("pages_checked", 0):,} مطابقة).',
+    dropped = sum(x['pages'] for x in rep['dropped'])
+    doc.ul([f'وصل {count(len(files), "ملف")}؛ فيها {count(n_pages, "صفحة")} بصيغة PDF.',
+            f'تُرك منها {count(dropped, "صفحة")} لأنها نسخ ثانية من كتل كاملة سبقتها في الملف نفسه.' if dropped else '',
+            f'بُني الملف من {count(len(docs), "مستند")} تضم {count(placed, "صفحة")}، وطوبقت كل صفحة منها بأصلها: '
+            f'المطابقة {asm.get("pages_checked", 0) - len(asm.get("wrong", [])):,} من {asm.get("pages_checked", 0):,}.',
             f'الصفحات القابلة للبحث بعد التعرف الضوئي: {asm.get("searchable", 0):,} من {asm.get("pages_in_docs", placed):,}.',
-            f'قطع البرنامج ووضع {by_program} مستندًا بنفسه، و{len(docs) - by_program} بقرارات من ملف القرارات (القسم 8).',
-            f'الملاحظات: {len(found)} — ' + '، '.join(f'{sum(1 for f in found if f["severity"] == s)} {SEV[s]}' for s in ('critical', 'major', 'minor')) + '.'])
+            f'المستندات التي قطعها البرنامج ووضعها بنفسه: {by_program} من {len(docs)}؛ والباقي بقرارات من ملف القرارات (القسم 8).',
+            f'الملاحظات: {len(found)} — ' + '، '.join(f'{SEV[s]}: {sum(1 for f in found if f["severity"] == s)}' for s in ('critical', 'major', 'minor')) + '.'])
     crit = [f for f in found if f['severity'] in ('critical', 'major')][:6]
     if crit:
         doc.h2('أهم ما يلزم قبل التقديم')
@@ -191,13 +259,16 @@ def ctd_report(w):
     doc.table(['الجزء', 'المستندات', 'الصفحات'], [[m, v[0], f'{v[1]:,}'] for m, v in sorted(mods.items())])
     doc.h1('4. ما استُبعد ولماذا')
     if rep['dropped']:
-        doc.h2(f'4.1 الكتل المكررة ({sum(x["pages"] for x in rep["dropped"]):,} صفحة)')
+        doc.h2(f'4.1 الكتل المكررة ({count(dropped, "صفحة")})')
         doc.table(['الكتلة المتروكة', 'الصفحات', 'نسخة من', 'متطابقة بالبايت', 'متطابقة في الرسم بدقة 24 نقطة'],
                   [[x['title'], f"{x['from']}–{x['to']}", f"{x['same_as_title']} ({x['same_as'][0]}–{x['same_as'][1]})", x['same_bytes'], x['same_24dpi']]
                    for x in rep['dropped']])
     why = Counter(r['why'] for r in plan['removed'] if not any(x['from'] <= r['page'] <= x['to'] for x in rep['dropped']))
     doc.h2('4.2 صفحات تُركت من داخل الكتل')
-    doc.table(['السبب', 'عدد الصفحات'], [[k, v] for k, v in why.most_common()])
+    merged = Counter()
+    for k, v in why.items():
+        merged[reason_ar(k)] += v
+    doc.table(['السبب', 'عدد الصفحات'], [[k, v] for k, v in merged.most_common()])
     where = {p: d for d in docs for p in d['pages']}
     pairs = Counter()
     for g in rep.get('identical_groups', []):
@@ -214,28 +285,31 @@ def ctd_report(w):
         doc.table(['البيان', 'القيمة', 'المصدر'], card)
     doc.h1('6. الملاحظات')
     doc.table(['م', 'الملاحظة', 'الموضع', 'المطلوب', 'المصدر'],
-              [[f['label'], f['text'], f['where'], f['action'], 'البرنامج' if f['by'] == 'program' else 'المراجع'] for f in found])
+              [[f['label'], f['text'], f['where'], f['action'], 'البرنامج' if f['by'] == 'program' else 'المراجع'] for f in found],
+              [11, 40, 21, 21, 9])
     needs = R.get('eg_m1_needs')
     if needs:
         doc.h1('7. Module 1 المصرية: ما يلزم')
         if R.get('eg_m1_intro'):
             doc.p(R['eg_m1_intro'])
         if needs and isinstance(needs[0], list):
-            doc.table(['البند', 'الحال في الملف الوارد', 'الجهة المصدِرة'], needs)
+            doc.table(['البند', 'الحال في الملف الوارد', 'الجهة المصدِرة'], needs, [33, 43, 22])
         else:
             doc.ul(needs)
     doc.h1('8. طريقة العمل')
     edits = plan.get('edits', [])
     doc.ul(['قُرئ نص كل صفحة كما في الملف، وقُرئت الإشارات المرجعية، ورُسمت كل صفحة بدقة 24 نقطة في البوصة.',
             'عُرفت الكتل المكررة بمقارنة الصفحات بالبايت وبالرسم، ثم قورنت كل صفحتين متقابلتين.',
-            f'قُرئت الصفحات التي بلا نص بالتعرف الضوئي (OCRmyPDF وTesseract) على مرحلتين؛ بقيت {sum(len(p["still_without_text"]) for p in parts)} صفحة بلا نص.',
+            'قُرئت الصفحات التي بلا نص بالتعرف الضوئي (OCRmyPDF وTesseract) على مرحلتين؛ الصفحات التي بقيت بلا نص: '
+            f'{sum(len(p["still_without_text"]) for p in parts)}.',
             'قُطع الملف بعناوين CTD في أعلى الصفحات، مع قواعد الفهارس والفواصل والأغلفة، ووُضع كل مستند في مكانه.',
-            f'قطع البرنامج ووضع {by_program} مستندًا من {len(docs)} بنفسه؛ والباقي بـ{len(edits)} قرارًا من ملف القرارات (تسمية أو قطع أو وضع).',
+            f'المستندات التي قطعها البرنامج ووضعها بنفسه: {by_program} من {len(docs)}؛ والباقي بقرارات من ملف القرارات (تسمية أو قطع أو وضع)، '
+            f'عددها {len(edits)}.',
             'نُسخت الصفحات دون تغيير، ثم طوبقت صور كل صفحة بصفحتها الأصلية بايتًا ببايت، وقيس أثر طبقة النص على شكل الصفحة '
             f'(أسوأ نسبة بكسلات تغيرت: {asm.get("worst_look_change", 0)}).'])
     doc.h1('الملحق: فهرس الوثائق')
     doc.table(['CTD', 'المستند', 'صفحات الملف الأصلي', 'العدد', 'قابلة للبحث'],
-              [[d['ctd'], d['title'], ranges(d['pages']), len(d['pages']), d.get('searchable', '')] for d in docs])
+              [[d['ctd'], d['title'], ranges(d['pages']), len(d['pages']), d.get('searchable', '')] for d in docs], [12, 50, 20, 8, 10])
     return doc
 
 
@@ -249,15 +323,15 @@ def ectd_report(w):
     doc = Doc(R.get('ectd_title', 'تقرير eCTD'), R.get('ectd_subtitle', ''))
     doc.h1('1. الخلاصة')
     doc.ul([f"التسلسل {e['envelope']['sequence']} وفق ICH eCTD v3.2.2 والملف الإقليمي المصري المؤقت v0.",
-            f"{len(e['leaves'])} ورقة في Modules 2–5 و{len(e['m1'])} في Module 1؛ {e['files']} ملفًّا بحجم {mb(e['bytes'])}.",
-            f"قواعد النجاح والرسوب: {v['pf_pass']} ناجحة و{v['pf_fail']} راسبة؛ أفضل الممارسات: {v['bp_met']} متحققة و{v['bp_not']} غير متحققة.",
+            f"الأوراق (leaf): في Modules 2–5 {len(e['leaves'])}، وفي Module 1 {len(e['m1'])}؛ والملفات {e['files']} بحجم {mb(e['bytes'])}.",
+            f"قواعد النجاح والرسوب: الناجحة {v['pf_pass']} والراسبة {v['pf_fail']}؛ قواعد أفضل الممارسات: المتحققة {v['bp_met']} وغير المتحققة {v['bp_not']}.",
             'ما رسب أو لم يتحقق مذكور في القسم 5 مع سببه.'])
     doc.h1(f"2. محتوى التسلسل {e['envelope']['sequence']}")
     by_mod = Counter(l['code'][0] for l in e['leaves'])
     doc.table(['الوحدة', 'الأوراق'], [['1', len(e['m1'])]] + [[m, by_mod[m]] for m in sorted(by_mod)])
     if e['left_out']:
         doc.h2('مستندات لم تدخل التسلسل')
-        doc.table(['المستند', 'السبب'], [[Path(p).stem, why] for p, why in e['left_out'].items()])
+        doc.table(['المستند', 'السبب'], [[Path(p).stem, reason_ar(why)] for p, why in e['left_out'].items()])
     doc.h1('3. التصحيحات المنفذة')
     rows = [[Path(k).stem, f"ص {x['page']}", '؛ '.join(f'«{a}» ← «{b}»' for a, b in x['edits']), x['changed_pixels']]
             for k, x in (fixed.get('docs') or {}).items()]
@@ -292,6 +366,74 @@ def ectd_report(w):
     return doc
 
 
+def link_tree(src, dst):
+    """A copy of a folder made of hard links where the disk allows it (no second copy of the bytes)."""
+    for root, _, files in os.walk(src):
+        r = Path(root)
+        (dst / r.relative_to(src)).mkdir(parents=True, exist_ok=True)
+        for f in files:
+            t = dst / r.relative_to(src) / f
+            try:
+                os.link(r / f, t)
+            except OSError:
+                shutil.copy2(r / f, t)
+
+
+def deliver(w, out):
+    dec = w.decisions()
+    D = dec.get('deliver') or {}
+    folder = w.ctd / (dec.get('ctd_folder') or 'CTD')
+    for kind in ('pdf', 'docx'):
+        shutil.copyfile(out['ctd'][kind], folder / f'00 READ FIRST - report (Arabic).{kind}')
+    e = w.load('ectd.json')
+    if not e:
+        return None
+    seq = Path(e['sequence'])
+    name = D.get('name') or f"{dec.get('ctd_folder') or 'CTD'} - eCTD {seq.name}"
+    root = w.root / 'deliver' / name
+    if root.exists():
+        shutil.rmtree(root)
+    sub = root / 'submission'
+    link_tree(seq, sub / seq.name)
+    fixed = w.load('fixed.json', {}) or {}
+    if fixed.get('pi'):
+        (sub / f'{seq.name}-workingdocuments').mkdir(parents=True, exist_ok=True)
+        for p in fixed['pi']:
+            shutil.copyfile(p['docx'], sub / f'{seq.name}-workingdocuments' / Path(p['docx']).name)
+    rc = root / 'report and checks'
+    rc.mkdir(parents=True, exist_ok=True)
+    for kind in ('pdf', 'docx'):
+        shutil.copyfile(out['ectd'][kind], rc / f'00 READ FIRST - eCTD report (Arabic).{kind}')
+    with open(rc / 'validation-results.csv', 'w', newline='', encoding='utf-8-sig') as f:
+        wr = csv.writer(f)
+        wr.writerow(['rule', 'kind', 'result', 'detail'])
+        for r in w.load('validation.json'):
+            wr.writerow([r['rule'], r['kind'], 'PASS' if r['ok'] else 'NOT MET', r['detail']])
+
+    def span(p):
+        return '' if not p else (f'{p[0]}-{p[-1]}' if len(p) > 1 else str(p[0]))
+
+    def rel(path):
+        try:
+            return str(Path(path).resolve().relative_to(w.root))
+        except ValueError:
+            return str(path)
+    with open(rc / 'source-map.csv', 'w', newline='', encoding='utf-8-sig') as f:
+        wr = csv.writer(f)
+        wr.writerow(['eCTD file', 'leaf ID', 'title', 'source', 'pages of the combined file', 'note'])
+        for m in e['m1']:
+            wr.writerow(['m1/eg/' + m[2], m[5], m[3], rel(m[6]), span(m[7]) if m[7] else '', ''])
+        for l in e['leaves']:
+            wr.writerow([l['href'], l['id'], l['title'], rel(l['source']), span(l['pages']), l['note']])
+        for k, v in e['left_out'].items():
+            wr.writerow(['(not in the eCTD)', '', k, k, '', v])
+    zname = D.get('zip') or f'{seq.name}.zip'
+    parts = [seq.name] + ([f'{seq.name}-workingdocuments'] if fixed.get('pi') else [])
+    subprocess.run(['zip', '-r', '-q', '-X', str(root / zname)] + parts, cwd=sub, check=True)
+    say(f'التسليم: {root}')
+    return {'folder': str(root), 'zip': str(root / zname)}
+
+
 def run(work):
     w = work if isinstance(work, Work) else Work(work)
     out = {}
@@ -300,5 +442,6 @@ def run(work):
     if w.load('ectd.json'):
         say('تقرير eCTD')
         out['ectd'] = write(ectd_report(w), 'ectd-report', w)
+    out['deliver'] = deliver(w, out)
     w.save('report.json', out)
     return out

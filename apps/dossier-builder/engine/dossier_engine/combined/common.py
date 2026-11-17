@@ -149,3 +149,31 @@ def pdftext(pdf, first=None, last=None):
 
 def python():
     return sys.executable
+
+
+NOUNS = {   # one, two, three to ten, eleven to ninety-nine (and the hundreds take «one» without «واحد»)
+    'مستند': ('مستند', 'مستندان', 'مستندات', 'مستندًا'), 'صفحة': ('صفحة', 'صفحتان', 'صفحات', 'صفحةً'),
+    'ملف': ('ملف', 'ملفان', 'ملفات', 'ملفًّا'), 'ملاحظة': ('ملاحظة', 'ملاحظتان', 'ملاحظات', 'ملاحظةً'),
+    'قرار': ('قرار', 'قراران', 'قرارات', 'قرارًا'), 'ورقة': ('ورقة', 'ورقتان', 'أوراق', 'ورقةً'),
+    'قاعدة': ('قاعدة', 'قاعدتان', 'قواعد', 'قاعدةً'), 'مجموعة': ('مجموعة', 'مجموعتان', 'مجموعات', 'مجموعةً'),
+    'كتلة': ('كتلة', 'كتلتان', 'كتل', 'كتلةً'), 'جزء': ('جزء', 'جزآن', 'أجزاء', 'جزءًا'),
+}
+
+
+def count(n, noun):
+    """A number with its noun in formal Arabic: «مستند واحد», «مستندان», «5 مستندات», «181 مستندًا», «200 مستند»."""
+    one, two, few, many = NOUNS[noun]
+    n = int(n)
+    if n == 1:
+        return f'{one} واحد' if not one.endswith('ة') else f'{one} واحدة'
+    if n == 2:
+        return two
+    r = n % 100
+    shown = f'{n:,}'
+    if 3 <= r <= 10:
+        return f'{shown} {few}'
+    if 11 <= r <= 99:
+        return f'{shown} {many}'
+    if n == 0:
+        return f'لا {one}'
+    return f'{shown} {one}'

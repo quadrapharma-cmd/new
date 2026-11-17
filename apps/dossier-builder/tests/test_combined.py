@@ -133,6 +133,15 @@ def test_correction_inside_a_pdf(work, tmp_path):
         edit_page(pdf, 0, [('1.25 mcg', '1.25 mcgx')])                  # adding is refused: deletions only
 
 
+def test_qos_file_names_the_substance_without_its_manufacturer():
+    assert ectd.without_maker('zentorine-ep', 'example pharma ltd., some city') == 'zentorine'          # initials
+    assert ectd.without_maker('zentorine-example', 'Example Pharma Ltd.') == 'zentorine'               # first word
+    assert ectd.without_maker('zentorine-exp', '', 'Zentorine (EXP)') == 'zentorine'                   # the dossier's short name
+    assert ectd.without_maker('zentorine-ex', 'example pharma ltd.') == 'zentorine-ex'                 # not the manufacturer's
+    assert ectd.without_maker('ep', 'example pharma ltd.') == 'ep'                                     # nothing left: kept
+    assert ectd.without_maker('zentorine-whole-cell', '', 'Zentorine (whole cell)') == 'zentorine-whole-cell'
+
+
 def test_translation_check_and_rtl_page():
     en = [{'t': 'PACKAGE LEAFLET'}, {'p': 'Each tablet contains 10 mg.'}, {'rows': [['Zentorine', '10 mg']]}]
     ar = [{'t': 'النشرة الداخلية'}, {'p': 'يحتوي كل قرص على 10 mg.'}, {'rows': [['زنتورين', '10 mg']]}]

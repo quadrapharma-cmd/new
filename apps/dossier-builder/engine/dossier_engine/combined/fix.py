@@ -212,6 +212,15 @@ def docx_doc(font, size_half_points, rtl=False):
     ppr_default = defaults.find(qn('w:pPrDefault'))
     if ppr_default is not None:
         defaults.remove(ppr_default)
+    defaults.append(OxmlElement('w:pPrDefault'))                            # empty, as docx-js writes it: LibreOffice then keeps
+                                                                            # a paragraph's lines together as Word does
+    settings = d.settings.element
+    for tag in ('w:compat', 'w:characterSpacingControl'):
+        for x in settings.findall(qn(tag)):
+            settings.remove(x)
+    from docx.oxml import parse_xml
+    settings.append(parse_xml('<w:compat xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+                              '<w:compatSetting w:val="15" w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word"/></w:compat>'))
     for st in d.styles:
         if st.name == 'Normal':
             st.font.name = font
@@ -236,17 +245,31 @@ def bullet_numbering(d):
 
 
 def set_num(par, num_id):
+    """The paragraph in the bullet list, its numPr in the place the schema gives it (before the spacing)."""
+    npr = par._p.get_or_add_pPr().get_or_add_numPr()
+    npr.get_or_add_ilvl().val = 0
+    npr.get_or_add_numId().val = int(num_id)
+
+
+BIDI_AFTER = ('w:adjustRightInd', 'w:snapToGrid', 'w:spacing', 'w:ind', 'w:contextualSpacing', 'w:mirrorIndents', 'w:suppressOverlap',
+              'w:jc', 'w:textDirection', 'w:textAlignment', 'w:textboxTightWrap', 'w:outlineLvl', 'w:divId', 'w:cnfStyle', 'w:rPr',
+              'w:sectPr', 'w:pPrChange')
+
+
+def set_bidi(par):
+    """A right-to-left paragraph: w:bidi in the place the schema gives it."""
     from docx.oxml import OxmlElement
     from docx.oxml.ns import qn
     ppr = par._p.get_or_add_pPr()
-    npr = OxmlElement('w:numPr')
-    il = OxmlElement('w:ilvl')
-    il.set(qn('w:val'), '0')
-    ni = OxmlElement('w:numId')
-    ni.set(qn('w:val'), str(num_id))
-    npr.append(il)
-    npr.append(ni)
-    ppr.append(npr)
+    if ppr.find(qn('w:bidi')) is not None:
+        return
+    after = {qn(t) for t in BIDI_AFTER}
+    el = OxmlElement('w:bidi')
+    for i, child in enumerate(ppr):
+        if child.tag in after:
+            ppr.insert(i, el)
+            return
+    ppr.append(el)
 
 
 def run_props(run, size=None, bold=None, color=None, font=None, rtl=False):
@@ -280,38 +303,44 @@ def run_props(run, size=None, bold=None, color=None, font=None, rtl=False):
 
 
 def page_field(par, size, color, font, words=('Page ', ' of '), rtl=False):
+    """«Page N of M» in one run, as docx-js writes it: the text, the PAGE field, the text, the NUMPAGES field — the fields with
+    no cached value (the PDF program fills them)."""
     from docx.oxml import OxmlElement
     from docx.oxml.ns import qn
+    r = par.add_run()
+    run_props(r, size=size, color=color, font=font, rtl=rtl)
+
+    def text(t):
+        e = OxmlElement('w:t')
+        e.set(qn('xml:space'), 'preserve')
+        e.text = t
+        r._r.append(e)
 
     def field(code):
-        r = par.add_run()
-        run_props(r, size=size, color=color, font=font, rtl=rtl)
-        for kind_, text in (('begin', None), (None, code), ('separate', None), (None, '1'), ('end', None)):
+        for kind_ in ('begin', None, 'separate', 'end'):
             if kind_:
                 f = OxmlElement('w:fldChar')
                 f.set(qn('w:fldCharType'), kind_)
                 r._r.append(f)
-            elif text == code:
+            else:
                 it = OxmlElement('w:instrText')
                 it.set(qn('xml:space'), 'preserve')
-                it.text = f' {code} '
+                it.text = code
                 r._r.append(it)
-            else:
-                t = OxmlElement('w:t')
-                t.text = text
-                r._r.append(t)
-    r = par.add_run(words[0])
-    run_props(r, size=size, color=color, font=font, rtl=rtl)
+    text(words[0])
     field('PAGE')
-    r = par.add_run(words[1])
-    run_props(r, size=size, color=color, font=font, rtl=rtl)
+    text(words[1])
     field('NUMPAGES')
 
 
 def spacing(par, before=None, after=None, keep_next=None, align=None, bidi=False):
     from docx.enum.text import WD_ALIGN_PARAGRAPH
     from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
     from docx.shared import Twips
+    ppr = par._p.get_or_add_pPr()
+    for st in ppr.findall(qn('w:pStyle')):
+        ppr.remove(st)                                                      # the template's «Header»/«Footer» style
     pf = par.paragraph_format
     if before is not None:
         pf.space_before = Twips(before)
@@ -323,18 +352,32 @@ def spacing(par, before=None, after=None, keep_next=None, align=None, bidi=False
         par.alignment = {'center': WD_ALIGN_PARAGRAPH.CENTER, 'both': WD_ALIGN_PARAGRAPH.JUSTIFY, 'left': WD_ALIGN_PARAGRAPH.LEFT,
                          'right': WD_ALIGN_PARAGRAPH.RIGHT}[align]
     if bidi:
-        par._p.get_or_add_pPr().insert(0, OxmlElement('w:bidi'))
+        set_bidi(par)
 
 
-def no_borders(table):
+W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'
+
+
+def no_borders(table, widths=(5600, 3426)):
+    """A table without borders, its width the sum of its columns, each cell's margins 20/60 (as the hand-built Word files)."""
     from docx.oxml import parse_xml
-    tblpr = table._tbl.tblPr
-    tblpr.append(parse_xml('<w:tblBorders xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
-                           + ''.join(f'<w:{s} w:val="none" w:sz="0" w:space="0" w:color="FFFFFF"/>' for s in
+    from docx.oxml.ns import qn
+    tbl = table._tbl
+    tblpr = tbl.tblPr
+    for tag in ('w:tblW', 'w:tblLook', 'w:tblStyle'):
+        for x in tblpr.findall(qn(tag)):
+            tblpr.remove(x)
+    tblpr.insert(0, parse_xml(f'<w:tblW {W_NS} w:type="dxa" w:w="{sum(widths)}"/>'))
+    tblpr.append(parse_xml(f'<w:tblBorders {W_NS}>'
+                           + ''.join(f'<w:{s} w:val="none" w:color="FFFFFF" w:sz="0"/>' for s in
                                      ('top', 'left', 'bottom', 'right', 'insideH', 'insideV')) + '</w:tblBorders>'))
-    tblpr.append(parse_xml('<w:tblCellMar xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
-                           '<w:top w:w="20" w:type="dxa"/><w:left w:w="60" w:type="dxa"/><w:bottom w:w="20" w:type="dxa"/>'
-                           '<w:right w:w="60" w:type="dxa"/></w:tblCellMar>'))
+    grid = tbl.find(qn('w:tblGrid'))
+    for col, wdt in zip(grid.findall(qn('w:gridCol')), widths):
+        col.set(qn('w:w'), str(wdt))
+    for tc in tbl.iter(qn('w:tc')):
+        tcpr = tc.get_or_add_tcPr()
+        tcpr.append(parse_xml(f'<w:tcMar {W_NS}><w:top w:type="dxa" w:w="20"/><w:left w:type="dxa" w:w="60"/>'
+                              '<w:bottom w:type="dxa" w:w="20"/><w:right w:type="dxa" w:w="60"/></w:tcMar>'))
 
 
 def word_en(path, title, blocks, header_line, creator, font='Times New Roman'):
