@@ -150,15 +150,15 @@ class Case:
 
 
 READ_TOOLS = [
-    {'name': 'read_pages', 'description': 'The text of pages of the dossier (its own text, or the OCR of a scanned page), at most '
+    {'name': 'read_pages', 'eager_input_streaming': True, 'description': 'The text of pages of the dossier (its own text, or the OCR of a scanned page), at most '
      f'{MAX_PAGES} pages a call and {PAGE_CHARS} characters a page. Read the first page or two of a document to know what it is; '
      'read more only when the decision needs it.',
      'input_schema': {'type': 'object', 'properties': {'pages': {'type': 'string', 'description': 'e.g. "12-15, 20"'}},
                       'required': ['pages']}},
-    {'name': 'view_page', 'description': 'One page drawn as a picture: for a page with no or unclear text (a scan, a form, '
+    {'name': 'view_page', 'eager_input_streaming': True, 'description': 'One page drawn as a picture: for a page with no or unclear text (a scan, a form, '
      'a mock-up, a table), or to check a heading or a signature.',
      'input_schema': {'type': 'object', 'properties': {'page': {'type': 'integer'}}, 'required': ['page']}},
-    {'name': 'search_text', 'description': 'The pages (kept pages only) whose text has these words, with a short extract each. '
+    {'name': 'search_text', 'eager_input_streaming': True, 'description': 'The pages (kept pages only) whose text has these words, with a short extract each. '
      'Spaces match any whitespace; case is ignored. regex=true for a regular expression.',
      'input_schema': {'type': 'object', 'properties': {'text': {'type': 'string'}, 'regex': {'type': 'boolean'}},
                       'required': ['text']}},

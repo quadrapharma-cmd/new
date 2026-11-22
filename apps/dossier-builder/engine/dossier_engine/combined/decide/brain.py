@@ -61,11 +61,46 @@ def _err(tool_id, text):
     return {'type': 'tool_result', 'tool_use_id': tool_id, 'content': text, 'is_error': True}
 
 
+JSON_TYPES = {'string': str, 'integer': int, 'number': (int, float), 'boolean': bool, 'array': list, 'object': dict}
+
+
+def misfit(schema, value, where='input'):
+    """Why a tool's input does not fit the tool's schema (its required fields, its types and its allowed values, all the way
+    down), or '' when it fits. A streamed input can arrive cut off, and the schema is not enforced by the API: every input is
+    checked before its tool runs, and one that does not fit goes back to Claude to send again."""
+    if not schema:
+        return ''
+    if 'anyOf' in schema:
+        return '' if any(not misfit(s, value, where) for s in schema['anyOf']) else f'{where} is not of an allowed form'
+    t = schema.get('type')
+    py = JSON_TYPES.get(t)
+    if py and (not isinstance(value, py) or (t in ('integer', 'number') and isinstance(value, bool))):
+        return f'{where} should be of type {t}'
+    if 'enum' in schema and value not in schema['enum']:
+        return f'{where} should be one of {schema["enum"]}'
+    if t == 'object':
+        for k in schema.get('required', []):
+            if k not in value:
+                return f'{where}.{k} is missing'
+        more = schema.get('additionalProperties')
+        for k, v in value.items():
+            why = misfit(schema.get('properties', {}).get(k, more if isinstance(more, dict) else None), v, f'{where}.{k}')
+            if why:
+                return why
+    if t == 'array' and 'items' in schema:
+        for i, v in enumerate(value):
+            why = misfit(schema['items'], v, f'{where}[{i}]')
+            if why:
+                return why
+    return ''
+
+
 def converse(client, task, system, tools, first, handlers, budget, log, *, model=MODEL, effort='high', max_tokens=32000,
              max_turns=90):
     """Run one task to its `finish`. `handlers` maps each tool's name to a function of its input that returns a string (or a
     list of content blocks) or raises ToolError. Returns {'finished', 'summary', 'turns'}; raises Stop."""
     messages = [{'role': 'user', 'content': first}]
+    schemas = {t['name']: t.get('input_schema') for t in tools}
     state = {'finished': False, 'summary': '', 'turns': 0}
     nudges = bad_json = 0
     for turn in range(max_turns):
@@ -116,6 +151,11 @@ def converse(client, task, system, tools, first, handlers, budget, log, *, model
             if fn is None or not isinstance(b.input, dict):
                 results.append(_err(b.id, f'Unknown tool or input: {b.name}'))
                 continue
+            why = misfit(schemas.get(b.name), b.input)
+            if why:
+                results.append(_err(b.id, f'This input does not fit the tool: {why}. Send it again, whole.'))
+                log({'task': task, 'tool': b.name, 'input': brief(b.input), 'ok': False, 'error': why})
+                continue
             if b.name == 'finish':                                          # decided after the turn's other calls
                 finish = (len(results), b)
                 results.append(None)
@@ -127,6 +167,10 @@ def converse(client, task, system, tools, first, handlers, budget, log, *, model
             except ToolError as e:
                 log({'task': task, 'tool': b.name, 'input': brief(b.input), 'ok': False, 'error': brief(str(e), 600)})
                 results.append(_err(b.id, str(e)))
+            except (KeyError, IndexError, TypeError, ValueError) as e:   # an input the schema allows but the program cannot use
+                why = f'{type(e).__name__}: {e}'
+                log({'task': task, 'tool': b.name, 'input': brief(b.input), 'ok': False, 'error': 'not usable: ' + brief(why, 600)})
+                results.append(_err(b.id, f'This input could not be used ({brief(why, 300)}). Check it and send it again.'))
         if finish:
             i, b = finish
             refused = sum(1 for r in results if r and r.get('is_error'))
