@@ -35,6 +35,12 @@ mkdir -p "$RT/tessdata"
 curl -fsSL -o "$RT/tessdata/ara.traineddata" https://github.com/tesseract-ocr/tessdata_fast/raw/4.1.0/ara.traineddata
 curl -fsSL -o "$RT/tessdata/eng.traineddata" https://github.com/tesseract-ocr/tessdata_fast/raw/4.1.0/eng.traineddata
 (cd "$RT/tessdata" && shasum -a 256 -c "$HERE/tessdata.sha256")
+# tesseract's own files beside the language files, as in the cloud edition's tessdata: its configs (OCRmyPDF asks for «hocr»,
+# «txt»…) and the glyphless font of the text layer (pdf.ttf)
+for f in configs tessconfigs pdf.ttf; do
+  if [ -e "$RT/env/share/tessdata/$f" ]; then cp -R "$RT/env/share/tessdata/$f" "$RT/tessdata/"; else echo "no $f in the tesseract package"; exit 1; fi
+done
+ls "$RT/tessdata" "$RT/tessdata/configs"
 
 echo "== 3. LibreOffice 24.2.7.2 (The Document Foundation's own build, signed by it)"
 curl -fsSL -o "$TMP/lo.dmg" \
