@@ -42,6 +42,21 @@ MOST = 0.004            # the share of a page's pixels that may differ (antialia
 # the texts of the outputs (but the line giving the files' total size, which a text layer changes) and their pages drawn.
 OCR_NEAR = 2            # characters a page's reading may differ by
 SIZE = re.compile('ميجابايت|بحجم')
+# A correction's «changed pixels» (fix.py: the page drawn before and after it by poppler) is a measurement of how small the
+# change is, and poppler draws a font the PDF does not carry with this computer's stand-in for it (the cloud's Nimbus Sans
+# for Helvetica; a Mac has Helvetica itself): it may differ, below 1 % of the page on both sides.
+SHARE = re.compile(r'\d(?:\.\d+)?e-\d\d|0\.\d{1,5}')
+MARKS = re.compile('[\u200e\u200f\u202a-\u202e\u2060\u2066-\u2069]')
+
+
+def allowed(line, near):
+    """Why a line of an output's text may differ here from the cloud edition's, or None."""
+    x = MARKS.sub('', line[1:]).strip()
+    if near and SIZE.search(x):
+        return 'the files\' size, which the hidden text of a page read otherwise changes'
+    if SHARE.fullmatch(x) and float(x) < 0.01:
+        return 'a correction\'s measured share of changed pixels'
+    return None
 
 
 def edits(a, b):
@@ -185,8 +200,9 @@ def test_the_same_dossier_as_the_cloud_edition(made):
         if x['text'] != y['text']:
             changed = [l for l in difflib.unified_diff(cloud['pdfs'][name], here['pdfs'][name], lineterm='', n=0)
                        if l[:1] in '-+' and not l.startswith(('---', '+++'))]
-            sizes = bool(near) and all(SIZE.search(l) for l in changed)
-            (near if sizes else diffs).append(f'{name} text (- cloud, + here): ' + ' | '.join(changed[:8]))
+            why = {allowed(l, near) for l in changed}
+            (near if None not in why else diffs).append(f'{name} text (- cloud, + here): ' + ' | '.join(changed[:8])
+                                                       + (f' ({"; ".join(sorted(why))})' if None not in why else ''))
     if near and not diffs:
         warnings.warn('read here within a near tie of the cloud edition: ' + ' / '.join(near))
     from PIL import Image
