@@ -1,0 +1,66 @@
+# eBOX for the Mac (the combined-dossier program with Claude inside): built and tested on GitHub's Macs, Apple Silicon and Intel.
+# By hand only (the owner's rule, 13/11/2026: tested and said finished first). Each build: the runtime (the tools in the versions
+# the program was measured with), the program's tests on the Mac with that runtime (the made-up dossier, compared with the cloud
+# edition's outputs), the app, and the app checked as it will reach the person (no runtime yet, its archive marked as downloaded).
+# Without «publish» the zips stay on the run as files to try; with it, after the try is approved, they go to the «ebox-mac» release.
+name: ebox-mac
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish to the «ebox-mac» release (only after the build was tried and approved)'
+        type: boolean
+        default: false
+permissions:
+  contents: write
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            asset: eBOX-Mac-AppleSilicon.zip
+          - os: macos-15-intel
+            asset: eBOX-Mac-Intel.zip
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: The runtime (pinned tools)
+        run: bash apps/dossier-builder/mac/build-runtime.sh
+      - name: The program's tests on the Mac, with the runtime
+        run: bash apps/dossier-builder/mac/test.sh -rs
+      - name: The app
+        run: bash apps/dossier-builder/mac/build-app.sh dist
+      - name: The app as it will reach the person (no runtime, archive marked as downloaded), its own check
+        run: bash apps/dossier-builder/mac/smoke.sh dist/eBOX.app
+      - name: Package
+        run: |
+          mkdir -p pkg/eBOX
+          ditto dist/eBOX.app pkg/eBOX/eBOX.app
+          cp apps/dossier-builder/mac/README-AR.txt pkg/eBOX/
+          ditto -c -k --keepParent pkg/eBOX ${{ matrix.asset }}
+          ls -la ${{ matrix.asset }}
+      - uses: actions/upload-artifact@v4
+        with: { name: '${{ matrix.asset }}', path: '${{ matrix.asset }}', retention-days: 30, compression-level: 0 }
+  publish:
+    needs: build
+    if: ${{ inputs.publish }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: out, merge-multiple: true }
+      - name: Publish to the «ebox-mac» release
+        env: { GH_TOKEN: '${{ github.token }}', REPO: '${{ github.repository }}' }
+        run: |
+          gh release view ebox-mac -R "$REPO" >/dev/null 2>&1 || \
+            gh release create ebox-mac -R "$REPO" --prerelease --target "${{ github.sha }}" \
+              --title "eBOX for the Mac" --notes "The combined-dossier program with Claude inside."
+          gh release upload ebox-mac out/*.zip -R "$REPO" --clobber
+          gh release edit ebox-mac -R "$REPO" --notes "Built from ${{ github.sha }} on $(date -u +%F).
+          - **Mac with an Apple chip (M1 and later):** eBOX-Mac-AppleSilicon.zip
+          - **Mac with an Intel processor:** eBOX-Mac-Intel.zip
+          Read README-AR.txt inside the zip."

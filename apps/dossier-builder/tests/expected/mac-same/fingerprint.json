@@ -1,0 +1,808 @@
+{
+ "ocr": [
+  "2d45f64b0b494cc2",
+  "52ecbfd0509e45fb",
+  "780217669d1bda4a",
+  "85bce8c1e8f98dba",
+  "2cb66c7fb9cba425",
+  "88ead313d344de67",
+  "6bfe3fffa92a38b9",
+  "a65f71c7b85c5ec9",
+  "528bd586f7f6e3ab",
+  "dadfe1894ee51989",
+  "f709ca3c2f099d6b",
+  "2cddd5e67ea3f7e9",
+  "ac4caf6e2f8eb88b",
+  "dd536d09388fa3fa",
+  "0cc2a3ed8a445672",
+  "89cefd97cedb8f45",
+  "7320550dbed8d59e",
+  "65a9b38efbb595c2",
+  "efce5825d6d53e3e",
+  "caf6e509332ce57d",
+  "1b269c0d7c075705",
+  "54b9c5f447992e43",
+  "9f852bf7b8675e27",
+  "11184ca01b2aa0f7",
+  "13f791577bc8b2e5",
+  "c892017fddf632b7",
+  "6cd474dece542e6a",
+  "086a2e39df2e2279",
+  "ace14782f786a449",
+  "da39a3ee5e6b4b0d",
+  "da39a3ee5e6b4b0d",
+  "da39a3ee5e6b4b0d",
+  "da39a3ee5e6b4b0d",
+  "da39a3ee5e6b4b0d",
+  "da39a3ee5e6b4b0d",
+  "da39a3ee5e6b4b0d",
+  "da39a3ee5e6b4b0d",
+  "da39a3ee5e6b4b0d",
+  "da39a3ee5e6b4b0d",
+  "6834c119def7edac",
+  "ac2ea3c42b9e7ee0",
+  "3733d8e02b3dc2bc",
+  "7ccae38360ec14b7",
+  "005d2cf127f0db0a",
+  "96faa97fb035091d",
+  "64cde310e43838bb",
+  "78a35461a2366a48"
+ ],
+ "plan": [
+  [
+   "Module 3/3.2.S Zentorine (EX)/3.2.S.1 General information/3.2.S.1.1 Nomenclature.pdf",
+   "3.2.S.1.1",
+   [
+    3
+   ]
+  ],
+  [
+   "Module 3/3.2.S Zentorine (EX)/3.2.S.1 General information/3.2.S.1.2 Structure.pdf",
+   "3.2.S.1.2",
+   [
+    4
+   ]
+  ],
+  [
+   "Module 3/3.2.S Zentorine (EX)/3.2.S.2 Manufacture/3.2.S.2.1 Manufacturer(s).pdf",
+   "3.2.S.2.1",
+   [
+    6
+   ]
+  ],
+  [
+   "Module 3/3.2.S Zentorine (EX)/3.2.S.2 Manufacture/3.2.S.2.2 Description of manufacturing process and process controls.pdf",
+   "3.2.S.2.2",
+   [
+    7,
+    8
+   ]
+  ],
+  [
+   "Module 3/3.2.S Zentorine (EX)/3.2.S.4 Control of drug substance/3.2.S.4.1 Specification.pdf",
+   "3.2.S.4.1",
+   [
+    9
+   ]
+  ],
+  [
+   "Module 3/3.2.S Zentorine (EX)/3.2.S.4 Control of drug substance/3.2.S.4.4 Batch analyses.pdf",
+   "3.2.S.4.4",
+   [
+    10
+   ]
+  ],
+  [
+   "Module 3/3.2.S Zentorine (EX)/3.2.S.7 Stability/3.2.S.7.1 Stability summary and conclusions.pdf",
+   "3.2.S.7.1",
+   [
+    11
+   ]
+  ],
+  [
+   "Module 3/3.2.S Zentorine (EX)/3.2.S.7 Stability/3.2.S.7.3 Stability data.pdf",
+   "3.2.S.7.3",
+   [
+    12
+   ]
+  ],
+  [
+   "Module 3/3.2.P Zentorix tablets (EX)/3.2.P.1 Description and composition/3.2.P.1 Description and composition of the drug product.pdf",
+   "3.2.P.1",
+   [
+    14
+   ]
+  ],
+  [
+   "Module 3/3.2.P Zentorix tablets (EX)/3.2.P.3 Manufacture/3.2.P.3.1 Manufacturer(s).pdf",
+   "3.2.P.3.1",
+   [
+    15
+   ]
+  ],
+  [
+   "Module 3/3.2.P Zentorix tablets (EX)/3.2.P.5 Control of drug product/3.2.P.5.1 Specification(s).pdf",
+   "3.2.P.5.1",
+   [
+    16
+   ]
+  ],
+  [
+   "Module 3/3.2.P Zentorix tablets (EX)/3.2.P.5 Control of drug product/3.2.P.5.4 Batch analyses.pdf",
+   "3.2.P.5.4",
+   [
+    17
+   ]
+  ],
+  [
+   "Module 3/3.2.P Zentorix tablets (EX)/3.2.P.8 Stability/3.2.P.8.1 Stability summary and conclusion.pdf",
+   "3.2.P.8.1",
+   [
+    18
+   ]
+  ],
+  [
+   "Module 3/3.2.P Zentorix tablets (EX)/3.2.P.8 Stability/3.2.P.8.3 Stability data.pdf",
+   "3.2.P.8.3",
+   [
+    19
+   ]
+  ],
+  [
+   "Module 3/3.2.S Zentorine (EX)/3.2.S.2 Manufacture/3.2.S.2.3 Control of materials.pdf",
+   "3.2.S.2.3",
+   [
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29
+   ]
+  ],
+  [
+   "Module 2/2.2 CTD introduction.pdf",
+   "2.2",
+   [
+    41
+   ]
+  ],
+  [
+   "Module 2/2.3 Quality overall summary/2.3 Introduction.pdf",
+   "2.3",
+   [
+    42
+   ]
+  ],
+  [
+   "Module 2/2.4 Nonclinical overview.pdf",
+   "2.4",
+   [
+    43
+   ]
+  ],
+  [
+   "Module 2/2.5 Clinical overview.pdf",
+   "2.5",
+   [
+    44
+   ]
+  ],
+  [
+   "Module 1 - EU layout as received (for reference)/1.3.1 SPC.pdf",
+   "1.3.1",
+   [
+    46
+   ]
+  ],
+  [
+   "Module 1 - EU layout as received (for reference)/1.3.2 Mock-ups.pdf",
+   "1.3.2",
+   [
+    47
+   ]
+  ]
+ ],
+ "removed": [
+  [
+   1,
+   "table of contents of this substance (the same lines are in Module 3's table of contents, 3.1)"
+  ],
+  [
+   2,
+   "table of contents of this substance (the same lines are in Module 3's table of contents, 3.1)"
+  ],
+  [
+   5,
+   "separator page (3.2.S.2)"
+  ],
+  [
+   13,
+   "table of contents of 3.2.P (the same lines are in Module 3's table of contents, 3.1)"
+  ],
+  [
+   40,
+   "cover page of Module 2"
+  ],
+  [
+   45,
+   "cover page of Module 1"
+  ]
+ ],
+ "findings": [
+  [
+   "units",
+   "critical",
+   "بوحدة mcg: ص 41؛ بوحدة mg: ص 14"
+  ],
+  [
+   "reviewer",
+   "major",
+   "ص 18"
+  ],
+  [
+   "certificates",
+   "major",
+   "—"
+  ],
+  [
+   "module1",
+   "major",
+   "ص 46–47"
+  ],
+  [
+   "heading_number",
+   "minor",
+   "ص 14"
+  ]
+ ],
+ "leaves": [
+  [
+   "2.2",
+   "m2/22-intro/introduction.pdf",
+   "Introduction to the dossier"
+  ],
+  [
+   "2.5",
+   "m2/25-clin-over/clinical-overview.pdf",
+   "2.5 Clinical overview"
+  ],
+  [
+   "3.2.S.1.1",
+   "m3/32-body-data/32s-drug-sub/zentorine-ex/32s1-gen-info/nomenclature.pdf",
+   "3.2.S.1.1 Nomenclature"
+  ],
+  [
+   "3.2.S.1.2",
+   "m3/32-body-data/32s-drug-sub/zentorine-ex/32s1-gen-info/structure.pdf",
+   "3.2.S.1.2 Structure"
+  ],
+  [
+   "3.2.S.2.1",
+   "m3/32-body-data/32s-drug-sub/zentorine-ex/32s2-manuf/manufacturer.pdf",
+   "3.2.S.2.1 Manufacturer(s)"
+  ],
+  [
+   "3.2.S.2.2",
+   "m3/32-body-data/32s-drug-sub/zentorine-ex/32s2-manuf/manuf-process-and-controls.pdf",
+   "3.2.S.2.2 Description of manufacturing process and process controls"
+  ],
+  [
+   "3.2.S.4.1",
+   "m3/32-body-data/32s-drug-sub/zentorine-ex/32s4-contr-drug-sub/32s41-spec/specification.pdf",
+   "3.2.S.4.1 Specification"
+  ],
+  [
+   "3.2.S.4.4",
+   "m3/32-body-data/32s-drug-sub/zentorine-ex/32s4-contr-drug-sub/32s44-batch-analys/batch-analyses.pdf",
+   "3.2.S.4.4 Batch analyses"
+  ],
+  [
+   "3.2.S.7.1",
+   "m3/32-body-data/32s-drug-sub/zentorine-ex/32s7-stab/stability-summary.pdf",
+   "3.2.S.7.1 Stability summary and conclusions"
+  ],
+  [
+   "3.2.S.7.3",
+   "m3/32-body-data/32s-drug-sub/zentorine-ex/32s7-stab/stability-data.pdf",
+   "3.2.S.7.3 Stability data"
+  ],
+  [
+   "3.2.S.2.3",
+   "m3/32-body-data/32s-drug-sub/zentorine-ex/32s2-manuf/control-of-materials.pdf",
+   "3.2.S.2.3 Control of materials (Zentorine)"
+  ],
+  [
+   "3.2.P.1",
+   "m3/32-body-data/32p-drug-prod/zentorix/32p1-desc-comp/description-and-composition.pdf",
+   "3.2.P.1 Description and composition of the drug product"
+  ],
+  [
+   "3.2.P.3.1",
+   "m3/32-body-data/32p-drug-prod/zentorix/32p3-manuf/manufacturers.pdf",
+   "3.2.P.3.1 Manufacturer(s)"
+  ],
+  [
+   "3.2.P.5.1",
+   "m3/32-body-data/32p-drug-prod/zentorix/32p5-contr-drug-prod/32p51-spec/specifications.pdf",
+   "3.2.P.5.1 Specification(s)"
+  ],
+  [
+   "3.2.P.5.4",
+   "m3/32-body-data/32p-drug-prod/zentorix/32p5-contr-drug-prod/32p54-batch-analys/batch-analyses.pdf",
+   "3.2.P.5.4 Batch analyses"
+  ],
+  [
+   "3.2.P.8.1",
+   "m3/32-body-data/32p-drug-prod/zentorix/32p8-stab/stability-summary.pdf",
+   "3.2.P.8.1 Stability summary and conclusion"
+  ],
+  [
+   "3.2.P.8.3",
+   "m3/32-body-data/32p-drug-prod/zentorix/32p8-stab/stability-data.pdf",
+   "3.2.P.8.3 Stability data"
+  ]
+ ],
+ "m1": [
+  [
+   "m1-0-cover",
+   "10-cover/cover.pdf",
+   "Cover letter for sequence 0000"
+  ],
+  [
+   "m1-0-cover",
+   "10-cover/tracking.pdf",
+   "Tracking table"
+  ],
+  [
+   "m1-3-1-spc-label-pl",
+   "13-pi/131-spclabelpl/en/spc.pdf",
+   "SmPC (English)"
+  ],
+  [
+   "m1-3-1-spc-label-pl",
+   "13-pi/131-spclabelpl/en/pl.pdf",
+   "Package leaflet (English)"
+  ],
+  [
+   "m1-3-1-spc-label-pl",
+   "13-pi/131-spclabelpl/ar/pl.pdf",
+   "Package leaflet (Arabic)"
+  ],
+  [
+   "m1-3-2-mockup",
+   "13-pi/132-mockup/mockup.pdf",
+   "Mock-ups of the current packs - Egyptian artwork to follow"
+  ]
+ ],
+ "validation": [
+  [
+   "EG-PF-5.1/2",
+   true
+  ],
+  [
+   "EG-PF-5.3",
+   true
+  ],
+  [
+   "EG-PF-4.1/2",
+   true
+  ],
+  [
+   "EG-PF-4.3",
+   true
+  ],
+  [
+   "EG-PF-3.1/2",
+   true
+  ],
+  [
+   "EG-PF-3.3",
+   true
+  ],
+  [
+   "EG-PF-1.1/2",
+   true
+  ],
+  [
+   "EG-PF-1.3",
+   true
+  ],
+  [
+   "EG-PF-2.1/2",
+   true
+  ],
+  [
+   "EG-PF-2.3",
+   true
+  ],
+  [
+   "EG-PF-6.1/2",
+   true
+  ],
+  [
+   "EG-PF-6.3",
+   true
+  ],
+  [
+   "EG-PF-1.3 (ICH value)",
+   true
+  ],
+  [
+   "EG-PF-2.3 (ICH value)",
+   true
+  ],
+  [
+   "EG-PF-7.1/7.2",
+   true
+  ],
+  [
+   "EG-PF-7.3",
+   true
+  ],
+  [
+   "EG-PF-7.4",
+   true
+  ],
+  [
+   "EG-PF-7.5",
+   true
+  ],
+  [
+   "EG-PF-7.6",
+   true
+  ],
+  [
+   "EG-PF-8.1/8.2/8.3",
+   true
+  ],
+  [
+   "EG-PF-9.1/9.2",
+   true
+  ],
+  [
+   "EG-PF-9.3",
+   true
+  ],
+  [
+   "EG-PF-9.4",
+   true
+  ],
+  [
+   "EG-PF-9.5",
+   true
+  ],
+  [
+   "EG-PF-9.6",
+   true
+  ],
+  [
+   "EG-PF-E01",
+   true
+  ],
+  [
+   "EG-PF-9.7",
+   true
+  ],
+  [
+   "EG-PF-9.9",
+   true
+  ],
+  [
+   "EG-PF-9.8",
+   true
+  ],
+  [
+   "EG-BP-E15",
+   true
+  ],
+  [
+   "EG-PF-E02",
+   true
+  ],
+  [
+   "EG-PF-E03",
+   true
+  ],
+  [
+   "EG-PF-E04",
+   true
+  ],
+  [
+   "EG-PF-E05",
+   true
+  ],
+  [
+   "EG-PF-E06",
+   false
+  ],
+  [
+   "EG-PF-E07",
+   true
+  ],
+  [
+   "EG-PF-13.1",
+   true
+  ],
+  [
+   "EG-PF-13.2",
+   true
+  ],
+  [
+   "EG-PF-13.3",
+   true
+  ],
+  [
+   "EG-PF-14.6",
+   true
+  ],
+  [
+   "EG-PF-14.7",
+   true
+  ],
+  [
+   "EG-BP-14.8",
+   true
+  ],
+  [
+   "EG-BP-14.BP4/BP5",
+   true
+  ],
+  [
+   "EG-BP-14.BP6",
+   false
+  ],
+  [
+   "EG-BP-E07",
+   true
+  ],
+  [
+   "EG-BP-E08",
+   true
+  ],
+  [
+   "EG-BP-E10",
+   true
+  ],
+  [
+   "EG-PF-11.11",
+   true
+  ],
+  [
+   "EG-PF-11.1",
+   true
+  ],
+  [
+   "EG-PF-11.2",
+   true
+  ],
+  [
+   "EG-PF-11.3",
+   true
+  ],
+  [
+   "EG-PF-11.4",
+   true
+  ],
+  [
+   "EG-PF-11.6",
+   true
+  ],
+  [
+   "EG-PF-11.8",
+   true
+  ],
+  [
+   "EG-PF-11.5/11.7/11.9/11.10/11.12",
+   true
+  ],
+  [
+   "EG-BP-E06",
+   true
+  ],
+  [
+   "EG-PF-12.1",
+   true
+  ],
+  [
+   "EG-PF-10.1",
+   true
+  ],
+  [
+   "EG-PF-E08",
+   true
+  ],
+  [
+   "EG-BP-E05",
+   true
+  ],
+  [
+   "EG-PF-E11",
+   true
+  ],
+  [
+   "EG-PF-E12",
+   true
+  ],
+  [
+   "EG-PF-E13",
+   true
+  ],
+  [
+   "EG-PF-14.5",
+   true
+  ],
+  [
+   "EG-BP-E16",
+   true
+  ],
+  [
+   "EG-PF-15.11",
+   true
+  ],
+  [
+   "EG-PF-15.12",
+   true
+  ],
+  [
+   "EG-BP-E01",
+   true
+  ],
+  [
+   "EG-BP-E02",
+   true
+  ],
+  [
+   "EG-PF-15.3",
+   true
+  ],
+  [
+   "EG-PF-15.4",
+   true
+  ],
+  [
+   "EG-PF-15.5",
+   true
+  ],
+  [
+   "EG-PF-15.6",
+   true
+  ],
+  [
+   "EG-PF-15.7",
+   true
+  ],
+  [
+   "EG-PF-15.8",
+   true
+  ],
+  [
+   "EG-PF-15.9",
+   true
+  ],
+  [
+   "EG-PF-15.10",
+   true
+  ],
+  [
+   "EG-BP-15.BP1",
+   true
+  ],
+  [
+   "EG-BP-15.BP1.1/BP2.1",
+   true
+  ],
+  [
+   "EG-BP-E20",
+   true
+  ],
+  [
+   "EG-BP-E28",
+   true
+  ],
+  [
+   "EG-PF-16.1",
+   true
+  ],
+  [
+   "EG-PF-16.2/16.3",
+   true
+  ],
+  [
+   "EG-PF-16.5",
+   true
+  ],
+  [
+   "EG-BP-16.BP1",
+   true
+  ],
+  [
+   "EG-BP-16.BP5",
+   true
+  ],
+  [
+   "EG-BP-16.BP8/BP9",
+   true
+  ],
+  [
+   "EG-BP-E23 (fonts)",
+   false
+  ],
+  [
+   "EG-BP-E23 (text)",
+   true
+  ],
+  [
+   "EG-BP-E24",
+   true
+  ],
+  [
+   "EG-PF-E09",
+   true
+  ],
+  [
+   "EG-PF-E10",
+   true
+  ]
+ ],
+ "pdfs": {
+  "pl-ar.pdf": {
+   "pages": 1,
+   "text": "4db73a8e0c01d6ba",
+   "fonts": [
+    "LiberationSans",
+    "LiberationSans-Bold",
+    "NotoNaskhArabic-Bold",
+    "NotoNaskhArabic-Regular"
+   ]
+  },
+  "pl-en.pdf": {
+   "pages": 1,
+   "text": "2810a97ef902ef11",
+   "fonts": [
+    "LiberationSerif",
+    "LiberationSerif-Bold"
+   ]
+  },
+  "spc-en.pdf": {
+   "pages": 1,
+   "text": "e7e92258af7f0bc6",
+   "fonts": [
+    "LiberationSerif",
+    "LiberationSerif-Bold"
+   ]
+  },
+  "2.2 CTD introduction.fixed.pdf": {
+   "pages": 1,
+   "text": "8b81aee9765aaa44",
+   "fonts": [
+    "/Helvetica",
+    "/Helvetica-Bold"
+   ]
+  },
+  "ctd-report.pdf": {
+   "pages": 3,
+   "text": "26dcd5e8df6bdaff",
+   "fonts": [
+    "LiberationSans",
+    "LiberationSans-Bold",
+    "NotoNaskhArabic-Bold",
+    "NotoNaskhArabic-Regular"
+   ]
+  },
+  "ectd-report.pdf": {
+   "pages": 2,
+   "text": "a541d07c22144d74",
+   "fonts": [
+    "LiberationSans",
+    "LiberationSans-Bold",
+    "NotoNaskhArabic-Bold",
+    "NotoNaskhArabic-Regular"
+   ]
+  }
+ }
+}
