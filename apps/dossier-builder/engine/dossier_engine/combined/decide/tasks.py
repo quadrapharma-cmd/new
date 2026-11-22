@@ -95,7 +95,7 @@ authority of the country of origin)]. Items the program builds (the cover letter
 are built by the program.
 6. add_to_confirm for each value the owner must confirm (the applicant, the submission, registration and marketing types, the \
 name, the presentations …) and add_company_gap for each document or data the company must still provide.
-7. set_titles: the two reports' titles and subtitles in Arabic, naming the product and its manufacturer.""",
+7. set_titles: the two reports' titles and subtitles in Arabic: «ملف تسجيل <the product> (<its manufacturer, in Arabic>)» and «بناه البرنامج eBOX من الملف الوارد، <today>»; «ملف eCTD لـ<the product> (<its manufacturer>)» and «التسلسل 0000، بناه البرنامج eBOX، <today>» (today's date is in the case file).""",
 
     'pi': """
 TASK 3 — THE PRODUCT INFORMATION. Write the product information to submit in Egypt from the company's own texts in the dossier: \
@@ -118,7 +118,8 @@ and write it again). Product, substance and company names and units stay in Lati
 4. When the same error is printed in the company's own PDFs (e.g. a wrong unit in Module 2), correct it there with \
 correct_in_pdf: the document's path, the page within the document, the exact phrase and the phrase with characters deleted \
 («1.25 mcg» → «1.25 mg»). The program refuses an edit that adds characters or a phrase it does not find exactly once.
-5. add_translation_note for what the reader of the Arabic leaflet must know (in Arabic).""",
+5. add_translation_note for what the reader of the Arabic leaflet must know (in Arabic).
+Names: title = the document's own title («Summary of Product Characteristics», «Package Leaflet», «Labelling (outer packaging)», «Labelling (immediate packaging)», «Package leaflet (Arabic)»); ectd_title = «Summary of Product Characteristics (English) - proposed, corrected» (or «- proposed» when nothing was corrected), «Package leaflet (English) - proposed, corrected», «Outer packaging labelling text (English)», «Immediate packaging labelling text (English)», «Package leaflet (Arabic) - proposed». With the first document give header = the product's full name, creator = «<company> (text) — corrections listed in the report», and with PIL_AR creator_ar = «Arabic translation of the corrected package leaflet».""",
 
     'review': """
 TASK 4 — THE REVIEWER'S FINDINGS. The program's rules made the findings you are given. Find what a reviewer at EDA would find and \
@@ -285,6 +286,9 @@ def first_message(task, w, case):
                 'Check the cut and correct it (task 1).')
     docs = case.documents(plan, first_line=(task != 'sequence'))
     if task == 'product':
+        import datetime
+        today = (dec.get('ectd') or {}).get('today') or datetime.date.today().isoformat()
+        head += f"TODAY: {datetime.date.fromisoformat(today).strftime('%d/%m/%Y')}\n"
         return (head + f"\nTHE DOCUMENTS ({len(plan.get('docs', []))})\n{docs}\n\nTHE NAMES GIVEN\n"
                 f"{json.dumps(dec.get('names', {}), ensure_ascii=False)}\n\nEDA'S MODULE 1 ITEMS (NTA 065 v5)\n{eda_m1()}\n\n"
                 'Record the product and Egypt\'s Module 1 (task 2).')
