@@ -175,8 +175,10 @@ def validate(seq, profile, header=()):
     check('EG-BP-E01', 'BP', any(re.fullmatch(r'10-cover/cover(-[a-z0-9-]+)?\.pdf', l.get(XL)) for l in cover), 'cover letter present')
     check('EG-BP-E02', 'BP', all(l.get('operation') == 'new' for l in cover), '')
     # files and folders (EG-PF-15)
-    files = [p for p in seq.rglob('*') if p.is_file()]
-    dirs = [p for p in seq.rglob('*') if p.is_dir()]
+    # in the order of their paths: the examples a result names are the same on every computer (a folder's own order is not:
+    # ext4 and APFS list it differently, and so do two Linux disks)
+    files = sorted(p for p in seq.rglob('*') if p.is_file())
+    dirs = sorted(p for p in seq.rglob('*') if p.is_dir())
     too_long = [str(p.relative_to(seq.parent)) for p in files if len(str(p.relative_to(seq.parent))) > 180]
     check('EG-PF-15.3', 'P/F', not too_long, f'longest path {max(len(str(p.relative_to(seq.parent))) for p in files)} characters {too_long[:2]}')
     check('EG-PF-15.4', 'P/F', all(len(p.name) <= 64 for p in files), f'longest file name {max(len(p.name) for p in files)}')

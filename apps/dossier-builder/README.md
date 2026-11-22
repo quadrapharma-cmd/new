@@ -1232,6 +1232,11 @@ with that runtime, compares the made-up dossier's outputs with the cloud edition
 the eCTD and its validation), then checks the packed app as it will arrive (no runtime, its archive marked as downloaded,
 `--self-test`). By hand only; published to the «ebox-mac» release after the try is approved.
 
+What may differ on a Mac, and only this: a scanned page's reading, by at most 2 characters (and the total size of the files,
+which the hidden text layer changes), because OCRmyPDF's rasterizer (PDFium) draws a resampled scan a little otherwise on a
+Mac than on Linux; the Mac's tesseract reads the cloud's own picture of a page exactly as the cloud does. On the made-up dossier
+(22/11): «M-O7» for «M-07» on 2 of its 47 pages, everything else the same.
+
 ```
 bash apps/dossier-builder/mac/build-runtime.sh && bash apps/dossier-builder/mac/test.sh     # on a Mac
 bash apps/dossier-builder/mac/build-app.sh dist && bash apps/dossier-builder/mac/smoke.sh dist/eBOX.app

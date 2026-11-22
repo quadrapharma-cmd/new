@@ -251,7 +251,14 @@ cannot hold a file of 600 MB and 5,000 pages, and a desktop build waits for his 
    record the made-up dossier's outputs again in the cloud edition (`EBOX_RECORD=1 pytest tests/test_mac_same.py`) only when the
    change is meant to alter them, and say so. The program finds its fonts, profiles and tools by its own folders and the PATH,
    never by a place of this computer (`tests/test_mac_app.py` refuses one): a Mac has no `/usr/share/fonts`, and the eCTD stage's
-   font path from there made every Mac test that reaches the eCTD fail (run 4, 22/11).
+   font path from there made every Mac test that reaches the eCTD fail (run 4, 22/11). Nothing an output shows may follow a
+   folder's own order (ext4 and APFS differ, and so do two Linux disks): `validate.py` lists its files sorted (run 5 showed
+   other example files named on the Mac). A scanned page is read from the picture OCRmyPDF's rasterizer (PDFium) draws of it,
+   and PDFium's Mac build draws a resampled scan a little otherwise than its Linux build: the Mac's tesseract reads the cloud's
+   own picture exactly as the cloud (`test_a_scanned_page_read_step_by_step`), but its own picture broke a near tie the other
+   way (M-O7 for M-07, two pages). So `test_mac_same.py` allows a reading to differ by 2 characters a page (and the size line
+   that follows), names each in the log, and nothing else. Making the pictures the same would change the cloud's reading of
+   DTP-HB too: only with his yes.
 
 ### 5. The open-source eCTD projects and the eCTD timelines (monthly, or when he asks)
 1. Last update of each project the plan uses (`docs/PART-2-PLAN.md` §3.9–3.10):
