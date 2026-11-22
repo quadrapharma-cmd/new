@@ -249,7 +249,9 @@ cannot hold a file of 600 MB and 5,000 pages, and a desktop build waits for his 
    stay on the run until he approves the try, then the same workflow with publish true puts them on the «ebox-mac» release (public
    repository: anyone can download them, no login). A change of a tool's version is a new runtime: raise `mac/RUNTIME_VERSION`,
    record the made-up dossier's outputs again in the cloud edition (`EBOX_RECORD=1 pytest tests/test_mac_same.py`) only when the
-   change is meant to alter them, and say so.
+   change is meant to alter them, and say so. The program finds its fonts, profiles and tools by its own folders and the PATH,
+   never by a place of this computer (`tests/test_mac_app.py` refuses one): a Mac has no `/usr/share/fonts`, and the eCTD stage's
+   font path from there made every Mac test that reaches the eCTD fail (run 4, 22/11).
 
 ### 5. The open-source eCTD projects and the eCTD timelines (monthly, or when he asks)
 1. Last update of each project the plan uses (`docs/PART-2-PLAN.md` §3.9–3.10):

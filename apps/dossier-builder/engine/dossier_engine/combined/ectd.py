@@ -21,7 +21,7 @@ from xml.sax.saxutils import escape, quoteattr
 import pikepdf
 
 from . import validate
-from .common import APP4, PROFILE_EG, Work, md5_file, parse_ranges, say
+from .common import APP4, FONTS, PROFILE_EG, Work, md5_file, parse_ranges, say
 
 EG_PDF = '1.4'
 S_FILES = {
@@ -145,9 +145,9 @@ def styles():
     from reportlab.lib.styles import ParagraphStyle
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
-    base = Path('/usr/share/fonts/truetype/liberation')
-    pdfmetrics.registerFont(TTFont('LS', str(base / 'LiberationSans-Regular.ttf')))
-    pdfmetrics.registerFont(TTFont('LSB', str(base / 'LiberationSans-Bold.ttf')))
+    # the program's own copies (vendor/fonts: the same files as Debian's fonts-liberation), so that a Mac writes the same PDFs
+    pdfmetrics.registerFont(TTFont('LS', str(FONTS / 'LiberationSans-Regular.ttf')))
+    pdfmetrics.registerFont(TTFont('LSB', str(FONTS / 'LiberationSans-Bold.ttf')))
     return {
         'n': ParagraphStyle('n', fontName='LS', fontSize=10.5, leading=14.5, spaceAfter=6),
         's': ParagraphStyle('s', fontName='LS', fontSize=8.5, leading=11, textColor=colors.HexColor('#555555'), spaceAfter=4),

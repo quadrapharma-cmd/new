@@ -3,6 +3,7 @@ Claude key kept in a file only the account can read, the settings, a dossier sta
 made-up dossier, without a key (the program goes on with its rules), then finished with a person's decisions. No network."""
 import json
 import os
+import re
 import shutil
 import stat
 import sys
@@ -133,3 +134,13 @@ def test_opened_twice_the_same_page(server):
     assert app.running_page() == url                                                # a second launch opens this page
     f.write_text(json.dumps({'pid': 999999, 'url': url}), encoding='utf-8')
     assert app.running_page() is None                                               # the first is gone: start anew
+
+
+def test_no_place_of_one_computer_in_the_program():
+    """The program finds its fonts, profiles and tools by its own folders and the PATH, never by a place of one computer: on a
+    Mac there is no /usr/share/fonts (the eCTD stage once looked for its font there, and only the Mac's tests showed it)."""
+    bad = re.compile(r"['\"]/(usr|opt|etc|var|Library|Applications|System|home|root|tmp)/")
+    code = HERE.parent / 'engine' / 'dossier_engine' / 'combined'
+    found = [f'{f.relative_to(code)}:{i}' for f in sorted(code.rglob('*')) if f.suffix in ('.py', '.html')
+             for i, line in enumerate(f.read_text(encoding='utf-8').splitlines(), 1) if bad.search(line)]
+    assert not found, found
