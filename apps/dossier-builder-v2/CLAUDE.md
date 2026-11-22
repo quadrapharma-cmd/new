@@ -835,6 +835,14 @@ When a part is done or an open item is closed, update «What exists» and «Open
   dollars a dossier by default, set on the page; what leaves the Mac is only what Claude reads, to Claude (said in the README).
   Waiting on him: the key in the environment and a test budget (asked: up to 50 dollars) to measure Claude's own decisions on
   DTP-HB against the hand result before the Mac program is sent; his Mac's chip (both builds are made).
+  Build 9 (run 44973905067, d934018), both Macs green: 34 tests (the made-up dossier the same as the cloud's but a near tie on
+  2 of 47 pages, M-O7 for M-07, and a correction's measured share 7e-05 for 6e-05, both named in the log), the app (828 MB), the
+  app as it reaches him (quarantined archive: its tools unpacked through a pipe, unmarked; its self-check all ✓), the zips
+  eBOX-Mac-AppleSilicon.zip (850 MB) and eBOX-Mac-Intel.zip (865 MB) on the run until 22/12 (his GitHub login to download).
+  Builds 4–8 found: the eCTD font path from /usr/share (vendor/fonts now), validate.py's unsorted file lists, PDFium's Mac
+  pictures of scans, poppler's stand-in for a font a PDF does not carry, tar's quarantine mark; and a stage stopped by one
+  unfitting tool input (now sent back to Claude). Not yet the same on a Mac: stand-in fonts for fonts a PDF or Word file does
+  not carry (task 179g: DTP-HB's Word files ask for Helvetica and CommonBullets). The release «ebox-mac» only after his try.
 
 ## Open items (propose when relevant; do when he asks)
 - Old program, next pieces (one at a time, each on his real files first): the 14/11 update and measuring Claude's reading (need
