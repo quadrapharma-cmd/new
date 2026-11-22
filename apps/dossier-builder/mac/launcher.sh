@@ -25,8 +25,11 @@ fi
 
 if [ ! -f "$RT/.complete" ]; then
   tell note "يُجهَّز البرنامج للمرة الأولى، وقد يستغرق ذلك بضع دقائق."
+  # read through a pipe: macOS's tar gives every file it unpacks the «downloaded» mark of an archive it opens by name, and then
+  # stops each tool of the program when it runs. The tools are a part of this app, which the person approved when first opening
+  # it (System Settings ← Privacy & Security ← Open Anyway); the app itself keeps its mark.
   mkdir -p "$ROOT" && rm -rf "$RT.part" && mkdir "$RT.part" \
-    && tar -xzf "$RES/runtime.tar.gz" -C "$RT.part" \
+    && cat "$RES/runtime.tar.gz" | tar -xzf - -C "$RT.part" \
     && rm -rf "$RT" && mv "$RT.part" "$RT" && touch "$RT/.complete" \
     || { rm -rf "$RT.part"; tell alert "تعذّر تجهيز البرنامج: لا مساحة كافية على القرص (يلزم نحو 3 غيغابايت)، أو لا إذن بالكتابة في المجلد /Users/Shared."; exit 1; }
   # the previous version's tools, by its exact name (never a wildcard)
