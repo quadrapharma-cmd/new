@@ -1,0 +1,496 @@
+<title>مكتب eBOX</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<style>
+/* layout: one column on a phone with a tab bar at the bottom; from 980px the dossiers and Claude side by side */
+:root {
+  --bg: #f3f6f5; --card: #ffffff; --ink: #18231f; --soft: #5b6a64; --line: #dbe3df; --chip: #e7eeeb;
+  --accent: #0f6b5c; --accent-ink: #ffffff; --accent-soft: #d8ebe6;
+  --ok: #1d7a4a; --warn: #9a5b00; --bad: #b3261e; --run: #1f5fa8;
+  --font: "IBM Plex Sans Arabic", "Geeza Pro", "Noto Naskh Arabic", "Segoe UI", Tahoma, sans-serif;
+  --r: 14px; color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1513; --card: #18201d; --ink: #e5ece9; --soft: #9db0a9; --line: #2a3531; --chip: #222c29;
+  --accent: #3fb59d; --accent-ink: #0b1210; --accent-soft: #1d332d;
+  --ok: #5cc98d; --warn: #e0a64a; --bad: #f2867f; --run: #7db3f0; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0f1513; --card: #18201d; --ink: #e5ece9; --soft: #9db0a9; --line: #2a3531; --chip: #222c29;
+  --accent: #3fb59d; --accent-ink: #0b1210; --accent-soft: #1d332d;
+  --ok: #5cc98d; --warn: #e0a64a; --bad: #f2867f; --run: #7db3f0; color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { direction: rtl; margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.65; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--accent); }
+button, input, textarea { font: inherit; color: inherit; }
+svg.i { width: 20px; height: 20px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.app { min-height: 100%; display: flex; flex-direction: column; }
+header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--accent); color: var(--accent-ink);
+  padding-block: 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.top-in { max-width: 1180px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
+.mark { width: 36px; height: 36px; border-radius: 10px; background: var(--accent-ink); color: var(--accent); display: grid; place-items: center;
+  font-weight: 700; font-size: 11px; letter-spacing: .02em; direction: ltr; }
+.top h1 { margin: 0; font-size: 18px; font-weight: 700; line-height: 1.2; }
+.top p { margin: 0; font-size: 12.5px; opacity: .85; }
+.top .grow { flex: 1; min-width: 0; }
+.conn { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 10px; border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-ink) 16%, transparent); white-space: nowrap; }
+.conn .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; opacity: .6; }
+.conn.ok .dot { opacity: 1; }
+nav.tabs { display: flex; gap: 6px; max-width: 1180px; margin: 0 auto; width: 100%;
+  padding-block: 10px 0; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+nav.tabs button { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--card); color: var(--soft);
+  padding: 8px 14px; border-radius: 999px; cursor: pointer; font-weight: 500; }
+nav.tabs button[aria-current="page"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+nav.tabs .badge { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--bad); color: #fff; font-size: 12px;
+  display: inline-grid; place-items: center; }
+main { flex: 1; width: 100%; max-width: 1180px; margin: 0 auto;
+  padding-block: 14px 96px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); align-content: start; align-items: start; }
+@media (min-width: 980px) {
+  main { grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); padding-block: 16px 24px; align-items: start; }
+  #view-chat { position: sticky; top: 80px; }
+  nav.tabs button[data-tab="chat"] { display: none; }
+  body.tab-chat #view-chat, #view-chat { display: flex !important; }
+}
+.panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); min-width: 0; }
+.panel > h2, .sec-h { margin: 0; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.pad { padding: 16px; }
+.stack { display: grid; gap: 12px; align-content: start; }
+.muted { color: var(--soft); }
+.small { font-size: 13px; }
+.row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.row > .grow { flex: 1; min-width: 0; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--line); background: var(--card);
+  border-radius: 10px; padding: 9px 14px; cursor: pointer; font-weight: 600; text-decoration: none; color: var(--ink); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn:disabled { opacity: .55; cursor: default; }
+.btn:focus-visible, nav.tabs button:focus-visible, .card:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 2px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; padding: 3px 10px; border-radius: 999px;
+  background: var(--chip); color: var(--soft); white-space: nowrap; }
+.pill.running { background: color-mix(in srgb, var(--run) 16%, transparent); color: var(--run); }
+.pill.needs { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+.pill.finished { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
+.pill.failed, .pill.stopped { background: color-mix(in srgb, var(--bad) 14%, transparent); color: var(--bad); }
+/* dossiers */
+.cards { display: grid; gap: 12px; }
+.card { display: grid; gap: 10px; padding: 14px 16px; background: var(--card); border: 1px solid var(--line); border-radius: var(--r);
+  cursor: pointer; text-align: start; width: 100%; }
+.card:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.card h3 { margin: 0; font-size: 16px; font-weight: 700; overflow-wrap: anywhere; }
+.rail { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 4px; }
+.rail span { height: 6px; border-radius: 3px; background: var(--chip); }
+.rail span.done { background: var(--ok); }
+.rail span.running { background: var(--run); animation: pulse 1.6s ease-in-out infinite; }
+.rail span.failed { background: var(--bad); }
+.rail span.needs { background: var(--warn); }
+.rail span.skipped { background: color-mix(in srgb, var(--soft) 45%, transparent); }
+@keyframes pulse { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .rail span.running, .stage.running .ic { animation: none; } }
+.example { font-size: 12px; color: var(--warn); font-weight: 600; }
+.empty { display: grid; gap: 10px; justify-items: start; padding: 22px 18px; border: 1px dashed var(--line); border-radius: var(--r); background: var(--card); }
+.empty h3 { margin: 0; font-size: 16px; }
+/* detail */
+.back { border: 0; background: none; color: var(--accent); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 4px 0; font-weight: 600; }
+.stages { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.stage { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.stage:last-child { border-bottom: 0; }
+.stage .ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--chip); color: var(--soft); }
+.stage.done .ic { background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok); }
+.stage.running .ic { background: color-mix(in srgb, var(--run) 15%, transparent); color: var(--run); animation: pulse 1.6s ease-in-out infinite; }
+.stage.failed .ic { background: color-mix(in srgb, var(--bad) 14%, transparent); color: var(--bad); }
+.stage.needs .ic { background: color-mix(in srgb, var(--warn) 16%, transparent); color: var(--warn); }
+.stage .nm { font-weight: 600; font-size: 14px; }
+.stage .note { font-size: 12.5px; color: var(--soft); overflow-wrap: anywhere; }
+.stage .st { font-size: 12px; color: var(--soft); white-space: nowrap; }
+.nums { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.num { background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.num b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+.num span { font-size: 12.5px; color: var(--soft); }
+.needs-list, .results { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.needs-list li { padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--warn) 10%, var(--card)); border: 1px solid color-mix(in srgb, var(--warn) 30%, var(--line)); }
+.results li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
+.results li .grow { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.log { margin: 0; padding: 10px 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; max-height: 220px; overflow: auto;
+  font-size: 12.5px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
+/* form */
+label.f { display: grid; gap: 6px; font-weight: 600; font-size: 14px; }
+label.f .hint { font-weight: 400; font-size: 12.5px; color: var(--soft); }
+input[type=text], input[type=url], textarea { width: 100%; border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 10px 12px; }
+input[type=url] { direction: ltr; text-align: left; }
+textarea { min-height: 84px; resize: vertical; }
+.files-in { display: grid; gap: 6px; }
+.file-row { display: flex; gap: 8px; align-items: center; font-size: 13px; padding: 6px 10px; border-radius: 10px; background: var(--bg); border: 1px solid var(--line); }
+.file-row .grow { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.msg-line { font-size: 13.5px; }
+.msg-line.ok { color: var(--ok); }
+.msg-line.bad { color: var(--bad); }
+/* chat */
+#view-chat { display: flex; flex-direction: column; min-height: 420px; max-height: calc(100vh - 120px); }
+.chat-h { padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.chat-list { flex: 1; overflow: auto; padding: 14px 16px; display: grid; gap: 10px; align-content: start; }
+.bubble { max-width: 88%; padding: 10px 12px; border-radius: 14px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14.5px; }
+.bubble.you { justify-self: start; background: var(--accent); color: var(--accent-ink); border-end-start-radius: 4px; }
+.bubble.claude { justify-self: end; background: var(--bg); border: 1px solid var(--line); border-end-end-radius: 4px; }
+.bubble .meta { display: block; font-size: 11.5px; opacity: .75; margin-top: 4px; }
+.bubble .meta button { border: 0; background: none; color: inherit; text-decoration: underline; cursor: pointer; padding: 0; font-size: 11.5px; }
+.composer { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--line); align-items: flex-end; }
+.composer textarea { min-height: 44px; max-height: 140px; }
+@media (max-width: 979px) {
+  nav.tabs { position: fixed; inset: auto 0 0 0; z-index: 6; background: var(--card); border-top: 1px solid var(--line); justify-content: space-around;
+    padding-block: 8px calc(8px + env(safe-area-inset-bottom, 0px)); }
+  nav.tabs button { flex: 1; justify-content: center; flex-direction: column; gap: 2px; border: 0; background: none; font-size: 12px; padding: 4px; border-radius: 10px; }
+  nav.tabs button[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
+  #view-chat { min-height: calc(100vh - 190px); max-height: none; }
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></symbol>
+  <symbol id="i-read" viewBox="0 0 24 24"><path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="i-scan" viewBox="0 0 24 24"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M7 12h10"/></symbol>
+  <symbol id="i-cut" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5zM3 13l9 5 9-5"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></symbol>
+  <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="m21 8-9-5-9 5v8l9 5 9-5zM3 8l9 5 9-5M12 13v8"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h6"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18a5 5 0 1 1 .9-9.9A6 6 0 0 1 19 10a4 4 0 0 1 0 8z"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="m4 12 16-8-6 16-2-6z"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2 20h20zM12 10v4M12 17v.5"/></symbol>
+  <symbol id="i-open" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+</svg>
+
+<div class="app" dir="rtl" lang="ar">
+  <header class="top">
+    <div class="top-in">
+      <div class="mark" aria-hidden="true">eBOX</div>
+      <div class="grow"><h1>مكتب eBOX</h1><p>إعداد ملفات التسجيل مع Claude</p></div>
+      <span class="conn" id="conn"><span class="dot"></span><span id="conn-t">Claude</span></span>
+    </div>
+  </header>
+  <nav class="tabs" aria-label="الأقسام">
+    <button type="button" data-tab="files" aria-current="page"><svg class="i"><use href="#i-folder"/></svg><span>الملفات</span></button>
+    <button type="button" data-tab="new"><svg class="i"><use href="#i-plus"/></svg><span>ملف جديد</span></button>
+    <button type="button" data-tab="chat"><svg class="i"><use href="#i-chat"/></svg><span>Claude</span><span class="badge" id="unread" hidden>0</span></button>
+  </nav>
+  <main>
+    <section id="view-files" class="stack" aria-live="polite"></section>
+    <section id="view-new" class="panel pad stack" hidden>
+      <h2><svg class="i"><use href="#i-plus"/></svg>ملف جديد</h2>
+      <form id="new-form" class="stack" novalidate>
+        <label class="f">اسم الملف
+          <span class="hint">للعرض في هذا المكتب، مثل اسم المستحضر.</span>
+          <input type="text" id="nf-name" maxlength="80" autocomplete="off" placeholder="مثال: ملف تسجيل المستحضر">
+        </label>
+        <label class="f">رابط مجلد الملف الوارد على Google Drive
+          <span class="hint">افتح المجلد في Drive، ثم «مشاركة» ← «نسخ الرابط». فيه الملف المجمّع وملفات Word.</span>
+          <input type="url" id="nf-drive" inputmode="url" autocomplete="off" placeholder="https://drive.google.com/drive/folders/…">
+        </label>
+        <div class="f stack" id="nf-files-box">
+          <label class="f" for="nf-files">ملفات إضافية (اختياري)
+            <span class="hint">PDF أو صور، حتى 20 ميجابايت للملف الواحد. ملفات Word والملفات الأكبر تُوضع في مجلد Drive.</span>
+          </label>
+          <input type="file" id="nf-files" multiple accept="application/pdf,image/png,image/jpeg">
+          <div class="files-in" id="nf-list"></div>
+        </div>
+        <label class="f">ملاحظات لـ Claude (اختياري)
+          <textarea id="nf-notes" maxlength="2000" placeholder="مثال: المتقدّم هو الوكيل المصري، والتسويق محلي."></textarea>
+        </label>
+        <div class="row">
+          <button class="btn primary" type="submit" id="nf-go"><svg class="i"><use href="#i-play"/></svg>ابدأ</button>
+          <span class="msg-line" id="nf-msg" role="status"></span>
+        </div>
+      </form>
+    </section>
+    <section id="view-chat" class="panel" hidden>
+      <div class="chat-h"><h2 class="sec-h"><svg class="i"><use href="#i-chat"/></svg>Claude</h2>
+        <p class="muted small" style="margin:4px 0 0">ما تكتبه هنا يصل إلى Claude في جلسة العمل التي يعمل فيها البرنامج، ويظهر ردّه هنا.</p></div>
+      <div class="chat-list" id="chat-list" aria-live="polite"></div>
+      <form class="composer" id="chat-form">
+        <textarea id="chat-in" rows="1" maxlength="4000" placeholder="اكتب لـ Claude…" aria-label="رسالتك إلى Claude"></textarea>
+        <button class="btn primary" type="submit" id="chat-go" aria-label="إرسال"><svg class="i"><use href="#i-send"/></svg></button>
+      </form>
+    </section>
+  </main>
+</div>
+
+<script>
+(() => {
+  // ------------------------------------------------------------------ the program's own words (formal Arabic)
+  const SESSION = 'session_01LcrRaPNd7k7FvK6ziA9n4b';           // the Claude session where the program and its tools run
+  const LINK = 'Claude Code Remote';                               // the claude.ai connector that carries a message to it
+  const STAGES = [
+    ['read', 'قراءة الملفات الواردة صفحةً صفحة', 'i-read'], ['repeats', 'الكتل المكررة', 'i-copy'],
+    ['ocr', 'التعرف الضوئي على الصفحات الممسوحة', 'i-scan'], ['split', 'تقسيم الملف إلى مستندات CTD', 'i-cut'],
+    ['assemble', 'بناء مجلد CTD ومطابقة كل صفحة بأصلها', 'i-layers'], ['checks', 'الفحوص', 'i-check'],
+    ['decide', 'قرارات Claude', 'i-spark'], ['fix', 'التصحيحات ومعلومات المستحضر', 'i-wrench'],
+    ['ectd', 'تسلسل eCTD والتحقق منه', 'i-box'], ['report', 'التقريران والتسليم', 'i-doc']];
+  const STATUS = { requested: 'أُرسل إلى Claude', queued: 'في الانتظار', running: 'يعمل', needs: 'يحتاج إليك',
+                   finished: 'اكتمل', stopped: 'توقّف', failed: 'تعذّر' };
+  const STAGE_STATE = { done: 'تمّت', running: 'جارية', waiting: 'لم تبدأ', failed: 'تعذّرت', skipped: 'لم تلزم', needs: 'تحتاج إليك' };
+  const NUMS = [['pages', 'الصفحات'], ['documents', 'مستندات CTD'], ['left_out', 'صفحات تُركت'], ['findings', 'ملاحظات المراجع'],
+                ['leaves', 'أوراق eCTD'], ['failed_rules', 'قواعد راسبة'], ['spent_usd', 'تكلفة Claude (دولار)']];
+
+  const $ = (s, r = document) => r.querySelector(s);
+  const el = (tag, attrs = {}, ...kids) => {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (v == null || v === false) continue;
+      if (k === 'class') n.className = v; else if (k === 'text') n.textContent = v;
+      else if (k.startsWith('on')) n.addEventListener(k.slice(2), v); else n.setAttribute(k, v === true ? '' : v);
+    }
+    for (const c of kids.flat()) if (c != null && c !== false) n.append(c.nodeType ? c : document.createTextNode(String(c)));
+    return n;
+  };
+  const icon = (id) => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('class', 'i');
+    const u = document.createElementNS('http://www.w3.org/2000/svg', 'use'); u.setAttribute('href', '#' + id); s.append(u); return s; };
+  const when = (iso) => { if (!iso) return ''; const d = new Date(iso); if (isNaN(d)) return '';
+    return d.toLocaleString('ar-EG', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }); };
+  const arNum = (n) => (typeof n === 'number' ? n.toLocaleString('ar-EG') : String(n ?? '—'));
+  const mb = (b) => (b / 1048576).toLocaleString('ar-EG', { maximumFractionDigits: 1 }) + ' ميجابايت';
+  const uid = (p) => p + '-' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '-' + Math.random().toString(36).slice(2, 8);
+
+  // ------------------------------------------------------------------ state
+  const S = { tab: 'files', open: null, dossiers: [], messages: [], db: null, mcp: null, assets: null, canWrite: true,
+              loading: true, stale: false, linkState: 'unknown', seen: 0, picked: [] };
+  try { S.seen = Number(localStorage.getItem('ebox-desk-seen') || 0); } catch (e) {}
+
+  // ------------------------------------------------------------------ tabs
+  function setTab(t) {
+    S.tab = t;
+    document.body.className = 'tab-' + t;
+    for (const b of document.querySelectorAll('nav.tabs button')) b.setAttribute('aria-current', b.dataset.tab === t ? 'page' : 'false');
+    $('#view-files').hidden = t !== 'files';
+    $('#view-new').hidden = t !== 'new';
+    $('#view-chat').hidden = t !== 'chat' && !wide();
+    if (t === 'chat' || wide()) markSeen();
+    if (t === 'chat') setTimeout(() => { const l = $('#chat-list'); l.scrollTop = l.scrollHeight; }, 0);
+  }
+  const wide = () => matchMedia('(min-width: 980px)').matches;
+  for (const b of document.querySelectorAll('nav.tabs button')) b.addEventListener('click', () => { if (b.dataset.tab === 'files') S.open = null; setTab(b.dataset.tab); render(); });
+  matchMedia('(min-width: 980px)').addEventListener('change', () => setTab(S.tab));
+
+  // ------------------------------------------------------------------ the dossiers
+  function stageState(d, key) { return (d.stages && d.stages[key]) || 'waiting'; }
+  function rail(d) { return el('div', { class: 'rail', 'aria-hidden': 'true' }, STAGES.map(([k]) => el('span', { class: stageState(d, k) }))); }
+  function pill(d) { const s = d.status || 'requested'; return el('span', { class: 'pill ' + s }, STATUS[s] || s); }
+
+  function renderFiles() {
+    const v = $('#view-files'); v.replaceChildren();
+    if (S.open) return renderDossier(v, S.dossiers.find((x) => x.id === S.open));
+    v.append(el('div', { class: 'row' }, el('h2', { class: 'sec-h grow' }, icon('i-folder'), 'الملفات'),
+      el('button', { class: 'btn', type: 'button', onclick: () => setTab('new') }, icon('i-plus'), 'ملف جديد')));
+    if (!S.db) {
+      v.append(el('div', { class: 'empty' }, el('h3', { text: 'لا يُقرأ سجل الملفات في هذا العرض' }),
+        el('p', { class: 'muted', text: 'افتح المكتب من حسابك على claude.ai لترى ملفاتك ومراحلها.' })));
+      return;
+    }
+    if (S.loading) { v.append(el('p', { class: 'muted', text: S.stale ? 'تعذّر الوصول إلى سجل الملفات الآن؛ سيظهر حين يتصل.' : 'جارٍ تحميل الملفات…' })); return; }
+    if (!S.dossiers.length) {
+      v.append(el('div', { class: 'empty' }, el('h3', { text: 'لا ملفات بعد' }),
+        el('p', { class: 'muted', text: 'ضع رابط مجلد الملف الوارد على Google Drive واضغط «ابدأ». يعمل البرنامج عند Claude، وتظهر هنا مراحله ونتائجه، ويتّخذ Claude القرارات التي لا تحسمها القواعد.' }),
+        el('button', { class: 'btn primary', type: 'button', onclick: () => setTab('new') }, icon('i-plus'), 'ملف جديد')));
+      return;
+    }
+    const cards = el('div', { class: 'cards' });
+    for (const d of S.dossiers) {
+      const cur = STAGES.find(([k]) => stageState(d, k) === 'running');
+      cards.append(el('button', { class: 'card', type: 'button', onclick: () => { S.open = d.id; render(); window.scrollTo({ top: 0 }); } },
+        el('div', { class: 'row' }, el('h3', { class: 'grow', text: d.name || 'ملف بلا اسم' }), pill(d)),
+        d.example ? el('span', { class: 'example', text: 'مثال من ملف مصطنع للتجربة، لا من ملفاتك' }) : null,
+        rail(d),
+        el('div', { class: 'row small muted' }, el('span', { class: 'grow', text: cur ? cur[1] : (d.headline || '') }), el('span', { text: when(d.updated || d.created) }))));
+    }
+    v.append(cards);
+  }
+
+  function renderDossier(v, d) {
+    v.append(el('button', { class: 'back', type: 'button', onclick: () => { S.open = null; render(); } }, icon('i-chev'), 'كل الملفات'));
+    if (!d) { v.append(el('p', { class: 'muted', text: 'لم يعد هذا الملف موجودًا.' })); return; }
+    const head = el('div', { class: 'panel pad stack' },
+      el('div', { class: 'row' }, el('h2', { class: 'grow', style: 'margin:0;font-size:18px', text: d.name || 'ملف بلا اسم' }), pill(d)),
+      d.example ? el('span', { class: 'example', text: 'مثال من ملف مصطنع للتجربة، لا من ملفاتك' }) : null,
+      d.headline ? el('p', { style: 'margin:0', text: d.headline }) : null,
+      el('p', { class: 'small muted', style: 'margin:0' }, 'بدأ ', when(d.created), d.updated ? ' · آخر تحديث ' + when(d.updated) : ''),
+      el('div', { class: 'row' },
+        el('button', { class: 'btn', type: 'button', onclick: () => askAbout(d) }, icon('i-chat'), 'اسأل Claude عن هذا الملف'),
+        (d.status === 'running' || d.status === 'queued') && S.canWrite
+          ? el('button', { class: 'btn', type: 'button', onclick: () => request(d, 'إيقاف', 'أوقف إعداد هذا الملف.') }, icon('i-stop'), 'إيقاف') : null,
+        (d.status === 'stopped' || d.status === 'failed' || d.status === 'needs') && S.canWrite
+          ? el('button', { class: 'btn', type: 'button', onclick: () => request(d, 'متابعة', 'تابع إعداد هذا الملف من حيث توقّف.') }, icon('i-play'), 'متابعة من حيث توقّف') : null));
+    v.append(head);
+    if (Array.isArray(d.needs) && d.needs.length) {
+      v.append(el('div', { class: 'panel pad stack' }, el('h2', {}, icon('i-alert'), 'ما يحتاج إليك'),
+        el('ul', { class: 'needs-list' }, d.needs.map((n) => el('li', { text: n })))));
+    }
+    const nums = NUMS.filter(([k]) => d.summary && d.summary[k] != null);
+    if (nums.length) v.append(el('div', { class: 'panel pad stack' }, el('h2', {}, icon('i-check'), 'الملف بالأرقام'),
+      el('div', { class: 'nums' }, nums.map(([k, t]) => el('div', { class: 'num' }, el('b', { text: arNum(d.summary[k]) }), el('span', { text: t }))))));
+    v.append(el('div', { class: 'panel pad stack' }, el('h2', {}, icon('i-layers'), 'المراحل'),
+      el('ol', { class: 'stages' }, STAGES.map(([k, name, ic]) => {
+        const st = stageState(d, k), note = d.notes && d.notes[k];
+        return el('li', { class: 'stage ' + st }, el('span', { class: 'ic' }, icon(ic)),
+          el('div', {}, el('div', { class: 'nm', text: name }), note ? el('div', { class: 'note', text: note }) : null),
+          el('span', { class: 'st', text: STAGE_STATE[st] || st }));
+      }))));
+    if (Array.isArray(d.results) && d.results.length) {
+      v.append(el('div', { class: 'panel pad stack' }, el('h2', {}, icon('i-doc'), 'النتائج'),
+        el('ul', { class: 'results' }, d.results.map((r) => el('li', {}, icon(r.asset ? 'i-doc' : 'i-box'),
+          el('div', { class: 'grow' }, el('div', { style: 'font-weight:600', text: r.title }), r.note ? el('div', { class: 'small muted', text: r.note }) : null),
+          r.asset ? el('a', { class: 'btn', href: '/_blob/' + r.asset, target: '_blank', rel: 'noopener' }, icon('i-open'), 'فتح')
+                  : (r.url ? el('a', { class: 'btn', href: r.url, target: '_blank', rel: 'noopener' }, icon('i-open'), 'فتح') : null))))));
+    }
+    if (Array.isArray(d.log) && d.log.length) v.append(el('div', { class: 'panel pad stack' }, el('h2', {}, icon('i-read'), 'آخر ما جرى'),
+      el('pre', { class: 'log', text: d.log.slice(-40).join('\n') })));
+  }
+
+  // ------------------------------------------------------------------ a new dossier
+  $('#nf-files').addEventListener('change', (e) => {
+    S.picked = [...e.target.files].filter((f) => f.size > 0);
+    const list = $('#nf-list'); list.replaceChildren();
+    for (const f of S.picked) list.append(el('div', { class: 'file-row' }, icon('i-doc'), el('span', { class: 'grow', text: f.name }),
+      el('span', { class: f.size > 20 * 1048576 ? 'msg-line bad' : 'muted', text: f.size > 20 * 1048576 ? 'أكبر من 20 ميجابايت: ضعه في Drive' : mb(f.size) })));
+  });
+  $('#new-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = $('#nf-msg'), go = $('#nf-go');
+    const name = $('#nf-name').value.trim(), drive = $('#nf-drive').value.trim(), notes = $('#nf-notes').value.trim();
+    const small = S.picked.filter((f) => f.size <= 20 * 1048576);
+    msg.className = 'msg-line';
+    if (!drive && !small.length) { msg.className = 'msg-line bad'; msg.textContent = 'ضع رابط مجلد Drive، أو اختر ملفًا واحدًا على الأقل.'; return; }
+    if (drive && !/^https:\/\/(drive|docs)\.google\.com\//.test(drive)) { msg.className = 'msg-line bad'; msg.textContent = 'هذا ليس رابطًا من Google Drive. انسخ الرابط من «مشاركة» في Drive.'; return; }
+    if (!S.db) { msg.className = 'msg-line bad'; msg.textContent = 'لا يُحفظ الملف في هذا العرض. افتح المكتب من حسابك على claude.ai.'; return; }
+    go.disabled = true; msg.textContent = 'جارٍ التسجيل…';
+    const id = uid('d'), uploads = [];
+    try {
+      if (small.length) {
+        if (!S.assets) throw { code: 'no_assets' };
+        for (const f of small) {
+          msg.textContent = 'رفع ' + f.name + '…';
+          const r = await S.assets.upload(f, f.type ? undefined : { type: 'application/pdf' });
+          uploads.push({ asset: r.id, name: f.name, size: f.size });
+        }
+      }
+      const now = new Date().toISOString();
+      const d = { name: name || 'ملف ' + new Date().toLocaleDateString('ar-EG'), status: 'requested', created: now, updated: now,
+                  source: { drive: drive || null, uploads }, request_notes: notes || null, stages: {} };
+      await S.db.doc('dossiers/' + id).set(d);
+      const text = ['[مكتب eBOX] ملف جديد', 'المعرّف: ' + id, 'الاسم: ' + d.name, drive ? 'مجلد Drive: ' + drive : null,
+        uploads.length ? 'ملفات مرفوعة إلى المكتب: ' + uploads.map((u) => u.name + ' (' + u.asset + ')').join('، ') : null,
+        notes ? 'ملاحظات: ' + notes : null].filter(Boolean).join('\n');
+      const sent = await tell(text);
+      await addMessage('you', 'ابدأ ملفًا جديدًا: ' + d.name + (drive ? '\n' + drive : '') + (notes ? '\n' + notes : ''), sent, text, id);
+      msg.className = 'msg-line ' + (sent ? 'ok' : 'bad');
+      msg.textContent = sent ? 'أُرسل الطلب إلى Claude. ستظهر المراحل في «الملفات» عند بدئها.'
+                             : 'سُجّل الملف، لكن الطلب لم يصل إلى Claude من هذا الجهاز: انسخه من «Claude» والصقه في المحادثة.';
+      $('#new-form').reset(); $('#nf-list').replaceChildren(); S.picked = [];
+      S.open = id; setTimeout(() => { setTab('files'); render(); }, 900);
+    } catch (err) {
+      msg.className = 'msg-line bad';
+      msg.textContent = err && err.code === 'too_large' ? 'ملف أكبر من 20 ميجابايت: ضعه في مجلد Drive.'
+        : err && err.code === 'unsupported_type' ? 'نوع ملف لا يُرفع هنا (PDF أو صور فقط): ضعه في مجلد Drive.'
+        : err && err.code === 'no_assets' ? 'لا يُرفع ملف من هذا العرض: ضع الملفات في مجلد Drive.'
+        : err && err.code === 'quota_exceeded' ? 'امتلأ سجل المكتب. احذف ملفات قديمة ثم أعد المحاولة.'
+        : 'تعذّر التسجيل الآن، فأعد المحاولة بعد لحظة.';
+    } finally { go.disabled = false; }
+  });
+
+  // ------------------------------------------------------------------ talking with Claude
+  async function tell(text) {
+    if (!S.mcp) { S.linkState = 'none'; paintConn(); return false; }
+    try {
+      await S.mcp.callTool(LINK, 'send_message', { session_id: SESSION, message: text });
+      S.linkState = 'ok'; paintConn(); return true;
+    } catch (err) {
+      S.linkState = (err && (err.code === 'server_not_connected' || err.code === 'not_in_manifest' || err.code === 'blocked_by_policy' || err.code === 'not_granted' || err.code === 'capability_disabled')) ? 'none' : 'unknown';
+      paintConn(); return false;
+    }
+  }
+  async function addMessage(from, text, delivered, carried, dossier) {
+    if (!S.db) return;
+    await S.db.collection('messages').doc(uid('m')).set({ from, text, at: new Date().toISOString(), delivered: !!delivered,
+      carried: delivered ? null : (carried || text), dossier: dossier || null });
+  }
+  async function request(d, kind, text) {
+    const full = '[مكتب eBOX] ' + kind + '\nالمعرّف: ' + d.id + '\nالاسم: ' + (d.name || '') + '\n' + text;
+    const sent = await tell(full);
+    await addMessage('you', kind + ': ' + (d.name || ''), sent, full, d.id);
+    if (!wide()) setTab('chat');
+  }
+  function askAbout(d) {
+    setTab('chat');
+    const ta = $('#chat-in'); ta.value = 'عن ملف «' + (d.name || '') + '»: '; ta.dataset.dossier = d.id; ta.focus();
+  }
+  $('#chat-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const ta = $('#chat-in'), text = ta.value.trim(); if (!text) return;
+    const go = $('#chat-go'); go.disabled = true;
+    const dossier = ta.dataset.dossier || null;
+    const full = '[مكتب eBOX] رسالة' + (dossier ? '\nالمعرّف: ' + dossier : '') + '\n' + text;
+    const sent = await tell(full);
+    try { await addMessage('you', text, sent, full, dossier); ta.value = ''; delete ta.dataset.dossier; }
+    catch (err) { /* the message stays in the box to send again */ }
+    go.disabled = false; ta.focus();
+  });
+  $('#chat-in').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); $('#chat-form').requestSubmit(); } });
+
+  function renderChat() {
+    const list = $('#chat-list'); const atEnd = list.scrollHeight - list.scrollTop - list.clientHeight < 40; list.replaceChildren();
+    if (!S.messages.length) list.append(el('p', { class: 'muted small', text: S.db ? 'لا رسائل بعد. اسأل Claude عن أي ملف، أو اطلب منه شيئًا في ملف يعمل.' : 'لا تُحفظ الرسائل في هذا العرض.' }));
+    for (const m of S.messages) {
+      const b = el('div', { class: 'bubble ' + (m.from === 'claude' ? 'claude' : 'you') }, m.text || '');
+      const meta = el('span', { class: 'meta' }, when(m.at));
+      if (m.from !== 'claude' && m.delivered === false) {
+        meta.append(' · لم تصل إلى Claude · ', el('button', { type: 'button', onclick: async (e) => {
+          try { await navigator.clipboard.writeText(m.carried || m.text); e.target.textContent = 'نُسخت: الصقها في المحادثة'; }
+          catch (x) { e.target.textContent = 'انسخها من هنا يدويًا'; } } }, 'نسخها للمحادثة'));
+      }
+      b.append(meta); list.append(b);
+    }
+    if (atEnd || S.tab === 'chat') list.scrollTop = list.scrollHeight;
+    const unread = S.messages.filter((m) => m.from === 'claude' && Date.parse(m.at || 0) > S.seen).length;
+    const badge = $('#unread'); badge.hidden = !unread || S.tab === 'chat' || wide(); badge.textContent = arNum(unread);
+  }
+  function markSeen() { const last = S.messages.reduce((t, m) => Math.max(t, Date.parse(m.at || 0) || 0), S.seen); S.seen = last;
+    try { localStorage.setItem('ebox-desk-seen', String(last)); } catch (e) {} }
+
+  function paintConn() {
+    const c = $('#conn'), t = $('#conn-t');
+    c.classList.toggle('ok', S.linkState === 'ok');
+    t.textContent = S.linkState === 'ok' ? 'متصل بـ Claude' : S.linkState === 'none' ? 'Claude عبر المحادثة' : 'Claude';
+    c.title = S.linkState === 'none' ? 'لا يصل المكتب إلى جلسة Claude من هذا الجهاز: انسخ الطلب والصقه في محادثة Claude.' : '';
+  }
+  function render() { renderFiles(); renderChat(); paintConn(); }
+
+  // ------------------------------------------------------------------ the capabilities, when they arrive
+  setTab('files'); render();
+  (async () => {
+    const use = (n) => (window.claude && typeof window.claude.use === 'function' ? window.claude.use(n) : Promise.resolve(null)).catch(() => null);
+    const [db, mcp, assets, user] = await Promise.all(['db', 'mcp', 'assets', 'user'].map(use));
+    S.db = db; S.mcp = mcp; S.assets = assets;
+    if (!assets) { const box = $('#nf-files-box'); if (box) box.hidden = true; }
+    if (user) { try { const w = await user.can('data.write'); if (w === false) S.canWrite = false; } catch (e) {} }
+    if (!S.canWrite) { const f = $('#new-form'); if (f) f.querySelectorAll('input,textarea,button').forEach((x) => { x.disabled = true; }); }
+    if (!db) { S.loading = false; render(); return; }
+    const timer = setTimeout(() => { S.stale = true; render(); }, 10000);
+    db.collection('dossiers').orderBy('created', 'desc').limit(200).onSnapshot((snap) => {
+      if (!snap.metadata.fromCache) clearTimeout(timer);
+      S.loading = false; S.dossiers = snap.docs.map((x) => ({ id: x.id, ...x.data() })); renderFiles();
+    }, () => { clearTimeout(timer); S.loading = false; renderFiles(); });
+    db.collection('messages').orderBy('at', 'asc').limit(400).onSnapshot((snap) => {
+      S.messages = snap.docs.map((x) => ({ id: x.id, ...x.data() })); if (S.tab === 'chat' || wide()) markSeen(); renderChat();
+    }, () => {});
+  })();
+})();
+</script>

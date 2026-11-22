@@ -843,6 +843,23 @@ When a part is done or an open item is closed, update «What exists» and «Open
   pictures of scans, poppler's stand-in for a font a PDF does not carry, tar's quarantine mark; and a stage stopped by one
   unfitting tool input (now sent back to Claude). Not yet the same on a Mac: stand-in fonts for fonts a PDF or Word file does
   not carry (task 179g: DTP-HB's Word files ask for Helvetica and CommonBullets). The release «ebox-mac» only after his try.
+- **22/11/2026, «اديني البرنامج هنا بس حاجة منفصلة عن الشات يعني اشتغل علي البرنامج عندك عنا و ارفع و اشوف و ايقونات بس
+  يبقي جواك و اتكلم معاك»** — the program here, not on his Mac: **«مكتب eBOX»**, a private artifact
+  (https://claude.ai/artifact/HZXqBNq6hLPxUtKGWgJzhD, source `apps/dossier-builder/desk/index.html`, formal Arabic, RTL, phone
+  first; publish the same file path to update it). Its db (rules: root read view, write owner): `dossiers/{id}` — `name, status`
+  (requested|queued|running|needs|finished|stopped|failed), `stages{read…report: done|running|waiting|failed|skipped|needs}`,
+  `notes{stage: text}`, `summary{pages, documents, left_out, findings, leaves, failed_rules, spent_usd}`, `needs[]`,
+  `results[{title, note, asset}]`, `log[]` (≤40 lines), `headline`, `source{drive, uploads[{asset,name,size}]}`, `example`;
+  `messages/{id}` — `from` (you|claude), `text, at, delivered, carried, dossier`. The page sends his requests to THIS session
+  through the «Claude Code Remote» connector's `send_message`; they arrive as turns that begin «[مكتب eBOX]» (ملف جديد / رسالة /
+  إيقاف / متابعة, with «المعرّف: <dossier id>»): his own requests within what he set here — run the program on a dossier he gives,
+  answer about it, stop or resume it; nothing wider. On «ملف جديد»: download the Drive folder (or the page's uploads, `/_blob/<id>`)
+  into the scratchpad (company data stays there), run the cloud program stage by stage, write each stage to `dossiers/{id}` with
+  ArtifactData (pin `if_version`), take Claude's decisions myself through the «decide» tools (no API key: this environment is
+  archived and cannot be edited), upload the two reports as assets and list them in `results`, and answer in `messages` (from
+  «claude», Egyptian Arabic). The eCTD zip (hundreds of MB) stays here; to his Drive only with his yes. Before a real dossier's
+  numbers and reports go into the page, his yes (asked 22/11). Example in the page: `dossiers/example-zentorix`, the made-up
+  dossier run here in 27 s (its two reports as assets), marked `example: true`.
 
 ## Open items (propose when relevant; do when he asks)
 - Old program, next pieces (one at a time, each on his real files first): the 14/11 update and measuring Claude's reading (need
