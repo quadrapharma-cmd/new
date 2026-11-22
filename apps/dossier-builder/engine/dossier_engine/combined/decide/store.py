@@ -153,7 +153,11 @@ class Store:
         if a.get('product'):
             n['product'] = text(a, 'product', 120)
         self.save()
-        return 'Recorded.'
+        folders = [f'«Module 3/3.2.S {v}/…»' for v in n.get('substances', {}).values()]
+        if n.get('product'):
+            folders.append(f"«Module 3/3.2.P {n['product']}/…»")
+        return ('Recorded. When the cut is made again the documents go under ' + ', '.join(folders)
+                + ': use these folders in the paths you give.')
 
     # -- 2. the product and Module 1
     def envelope(self, a):

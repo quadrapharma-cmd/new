@@ -84,7 +84,8 @@ def run(work, client=None, budget_usd=None, again=False, only=None):
         t0 = time.time()
         try:
             res = converse(client, t, PREAMBLE + TASK_TEXT[t], READ_TOOLS + TOOLS[t] + [FINISH], first_message(t, w, case),
-                           {**read_handlers(case), **handlers(t, store), 'finish': lambda a: 'Done.'}, budget, log)
+                           {**read_handlers(case), **handlers(t, store), 'finish': lambda a: 'Done.'}, budget, log,
+                           max_tokens=64000 if t == 'pi' else 32000)
             tasks[t] = {'finished': True, 'summary': res['summary'], 'turns': res['turns'], 'minutes': round((time.time() - t0) / 60, 1)}
         except Stop as e:
             tasks[t] = {'finished': False, 'stopped': e.why, 'detail': str(e)}
