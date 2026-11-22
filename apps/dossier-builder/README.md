@@ -1244,6 +1244,37 @@ python3 -m dossier_engine.combined.mac            # the page, from the source (n
 python3 -m pytest -q tests/test_decide.py tests/test_mac_app.py tests/test_mac_same.py
 ```
 
+### The desk, one work session per dossier (22/11/2026) — «عايز الحل ده مستدام ميقفلش حتي لو اشتغلنا الف ملف»
+
+«مكتب eBOX» (`desk/index.html`, a private claude.ai artifact) no longer leans on one long conversation. «ابدأ» fires a
+scheduled task with no schedule of its own (`config/desk.trigger_id` in the desk's database), which starts a **new cloud
+session for that dossier** in the environment new-ebox; the session follows `desk/WORKER.md`:
+
+- the inputs from the page's own uploads (or, once the owner allows it, his Drive folder);
+- the program's stages one by one through `desk/worker.py`, which records each and writes the patch the session sends to
+  `dossiers/<id>` (stages, notes, log, numbers, what is needed, results); a missing or empty input folder is a failed
+  stage, said plainly (the program itself reads it as zero pages);
+- **Claude's five tasks taken by the session itself** through `combined/decide/tool.py` (`brief`, `tools`, `call`,
+  `finish`, `status`): the same tools and the same checks as through the API — the schema, the stores' refusals, the
+  tasks' order, the stages made again after each task and before the sequence — with no API key and no cost; a refused
+  decision not made again holds `finish` back once;
+- the results: the reports in the page (once he allows a real dossier's numbers there; until then a real dossier is
+  private: the page shows its stages only, and the details stay in its session), the eCTD zip in that session (or his
+  Drive, once allowed), Claude's decisions kept so a new machine can take the dossier up again.
+
+A dossier's own requests (a stop, a resume, a question) go to its session, and to a new one when that session no longer
+answers; nothing ties a dossier to another, so a thousand dossiers are a thousand short sessions. The owner's yes for each
+use of his data sits in `config/desk` (`drive_read`, `drive_write`, `results_in_page`).
+
+```
+python3 -m pytest -q tests/test_decide_tool.py tests/test_desk_worker.py tests/test_desk_page.py
+```
+`test_decide_tool.py` sends `test_decide.py`'s decisions through the session's tool: the same seven refusals word for word
+and the same decisions file, cut, findings and eCTD leaves as the API path. `test_desk_worker.py` runs the made-up dossier
+through `worker.py` and the tool (the desk example's numbers, its needs, reports and zip; the private patch; a stop; three
+failures). `test_desk_page.py` drives the page in Chromium with a stand-in for claude.ai's runtime: every route of a request
+and what the page shows when none is reachable.
+
 ## Run the app
 
 **Online (cloud):** see `deploy/DEPLOY-AR.md` (Docker + login + HTTPS).
