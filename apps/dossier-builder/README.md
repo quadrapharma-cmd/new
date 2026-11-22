@@ -1196,6 +1196,49 @@ EDA can give (the applicant's confirmation, local or tender marketing, the EDA t
 Tests: `python3 -m pytest -q tests/test_combined.py` (a made-up dossier, `tests/combined_fixture.py`: the stages from the
 received files to the eCTD sequence and the reports; it needs the tools above).
 
+### Claude inside the program, and eBOX for the Mac (22/11/2026) — «اعمل البرنامج للماك و شوف ازاي هتكون جزء منه بدون ما ادخل»
+
+**The «decide» stage** (`combined/decide/`, between `checks` and `fix`): the decisions a person wrote into `dossier.json` by hand
+for DTP-HB are made by Claude through the Claude API (Opus, adaptive thinking at high effort), in five tasks — the documents (the
+cut corrected, names), the product and Egypt's Module 1 (envelope, cover letter, product card, EDA's NTA 065 items from the rule
+pack), the product information (the English texts corrected with each change sourced; the Arabic leaflet, checked block by
+block), the reviewer's findings, and the eCTD sequence (leaves, left out, Module 1). Claude reads the dossier through the program
+(a page's text, a page drawn, a search, the documents as placed) and writes through tools that check each decision before it
+reaches `dossier.json` (pages, paths, CTD numbers, the envelope's DTD values, edits that delete characters only tried on the page,
+the translation check, ICH file names, lists sent with their count); a refused decision goes back to Claude with the reason, and
+«finish» is refused while a decision of its turn was refused. Every call's cost is counted against the dossier's cap
+(`EBOX_CLAUDE_BUDGET_USD`, 25 by default); every decision is logged (`decide/log.jsonl`); a stop (the cap, the API, the
+connection) keeps what was decided and resumes. Without `ANTHROPIC_API_KEY` the program goes on with its rules alone; a decisions
+file written by a person is left as it is (`decide --again` to let Claude redo it).
+
+Measured: the made-up dossier with a stand-in for the API (`tests/test_decide.py`, every refusal checked); and the DTP-HB hand
+decisions sent through Claude's tools as the API would send them (no API, no cost): 0 refused, the same decisions file, then the
+same 182 CTD PDFs, 148 eCTD files, XML and validation as the hand-built dossier — the tools can say everything the hand decisions
+said. What Claude itself decides on DTP-HB is measured once the owner's API key is in the environment (a test budget he approves).
+
+**The same pages everywhere**: Chromium prints with Noto Naskh Arabic and Liberation Sans from `vendor/fonts` (as @font-face);
+LibreOffice runs with a profile of its own and a font table (Times New Roman → Liberation Serif, Arial → Liberation Sans, …, as
+fontconfig does on Linux). Measured on DTP-HB: the product-information PDFs and the reports identical to those made before.
+
+**eBOX for the Mac** (`combined/mac/`, `mac/`, `.github/workflows/ebox-mac.yml`): one page in the browser served from the Mac
+only (127.0.0.1, a token): the Claude key saved once (tried on the API's free model list, kept in a file of mode 0600), a spending
+cap, the received folder chosen with the Mac's own dialog, «ابدأ»; the stages, Claude's decisions and their cost as they go; why a
+run stopped and «متابعة»; the delivery folder and the report opened at the end. The app carries its runtime — conda-forge's
+tesseract 5.3.4, ghostscript 10.02.1, poppler 24.02.0, Python 3.13 with the cloud edition's libraries (`mac/requirements.txt`),
+the cloud edition's OCR language files (sha256 pinned), LibreOffice 24.2.7.2, Playwright 1.63's Chromium — built on GitHub's Macs
+at the place it is unpacked (`/Users/Shared/eBOX/runtime-1`), so nothing in it is rewritten. The build runs the tests on the Mac
+with that runtime, compares the made-up dossier's outputs with the cloud edition's (`tests/test_mac_same.py`,
+`tests/expected/mac-same`: each page's reading, the cut, the findings, the product information and the reports drawn page by page,
+the eCTD and its validation), then checks the packed app as it will arrive (no runtime, its archive marked as downloaded,
+`--self-test`). By hand only; published to the «ebox-mac» release after the try is approved.
+
+```
+bash apps/dossier-builder/mac/build-runtime.sh && bash apps/dossier-builder/mac/test.sh     # on a Mac
+bash apps/dossier-builder/mac/build-app.sh dist && bash apps/dossier-builder/mac/smoke.sh dist/eBOX.app
+python3 -m dossier_engine.combined.mac            # the page, from the source (needs the tools on the PATH)
+python3 -m pytest -q tests/test_decide.py tests/test_mac_app.py tests/test_mac_same.py
+```
+
 ## Run the app
 
 **Online (cloud):** see `deploy/DEPLOY-AR.md` (Docker + login + HTTPS).

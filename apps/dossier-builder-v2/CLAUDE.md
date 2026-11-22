@@ -238,9 +238,18 @@ cannot hold a file of 600 MB and 5,000 pages, and a desktop build waits for his 
    counts in the reports checked against the JSON files. Send him the two reports (`<work>/report/*.pdf`) and say in plain words
    what the program decided by itself and what the decisions file holds. The delivery folder (`<work>/deliver/`: the sequence,
    its working documents, the reports and checks, one ZIP) goes to his Drive only after his yes (rule 2).
-5. The decisions that need the documents read and understood (names, the product information's corrected text, the reviewer's
-   findings) are made by you in the session. For the program to make them without you it needs Claude through the API: his key
-   (`ANTHROPIC_API_KEY`, «The environment»), and the cost said before every run.
+5. The decisions that need the documents read and understood are made by Claude inside the program since 22/11 (the «decide»
+   stage, README «Claude inside the program, and eBOX for the Mac»): it needs his key in the environment (`ANTHROPIC_API_KEY`,
+   «The environment») and a cap he approved (`EBOX_CLAUDE_BUDGET_USD`); say the cost before a billed run and the real cost after.
+   Without the key the stage says so and the program stops at the eCTD (the envelope is Claude's or a person's): then you write
+   the decisions yourself as on 17/11 (a person's decisions file is left as it is).
+6. **eBOX for the Mac** (22/11, his «اعمل البرنامج للماك و شوف ازاي هتكون جزء منه بدون ما ادخل»): he runs the same program on
+   his Mac without you — the page, his key saved once, the folder, «ابدأ». Build and test: `.github/workflows/ebox-mac.yml` by
+   hand (`mcp__github__actions_run_trigger`, ref `claude/new-session-8nmyo7`, publish false), then read every job's log; the zips
+   stay on the run until he approves the try, then the same workflow with publish true puts them on the «ebox-mac» release (public
+   repository: anyone can download them, no login). A change of a tool's version is a new runtime: raise `mac/RUNTIME_VERSION`,
+   record the made-up dossier's outputs again in the cloud edition (`EBOX_RECORD=1 pytest tests/test_mac_same.py`) only when the
+   change is meant to alter them, and say so.
 
 ### 5. The open-source eCTD projects and the eCTD timelines (monthly, or when he asks)
 1. Last update of each project the plan uses (`docs/PART-2-PLAN.md` §3.9–3.10):
@@ -803,6 +812,20 @@ When a part is done or an open item is closed, update «What exists» and «Open
   rules), the same 3 corrections and 5 product-information PDFs pixel for pixel, 148/148 eCTD files the same with the same XML but
   for the checksums, the same validation (69/1 pass/fail, 20/2 best practice: the EDA tracking number, fonts not embedded as the
   company made them). Still his to confirm: the applicant, local or tender marketing, the tracking number (EDA's).
+- **21/11/2026, «أنا مش فاهم» (after a long message): answer in short plain sentences, no terms (no OCR, XML, MD5, git); then
+  «انت قولت ان البرنامج مش بيعمل كل حاجة لوحدة لازم انت تدخل».** True: on DTP-HB the rules placed 164 of 181 documents; the rest,
+  the product information and three findings were decisions made by hand (by you, in the session). Proposed: Claude inside the
+  program through his API key (a cost for each dossier), or you go on doing that part.
+- **22/11/2026, «اعمل البرنامج للماك و شوف ازاي هتكون جزء منه بدون ما ادخل»** — his approval of a Mac build (rule 9) and of Claude
+  inside the program. Done (README «Claude inside the program, and eBOX for the Mac»): the «decide» stage (five tasks, tools that
+  check every decision, a cap, a log, resumable), the same pages on any machine (the program's own fonts and LibreOffice font
+  table: DTP-HB's outputs unchanged), and eBOX.app with its runtime in the cloud edition's versions, built and tested on GitHub's
+  Macs (Apple Silicon and Intel). The DTP-HB hand decisions sent through Claude's tools gave the hand-built dossier again (182 CTD
+  PDFs, 148 eCTD files, the same XML and validation): the tools can say all of it. Choices made for him: his key on the Mac in a
+  file of mode 0600 (no Keychain prompt after an update); the tools unpacked into /Users/Shared/eBOX (no password); a cap of 25
+  dollars a dossier by default, set on the page; what leaves the Mac is only what Claude reads, to Claude (said in the README).
+  Waiting on him: the key in the environment and a test budget (asked: up to 50 dollars) to measure Claude's own decisions on
+  DTP-HB against the hand result before the Mac program is sent; his Mac's chip (both builds are made).
 
 ## Open items (propose when relevant; do when he asks)
 - Old program, next pieces (one at a time, each on his real files first): the 14/11 update and measuring Claude's reading (need

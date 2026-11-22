@@ -29,11 +29,11 @@ export MAMBA_ROOT_PREFIX="$TMP/mamba"
 "$RT/env/bin/gs" --version
 "$RT/env/bin/pdftotext" -v 2>&1 | head -1
 
-echo "== 2. the OCR language files (the cloud edition's: Debian's tesseract-ocr-ara/eng/osd 1:4.1.0-2)"
+echo "== 2. the OCR language files (the cloud edition's: Debian's tesseract-ocr-ara/eng 1:4.1.0-2 = tessdata_fast 4.1.0)"
+# (no osd.traineddata: it serves page-rotation detection, which the program never asks OCRmyPDF for)
 mkdir -p "$RT/tessdata"
 curl -fsSL -o "$RT/tessdata/ara.traineddata" https://github.com/tesseract-ocr/tessdata_fast/raw/4.1.0/ara.traineddata
 curl -fsSL -o "$RT/tessdata/eng.traineddata" https://github.com/tesseract-ocr/tessdata_fast/raw/4.1.0/eng.traineddata
-curl -fsSL -o "$RT/tessdata/osd.traineddata" https://github.com/tesseract-ocr/tessdata/raw/4.1.0/osd.traineddata
 (cd "$RT/tessdata" && shasum -a 256 -c "$HERE/tessdata.sha256")
 
 echo "== 3. LibreOffice 24.2.7.2 (The Document Foundation's own build, signed by it)"
