@@ -7,7 +7,8 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update -q
 apt-get install -y -q tesseract-ocr tesseract-ocr-ara tesseract-ocr-eng ghostscript fonts-noto-core
 if [ -d new/apps/dossier-builder ]; then
-  python3 -m pip install -q --disable-pip-version-check -r new/apps/dossier-builder/mac/requirements.txt
+  # --ignore-installed: PyYAML and packaging came with the machine from Debian, and pip cannot uninstall them otherwise
+  python3 -m pip install -q --disable-pip-version-check --ignore-installed -r new/apps/dossier-builder/mac/requirements.txt
 fi
 tesseract --list-langs 2>&1 | grep -qx ara && tesseract --list-langs 2>&1 | grep -qx eng
 echo "eBOX tools ready: $(tesseract --version 2>&1 | head -1), ghostscript $(gs --version)"

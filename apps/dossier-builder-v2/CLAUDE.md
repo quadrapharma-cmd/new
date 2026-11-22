@@ -860,6 +860,18 @@ When a part is done or an open item is closed, update «What exists» and «Open
   «claude», Egyptian Arabic). The eCTD zip (hundreds of MB) stays here; to his Drive only with his yes. Before a real dossier's
   numbers and reports go into the page, his yes (asked 22/11). Example in the page: `dossiers/example-zentorix`, the made-up
   dossier run here in 27 s (its two reports as assets), marked `example: true`.
+- **22/11/2026, «عايز الحل ده مستدام ميقفلش حتي لو اشتغلنا الف ملف»** — the desk no longer leans on one session: **each
+  dossier gets its own work session.** «ابدأ» fires the scheduled task `trig_01QncGV1Kg8BCp767rQayvCE` («مكتب eBOX: جلسة عمل
+  لكل ملف»; environment new-ebox, whose setup script is `apps/dossier-builder/desk/setup.sh`; a new session on each firing, no
+  schedule of its own), and that session follows **`apps/dossier-builder/desk/WORKER.md`**: the stages one by one through
+  `desk/worker.py` (it writes the progress patch for `dossiers/<id>`), Claude's five tasks taken by the session itself through
+  `combined/decide/tool.py` (the same tools and checks as the API path, no key), the results, the chat. The page reads
+  `config/desk` (`trigger_id`, and his yes for each use of his data: `drive_read`, `drive_write`, `results_in_page`, all false
+  until he says yes; until then a real dossier is `--private`: the page shows its stages only). A dossier's own requests go to
+  its session (`dossiers/<id>.session`; a stop interrupts it), to a new one when that one does not answer; a general message
+  starts a session too; this session is the last resort. The task was made without connectors (the tool may not pass them
+  here): Drive in the workers needs him to make it again from claude.ai's scheduled tasks with Google Drive. Tests:
+  `tests/test_decide_tool.py` (the same decisions as the API path), `tests/test_desk_worker.py`, `tests/test_desk_page.py`.
 
 ## Open items (propose when relevant; do when he asks)
 - Old program, next pieces (one at a time, each on his real files first): the 14/11 update and measuring Claude's reading (need

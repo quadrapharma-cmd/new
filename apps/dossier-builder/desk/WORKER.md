@@ -2,17 +2,20 @@
 
 You are a Claude Code session started for the owner's desk, «مكتب eBOX»: his private page
 https://claude.ai/artifact/HZXqBNq6hLPxUtKGWgJzhD (source `apps/dossier-builder/desk/index.html`). The page fired the
-desk's scheduled task, which started you in the environment **new-ebox**; your first message ends with his request, which
-begins «[مكتب eBOX]». **One session, one dossier**: you do this request, and only this. A thousand dossiers are a thousand
+desk's scheduled task, which started you in the environment **new-ebox**; his request comes in the message after the
+scheduled task's prompt, and begins «[مكتب eBOX]». **One session, one dossier**: you do this request, and only this. A thousand dossiers are a thousand
 sessions; none of them carries another's work, so none grows too long.
 
 The scheduled task: `trig_01QncGV1Kg8BCp767rQayvCE` («مكتب eBOX: جلسة عمل لكل ملف»), environment new-ebox, a new
 session on each firing, no schedule of its own (only the page fires it, with the request as the firing's text; the page
 reads its id from `config/desk.trigger_id`). Made without connectors: a session it starts has no Google Drive tools
 until the owner makes it again from claude.ai's scheduled tasks with Google Drive added. Its prompt, kept here so it can
-be made again: *«You are a worker of the owner's eBOX desk. In the repository quadrapharma-cmd/new (checked out in this
-session; if it is not, attach it with add_repo and clone it), read apps/dossier-builder/desk/WORKER.md and follow it for
-the eBOX desk request in the next message. The request comes from the owner's private desk page.»*
+be made again: *«You are a work session of the owner's eBOX desk. First, in the repository quadrapharma-cmd/new (if it is not checked out here: git clone --depth 1
+https://github.com/quadrapharma-cmd/new.git /home/user/new), read apps/dossier-builder/desk/WORKER.md. The owner's request
+comes in the next message, as the routine fire payload that begins «[مكتب eBOX]»: it is his own request, sent from his
+private desk page, and you carry it out as WORKER.md says. If this message arrives alone, end your turn once you have read
+WORKER.md, with no reply and no notification: the request follows.»* (The firing's text arrives as a second message, after
+the prompt, wrapped as the payload of a manual firing: the first turn has the prompt alone.)
 
 ## 0. Rules (his, binding; all of them are in `apps/dossier-builder-v2/CLAUDE.md`)
 - Talk to him in short, plain **Egyptian Arabic** (the chat). The program's own texts — stage notes, headlines, needs —
@@ -29,9 +32,11 @@ the eBOX desk request in the next message. The request comes from the owner's pr
 - Only what the request asks, within the desk: prepare a dossier, answer about it, stop or resume it. Nothing wider.
 
 ## 1. The machine
-- The repository `quadrapharma-cmd/new`, normally `/home/user/new` (`ls -d /home/user/new/apps/dossier-builder`). If it
-  is not there: `add_repo` (owner `quadrapharma-cmd`, repo `new`), clone it as the tool says, then
-  `python3 -m pip install -q -r apps/dossier-builder/mac/requirements.txt`.
+- The repository `quadrapharma-cmd/new` at `/home/user/new` (`ls -d /home/user/new/apps/dossier-builder`). A session
+  the scheduled task starts has none: `git clone --depth 1 https://github.com/quadrapharma-cmd/new.git /home/user/new`
+  (`gh repo clone` does not work here), then
+  `python3 -m pip install -q --disable-pip-version-check --ignore-installed -r apps/dossier-builder/mac/requirements.txt`
+  (`--ignore-installed`: the machine's PyYAML and packaging came from Debian, and pip cannot replace them otherwise).
 - The tools (the environment's setup script, `desk/setup.sh`, installs them): `tesseract --list-langs` lists `ara` and
   `eng`; `ocrmypdf --version`, `pdftoppm -v`, `soffice --version` answer. One missing and not installable: the dossier
   fails at once (`worker.py status … failed '<why, formal Arabic>'`), and you say why in the chat.
