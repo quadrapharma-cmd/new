@@ -197,6 +197,7 @@ textarea { min-height: 84px; resize: vertical; }
           <span class="hint">افتح المجلد في Drive، ثم «مشاركة» ← «نسخ الرابط». فيه الملف المجمّع وملفات Word.</span>
           <input type="url" id="nf-drive" inputmode="url" autocomplete="off" placeholder="https://drive.google.com/drive/folders/…">
         </label>
+        <p class="msg-line" id="nf-drive-state" hidden></p>
         <div class="f stack" id="nf-files-box">
           <label class="f" for="nf-files">ملفات إضافية (اختياري)
             <span class="hint">PDF أو صور، حتى 20 ميجابايت للملف الواحد. ملفات Word والملفات الأكبر تُوضع في مجلد Drive.</span>
@@ -215,7 +216,7 @@ textarea { min-height: 84px; resize: vertical; }
     </section>
     <section id="view-chat" class="panel" hidden>
       <div class="chat-h"><h2 class="sec-h"><svg class="i"><use href="#i-chat"/></svg>Claude</h2>
-        <p class="muted small" style="margin:4px 0 0">ما تكتبه هنا يصل إلى Claude في جلسة العمل التي يعمل فيها البرنامج، ويظهر ردّه هنا.</p></div>
+        <p class="muted small" style="margin:4px 0 0">لكل ملف جلسة عمل خاصة به: ما تكتبه عن ملف يصل إلى جلسته، وما سواه إلى جلسة جديدة، ويظهر الرد هنا.</p></div>
       <div class="chat-list" id="chat-list" aria-live="polite"></div>
       <form class="composer" id="chat-form">
         <textarea id="chat-in" rows="1" maxlength="4000" placeholder="اكتب لـ Claude…" aria-label="رسالتك إلى Claude"></textarea>
@@ -230,6 +231,8 @@ textarea { min-height: 84px; resize: vertical; }
   // ------------------------------------------------------------------ the program's own words (formal Arabic)
   const SESSION = 'session_01LcrRaPNd7k7FvK6ziA9n4b';           // the Claude session where the program and its tools run
   const LINK = 'Claude Code Remote';                               // the claude.ai connector that carries a message to it
+  // The connector itself unreachable from this view: no other route will do better.
+  const NO_LINK = new Set(['server_not_connected', 'blocked_by_policy', 'not_granted', 'capability_disabled']);
   const STAGES = [
     ['read', 'قراءة الملفات الواردة صفحةً صفحة', 'i-read'], ['repeats', 'الكتل المكررة', 'i-copy'],
     ['ocr', 'التعرف الضوئي على الصفحات الممسوحة', 'i-scan'], ['split', 'تقسيم الملف إلى مستندات CTD', 'i-cut'],
@@ -263,7 +266,7 @@ textarea { min-height: 84px; resize: vertical; }
 
   // ------------------------------------------------------------------ state
   const S = { tab: 'files', open: null, dossiers: [], messages: [], db: null, mcp: null, assets: null, canWrite: true,
-              loading: true, stale: false, linkState: 'unknown', seen: 0, picked: [] };
+              loading: true, stale: false, linkState: 'unknown', seen: 0, picked: [], config: {} };
   try { S.seen = Number(localStorage.getItem('ebox-desk-seen') || 0); } catch (e) {}
 
   // ------------------------------------------------------------------ tabs
@@ -325,6 +328,8 @@ textarea { min-height: 84px; resize: vertical; }
       el('p', { class: 'small muted', style: 'margin:0' }, 'بدأ ', when(d.created), d.updated ? ' · آخر تحديث ' + when(d.updated) : ''),
       el('div', { class: 'row' },
         el('button', { class: 'btn', type: 'button', onclick: () => askAbout(d) }, icon('i-chat'), 'اسأل Claude عن هذا الملف'),
+        /^session_[A-Za-z0-9]+$/.test(d.session || '')
+          ? el('a', { class: 'btn', href: 'https://claude.ai/code/' + d.session, target: '_blank', rel: 'noopener' }, icon('i-open'), 'جلسة العمل') : null,
         (d.status === 'running' || d.status === 'queued') && S.canWrite
           ? el('button', { class: 'btn', type: 'button', onclick: () => request(d, 'إيقاف', 'أوقف إعداد هذا الملف.') }, icon('i-stop'), 'إيقاف') : null,
         (d.status === 'stopped' || d.status === 'failed' || d.status === 'needs') && S.canWrite
@@ -392,7 +397,7 @@ textarea { min-height: 84px; resize: vertical; }
       const sent = await tell(text);
       await addMessage('you', 'ابدأ ملفًا جديدًا: ' + d.name + (drive ? '\n' + drive : '') + (notes ? '\n' + notes : ''), sent, text, id);
       msg.className = 'msg-line ' + (sent ? 'ok' : 'bad');
-      msg.textContent = sent ? 'أُرسل الطلب إلى Claude. ستظهر المراحل في «الملفات» عند بدئها.'
+      msg.textContent = sent ? 'أُرسل الطلب: تبدأ لهذا الملف جلسة عمل خاصة به خلال دقائق، وتظهر مراحله في «الملفات».'
                              : 'سُجّل الملف، لكن الطلب لم يصل إلى Claude من هذا الجهاز: انسخه من «Claude» والصقه في المحادثة.';
       $('#new-form').reset(); $('#nf-list').replaceChildren(); S.picked = [];
       S.open = id; setTimeout(() => { setTab('files'); render(); }, 900);
@@ -407,15 +412,28 @@ textarea { min-height: 84px; resize: vertical; }
   });
 
   // ------------------------------------------------------------------ talking with Claude
-  async function tell(text) {
+  // A request goes to the dossier's own work session when it has one; else the desk's scheduled task starts a new session
+  // for it (config/desk.trigger_id); the session this desk was made in is the last resort.
+  async function tell(text, to = {}) {
     if (!S.mcp) { S.linkState = 'none'; paintConn(); return false; }
-    try {
-      await S.mcp.callTool(LINK, 'send_message', { session_id: SESSION, message: text });
-      S.linkState = 'ok'; paintConn(); return true;
-    } catch (err) {
-      S.linkState = (err && (err.code === 'server_not_connected' || err.code === 'not_in_manifest' || err.code === 'blocked_by_policy' || err.code === 'not_granted' || err.code === 'capability_disabled')) ? 'none' : 'unknown';
-      paintConn(); return false;
+    const routes = [];
+    if (/^session_[A-Za-z0-9]+$/.test(to.session || '')) {
+      routes.push(['send_message', Object.assign({ session_id: to.session, message: text }, to.now ? { priority: 'now' } : {})]);
     }
+    if (/^trig_[A-Za-z0-9]+$/.test(S.config.trigger_id || '')) routes.push(['fire_trigger', { trigger_id: S.config.trigger_id, text }]);
+    routes.push(['send_message', { session_id: SESSION, message: text }]);
+    let last = null;
+    for (const [tool, input] of routes) {
+      try { await S.mcp.callTool(LINK, tool, input, { cache: false }); S.linkState = 'ok'; paintConn(); return true; }
+      catch (err) { last = err; if (err && NO_LINK.has(err.code)) break; }
+    }
+    S.linkState = last && (NO_LINK.has(last.code) || last.code === 'not_in_manifest') ? 'none' : 'unknown';
+    paintConn(); return false;
+  }
+  function paintDrive() {
+    const p = $('#nf-drive-state'); if (!p) return;
+    p.hidden = !S.db || S.config.drive_read === true;
+    p.textContent = 'قراءة مجلدات Drive لم تُفعَّل في المكتب بعد: ارفع ملفات PDF أدناه، أو اكتب لـ Claude لتفعيلها.';
   }
   async function addMessage(from, text, delivered, carried, dossier) {
     if (!S.db) return;
@@ -424,7 +442,7 @@ textarea { min-height: 84px; resize: vertical; }
   }
   async function request(d, kind, text) {
     const full = '[مكتب eBOX] ' + kind + '\nالمعرّف: ' + d.id + '\nالاسم: ' + (d.name || '') + '\n' + text;
-    const sent = await tell(full);
+    const sent = await tell(full, { session: d.session, now: kind === 'إيقاف' });
     await addMessage('you', kind + ': ' + (d.name || ''), sent, full, d.id);
     if (!wide()) setTab('chat');
   }
@@ -438,7 +456,8 @@ textarea { min-height: 84px; resize: vertical; }
     const go = $('#chat-go'); go.disabled = true;
     const dossier = ta.dataset.dossier || null;
     const full = '[مكتب eBOX] رسالة' + (dossier ? '\nالمعرّف: ' + dossier : '') + '\n' + text;
-    const sent = await tell(full);
+    const d = dossier ? S.dossiers.find((x) => x.id === dossier) : null;
+    const sent = await tell(full, { session: d && d.session });
     try { await addMessage('you', text, sent, full, dossier); ta.value = ''; delete ta.dataset.dossier; }
     catch (err) { /* the message stays in the box to send again */ }
     go.disabled = false; ta.focus();
@@ -483,6 +502,8 @@ textarea { min-height: 84px; resize: vertical; }
     if (user) { try { const w = await user.can('data.write'); if (w === false) S.canWrite = false; } catch (e) {} }
     if (!S.canWrite) { const f = $('#new-form'); if (f) f.querySelectorAll('input,textarea,button').forEach((x) => { x.disabled = true; }); }
     if (!db) { S.loading = false; render(); return; }
+    paintDrive();
+    db.doc('config/desk').onSnapshot((snap) => { S.config = (snap.exists && snap.data()) || {}; paintDrive(); }, () => {});
     const timer = setTimeout(() => { S.stale = true; render(); }, 10000);
     db.collection('dossiers').orderBy('created', 'desc').limit(200).onSnapshot((snap) => {
       if (!snap.metadata.fromCache) clearTimeout(timer);

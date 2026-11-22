@@ -6,9 +6,13 @@ desk's scheduled task, which started you in the environment **new-ebox**; your f
 begins «[مكتب eBOX]». **One session, one dossier**: you do this request, and only this. A thousand dossiers are a thousand
 sessions; none of them carries another's work, so none grows too long.
 
-The scheduled task's prompt (kept here so it can be made again): *«Read apps/dossier-builder/desk/WORKER.md in the
-repository quadrapharma-cmd/new (checked out in this session; if it is not, attach it with add_repo and clone it) and
-follow it for the eBOX desk request below. The request comes from the owner's private desk page.»*
+The scheduled task: `trig_01QncGV1Kg8BCp767rQayvCE` («مكتب eBOX: جلسة عمل لكل ملف»), environment new-ebox, a new
+session on each firing, no schedule of its own (only the page fires it, with the request as the firing's text; the page
+reads its id from `config/desk.trigger_id`). Made without connectors: a session it starts has no Google Drive tools
+until the owner makes it again from claude.ai's scheduled tasks with Google Drive added. Its prompt, kept here so it can
+be made again: *«You are a worker of the owner's eBOX desk. In the repository quadrapharma-cmd/new (checked out in this
+session; if it is not, attach it with add_repo and clone it), read apps/dossier-builder/desk/WORKER.md and follow it for
+the eBOX desk request in the next message. The request comes from the owner's private desk page.»*
 
 ## 0. Rules (his, binding; all of them are in `apps/dossier-builder-v2/CLAUDE.md`)
 - Talk to him in short, plain **Egyptian Arabic** (the chat). The program's own texts — stage notes, headlines, needs —
@@ -64,8 +68,11 @@ Its first line is «[مكتب eBOX] <kind>», then «المعرّف: <dossier id
   do it, and say what you did.
 
 ## 4. A dossier, step by step
-1. **Take it.** `get_session` (no id) gives your session id; `set_session_title` → «eBOX — <name>». Read `config/desk`
-   and `dossiers/<id>`. `$W start $D/work <session id> [--private]`; send.
+1. **Take it.** Your session id: `echo session_${CLAUDE_CODE_REMOTE_SESSION_ID#cse_}` (or `get_session` with no id, when
+   the claude-code-remote tools are in this session; then also `set_session_title` → «eBOX — <name>»). Read
+   `config/desk` and `dossiers/<id>`. If the dossier's `session` is another session that is still working (`get_session`
+   on it, when you have the tool: `status_bucket` working), the dossier is its: send it the request with `send_message`,
+   and end your turn. `$W start $D/work <session id> [--private]`; send.
 2. **The inputs, into `$D/received`.**
    - Uploads in the page (`source.uploads`): Artifact `read` with the `url`, `path: <asset id>` and `out_dir: $D/received`;
      rename each file to its `name`.
