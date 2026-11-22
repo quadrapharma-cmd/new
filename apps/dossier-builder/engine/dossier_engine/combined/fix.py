@@ -15,7 +15,7 @@ from pathlib import Path
 import pikepdf
 from PIL import Image, ImageChops
 
-from .common import Work, say, tool
+from .common import Work, font_faces, say, soffice_pdf, tool
 from .pdfedit import edit_page
 
 AR = re.compile('[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]')
@@ -167,12 +167,14 @@ td.v {{ width: 35%; }}
 
 def print_html(src, dest, footer_rtl=True):
     from playwright.sync_api import sync_playwright
-    footer = ('<div style="font-size:7.5pt;color:#777;width:100%;text-align:center;font-family:\'Noto Naskh Arabic\';direction:rtl">'
+    footer = (f'<style>{font_faces(["Noto Naskh Arabic"])}</style>'
+              '<div style="font-size:7.5pt;color:#777;width:100%;text-align:center;font-family:\'Noto Naskh Arabic\';direction:rtl">'
               'صفحة <span class="pageNumber"></span> من <span class="totalPages"></span></div>')
     with sync_playwright() as p:
         b = p.chromium.launch()
         page = b.new_page()
         page.goto('file://' + str(src), wait_until='load')
+        page.add_style_tag(content=font_faces())
         page.evaluate('() => document.fonts.ready')
         page.pdf(path=str(dest), format='A4', print_background=True, prefer_css_page_size=True, display_header_footer=True,
                  header_template='<div></div>', footer_template=footer)
@@ -504,9 +506,7 @@ def word_rtl(path, title, blocks, creator, font='Arial'):
 
 
 def to_pdf_lo(docx, outdir):
-    subprocess.run([tool('soffice'), '--headless', '--norestore', '--convert-to', 'pdf', '--outdir', str(outdir), str(docx)],
-                   check=True, capture_output=True, timeout=600)
-    return outdir / (Path(docx).stem + '.pdf')
+    return soffice_pdf(docx, outdir)
 
 
 def make_pi(w, pi):

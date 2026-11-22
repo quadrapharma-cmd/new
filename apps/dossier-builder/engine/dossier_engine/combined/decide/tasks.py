@@ -154,7 +154,7 @@ def T(name, desc, props, required):
 
 
 S = {'type': 'string'}
-ROWS3 = {'type': 'array', 'items': {'type': 'array', 'items': S}}
+ROWS3 = {'type': 'array', 'items': {'type': 'array', 'items': {'anyOf': [S, {'type': 'array', 'items': S}]}}}   # a cell: a text or its lines
 FINISH = T('finish', 'The task is done: a short summary of what you decided.', {'summary': S}, ['summary'])
 
 TOOLS = {

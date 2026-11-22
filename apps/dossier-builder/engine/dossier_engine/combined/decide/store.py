@@ -52,10 +52,12 @@ def rows_of(a, key, width, most=60):
         raise ToolError(f'«{key}» must be a list of rows.')
     if len(rows) > most:
         raise ToolError(f'At most {most} rows.')
+    def cell(c):
+        return isinstance(c, str) or (isinstance(c, list) and c and all(isinstance(x, str) for x in c))
     for r in rows:
-        if not isinstance(r, list) or len(r) != width or not all(isinstance(c, str) for c in r):
-            raise ToolError(f'Each row of «{key}» is a list of {width} texts; this one is not: {r!r}'[:400])
-    return [[c.strip() for c in r] for r in rows]
+        if not isinstance(r, list) or len(r) != width or not all(cell(c) for c in r):
+            raise ToolError(f'Each row of «{key}» is a list of {width} cells, each a text or a list of lines; this one is not: {r!r}'[:400])
+    return [[c.strip() if isinstance(c, str) else [x.strip() for x in c] for c in r] for r in rows]
 
 
 def path_of(p):
@@ -82,6 +84,15 @@ class Store:
 
     def save(self):
         self.w.save('dossier.json', self.d)
+
+    def add_row(self, where, key, row):
+        """A row added to one of the report's lists once: a task made again (after a stop) does not add it twice."""
+        rows = where.setdefault(key, [])
+        if row in rows:
+            return 'Already recorded.'
+        rows.append(row)
+        self.save()
+        return 'Recorded.'
 
     def docs(self):
         return {d['path']: d for d in (self.w.load('plan.json', {}) or {}).get('docs', [])}
@@ -217,14 +228,10 @@ class Store:
         return 'Recorded.'
 
     def to_confirm(self, a):
-        self.d['report'].setdefault('to_confirm', []).append(glossary([text(a, 'item', 200), text(a, 'value', 400), text(a, 'why', 400)]))
-        self.save()
-        return 'Recorded.'
+        return self.add_row(self.d['report'], 'to_confirm', glossary([text(a, 'item', 200), text(a, 'value', 400), text(a, 'why', 400)]))
 
     def gap(self, a):
-        self.d['report'].setdefault('company_gaps', []).append(glossary([text(a, 'item', 300), text(a, 'where', 300), text(a, 'who', 100)]))
-        self.save()
-        return 'Recorded.'
+        return self.add_row(self.d['report'], 'company_gaps', glossary([text(a, 'item', 300), text(a, 'where', 300), text(a, 'who', 100)]))
 
     # -- 3. the product information
     def pi_content(self):
@@ -277,9 +284,7 @@ class Store:
 
     def pi_change(self, a):
         row = [text(a, 'where', 200), text(a, 'old', 600), text(a, 'new', 600), text(a, 'source', 300)]
-        self.d['report'].setdefault('pi_changes', []).append(row)
-        self.save()
-        return 'Recorded.'
+        return self.add_row(self.d['report'], 'pi_changes', row)
 
     def fix_in_pdf(self, a):
         d = self.doc(a.get('doc'))
@@ -299,6 +304,8 @@ class Store:
                 raise ToolError(f'{e}\nThe page\'s text as the PDF draws it (the phrase must be found in it exactly once):\n{drawn[:2500]}')
         for f in self.d['fixes']:
             if f['doc'] == d['path'] and f['page'] == page:
+                if [old, new] in f['edits']:
+                    return 'Already recorded.'
                 f['edits'].append([old, new])
                 break
         else:
@@ -307,17 +314,18 @@ class Store:
         return 'Recorded: the correction applies (characters deleted only).'
 
     def translation_note(self, a):
-        self.d['report'].setdefault('translation_notes', []).append(glossary(text(a, 'text', 600)))
-        self.save()
-        return 'Recorded.'
+        return self.add_row(self.d['report'], 'translation_notes', glossary(text(a, 'text', 600)))
 
     # -- 4. the reviewer's findings
     def finding(self, a):
         sev = text(a, 'severity', 10)
         if sev not in SEVERITY:
             raise ToolError(f'severity is one of {SEVERITY}.')
+        t = glossary(text(a, 'text', 1500))
+        if any(f.get('text') == t for f in self.d['findings']):
+            return 'Already recorded.'
         n = sum(1 for f in self.d['findings'] if f.get('rule') == 'reviewer')
-        self.d['findings'].append(glossary({'rule': 'reviewer', 'order': 20 + 10 * n, 'severity': sev, 'text': text(a, 'text', 1500),
+        self.d['findings'].append(glossary({'rule': 'reviewer', 'order': 20 + 10 * n, 'severity': sev, 'text': t,
                                             'where': text(a, 'where', 600), 'action': text(a, 'action', 800)}))
         self.save()
         return 'Recorded.'

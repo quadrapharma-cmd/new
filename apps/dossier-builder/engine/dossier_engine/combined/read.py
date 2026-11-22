@@ -19,7 +19,7 @@ from pathlib import Path
 import pikepdf
 from PIL import Image
 
-from .common import NO_TEXT, Work, natural, pdftext, say, sha256_file, tool
+from .common import NO_TEXT, Work, natural, pdftext, say, sha256_file, soffice_pdf, tool
 
 WORD_EXT = {'.doc', '.docx', '.rtf', '.dot', '.dotx', '.odt'}
 
@@ -175,8 +175,7 @@ def to_pdf(src, name, outdir):
     work.mkdir(exist_ok=True)
     tmp = work / name
     shutil.copyfile(src, tmp)
-    subprocess.run([tool('soffice'), '--headless', '--norestore', '--convert-to', 'pdf', '--outdir', str(outdir), str(tmp)],
-                   check=True, capture_output=True, timeout=900)
+    soffice_pdf(tmp, outdir, timeout=900)
     tmp.unlink()
     work.rmdir()
     out = outdir / (tmp.stem + '.pdf')

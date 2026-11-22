@@ -16,7 +16,7 @@ from reportlab.pdfgen import canvas
 
 PRODUCT = 'Zentorix 10 mg film-coated tablets'
 COMPANY = 'EXAMPLE PHARMA LTD.'
-FONT = '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf'
+FONT = str(Path(__file__).resolve().parents[1] / 'vendor' / 'fonts' / 'LiberationSans-Regular.ttf')   # Debian's file, in the repository
 
 
 def text_page(c, lines, header=True):

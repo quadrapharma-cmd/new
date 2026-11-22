@@ -1,4 +1,6 @@
 """What the stages share: the work folder, JSON files, page ranges, the tools on the computer."""
+import atexit
+import base64
 import hashlib
 import json
 import os
@@ -6,6 +8,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -14,6 +17,7 @@ APP = ENGINE.parents[1]                      # apps/dossier-builder
 REPO = APP.parents[1]
 PROFILE_EG = REPO / 'docs' / 'ctd' / 'ectd' / 'EG-PROVISIONAL-PROFILE-v0'
 APP4 = APP / 'rulepacks' / 'ich.ectd.v322' / 'app4.csv'
+FONTS = APP / 'vendor' / 'fonts'
 NO_TEXT = 30                                  # a page with fewer characters than this has no text of its own
 
 
@@ -126,6 +130,66 @@ def tool(name):
     if not p:
         raise SystemExit(f'البرنامج «{name}» غير موجود على هذا الجهاز، وهذه المرحلة تحتاج إليه.')
     return p
+
+
+# The fonts the printed pages use, given to Chromium from the program's own files: Linux has them installed, a Mac has none of
+# them, and both must draw the same pages.
+WEB_FONTS = (('Noto Naskh Arabic', 'NotoNaskhArabic-Regular.ttf', 400, 'normal'), ('Noto Naskh Arabic', 'NotoNaskhArabic-Bold.ttf', 700, 'normal'),
+             ('Liberation Sans', 'LiberationSans-Regular.ttf', 400, 'normal'), ('Liberation Sans', 'LiberationSans-Bold.ttf', 700, 'normal'),
+             ('Liberation Sans', 'LiberationSans-Italic.ttf', 400, 'italic'), ('Liberation Sans', 'LiberationSans-BoldItalic.ttf', 700, 'italic'))
+_faces = {}
+
+
+def font_faces(families=None):
+    """@font-face rules for the printed pages' fonts, each font file as a data: URL (a page opened from a file may not load
+    fonts from other files)."""
+    key = tuple(families or ())
+    if key not in _faces:
+        out = []
+        for fam, file, weight, style in WEB_FONTS:
+            if families and fam not in families:
+                continue
+            data = base64.standard_b64encode((FONTS / file).read_bytes()).decode('ascii')
+            out.append(f"@font-face {{ font-family: '{fam}'; src: url(data:font/ttf;base64,{data}) format('truetype'); "
+                       f'font-weight: {weight}; font-style: {style}; }}')
+        _faces[key] = '\n'.join(out)
+    return _faces[key]
+
+
+# LibreOffice with a profile of the program's own: never the person's own LibreOffice (an open LibreOffice would take the
+# conversion over), and a font table that draws the fonts Word files name with the fonts of the same measures, as fontconfig
+# does on Linux, so a Mac (which has Times New Roman and Arial themselves) draws the same pages.
+LO_FONTS = (('Times New Roman', 'Liberation Serif'), ('Arial', 'Liberation Sans'), ('Courier New', 'Liberation Mono'),
+            ('Calibri', 'Carlito'), ('Cambria', 'Caladea'))
+_lo = {}
+
+
+def lo_profile():
+    if 'dir' not in _lo:
+        d = Path(tempfile.mkdtemp(prefix='ebox-lo-'))
+        atexit.register(shutil.rmtree, d, True)
+        items = ['<item oor:path="/org.openoffice.Office.Common/Font/Substitution"><prop oor:name="Replacement" oor:op="fuse">'
+                 '<value>true</value></prop></item>']
+        for i, (a, b) in enumerate(LO_FONTS):
+            items.append('<item oor:path="/org.openoffice.Office.Common/Font/Substitution/FontPairs">'
+                         f'<node oor:name="_{i}" oor:op="replace"><prop oor:name="Always" oor:op="fuse"><value>true</value></prop>'
+                         '<prop oor:name="OnScreenOnly" oor:op="fuse"><value>false</value></prop>'
+                         f'<prop oor:name="ReplaceFont" oor:op="fuse"><value>{a}</value></prop>'
+                         f'<prop oor:name="SubstituteFont" oor:op="fuse"><value>{b}</value></prop></node></item>')
+        (d / 'user').mkdir(parents=True)
+        (d / 'user' / 'registrymodifications.xcu').write_text(
+            '<?xml version="1.0" encoding="UTF-8"?>\n<oor:items xmlns:oor="http://openoffice.org/2001/registry" '
+            'xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n'
+            + '\n'.join(items) + '\n</oor:items>\n', encoding='utf-8')
+        _lo['dir'] = d
+    return _lo['dir']
+
+
+def soffice_pdf(src, outdir, timeout=600):
+    """A Word or RTF file made PDF by LibreOffice, in outdir under the same stem."""
+    subprocess.run([tool('soffice'), f'-env:UserInstallation={lo_profile().as_uri()}', '--headless', '--norestore',
+                    '--convert-to', 'pdf', '--outdir', str(outdir), str(src)], check=True, capture_output=True, timeout=timeout)
+    return Path(outdir) / (Path(src).stem + '.pdf')
 
 
 def run(cmd, **kw):
