@@ -330,14 +330,40 @@ def serve(port=0, open_browser=True, choose=choose_folder, opener=None, check=ch
     return httpd, url
 
 
+def running_page():
+    """The page of an eBOX already running on this Mac (opened again rather than a second server), or None."""
+    f = support_dir() / 'server.json'
+    if not f.exists():
+        return None
+    try:
+        s = json.loads(f.read_text(encoding='utf-8'))
+        os.kill(int(s['pid']), 0)
+        import urllib.request
+        urllib.request.urlopen(s['url'], timeout=3).read(64)
+        return s['url']
+    except Exception:                                               # noqa: BLE001 — gone, or not answering: start anew
+        return None
+
+
 def main(argv):
     if '--self-test' in argv:
         from .selftest import main as selftest
         return selftest()
+    url = running_page()
+    if url:
+        webbrowser.open(url)
+        return 0
     httpd, url = serve()
-    (support_dir() / 'last-url.txt').write_text(url, encoding='utf-8')
+    f = support_dir() / 'server.json'
+    fd = os.open(f, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)          # the page's token is in it: the account's only
+    with os.fdopen(fd, 'w', encoding='utf-8') as h:
+        json.dump({'pid': os.getpid(), 'url': url}, h)
     print(time.strftime('%H:%M:%S'), 'eBOX:', url.split('?')[0], flush=True)
-    httpd.serve_forever()
+    try:
+        httpd.serve_forever()
+    finally:
+        if f.exists():
+            f.unlink()
     return 0
 
 

@@ -123,3 +123,13 @@ def test_a_dossier_started_resumed_and_opened(server):
     assert call(url, '/api/open', {'id': '../x', 'what': 'folder'}, t)[0] == 404      # nothing outside the dossiers' folder
     runs = call(url, '/api/state', token=t)[1]['runs']
     assert runs[0]['id'] == r['id'] and runs[0]['finished']
+
+
+def test_opened_twice_the_same_page(server):
+    httpd, url, tmp, _ = server
+    f = tmp / 'Support' / 'server.json'
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text(json.dumps({'pid': os.getpid(), 'url': url}), encoding='utf-8')
+    assert app.running_page() == url                                                # a second launch opens this page
+    f.write_text(json.dumps({'pid': 999999, 'url': url}), encoding='utf-8')
+    assert app.running_page() is None                                               # the first is gone: start anew
