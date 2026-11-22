@@ -1275,6 +1275,14 @@ through `worker.py` and the tool (the desk example's numbers, its needs, reports
 failures). `test_desk_page.py` drives the page in Chromium with a stand-in for claude.ai's runtime: every route of a request
 and what the page shows when none is reachable.
 
+Measured (22/11, 17:54–18:01): the made-up combined file uploaded in the page and the scheduled task fired as «ابدأ» fires
+it: a new session cloned the repository, installed the libraries, ran the ten stages and took Claude's five tasks itself in
+7½ minutes — 47 pages, 21 CTD documents, 25 eCTD leaves, 69 of 70 pass/fail rules met (the one left: the tracking number
+EDA gives), 12 findings, what the company must give listed with its pages, the two reports in the page and its reply in
+the chat; it used 135k of its 1M-token context. What that first run showed is in WORKER.md now: the firing's text comes
+as a second message (a first turn with the prompt alone ends quietly), the session clones the repository itself, pip
+needs `--ignore-installed` on a fresh machine, and a session the task starts cannot rename itself (the page links to it).
+
 ## Run the app
 
 **Online (cloud):** see `deploy/DEPLOY-AR.md` (Docker + login + HTTPS).

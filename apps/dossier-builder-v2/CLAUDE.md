@@ -871,7 +871,8 @@ When a part is done or an open item is closed, update «What exists» and «Open
   its session (`dossiers/<id>.session`; a stop interrupts it), to a new one when that one does not answer; a general message
   starts a session too; this session is the last resort. The task was made without connectors (the tool may not pass them
   here): Drive in the workers needs him to make it again from claude.ai's scheduled tasks with Google Drive. Tests:
-  `tests/test_decide_tool.py` (the same decisions as the API path), `tests/test_desk_worker.py`, `tests/test_desk_page.py`.
+  `tests/test_decide_tool.py` (the same decisions as the API path), `tests/test_desk_worker.py`, `tests/test_desk_page.py`. First run
+  (made-up file, 22/11 17:54–18:01): a new session did the whole dossier alone in 7½ minutes (`dossiers/d-20261122-worker1`).
 
 ## Open items (propose when relevant; do when he asks)
 - Old program, next pieces (one at a time, each on his real files first): the 14/11 update and measuring Claude's reading (need

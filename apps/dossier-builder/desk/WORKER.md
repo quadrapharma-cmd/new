@@ -60,7 +60,8 @@ the prompt, wrapped as the payload of a manual firing: the first turn has the pr
 - **Private until he says yes.** If `results_in_page` is not true and the dossier is not `example: true`, start with
   `--private`: the page then shows the stages and their states only. Your headlines, needs and chat replies then carry
   no data of the dossier either (no product, company or person beyond the name he gave, no numbers, no findings): say
-  «التفاصيل في جلسة العمل», and give them here, in this session (it is in his sessions list as «eBOX — <name>»).
+  «التفاصيل في جلسة العمل», and give them here, in this session (the dossier's «جلسة العمل» button in the page opens
+  it; a session the task starts keeps the task's name, as it has no tool to rename itself).
 
 ## 3. The request
 Its first line is «[مكتب eBOX] <kind>», then «المعرّف: <dossier id>» (a general message has none).
@@ -111,7 +112,7 @@ Its first line is «[مكتب eBOX] <kind>», then «المعرّف: <dossier id
    - The two reports (PDF): if `results_in_page` is true or the dossier is an example, check the page's asset store
      (Artifact `list`, `scope: assets`, with the `url`), then Artifact publish with the `url`, `asset: true`,
      `file_paths: [the two PDFs]`, and for each: `$W result $D/work '<title>' '<note>' --asset <id>` (the titles and notes
-     `summary` printed). Otherwise: `$W result $D/work '<title>' 'في جلسة العمل «eBOX — <name>»'`, and send him the two
+     `summary` printed). Otherwise: `$W result $D/work '<title>' 'في جلسة عمل هذا الملف (زر «جلسة العمل» أعلاه)'`, and send him the two
      PDFs here with SendUserFile.
    - The eCTD zip: if `drive_write` is true, put it in his Drive: `create_file` a folder «eBOX — <name>» (the folder mime
      type), then the zip in it (`contentMimeType: application/zip`, `disableConversionToGoogleType: true`, and as
