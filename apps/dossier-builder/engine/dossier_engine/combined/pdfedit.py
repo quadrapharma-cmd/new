@@ -47,6 +47,27 @@ class _Identity(dict):
 IDENTITY = _Identity({b'\x00\x00': '\x00'})       # one entry so the code width (2) can be read from it
 
 
+def drawn_text(pdf, index):
+    """A page's text in the order its content stream draws it: what edit_page looks for a phrase in."""
+    page = pdf.pages[index]
+    fonts = page.obj.Resources.get('/Font') or {}
+    maps = {str(k): tounicode(fonts[k]) for k in fonts.keys()}
+    font, out = None, []
+    for operands, op in pikepdf.parse_content_stream(page):
+        name = str(op)
+        if name == 'Tf':
+            font = str(operands[0])
+        elif name in ('Tj', "'", '"', 'TJ'):
+            cmap = maps.get(font, {})
+            width = 2 if cmap and len(next(iter(cmap))) == 2 else 1
+            for it in (operands[0] if name == 'TJ' else [operands[-1]]):
+                if isinstance(it, pikepdf.String):
+                    raw = bytes(it)
+                    out += [cmap[raw[k:k + width]] if isinstance(cmap, _Identity) else cmap.get(raw[k:k + width], '?')
+                            for k in range(0, len(raw), width)]
+    return ''.join(out)
+
+
 def edit_page(pdf, index, edits):
     page = pdf.pages[index]
     fonts = page.obj.Resources.Font
