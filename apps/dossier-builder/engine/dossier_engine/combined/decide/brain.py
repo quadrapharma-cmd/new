@@ -86,6 +86,10 @@ def converse(client, task, system, tools, first, handlers, budget, log, *, model
             if bad_json > 2:
                 raise Stop('bad tool input')
             continue
+        except Exception as e:                      # the API refused or could not be reached (after the library's retries)
+            if type(e).__module__.split('.')[0] != 'anthropic':
+                raise
+            raise Stop('api', f'{type(e).__name__}: {e}'[:400]) from e
         cost = budget.add(model, msg.usage)
         state['turns'] = turn + 1
         log({'task': task, 'turn': turn + 1, 'stop': msg.stop_reason, 'seconds': round(time.time() - t0, 1),
