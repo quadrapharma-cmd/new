@@ -22,8 +22,11 @@ echo "== 1. the tools from conda-forge ($PLAT)"
 curl -fsSL "https://micro.mamba.pm/api/micromamba/$PLAT/latest" | tar -xj -C "$TMP" bin/micromamba
 "$TMP/bin/micromamba" --version
 export MAMBA_ROOT_PREFIX="$TMP/mamba"
+EXTRA=""
+# PyPI has no Intel-Mac wheel of pikepdf 10.17.0 (it would be built without qpdf's headers): conda-forge's build of it
+if [ "$PLAT" = osx-64 ]; then EXTRA="pikepdf=10.17.0"; fi
 "$TMP/bin/micromamba" create -y -p "$RT/env" -c conda-forge --override-channels \
-  python=3.13 tesseract=5.3.4 ghostscript=10.02.1 poppler=24.02.0
+  python=3.13 tesseract=5.3.4 ghostscript=10.02.1 poppler=24.02.0 $EXTRA
 "$RT/env/bin/python" -m pip install --no-cache-dir --disable-pip-version-check -r "$HERE/requirements.txt"
 "$RT/env/bin/tesseract" --version | head -1
 "$RT/env/bin/gs" --version
