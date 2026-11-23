@@ -49,15 +49,17 @@ the prompt, wrapped as the payload of a manual firing: the first turn has the pr
   - **`config/desk`** — read it first. `drive_read: true` = his Google Drive links may be read (the scheduled task carries
     the Google Drive connector); `drive_write: true` = the eCTD zip may go to his Drive; `results_in_page: true` = a real
     dossier's numbers, needs, reports and Claude's kept decisions may go into the page. Missing or false = **no**.
-  - **`dossiers/<id>`** — what he gave (`name`, `source{drive, uploads[{asset, name, size}]}`, `request_notes`,
-    `example`) and the progress you write. Keep the `version` of every read and write, and pin every write with
+    A dossier's own `allowed` (the same names, with his words and the date in `allowed.said`) is his yes for that dossier
+    alone, and counts as `config/desk` does for it.
+  - **`dossiers/<id>`** — what he gave (`name`, `source{drive, drive_files[{id, name, size}], uploads[{asset, name,
+    size}]}`, `request_notes`, `example`, `allowed`) and the progress you write. Keep the `version` of every read and write, and pin every write with
     `if_version`; on a version conflict, read the document again and redo the write.
   - **`messages`** — the chat. Your reply is a new document: `set` on `messages/m-<yyyymmdd>-<6 letters or digits>` with
     `{from: 'claude', text, at: <ISO time>, delivered: true, carried: null, dossier: <id or null>}`. For context,
     `query` his last messages (`where: [['dossier', '==', <id>]]`).
 - **Progress goes through `worker.py`.** After each of its commands, send `$D/work/desk/patch.json` with ArtifactData
   `update` (`collection: dossiers`, `doc_id: <id>`, `file_path: <that file>`, `if_version`).
-- **Private until he says yes.** If `results_in_page` is not true and the dossier is not `example: true`, start with
+- **Private until he says yes.** If `results_in_page` is not allowed (§2 above) and the dossier is not `example: true`, start with
   `--private`: the page then shows the stages and their states only. Your headlines, needs and chat replies then carry
   no data of the dossier either (no product, company or person beyond the name he gave, no numbers, no findings): say
   «التفاصيل في جلسة العمل», and give them here, in this session (the dossier's «جلسة العمل» button in the page opens
@@ -87,6 +89,11 @@ Its first line is «[مكتب eBOX] <kind>», then «المعرّف: <dossier id
      (`query: "parentId = '<id>'"`, `excludeContentSnippets: true`, every page by `pageToken`), and keep the same folders
      under `$D/received`. `download_file_content` each file: a large result is saved to a tool-results file — decode its
      `content` (base64) into the file with a short Python script, without reading it into the conversation.
+   - Files in his Drive shared by link (`source.drive_files`), when `drive_read` is allowed: no Drive tool is needed, the
+     environment reaches drive.usercontent.google.com. For each:
+     `curl -sS -L --retry 3 -o "$D/received/<name>" "https://drive.usercontent.google.com/download?id=<id>&export=download&confirm=t"`,
+     then check the file's size is `size` (a page of HTML instead means the link is not shared: say so). A file of hundreds
+     of MB: in the background. Check the free disk first (`df -h /`): a dossier of 600 MB needs about 4 GB.
    - Not allowed, not reachable, or nothing there: `$W need $D/work '<what is needed, formal Arabic>'`,
      `$W status $D/work needs '<headline>'`, send, and tell him in the chat what to do (share the folder, or upload the
      files in the page).
@@ -101,6 +108,7 @@ Its first line is «[مكتب eBOX] <kind>», then «المعرّف: <dossier id
    - Read and look before deciding: `call <task> read_pages '{"pages": "12-15"}'`, `call <task> view_page '{"page": 3}'`
      (then Read the PNG it names), `call <task> search_text '{"text": "…"}'`.
    - Record each decision with the task's tools (`tools <task>` lists them with their inputs), as the instructions say.
+     A long input (a whole leaflet): write it to a file and pass `@<file>` (an argument longer than 128 KB is cut).
      Correct every «REFUSED» by its reason (a refused decision left on purpose: `finish` says so once; asked again, it
      finishes).
    - `finish <task> '<a short summary of what you decided>'`. Between tasks, now and then:

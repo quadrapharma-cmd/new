@@ -7,6 +7,8 @@ the session is Claude, and no API key is needed.
   python -m dossier_engine.combined.decide.tool <work> tools <task>      the task's tools, with the JSON schema of each input
   python -m dossier_engine.combined.decide.tool <work> call <task> <tool> '<json input>'
                                                                          one call: its result, or «REFUSED: why» and exit 2
+                                                                         (a long input: @<file> or - for stdin; an argument
+                                                                         is cut at 128 KB by the system)
   python -m dossier_engine.combined.decide.tool <work> finish <task> '<summary>'
                                                                          the task done; the stages it changes are made again
 
@@ -193,8 +195,16 @@ def main(argv):
         if len(argv) < 4:
             print('call <task> <tool> \'<json input>\'')
             return 1
+        raw = argv[4] if len(argv) > 4 else '{}'
         try:
-            inp = json.loads(argv[4]) if len(argv) > 4 else {}
+            if raw == '-':                          # a long input (a whole leaflet) from stdin, or from a file: @<path>
+                raw = sys.stdin.read()
+            elif raw.startswith('@'):
+                raw = Path(raw[1:]).read_text(encoding='utf-8')
+            inp = json.loads(raw)
+        except OSError as e:
+            print(f'REFUSED: the input file could not be read ({e}).')
+            return 2
         except json.JSONDecodeError as e:
             print(f'REFUSED: the input is not JSON ({e}). Send it again, whole.')
             return 2

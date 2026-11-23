@@ -159,6 +159,19 @@ def test_wrong_inputs_are_refused_with_the_reason(both):
     assert code == 2 and 'summary' in refusal(out)
 
 
+def test_a_long_input_from_a_file_or_stdin(both, tmp_path, monkeypatch):
+    w, _, _, _, _ = both
+    f = tmp_path / 'in.json'
+    f.write_text('{"pages": "1"}', encoding='utf-8')
+    code, out = cli(w, 'call', 'review', 'read_pages', '@' + str(f))
+    assert code == 0 and '— page 1 —' in out
+    monkeypatch.setattr(sys, 'stdin', io.StringIO('{"pages": "2"}'))
+    code, out = cli(w, 'call', 'review', 'read_pages', '-')
+    assert code == 0 and '— page 2 —' in out
+    code, out = cli(w, 'call', 'review', 'read_pages', '@' + str(tmp_path / 'none.json'))
+    assert code == 2 and refusal(out).startswith('the input file could not be read')
+
+
 def test_a_page_is_read_and_seen(both):
     w, _, _, _, _ = both
     code, out = cli(w, 'call', 'review', 'read_pages', '{"pages": "1-2"}')
