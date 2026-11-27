@@ -874,6 +874,12 @@ When a part is done or an open item is closed, update «What exists» and «Open
   `tests/test_decide_tool.py` (the same decisions as the API path), `tests/test_desk_worker.py`, `tests/test_desk_page.py`. First run
   (made-up file, 22/11 17:54–18:01): a new session did the whole dossier alone in 7½ minutes (`dossiers/d-20261122-worker1`).
 
+- **27/11/2026, «يقرا اي ملف من اي درايف»** — a standing yes for the desk to read any Drive link he gives
+  (`config/desk.drive_read: true`, his words in `said.drive_read`); writing to his Drive and real results in the page are still
+  his yes per use. Found the same day: a dossier he started from a folder link stopped at once («قراءة Drive غير مأذون بها»)
+  because the 23/11 yes was for DTP-HB alone; and the worker sessions have no Google Drive tools, so a folder link is
+  turned into `source.drive_files` (listed here with the Drive connector) for the worker to download by link.
+
 ## Open items (propose when relevant; do when he asks)
 - Old program, next pieces (one at a time, each on his real files first): the 14/11 update and measuring Claude's reading (need
   the API key: `ANTHROPIC_API_KEY` in the environment's settings, added by him), «شروط الشكل لكل دولة», the Assistant on his
