@@ -1,15 +1,39 @@
 """Deficiency letter and assessment report (DOCX; PDF through LibreOffice when present, else a text PDF).
-Both carry the simulation statement: produced by the applicant's own review tool, never issued by EDA."""
+Both carry the simulation statement: produced by the applicant's own review tool, never issued by the authority it simulates
+(EDA, or the authority the dossier goes to)."""
 import time
 from pathlib import Path
 from ..generate.docx_kit import new_doc, para, table, to_pdf, basic_pdf, find_soffice
+from .pack import is_egypt, authority_label
 
 SEV = {'critical': 'Critical', 'major': 'Major', 'minor': 'Minor', 'note': 'Note'}
 SEV_AR = {'critical': 'حرج', 'major': 'رئيسي', 'minor': 'ثانوي', 'note': 'ملاحظة'}
 
 
-def _dept(pack, dept_id):
-    return next((d for d in pack.departments() if d['id'] == dept_id), {'id': dept_id, 'en': dept_id, 'ar': dept_id, 'body': {'en': '', 'ar': ''}})
+def _au(run):
+    """The authority the run simulates (a run made before the review was global was EDA's)."""
+    return (run.get('options') or {}).get('authority')
+
+
+def _dept(pack, dept_id, run=None):
+    return next((d for d in pack.departments_for(_au(run or {})) if d['id'] == dept_id),
+                {'id': dept_id, 'en': dept_id, 'ar': dept_id, 'body': {'en': '', 'ar': ''}})
+
+
+def _closing(pack, run):
+    if is_egypt(_au(run)):
+        return pack.meta['letters']['deficiency']['closing']
+    n = authority_label(_au(run))
+    return {'en': f"This letter is a simulation produced by the applicant's own review tool from ICH and WHO guidelines and {n['en']}'s "
+                  f"requirements as the program has them. It is not issued by {n['en']}.",
+            'ar': f"هذا الخطاب محاكاة أعدّتها أداة المراجعة الخاصة بمقدم الطلب من إرشادات ICH وWHO ومتطلبات {n['ar']} كما في البرنامج، "
+                  f"وليس صادراً عن {n['ar']}."}
+
+
+def _reply(pack, run):
+    if is_egypt(_au(run)):
+        return f"{pack.meta['clock_stop']['fast_track_months']} months after the date of this letter"
+    return 'as the authority sets it (its timelines are not in the program)'
 
 
 def letter_items(findings, dept_id):
@@ -18,8 +42,15 @@ def letter_items(findings, dept_id):
 
 
 def _head(d, title_en, title_ar, dossier, run, pack, dept):
-    para(d, 'SIMULATION — produced by the applicant’s review tool from EDA’s published documents. NOT an EDA letter.', bold=True)
-    para(d, 'محاكاة — أعدّتها أداة المراجعة الخاصة بمقدم الطلب من مستندات الهيئة المنشورة. ليس خطاباً صادراً عن الهيئة.', ar=True, bold=True)
+    if is_egypt(_au(run)):
+        para(d, 'SIMULATION — produced by the applicant’s review tool from EDA’s published documents. NOT an EDA letter.', bold=True)
+        para(d, 'محاكاة — أعدّتها أداة المراجعة الخاصة بمقدم الطلب من مستندات الهيئة المنشورة. ليس خطاباً صادراً عن الهيئة.', ar=True, bold=True)
+    else:
+        n = authority_label(_au(run))
+        para(d, f"SIMULATION — produced by the applicant’s review tool from ICH and WHO guidelines and {n['en']}’s requirements as the "
+                f"program has them. NOT a letter of {n['en']}.", bold=True)
+        para(d, f"محاكاة — أعدّتها أداة المراجعة الخاصة بمقدم الطلب من إرشادات ICH وWHO ومتطلبات {n['ar']} كما في البرنامج. "
+                f"ليس خطاباً صادراً عن {n['ar']}.", ar=True, bold=True)
     para(d, f"{title_en} — {dept['en']}", bold=True, size=14)
     para(d, f"{title_ar} — {dept['ar']}", ar=True, bold=True, size=13)
     para(d, f"Simulated body: {dept['body']['en']} · knowledge pack {run['pack_version']} · run {run['id']} · {time.strftime('%Y-%m-%d', time.localtime(run['created']))}")
@@ -27,12 +58,14 @@ def _head(d, title_en, title_ar, dossier, run, pack, dept):
     table(d, ['Item', 'Value'], [('Applicant', env.get('applicant') or dossier.get('product', {}).get('manufacturer') or ''),
                                  ('Product', dossier.get('name', '')), ('Tracking', ', '.join(env.get('tracking') or []) if isinstance(env.get('tracking'), list) else (env.get('tracking') or '')),
                                  ('Submission', f"{dossier['profile'].get('dossier_kind', '')} · {dossier['profile'].get('origin', '')} · {dossier['profile'].get('activity', '')} · {dossier['profile'].get('route', '')}"),
-                                 ('Strictness', run['options'].get('strictness', '')), ('Clock', f"Stopped at technical evaluation — reply within {pack.meta['clock_stop']['fast_track_months']} months as supplementary documents (submission procedures, Step 3)")],
+                                 ('Strictness', run['options'].get('strictness', '')),
+                                 ('Clock', f"Stopped at technical evaluation — reply within {pack.meta['clock_stop']['fast_track_months']} months as supplementary documents (submission procedures, Step 3)"
+                                  if is_egypt(_au(run)) else f"Reply {_reply(pack, run)}")],
           widths=[4, 13])
 
 
 def deficiency_letter(out, dossier, run, pack, dept_id, findings):
-    dept = _dept(pack, dept_id)
+    dept = _dept(pack, dept_id, run)
     items = letter_items(findings, dept_id)
     signed = run.get('signed') or {}
     d = new_doc(draft=not signed.get('peer'))
@@ -62,9 +95,9 @@ def deficiency_letter(out, dossier, run, pack, dept_id, findings):
             if p.get('detail'):
                 para(d, f"Assessor note: {p['detail'].get('en', '')}", size=9)
     para(d, '')
-    para(d, f"Open queries: {sum(1 for f in items if f['status'] in ('open', 'answered', 'not_accepted'))} of {len(items)} · Reply deadline: {pack.meta['clock_stop']['fast_track_months']} months after the date of this letter.")
-    para(d, L['closing']['en'])
-    para(d, L['closing']['ar'], ar=True)
+    para(d, f"Open queries: {sum(1 for f in items if f['status'] in ('open', 'answered', 'not_accepted'))} of {len(items)} · Reply deadline: {_reply(pack, run)}.")
+    para(d, _closing(pack, run)['en'])
+    para(d, _closing(pack, run)['ar'], ar=True)
     para(d, '')
     para(d, f"Assessor: {signed.get('assessor', {}).get('by', '______________________')}     Second assessor: {signed.get('peer', {}).get('by', '______________________')}")
     d.save(out)
@@ -72,7 +105,7 @@ def deficiency_letter(out, dossier, run, pack, dept_id, findings):
 
 
 def assessment_report(out, dossier, run, pack, dept_id, findings):
-    dept = _dept(pack, dept_id)
+    dept = _dept(pack, dept_id, run)
     fs = [f for f in findings if f['dept'] == dept_id]
     signed = run.get('signed') or {}
     d = new_doc(landscape=True, draft=not signed.get('peer'))
@@ -112,7 +145,7 @@ def assessment_report(out, dossier, run, pack, dept_id, findings):
     para(d, '3. Sign-off (good review practice: a second assessor reviews the findings before the letter is final)', bold=True)
     para(d, f"Assessor: {signed.get('assessor', {}).get('by', '____________')}  {signed.get('assessor', {}).get('at', '')}")
     para(d, f"Second assessor: {signed.get('peer', {}).get('by', '____________')}  {signed.get('peer', {}).get('at', '')}")
-    para(d, pack.meta['letters']['deficiency']['closing']['en'], size=9)
+    para(d, _closing(pack, run)['en'], size=9)
     d.save(out)
     return Path(out)
 

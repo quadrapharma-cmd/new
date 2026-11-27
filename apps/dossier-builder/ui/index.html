@@ -1051,8 +1051,8 @@ Promise.all([api('/me'), api('/auth').catch(()=>null)]).then(([m,a])=>{ S.me=m; 
 function nav(r){
   S.navR = r;
   const id = S.dossier && S.dossier.id;
-  const au = S.dossier && S.dossier.authority, eg = !au || au.egypt, dnav = DNAV.filter(([k])=>eg||k!=='review');      // the review desk reads Egypt's assessor rules
-  DNAV.forEach(([k])=>{ const a=$('#nav'+k[0].toUpperCase()+k.slice(1)); a.href = id?`#/d/${id}/${k}`:'#'; a.setAttribute('aria-disabled', id?'false':'true'); a.hidden = !eg && k==='review'; });
+  const au = S.dossier && S.dossier.authority, eg = !au || au.egypt, dnav = DNAV;      // the review desk reads any authority: EDA's own questions, or the core ones
+  DNAV.forEach(([k])=>{ const a=$('#nav'+k[0].toUpperCase()+k.slice(1)); a.href = id?`#/d/${id}/${k}`:'#'; a.setAttribute('aria-disabled', id?'false':'true'); a.hidden = false; });
   $('#navD').hidden = !id;                                  // a dossier's pages show while one is open
   $$('#nav a').forEach(a=>{ const on=a.dataset.r===r; a.classList.toggle('on', on); if(on) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); });
   if(S.caps) $('#verTag').textContent = `v${S.caps.version} · ${(S.dossier&&S.dossier.pack)||S.caps.pack.id}`;          // the rules in use: the open dossier's own
@@ -4182,7 +4182,7 @@ async function checksView(tok){
   const id=S.dossier.id;
   const [{b, data, hist, J}, g, bs] = await Promise.all([loadJourney(), api(`/dossiers/${id}/gate`), api(`/dossiers/${id}/builds`)]);
   const eg=isEG(), eu=isEU(), au=S.dossier.authority||{};
-  const rv = eg ? await api(`/dossiers/${id}/review/latest`).catch(()=>null) : null;
+  const rv = await api(`/dossiers/${id}/review/latest`).catch(()=>null);
   if(!fresh(tok)) return;
   const st=J.stages.find(s=>s.key==='checks');
   /* the documents' own checks and the cross-document checks, before the build (the page this station was) */
@@ -4258,8 +4258,8 @@ async function checksView(tok){
      <div class="row gap-s" style="flex-wrap:wrap"><button class="btn pri" id="go" ${g.ok?'':'disabled'} title="${esc(g.ok?'':t('v8GoBlocked'))}">${icon('shield')} ${esc(t('v8Go'))}</button><button class="btn" id="wkGo">${icon('scan')} ${esc(t('v8Wk'))}</button></div>
      <p class="small muted">${esc(t('v8WkSub'))}</p><div id="valMsg"></div>
      <p class="small muted" id="valNote">${esc(t(eg?'v8NoteEG':eu?'v8NoteEU':isGCC()?'v8NoteGCC':'v8NoteCTD'))}</p></div></section>`;
-  const door2 = eg ? `<section class="card pad stack gap-s" id="valReview"><div class="row gap-s" style="flex-wrap:wrap"><span class="ic-tile">${icon('stamp',16)}</span><div class="grow"><h2 style="margin:0">${esc(t('navReview'))}</h2><div class="small muted">${esc(t('v8Door2Sub'))}</div></div><a class="btn" href="#/d/${id}/review/desk" id="valRevGo">${icon('stamp',14)} ${esc(t('v8RevGo'))}</a></div>
-      ${rv&&rv.run?`<div class="row gap-s small" style="flex-wrap:wrap" id="valRevRun"><span>${esc(t('v8RevWhen').replace('{d}', buildWhen(rv.run)))}</span>${rDChip(rv.run.verdict)}<span>${esc(t('v8RevOpen').replace('{n}', (rv.findings||[]).filter(rOpen).length))}</span></div>`:`<p class="small muted" id="valRevNone">${esc(t('v8RevNone'))}</p>`}</section>` : '';
+  const door2 = `<section class="card pad stack gap-s" id="valReview"><div class="row gap-s" style="flex-wrap:wrap"><span class="ic-tile">${icon('stamp',16)}</span><div class="grow"><h2 style="margin:0">${esc(t('navReview'))}</h2><div class="small muted">${esc(t('v8Door2Sub'))}</div></div><a class="btn" href="#/d/${id}/review/desk" id="valRevGo">${icon('stamp',14)} ${esc(t('v8RevGo'))}</a></div>
+      ${rv&&rv.run?`<div class="row gap-s small" style="flex-wrap:wrap" id="valRevRun"><span>${esc(t('v8RevWhen').replace('{d}', buildWhen(rv.run)))}</span>${rDChip(rv.run.verdict)}<span>${esc(t('v8RevOpen').replace('{n}', (rv.findings||[]).filter(rOpen).length))}</span></div>`:`<p class="small muted" id="valRevNone">${esc(t('v8RevNone'))}</p>`}</section>`;
   const html = `${stripHtml(J)}<div class="head"><div class="title"><h1>${esc(t('stn8'))}</h1><p class="sub">${esc(t('v8Sub'))}</p></div></div>
     ${sign}${door1}${buildBlock(bs.submission,'sub')}${buildBlock(bs.working,'work')}${door2}
     <details class="card" id="valDocs" ${nDocProblems?'open':''}><summary class="pad"><b>${esc(t('v8DocsT'))}</b> <span class="small muted">${esc(t('v8DocsSub'))}</span>
@@ -4558,10 +4558,11 @@ const rVChip = v => `<span class="chip ${v==='adequate'?'c-ok':v==='deficient'?'
 const rDChip = v => `<span class="chip ${ {approve:'c-ok',comments:'c-info',clock_stop:'c-warn',reject:'c-bad'}[v]||'c-na'}"><i></i>${esc(rt(v))}</span>`;
 const rOTag = f => `<span class="otag ${f.origin}">${esc(rt(f.origin))}${f.confidence?` · ${Math.round(f.confidence*100)}%`:''}${rPendingAI(f)?` · ${esc(rt('pending'))}`:''}</span>`;
 const rSevDots = c => `<div class="sevs"><span class="sev critical"><b>${c.critical||0}</b> ${esc(rt('critical'))}</span><span class="sev major"><b>${c.major||0}</b> ${esc(rt('major'))}</span><span class="sev minor"><b>${c.minor||0}</b> ${esc(rt('minor'))}</span>${c.not_assessable?`<span class="sev na"><b>${c.not_assessable}</b> ${esc(rt('na'))}</span>`:''}</div>`;
-const rSim = () => `<span class="sim">${esc(rt('simNote'))}</span>`;
+const rEG = () => !(S.rpack && S.rpack.authority) || S.rpack.authority.egypt;
+const rSim = () => `<span class="sim">${esc(rEG() ? rt('simNote') : L({ar:'محاكاة مبنية على إرشادات ICH وWHO ومتطلبات الجهة كما في البرنامج — القرار للجهة', en:"Simulation built on ICH/WHO guidelines and the authority's requirements as the program has them — the authority decides"}))}</span>`;
 const RICON = {screening:'checklist', technical:'cpu', quality:'flask', cadc:'target', stability:'activity', be:'pill', clinical:'users', labelling:'book', gates:'stamp', reliance:'globe'};
 async function rLoad(){
-  if(!S.rpack) S.rpack = await api('/review/pack');
+  if(!S.rpack || S.rpack._for!==S.dossier.id){ S.rpack = await api('/review/pack?dossier='+encodeURIComponent(S.dossier.id)); S.rpack._for = S.dossier.id; }
   const r = await api(`/dossiers/${S.dossier.id}/review/latest`);
   S.review = r; return r;
 }
@@ -4594,12 +4595,12 @@ function rDesk(){
   const run = S.review.run, c = run.counts, dv = run.dept_verdicts, ck = run.clock, diff = run.diff || {closed:[], new:[], still_open:[]};
   const color = run.verdict==='ready'?'var(--ok)':run.verdict==='ready_with_risks'?'var(--warn)':'var(--bad)';
   const stages = ck.stages.map((s,i)=>`<div class="st ${i===0?'now':i===ck.stages.length-1?'end':''}"><span class="k">${i+1}</span><b>${esc(L(s.label))}</b><span class="wd">${typeof s.wds==='number'?`${s.wds} ${esc(rt('wds'))}`:esc(String(s.wds))}</span></div>`).join('');
-  const stop = ck.expected_rounds ? `<div class="st stop"><span class="k">⏸</span><b>${esc(L({ar:'جولات استيفاء متوقعة', en:'Expected deficiency rounds'}))}</b><span class="wd">${ck.expected_rounds} × ${ck.clock_stop_months} ${esc(L({ar:'أشهر كحد أقصى', en:'months max'}))}</span></div>` : '';
+  const stop = ck.expected_rounds ? `<div class="st stop"><span class="k">⏸</span><b>${esc(L({ar:'جولات استيفاء متوقعة', en:'Expected deficiency rounds'}))}</b><span class="wd">${ck.clock_stop_months ? `${ck.expected_rounds} × ${ck.clock_stop_months} ${esc(L({ar:'أشهر كحد أقصى', en:'months max'}))}` : ck.expected_rounds}</span></div>` : '';
   const readiness = c.total ? Math.round(100*c.adequate/c.total) : 0;
   return `${rHead(rt('desk'), `<button class="btn primary" id="runBtn">${icon('zap',16)} ${esc(rt('rerun'))}</button>`)}
   <section class="vstrip" style="--v-color:${color}">${ring(readiness,'lg')}<div><div class="vlabel">${esc(rt('verdict'))} · ${esc(rt('lastRun'))} ${esc(run.id)} · ${esc(run.pack_version)}</div><h1>${esc(rt(run.verdict))}</h1><p class="why">${esc(L(run.why||{}))}</p><div class="row gap-s" style="margin-top:10px">${rSevDots(c)}<span class="small muted">${c.adequate} ${esc(rt('adequate'))} · ${c.total} ${esc(rt('assessed'))}${c.needs_review?` · ${c.needs_review} ${esc(rt('needsReview'))}`:''}</span></div></div>
     <div class="acts"><a class="btn" href="#/d/${S.dossier.id}/review/assess">${icon('search',16)} ${esc(rt('assess'))}</a><a class="btn" href="#/d/${S.dossier.id}/review/letter">${icon('mail',16)} ${esc(rt('letter'))}</a></div></section>
-  <section class="stack gap-s"><div class="row"><h2>${esc(rt('depts'))}</h2><span class="small muted">${esc(L({ar:'كل بطاقة = مقيِّم يحاكي إدارة في الهيئة (أو الطبقة الدولية)', en:'Each card is an assessor simulating one EDA department (or the international layer)'}))}</span></div>
+  <section class="stack gap-s"><div class="row"><h2>${esc(rt('depts'))}</h2><span class="small muted">${esc(rEG() ? L({ar:'كل بطاقة = مقيِّم يحاكي إدارة في الهيئة (أو الطبقة الدولية)', en:'Each card is an assessor simulating one EDA department (or the international layer)'}) : L({ar:'كل بطاقة = مقيِّم يحاكي مكتبًا لدى الجهة: الأسئلة الأساسية التي يطرحها مُقيِّم أي جهة، وبنود Module 1 الخاصة بها', en:"Each card is an assessor at the authority: the core questions any authority's assessor asks, and its own Module 1 items"}))}</span></div>${!rEG() && S.rpack.note ? `<p class="small muted" id="rAnyNote">${esc(L(S.rpack.note))}</p>` : ''}
     <div class="depts">${rDepts().filter(d=>dv[d.id]).map(d=>{ const x=dv[d.id]; return `<button class="card dept" data-rdept="${d.id}"><div class="dh"><span class="ic-tile ${x.verdict==='approve'?'ok':x.verdict==='reject'?'bad':x.verdict==='clock_stop'?'warn':''}">${icon(RICON[d.id]||'info',17)}</span><h3>${esc(L(d))}</h3>${rDChip(x.verdict)}</div><p class="sub">${esc(L(d.body))}</p>${rSevDots({...x.counts, not_assessable:x.not_assessable})}<div class="prog">${meter(x.total?Math.round(100*(x.total-x.not_assessable)/x.total):0,'ok')}<span class="num">${x.total-x.not_assessable}/${x.total} ${esc(rt('assessed'))}</span></div></button>`; }).join('')}</div></section>
   <div class="grid2">
     <section class="card"><div class="hd pad" style="padding-bottom:0"><h3>${esc(rt('clock'))}</h3><span class="small muted">${esc(L(ck.label))}${ck.total_months?` · ${ck.total_months} ${esc(L({ar:'أشهر إجمالًا بحسب المنشور', en:'months published total'}))}`:''}</span></div><div class="pad"><div class="clock">${stages}${stop}</div><p class="tiny-note" style="margin-top:8px">${esc(L(ck.note||{}))}</p></div></section>
@@ -4702,7 +4703,7 @@ function rResponses(){
   const c = {open:fs.filter(f=>st(f)==='open').length, answered:fs.filter(f=>st(f)==='answered').length, accepted:fs.filter(f=>st(f)==='accepted').length, not_accepted:fs.filter(f=>st(f)==='not_accepted').length};
   const rows = fs.map(f=>{ const last=(f.responses||[]).slice(-1)[0]; return `<tr><td class="code">${esc(f.question_id)}</td><td>${esc(rDeptName(f.dept))}<div class="small muted code">${esc(f.ctd)}</div></td><td>${rSevTag(f.severity)}</td><td>${stChip(st(f))}</td><td>${last?`<span class="small">${esc(last.text.slice(0,90))}${last.text.length>90?'…':''}</span><div class="small muted">${esc(L({ar:'الجولة', en:'round'}))} ${last.round}${(last.doc_ids||[]).length?` · ${last.doc_ids.length} ${esc(L({ar:'مستند', en:'docs'}))}`:''}</div>`:'<span class="muted small">—</span>'}</td>
     <td class="end nowrap"><button class="btn sm" data-rresp="${f.id}">${icon('pen',14)} ${esc(rt('respond'))}</button> <button class="btn sm ${f.status==='answered'?'primary':''}" data-rre="${f.id}">${icon('repeat',14)} ${esc(rt('reassess'))}</button></td></tr>`; }).join('');
-  return `${rHead(rt('responses'), `<span class="badge">${esc(L({ar:'المهلة', en:'deadline'}))} ${run.clock.clock_stop_months} ${esc(L({ar:'أشهر من تاريخ الخطاب', en:'months from the letter'}))}</span>`)}
+  return `${rHead(rt('responses'), `<span class="badge">${esc(L({ar:'المهلة', en:'deadline'}))} ${run.clock.clock_stop_months ? `${run.clock.clock_stop_months} ${esc(L({ar:'أشهر من تاريخ الخطاب', en:'months from the letter'}))}` : esc(L({ar:'تحددها الجهة', en:'set by the authority'}))}</span>`)}
   <div class="kpis"><div class="card kpi warn"><span class="n">${c.open}</span><span class="l">${esc(rt('open'))}</span></div><div class="card kpi info"><span class="n">${c.answered}</span><span class="l">${esc(rt('answered'))}</span></div><div class="card kpi ok"><span class="n">${c.accepted}</span><span class="l">${esc(rt('accepted'))}</span></div><div class="card kpi bad"><span class="n">${c.not_accepted}</span><span class="l">${esc(rt('not_accepted'))}</span></div></div>
   <section class="card rtable"><div class="tbl"><table><thead><tr><th>#</th><th>${esc(L({ar:'الإدارة · البند', en:'Department · section'}))}</th><th></th><th>${esc(rt('status'))}</th><th>${esc(L({ar:'الرد', en:'Response'}))}</th><th></th></tr></thead><tbody>${rows||`<tr><td colspan="6" class="muted">${esc(L({ar:'لا استفسارات مفتوحة', en:'No open queries'}))}</td></tr>`}</tbody></table></div></section>
   <p class="tiny-note">${esc(L({ar:'ارفع النسخ الجديدة في بنودها من شجرة الملف أو عدِّل البيانات، ثم «إعادة التقييم»: يُشغَّل السؤال من جديد على النسخة الجديدة ويُغلق إن صار كافيًا.', en:'Upload the new versions to their slots from the requirements board or edit the data, then «Re-assess»: the question re-runs on the new version and closes when adequate.'}))}</p>`;

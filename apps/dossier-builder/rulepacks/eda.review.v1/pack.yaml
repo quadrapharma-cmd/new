@@ -25,6 +25,20 @@ departments:
   - {id: labelling, en: Labelling, ar: النشرة والعبوة, body: {en: SmPC · PIL · artwork, ar: النشرة الداخلية والخارجية والعبوة}, modules: [1]}
   - {id: gates, en: Gates, ar: البوابات, body: {en: Inspection · pharmacovigilance · pricing · prior approvals, ar: التفتيش · اليقظة الدوائية · التسعير · الموافقات المسبقة}, modules: [1]}
   - {id: reliance, en: Reliance route, ar: مسار الاعتماد, body: {en: Imported products approved by a reference authority, ar: المنتجات المستوردة المعتمدة من جهة مرجعية}, modules: [1]}
+departments_any:   # the same desks for a dossier going to any other authority (review/pack.py departments_for): named for any assessor
+  screening: {en: Validation, ar: التحقق من الطلب, body: {en: "The authority's validation of the application: its Module 1 as the program has it", ar: "تحقق الجهة من الطلب: Module 1 الخاص بها كما في البرنامج"}}
+  technical: {en: Technical file, ar: الملف الفني, body: {en: ICH eCTD v3.2.2 and the ICH M2 format rules, ar: مواصفة ICH للـ eCTD 3.2.2 وقواعد تنسيق ICH M2}}
+  quality: {en: Quality, ar: الجودة, body: {en: "Quality assessment, Modules 2–3 (ICH M4Q · ICH Q guidelines)", ar: "تقييم الجودة، Module 2 و3 (ICH M4Q · إرشادات ICH للجودة)"}}
+  cadc: {en: Specifications and analytical procedures, ar: المواصفات وطرق التحليل, body: {en: "The assessment of specifications and analytical procedures (in Egypt, CADC's file assessment)", ar: "تقييم المواصفات وطرق التحليل (في مصر: تقييم الملف في CADC)"}}
+  stability: {en: Stability, ar: الثبات, body: {en: Stability assessment (ICH Q1A–Q1E), ar: تقييم الثبات (ICH Q1A–Q1E)}}
+  be: {en: Bioequivalence, ar: التكافؤ الحيوي, body: {en: Bioequivalence assessment (ICH M13A · ICH M10 · ICH M9), ar: تقييم التكافؤ الحيوي (ICH M13A · ICH M10 · ICH M9)}}
+  clinical: {en: Clinical / non-clinical, ar: الإكلينيكي وغير الإكلينيكي, body: {en: Scientific assessment (ICH M4S · M4E · E3 · E6), ar: التقييم العلمي (ICH M4S · M4E · E3 · E6)}}
+  labelling: {en: Product information, ar: معلومات المنتج, body: {en: "SmPC / PI · leaflet · labels, as the authority asks them", ar: "ملخص خصائص المنتج · النشرة · العبوات، كما تطلبها الجهة"}}
+any_authority:     # what a review for another authority says of itself
+  layer: {en: The authority's own requirements (its Module 1 as the program has it), ar: متطلبات الجهة نفسها (Module 1 الخاص بها كما في البرنامج)}
+  clock: {en: "This authority's timelines are not in the program: no clock is simulated.", ar: "مدد هذه الجهة ليست في البرنامج: لا تُحاكى الساعة الرقابية."}
+  note: {en: "For an authority other than EDA the review asks the core questions — those an assessor of any authority asks (an ICH, WHO, EMA, FDA or pharmacopoeial basis, the common CTD's Modules 2–5) — and the authority's own Module 1 items from its requirements pack. EDA's own questions are not asked.",
+         ar: "لجهة غير هيئة الدواء المصرية تطرح المراجعة الأسئلة الأساسية — التي يطرحها مُقيِّم أي جهة (لها أساس في ICH أو WHO أو EMA أو FDA أو دستور أدوية، وتخص Module 2–5 المشتركة) — وبنود Module 1 الخاصة بالجهة من حزمة متطلباتها. ولا تُطرح أسئلة الهيئة المصرية الخاصة بها."}
 severity:
   critical: {en: Stops the file at screening or makes the department refuse it, ar: يوقف الملف عند الفحص الأولي أو يجعل الإدارة ترفضه}
   major:    {en: A query that stops the clock until answered, ar: استفسار يوقف الساعة حتى الرد}

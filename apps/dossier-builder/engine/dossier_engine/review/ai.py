@@ -41,12 +41,14 @@ def documents_for(findings, board):
     return out
 
 
-def build_prompt(findings, texts, lang='en'):
+def build_prompt(findings, texts, lang='en', authority=None):
     """texts: [{filename, pages:[{page, text}], scanned}] — scanned documents come as images in the browser edition."""
     qs = [{'id': f['id'], 'question_id': f['question_id'], 'ctd': f['ctd'], 'severity': f['severity'], 'question': f['payload']['question']['en'],
            'deficiency_if_missing': f['payload']['deficiency']['en'], 'source': (f['payload'].get('source') or {}).get('code', ''),
            'current_verdict': f['verdict']} for f in findings]
-    head = ('You are a regulatory assessor at a medicines authority reviewing part of a CTD registration dossier the way the Egyptian Drug Authority '
+    from .pack import authority_label
+    who = authority_label(authority)['en']                     # the authority the run simulates (EDA by default)
+    head = (f'You are a regulatory assessor at a medicines authority reviewing part of a CTD registration dossier the way {who} '
             'and international (ICH/WHO/EMA/FDA) assessors do. Answer ONLY the questions listed, from the document text (and page images) provided. '
             'Never invent content: if the documents do not answer a question, say not_assessable. Quote evidence verbatim with its page. '
             'Write finding_en in the voice of an authority letter ("The applicant should …") and finding_ar in formal Arabic. '

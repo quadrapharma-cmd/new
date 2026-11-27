@@ -1139,6 +1139,20 @@ the `sample` capability, server through the SDK with a key) and suggests verdict
 human confirms them; quoted excerpts are verified against the document text. Everything says «simulation — EDA decides».
 Lint: `python3 -m pytest -q tests/test_review.py` (pack clean and cited, run, responses, letters, sign-off, AI, reliance).
 
+**For any authority (27/11/2026 — «خلي المراجعة والمعيار عالمي ويصلح لأي دولة»).** The review reads the authority the dossier goes
+to (its requirements pack's). Each question has a scope, computed in `review/pack.py` (`scope_of`; an explicit `scope:` in the pack
+wins): **core** when an assessor of any authority asks it — an ICH, WHO, EMA, FDA or pharmacopoeial basis (its `anchor`), no Egyptian
+department, field or wording (EDA, CADC, a decree, an EDA guideline's own annexes and section numbers), and only the common CTD's
+items (Modules 2–5, the same ids in every country's pack) as evidence — else **eda**. Today 49 of the 226 questions are core
+(quality 31, specifications and methods 5, stability 5, bioequivalence 5, clinical 3); a question becomes core when its
+international basis is added and checked. A dossier for EDA is reviewed exactly as before. A dossier for any other authority gets
+the core questions, its own Module 1 items from its requirements pack (the missing-item findings, layer `own`), the PDF findings
+on ICH's rules, the desks named for any assessor (pack.yaml `departments_any`; no gates, no reliance route), no simulated clock
+(only EDA's timelines are in the program), and letters, reports and the AI prompt that name the authority they simulate («NOT a
+letter of …»; «the receiving authority» for the general pack of any other country). `GET /api/review/pack?dossier=<id>` gives the
+pack as that dossier's authority sees it. Tests: `tests/test_review_global.py` (the core, an EU dossier, any other country, Egypt
+unchanged) and `tests/test_ui_country.py` (the Gulf dossier's review in the page).
+
 ## A combined dossier made ready — one program (cloud edition, 17/11/2026) — «اديني برنامج شغال يديني نفس النتايج بتاعتك بالظبط»
 
 The owner sent a dossier as one combined PDF (5,274 pages, 600 MB, half of it pictures, two whole blocks received twice) with six

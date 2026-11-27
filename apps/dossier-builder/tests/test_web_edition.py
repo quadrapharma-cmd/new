@@ -274,7 +274,7 @@ def test_a_dossier_for_another_country_in_the_browser(site):
         page.fill('[data-in=applicant]', 'Example Pharm Co.'); page.fill('[data-in=tracking]', 'T-0001')
         confirm_card(page, then='board')
         page.wait_for_selector('[data-tpl="GCC-1.7.5"]', timeout=60000)
-        assert 'Saudi Arabia' in page.inner_text('#crumbAu') and page.locator('#navReview').is_hidden()
+        assert 'Saudi Arabia' in page.inner_text('#crumbAu') and page.locator('#navReview').is_visible()   # the review reads any authority
         page.click('[data-tpl="GCC-1.7.5"]')
         page.wait_for_selector('#tplPanel .docprev', timeout=60000)
         assert 'free from alcohol' in page.inner_text('#tplPanel')

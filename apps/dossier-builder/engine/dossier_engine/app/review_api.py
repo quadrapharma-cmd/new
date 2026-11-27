@@ -67,12 +67,20 @@ def install(app, st):
         return f
 
     @app.get('/api/review/pack')
-    def pack_info():
-        depts = PACK.departments()
-        return {'id': PACK.id, 'version': PACK.version, 'status': PACK.meta.get('status'), 'counts': PACK.counts(), 'departments': depts,
-                'layers': PACK.meta['layers'], 'strictness': PACK.meta['strictness'], 'severity': PACK.meta['severity'], 'tracks': PACK.meta['tracks'],
+    def pack_info(dossier: str = None):
+        """The assessor pack as a dossier's authority sees it (?dossier=<id>): EDA's departments and every question for EDA; for any
+        other authority the desks named for any assessor and the core questions only (review/pack.py)."""
+        au = runmod.authority_of(st, st.dossier(dossier)) if dossier else None
+        egypt = packmod.is_egypt(au)
+        any_ = PACK.meta.get('any_authority') or {}
+        return {'id': PACK.id, 'version': PACK.version, 'status': PACK.meta.get('status'), 'counts': PACK.counts(au),
+                'departments': PACK.departments_for(au), 'authority': au and {'id': au['id'], 'name': au['name'], 'egypt': egypt},
+                'note': None if egypt else any_.get('note'),
+                'layers': {**PACK.meta['layers'], 'own': any_.get('layer') or {'en': "The authority's own requirements", 'ar': 'متطلبات الجهة نفسها'}},
+                'strictness': PACK.meta['strictness'], 'severity': PACK.meta['severity'], 'tracks': PACK.meta['tracks'] if egypt else {},
                 'sources': PACK.meta['sources'], 'unread': PACK.meta.get('unread', []), 'lint': packmod.lint(PACK, REQ, checks.CHECKS),
-                'questions': [{k: q.get(k) for k in ('id', 'dept', 'layer', 'ctd', 'title', 'question', 'severity', 'applies', 'source', 'anchor', 'provisional', 'auto')} for q in PACK.questions]}
+                'questions': [{**{k: q.get(k) for k in ('id', 'dept', 'layer', 'ctd', 'title', 'question', 'severity', 'applies', 'source', 'anchor', 'provisional', 'auto')},
+                               'scope': PACK.scope(q)} for q in PACK.questions_for(au)]}
 
     @app.post('/api/dossiers/{did}/review', status_code=201)
     def run_review(did: str, body: RunReq):
@@ -245,7 +253,7 @@ def install(app, st):
 
     @app.get('/api/dossiers/{did}/review/{rid}/ai')
     def ai_prompt(did: str, rid: str, dept: str = None, ctd: str = None, ids: str = None):
-        _run(did, rid)
+        run = _run(did, rid)
         findings = aimod.section_findings(storage.findings(st, rid), dept, ctd, set(ids.split(',')) if ids else None)
         if not findings:
             err(422, 'E-AI-EMPTY', 'No questions in this section.', 'لا توجد أسئلة في هذا القسم.')
@@ -257,7 +265,7 @@ def install(app, st):
             d = st.document(dmeta['doc_id'])
             pages = text.pages(d)
             texts.append({'filename': d['filename'], 'doc_id': d['id'], 'scanned': text.scanned(d), 'pages': [{'page': n, 'text': t} for n, t in pages]})
-        prompt = aimod.build_prompt(findings, texts)
+        prompt = aimod.build_prompt(findings, texts, authority=(run.get('options') or {}).get('authority'))
         return {'prompt': prompt, 'documents': [{**x, 'scanned': t['scanned']} for x, t in zip(docs, texts)], 'findings': [f['id'] for f in findings]}
 
     @app.post('/api/dossiers/{did}/review/{rid}/ai')

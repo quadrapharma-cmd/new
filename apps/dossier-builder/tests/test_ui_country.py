@@ -82,7 +82,7 @@ def test_the_wizard_starts_with_the_country_and_builds_for_its_authority(server)
         did = page.url.split('/d/')[1].split('/')[0]
         d = call(server, f'/api/dossiers/{did}')
         assert d['pack'] == 'gcc.ctd.m1.v1' and d['authority']['country'] == 'SA' and d['profile']['extra'] == {'gcc_agency': 'SA'}
-        assert 'السعودية' in page.inner_text('#crumbAu') and page.locator('#navReview').is_hidden()
+        assert 'السعودية' in page.inner_text('#crumbAu') and page.locator('#navReview').is_visible()   # the review reads any authority
         assert page.locator('[data-draft="GCC-1.7.5"]').count() == 1 and page.locator('[data-draft="GCC-1.7.1"]').count() == 0     # a declaration is drafted, a certificate never
         # the item says where its level comes from when the source does not (an optional item — not a point to close: under «الكل»)
         page.click('[data-f="all"]')
@@ -107,6 +107,17 @@ def test_the_wizard_starts_with_the_country_and_builds_for_its_authority(server)
         page.wait_for_selector('input[data-out="ectd32"]')                                     # the Gulf: its own eCTD (GCC M1 v1.5), CTD and NeeS
         assert page.locator('input[data-out]').count() == 3 and page.locator('#ctdOnly').count() == 0 and 'GCC M1 1.5' in page.inner_text('#view')
         page.screenshot(path=f'{OUT}/country-export.png')
+        assert page.locator('#valReview').count() == 1                                       # the second door: the assessor's review, for any authority
+        # the review for the Gulf: the core questions any assessor asks, the Gulf's own Module 1, the desks named for any authority
+        page.goto(f'{server}/#/d/{did}/review/desk')
+        page.wait_for_selector('#runBtn')
+        page.click('#runBtn')
+        page.wait_for_selector('.depts [data-rdept]', timeout=60000)
+        view = page.inner_text('#view')
+        assert page.locator('[data-rdept="gates"]').count() == 0 and page.locator('[data-rdept="screening"]').count() == 1
+        assert 'التحقق من الطلب' in view and 'مدد هذه الجهة ليست في البرنامج' in view and page.locator('#rAnyNote').count() == 1
+        assert 'هيئة الدواء المصرية' not in page.inner_text('.depts')
+        page.screenshot(path=f'{OUT}/country-review.png')
         # the projects list names the country
         page.goto(f'{server}/#/dossiers')
         page.wait_for_selector('[data-au="GCC"]')

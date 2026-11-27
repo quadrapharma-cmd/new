@@ -1,8 +1,11 @@
 """The review pipeline: resolve → completeness → technical → data gates → text evidence → aggregate → clock → diff.
-Deterministic: the same dossier, data and pack give the same findings (the AI layer is separate and never automatic)."""
+Deterministic: the same dossier, data and pack give the same findings (the AI layer is separate and never automatic).
+For any authority: the dossier's authority (its requirements pack's) decides the questions and the desks — EDA's own for a dossier
+going to EDA, the core questions and the desks named for any assessor for any other (review/pack.py); the missing-item findings
+read the board, which is built from that authority's own pack."""
 import time
 from datetime import date
-from .. import expr
+from .. import expr, packs
 from ..profile import Profile, Api
 from . import pack as packmod, evidence, checks, storage
 
@@ -13,9 +16,26 @@ DEPT_BY_MODULE = {1: 'screening', 2: 'quality', 3: 'quality', 4: 'clinical', 5: 
 ABBREVIATED = ('quality', 'cadc', 'stability')      # reliance route: the full technical assessment is abbreviated
 
 
+def authority_of(st, dossier):
+    """{id, name, countries} of the authority the dossier goes to (its requirements pack's); EDA when the pack is not known."""
+    try:
+        au = st.pack(dossier['pack']).authority
+    except Exception:                                   # noqa: BLE001 — a dossier on a pack this version does not have: EDA, as before
+        au = packs.EGYPT
+    return {'id': au['id'], 'name': au['name'], 'countries': au.get('countries') or []}
+
+
+def _au_opts(run_or_opts):
+    """The authority a run was made for (runs made before the review was global were EDA's)."""
+    o = run_or_opts.get('options', run_or_opts)
+    return o.get('authority') or {'id': packmod.EGYPT_ID, 'name': packs.EGYPT['name']}
+
+
 class Ctx:
     def __init__(self, st, dossier, board, env, opts, today):
         self.st, self.dossier, self.board, self.env, self.opts, self.today = st, dossier, board, env, opts, today
+        self.authority = opts.get('authority') or authority_of(st, dossier)
+        self.egypt = packmod.is_egypt(self.authority)
         self.data = dossier.get('data') or {}
         self.text = evidence.DocText(st)
         prof_apis = {f"{a.get('name')}|{a.get('manufacturer')}": dict(a) for a in (dossier['profile'].get('apis') or [])}
@@ -87,7 +107,7 @@ def assess_question(q, ctx):
         if len(found) >= need:
             return _finding(q, 'adequate', hits[:8], _bi(f"Found {len(found)} of {len(ev_spec.get('keywords') or [])} indicators in {pages_read} page(s).", f"وُجد {len(found)} من {len(ev_spec.get('keywords') or [])} مؤشراً في {pages_read} صفحة."), 'text')
         if not readable:
-            return _finding(q, 'not_assessable', doc_ev, _bi('Scanned without a text layer: ' + ', '.join(scanned) + '. EDA requires searchable PDFs: replace it with a copy made searchable when scanning, then re-assess.', 'ممسوح بدون طبقة نصية: ' + '، '.join(scanned) + '. الهيئة تشترط PDF قابلًا للبحث: استبدله بنسخة أُجريت لها قراءة ضوئية عند المسح، ثم أعد التقييم.'), 'text',
+            return _finding(q, 'not_assessable', doc_ev, _bi('Scanned without a text layer: ' + ', '.join(scanned) + ('. EDA requires searchable PDFs' if ctx.egypt else '. A searchable PDF is expected (ICH eCTD specification, Appendix 7; ICH M2 FMT v1.3 §2.8)') + ': replace it with a copy made searchable when scanning, then re-assess.', 'ممسوح بدون طبقة نصية: ' + '، '.join(scanned) + ('. الهيئة تشترط PDF قابلًا للبحث' if ctx.egypt else '. المتوقع PDF قابل للبحث (مواصفة ICH للـ eCTD، الملحق 7)') + ': استبدله بنسخة أُجريت لها قراءة ضوئية عند المسح، ثم أعد التقييم.'), 'text',
                             extra={'needs_text': True})
         detail = _bi(f"Searched {pages_read} page(s) of {len(readable)} document(s) for: {', '.join(ev_spec.get('keywords') or [])} — found {len(found)} (need {need})." + (f" Unreadable scans: {', '.join(scanned)}." if scanned else ''),
                      f"بُحث في {pages_read} صفحة من {len(readable)} مستند عن: {'، '.join(ev_spec.get('keywords') or [])} — وُجد {len(found)} (المطلوب {need})." + (f" مستندات ممسوحة ضوئيًا غير مقروءة: {'، '.join(scanned)}." if scanned else ''))
@@ -106,10 +126,11 @@ def completeness_findings(ctx, enabled):
             dept = 'clinical'
         if dept not in enabled:
             continue
-        q = {'id': f"MISSING-{s['req_id']}", 'dept': dept, 'layer': 'eda', 'ctd': s['ctd'], 'severity': 'critical' if s['module'] == 1 else 'major',
+        source = 'NP.CAPP.065 v5/2025' if ctx.egypt else f"{ctx.authority['name']['en']} — requirements as the program has them"
+        q = {'id': f"MISSING-{s['req_id']}", 'dept': dept, 'layer': 'eda' if ctx.egypt else 'own', 'ctd': s['ctd'], 'severity': 'critical' if s['module'] == 1 else 'major',
              'title': s['title'], 'question': _bi(f"Is «{s['title']['en']}» ({s['ctd']}) provided?", f"هل «{s['title']['ar']}» ({s['ctd']}) مقدَّم؟"),
              'deficiency': _bi(f"«{s['title']['en']}» ({s['ctd']}) is required for this product and has not been provided.", f"«{s['title']['ar']}» ({s['ctd']}) مطلوب لهذا المنتج ولم يُقدَّم."),
-             'action': {'type': 'upload', 'target': s['slot_id']}, 'source': {'code': 'NP.CAPP.065 v5/2025', 'section': s['ctd'], 'quote': '; '.join(r.get('en', '') for r in s['reasons'][:1])},
+             'action': {'type': 'upload', 'target': s['slot_id']}, 'source': {'code': source, 'section': s['ctd'], 'quote': '; '.join(r.get('en', '') for r in s['reasons'][:1])},
              'evidence': {'slots': [s['req_id']]}}
         if s['status'] == 'waiting':
             out.append(_finding(q, 'not_assessable', [], _bi(f"Requested from {s['request']['issuer']}; not received yet.", f"مطلوب من {s['request']['issuer']}؛ لم يصل بعد."), 'slot', slot_id=s['slot_id']))
@@ -129,11 +150,11 @@ def technical_findings(ctx, enabled):
                 continue
             blocks = [f for f in bad if f.get('severity') == 'block']
             sev = 'critical' if blocks else 'minor'
-            q = {'id': f"TECH-{s['req_id']}", 'dept': 'technical', 'layer': 'eda', 'ctd': s['ctd'], 'severity': sev, 'title': s['title'],
+            q = {'id': f"TECH-{s['req_id']}", 'dept': 'technical', 'layer': 'eda' if ctx.egypt else 'own', 'ctd': s['ctd'], 'severity': sev, 'title': s['title'],
                  'question': _bi(f"Does «{d['filename']}» conform to the technical PDF profile?", f"هل «{d['filename']}» مطابق للملف الفني لملفات PDF؟"),
                  'deficiency': _bi('; '.join(f.get('en', '') for f in bad[:4]), '؛ '.join(f.get('ar', '') for f in bad[:4])),
                  'action': {'type': 'fix' if any(f.get('action') == 'auto_fix' for f in bad) else 'rebuild', 'target': s['slot_id']},
-                 'source': {'code': bad[0].get('source') or 'EDA eCTD technical guidance (DRAFT v1/2026) · ICH eCTD', 'section': bad[0].get('rule', '')},
+                 'source': {'code': bad[0].get('source') or ('EDA eCTD technical guidance (DRAFT v1/2026) · ICH eCTD' if ctx.egypt else 'ICH eCTD v3.2.2 · ICH M2 FMT v1.3'), 'section': bad[0].get('rule', '')},
                  'evidence': {'slots': [s['req_id']]}}
             ev = [{'doc_id': d['id'], 'filename': d['filename'], 'slot_id': s['slot_id'], 'ctd': s['ctd'], 'rules': [f.get('rule') for f in bad]}]
             out.append(_finding(q, 'deficient', ev, _bi(f"{len(blocks)} blocking, {len(bad) - len(blocks)} warning(s).", f"{len(blocks)} مانع، {len(bad) - len(blocks)} تحذير."), 'rule', slot_id=s['slot_id']))
@@ -150,10 +171,10 @@ def cross_findings(ctx, enabled):
             continue
         sev = 'critical' if f.get('severity') == 'block' else 'major'
         slots = f.get('slots') or []
-        q = {'id': f['id'], 'dept': dept, 'layer': 'eda', 'ctd': ', '.join(slots[:3]) or '3.2', 'severity': sev, 'title': _bi(f"Cross-check {f['id']}", f"فحص التطابق {f['id']}"),
+        q = {'id': f['id'], 'dept': dept, 'layer': 'eda' if ctx.egypt else 'own', 'ctd': ', '.join(slots[:3]) or '3.2', 'severity': sev, 'title': _bi(f"Cross-check {f['id']}", f"فحص التطابق {f['id']}"),
              'question': _bi(f"Cross-check {f['id']}: are the related data consistent across the dossier?", f"فحص التطابق {f['id']}: هل البيانات المرتبطة متسقة عبر الملف؟"),
              'deficiency': _bi(f['en'], f['ar']), 'action': {'type': {'rebuild': 'rebuild', 'request_data': 'edit_data'}.get(f.get('action'), 'edit_data'), 'target': slots[0] if slots else 'data'},
-             'source': {'code': f.get('source') or 'NP.CAPP.040 v1/2022'}, 'evidence': {'slots': slots}}
+             'source': {'code': f.get('source') or ('NP.CAPP.040 v1/2022' if ctx.egypt else 'Consistency across the dossier (general practice)')}, 'evidence': {'slots': slots}}
         if f.get('needs'):
             out.append(_finding(q, 'not_assessable', [{'field': 'needs', 'value': ', '.join(map(str, f['needs']))}], _bi('Needs data: ' + ', '.join(map(str, f['needs'])), 'يحتاج بيانات: ' + '، '.join(map(str, f['needs']))), 'data', slot_id=slots[0] if slots else None))
         else:
@@ -187,6 +208,12 @@ def overall(dv, enabled):
 
 
 def clock_plan(pack, env, opts, dv):
+    if not packmod.is_egypt(opts.get('authority')):            # only EDA's published timelines are in the program
+        any_ = pack.meta.get('any_authority') or {}
+        stops = [d for d, x in dv.items() if d not in ('screening', 'technical') and x['verdict'] in ('clock_stop', 'reject')]
+        return {'track': None, 'label': any_.get('clock') or _bi('No clock is simulated for this authority.', 'لا تُحاكى الساعة لهذه الجهة.'),
+                'decree': None, 'total_months': None, 'stages': [], 'clock_stop_months': None, 'expected_rounds': len(stops),
+                'stopping_departments': stops, 'screening_reject': dv.get('screening', {}).get('verdict') == 'reject', 'note': any_.get('clock')}
     key = opts.get('track') or ('c2_track_c_ref' if env.get('origin') == 'imported' and opts.get('reliance') else 'c2_track_c')
     tr = pack.track(key) or pack.track('c2_track_c')
     names = pack.meta['stage_names']['six' if len(tr['stages']) == 6 else 'four']
@@ -215,7 +242,7 @@ def diff_runs(prev_findings, findings):
 
 
 def aggregate(run, findings, pack, env):
-    enabled = run['options'].get('departments') or [d['id'] for d in pack.departments()]
+    enabled = run['options'].get('departments') or [d['id'] for d in pack.departments_for(_au_opts(run))]
     dv = dept_verdicts(findings, enabled)
     verdict, why = overall(dv, enabled)
     run.update({'dept_verdicts': dv, 'verdict': verdict, 'why': why, 'counts': counts_of(findings), 'clock': clock_plan(pack, env, run['options'], dv)})
@@ -231,14 +258,20 @@ def run_review(st, did, options=None, actor=None, pack=None, today=None):
     env = prof.env()
     env.update({'reliance': bool(opts.get('reliance')), 'strictness': opts['strictness']})
     board = st.board(did)
+    au = authority_of(st, dossier)
+    opts['authority'] = {'id': au['id'], 'name': au['name']}
+    egypt = packmod.is_egypt(au)
+    if not egypt:
+        opts['reliance'], env['reliance'] = False, False            # Egypt's reliance route
     ctx = Ctx(st, dossier, board, env, opts, today)
-    layers = pack.layers_for(opts['strictness'])
-    enabled = opts.get('departments') or [d['id'] for d in pack.departments()]
+    layers = pack.layers_for(opts['strictness'] if egypt or opts['strictness'] == 'strict' else 'international')
+    desks = [d['id'] for d in pack.departments_for(au)]
+    enabled = [d for d in (opts.get('departments') or desks) if d in desks]
     if not opts.get('reliance'):
         enabled = [d for d in enabled if d != 'reliance']
     opts['departments'] = enabled
     findings = completeness_findings(ctx, enabled) + technical_findings(ctx, enabled) + cross_findings(ctx, enabled)
-    for q in pack.questions:
+    for q in pack.questions_for(au):
         if q.get('layer', 'eda') not in layers or q['dept'] not in enabled:
             continue
         try:
@@ -269,7 +302,7 @@ def reassess(st, did, run, finding, pack=None, today=None):
     dossier = st.dossier(did)
     env = _profile(dossier).env()
     env.update({'reliance': bool(run['options'].get('reliance')), 'strictness': run['options'].get('strictness', 'international')})
-    ctx = Ctx(st, dossier, st.board(did), env, {**run['options'], 'signed': run.get('signed') or {}}, today or st.today())
+    ctx = Ctx(st, dossier, st.board(did), env, {**run['options'], 'authority': _au_opts(run), 'signed': run.get('signed') or {}}, today or st.today())
     qid = finding['question_id']
     q = pack.by_id.get(qid)
     if q is None:                                   # completeness / technical / cross findings: rebuild from the board
