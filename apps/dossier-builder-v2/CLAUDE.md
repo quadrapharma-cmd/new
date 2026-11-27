@@ -886,6 +886,14 @@ When a part is done or an open item is closed, update «What exists» and «Open
   through the work sessions (no API key); the commercial questions (a desktop program for clients or a hosted service, Windows,
   the key) were put to him and are still open.
 
+- **27/11/2026, «ممكن تكمل البرنامج كاملا بكل الفيتشرز اللي كانت في الملف القديم» then «وقف اي شغل و اشتغل انت»** — the
+  operator session (session_01LcrRaMyoPYFMdm6SRZU8Sj) is now the only one building; the planning session
+  (session_01LcrRaPNd7k7FvK6ziA9n4b) was interrupted and told so. The work: the desk does everything eBOX's full program does,
+  in this order — (1) the three outputs (ctd.zip, eCTD 3.2.2, eCTD 4.0), (2) countries beyond Egypt, (3) the assessor's
+  review, (4) the vault, (5) the editing programs, (6) the product card, (7) missing items by party with one request each,
+  (8) after submission, (9) variations, (10) the library beside each step. Each piece tried on his real files before it
+  reaches him (rule 13).
+
 ## Open items (propose when relevant; do when he asks)
 - Old program, next pieces (one at a time, each on his real files first): the 14/11 update and measuring Claude's reading (need
   the API key: `ANTHROPIC_API_KEY` in the environment's settings, added by him), «شروط الشكل لكل دولة», the Assistant on his
