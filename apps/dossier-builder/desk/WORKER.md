@@ -115,15 +115,17 @@ Its first line is «[مكتب eBOX] <kind>», then «المعرّف: <dossier id
      `$W mark $D/work decide running '<the next task's Arabic name>'` and send.
    - After the fifth: `$W mark $D/work decide done 'اتُّخذت القرارات الخمس.'`; send.
 5. **Stages 8–10.** `$W stage $D/work fix`, then `ectd`, `report` — send after each.
-6. **The numbers.** `$W summary $D/work` (it prints the two reports and the eCTD zip); send.
+6. **The numbers.** `$W summary $D/work` (it prints the two reports and the three outputs: the eCTD 3.2.2 zip, `ectd40.zip`
+   and `ctd.zip` — CTD One Submission, what EDA receives today); send.
 7. **The results.**
    - The two reports (PDF): if `results_in_page` is true or the dossier is an example, check the page's asset store
      (Artifact `list`, `scope: assets`, with the `url`), then Artifact publish with the `url`, `asset: true`,
      `file_paths: [the two PDFs]`, and for each: `$W result $D/work '<title>' '<note>' --asset <id>` (the titles and notes
      `summary` printed). Otherwise: `$W result $D/work '<title>' 'في جلسة عمل هذا الملف (زر «جلسة العمل» أعلاه)'`, and send him the two
      PDFs here with SendUserFile.
-   - The eCTD zip: if `drive_write` is true, put it in his Drive: `create_file` a folder «eBOX — <name>» (the folder mime
-     type), then the zip in it (`contentMimeType: application/zip`, `disableConversionToGoogleType: true`, and as
+   - The three outputs (each in `outputs` of `summary`: `zip` the eCTD 3.2.2, `ectd40_zip`, `ctd_zip`), each as the eCTD zip
+     below, titled «تسلسل eCTD 3.2.2», «تسلسل eCTD 4.0», «ملف CTD للتقديم (ctd.zip)». The eCTD zip: if `drive_write` is true,
+     put it in his Drive: `create_file` a folder «eBOX — <name>» (the folder mime type), then the zip in it (`contentMimeType: application/zip`, `disableConversionToGoogleType: true`, and as
      `base64Content` the file reference `sha256:<its sha256sum>:<its absolute path>`, never its base64), then
      `$W result $D/work 'مجلد التسليم (eCTD)' 'في Google Drive' --url <its link>`. Otherwise, send it here with
      SendUserFile: he takes it from this session.

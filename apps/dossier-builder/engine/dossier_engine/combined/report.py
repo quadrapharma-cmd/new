@@ -356,7 +356,29 @@ def ectd_report(w):
         doc.h1('7. الترجمة العربية')
         doc.ul([f'{k}: ' + ('الكتل نفسها بالترتيب نفسه، والأرقام نفسها في كل كتلة، وقيم التركيب متطابقة.' if not v2 else '؛ '.join(v2))
                 for k, v2 in fixed['translation_checks'].items()] + (R.get('translation_notes') or []))
-    doc.h1('8. طريقة العمل')
+    e4, cz = w.load('ectd40.json'), w.load('ctdzip.json')
+    if e4 or cz:
+        doc.h1('8. الصيغتان الأخريان')
+        rows = []
+        if e4:
+            v4 = e4['validation']
+            rows.append([f"eCTD 4.0 (التسلسل {e4['number']})", f"{e4['documents']} مستندًا، {e4['files']} ملفًا",
+                         f"الناجحة {v4['pass']} والراسبة {v4['fail']} والتنبيهات {v4['warning']}"])
+        if cz:
+            rows.append(['CTD One Submission ‏(ctd.zip)', f"{cz['documents']} مستندًا في بنود NP.CAPP.065",
+                         f"بنود مطلوبة ناقصة {len(cz['required_missing'])}؛ مستندات بلا بند {len(cz['unplaced'])}"])
+        doc.table(['الصيغة', 'المحتوى', 'النتيجة'], rows)
+        doc.ul(['المستندات في الصيغ الثلاث هي ملفات تسلسل eCTD 3.2.2 نفسها، بايتًا ببايت.',
+                'eCTD 4.0 مكتوب على الملف المصري المؤقت للإصدار 4.0 (مسودات الهيئة)؛ وأرقام OID الإقليمية فيه مؤقتة حتى تسجلها الهيئة.',
+                'ctd.zip هو ما تستلمه الهيئة اليوم (NP.CAPP.065 v5)، ومعه 00-navigator.html و00-checklist.csv لكل بند وحالته.'])
+        if e4:
+            bad4 = [r for r in e4['results'] if r['status'] != 'pass']
+            if bad4:
+                doc.table(['قاعدة eCTD 4.0', 'النتيجة', 'التفصيل'],
+                          [[r['rule'], 'راسبة' if r['status'] == 'fail' else 'تنبيه', '؛ '.join(map(str, r['failures'][:3]))] for r in bad4])
+        if cz and cz['unplaced']:
+            doc.table(['مستند بلا بند في ctd.zip', 'رقمه'], [[u['title'], u['node']] for u in cz['unplaced']])
+    doc.h1('9. طريقة العمل')
     doc.ul(['أُخذت المستندات من الملف المبني (CTD)، ووُضع كل مستند في عنصره من ICH DTD 3.2 بأسماء المجلدات والملفات في الملحق 4 من ICH.',
             'تُركت الفهارس (ملف XML هو الفهرس) والمستندات التي لا تقول إلا «غير قابل للتطبيق» أو «لا شيء» (EG-BP-E24).',
             'المستند المشترك بين عدة مواد فعالة حُفظ مرة واحدة وأُشير إليه من كل مادة.',
@@ -430,8 +452,23 @@ def deliver(w, out):
     zname = D.get('zip') or f'{seq.name}.zip'
     parts = [seq.name] + ([f'{seq.name}-workingdocuments'] if fixed.get('pi') else [])
     subprocess.run(['zip', '-r', '-q', '-X', str(root / zname)] + parts, cwd=sub, check=True)
+    got = {'folder': str(root), 'zip': str(root / zname)}
+    e4, cz = w.load('ectd40.json'), w.load('ctdzip.json')
+    if e4:                                                   # eCTD 4.0: <application UUID>/<sequence>, zipped from the application's folder
+        s4 = Path(e4['sequence'])
+        link_tree(s4, root / 'eCTD 4.0' / s4.parent.name / s4.name)
+        subprocess.run(['zip', '-r', '-q', '-X', str(root / 'ectd40.zip'), s4.parent.name], cwd=root / 'eCTD 4.0', check=True)
+        got['ectd40_zip'] = str(root / 'ectd40.zip')
+        with open(rc / 'validation-results-ectd40.csv', 'w', newline='', encoding='utf-8-sig') as f:
+            wr = csv.writer(f)
+            wr.writerow(['rule', 'severity', 'result', 'failures'])
+            for r in e4['results']:
+                wr.writerow([r['rule'], r['severity'], r['status'].upper(), ' | '.join(map(str, r['failures']))])
+    if cz:
+        shutil.copyfile(cz['zip'], root / 'ctd.zip')
+        got['ctd_zip'] = str(root / 'ctd.zip')
     say(f'التسليم: {root}')
-    return {'folder': str(root), 'zip': str(root / zname)}
+    return got
 
 
 def run(work):

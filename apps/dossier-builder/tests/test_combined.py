@@ -13,7 +13,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / 'engine'))
 sys.path.insert(0, str(HERE))
 
-from dossier_engine.combined import assemble, checks, ectd, fix, ocr, read, repeats, report, split  # noqa: E402
+from dossier_engine.combined import assemble, checks, ctdzip, ectd, ectd40, fix, ocr, read, repeats, report, split  # noqa: E402
 from dossier_engine.combined.common import Work, parse_ranges, ranges  # noqa: E402
 from dossier_engine.combined.pdfedit import edit_page  # noqa: E402
 
@@ -177,9 +177,32 @@ def test_ectd_sequence_and_validation(work):
     assert fixed['source'].endswith('.fixed.pdf')
 
 
+def test_ectd40_and_ctd_zip_carry_the_same_documents(work):
+    e = work.load('ectd.json')
+    r4 = ectd40.run(work)
+    assert r4['validation']['fail'] == 0, [x for x in r4['results'] if x['status'] == 'fail']
+    assert r4['number'] == 1 and r4['documents'] == len(e['leaves']) + len(e['m1'])
+    seq4 = Path(r4['sequence'])
+    assert seq4.parent.name == e['envelope']['identifier'].lower() and (seq4 / 'submissionunit.xml').exists()
+    md5s = {l['md5'] for l in e['leaves']}                       # the same bytes as the 3.2.2 sequence's
+    import hashlib
+    pdfs4 = [p for p in seq4.rglob('*.pdf')]
+    assert pdfs4 and all(hashlib.md5(p.read_bytes()).hexdigest() in md5s | {m[4] for m in e['m1']} for p in pdfs4)
+    cz = ctdzip.run(work)
+    assert cz['unplaced'] == [] and cz['documents'] == r4['documents']
+    import zipfile
+    names = zipfile.ZipFile(cz['zip']).namelist()
+    assert any(n.endswith('00-navigator.html') for n in names) and any(n.endswith('00-checklist.csv') for n in names)
+    assert any('/3.2.S Zentorine - ' in n and '3.2.S.7 Stability' in n for n in names)        # 3.2.S.7.1 → EDA's 3.2.S.7 item
+    assert not any('3.2.S.1.1 3.2.S.1.1' in n for n in names)                                # the number once in a name
+
+
 def test_reports(work):
     out = report.run(work)
     for kind in ('ctd', 'ectd'):
         assert Path(out[kind]['pdf']).stat().st_size > 5000 and Path(out[kind]['docx']).exists()
     text = subprocess.run(['pdftotext', out['ctd']['pdf'], '-'], capture_output=True, text=True).stdout
     assert 'الخلاصة' in text and 'الملاحظات' in text
+    assert Path(out['deliver']['ctd_zip']).exists() and Path(out['deliver']['ectd40_zip']).exists()
+    etext = subprocess.run(['pdftotext', out['ectd']['pdf'], '-'], capture_output=True, text=True).stdout
+    assert 'الصيغتان الأخريان' in etext

@@ -251,10 +251,18 @@ def summary(work):
     for f in files:
         f['bytes'] = Path(f['file']).stat().st_size
         f['fits_page'] = f['bytes'] <= ASSET_MOST
-    z = (rj.get('deliver') or {}).get('zip')
+    dl = rj.get('deliver') or {}
+    z = dl.get('zip')
+    e4, cz = w.load('ectd40.json', {}) or {}, w.load('ctdzip.json', {}) or {}
+    if e4:
+        s['ectd40_failed_rules'] = e4['validation']['fail']
+    if cz:
+        s['ctd_required_missing'] = len(cz.get('required_missing', []))
+        s['ctd_unplaced'] = len(cz.get('unplaced', []))
+    st['summary'] = s
     save(work, st)
-    print(json.dumps({'summary': s, 'needs': st['needs'], 'reports': files,
-                      'zip': {'file': z, 'bytes': Path(z).stat().st_size} if z and Path(z).exists() else None},
+    outs = {k: {'file': dl[k], 'bytes': Path(dl[k]).stat().st_size} for k in ('zip', 'ectd40_zip', 'ctd_zip') if dl.get(k) and Path(dl[k]).exists()}
+    print(json.dumps({'summary': s, 'needs': st['needs'], 'reports': files, 'zip': outs.get('zip'), 'outputs': outs},
                      ensure_ascii=False, indent=1))
     return 0
 

@@ -10,7 +10,7 @@
   decide <work>            7. Claude makes the decisions the rules cannot (needs ANTHROPIC_API_KEY; options: --again,
                               --budget <US dollars>, --only <task>); a decisions file made by a person is left as it is
   fix <work>               8. the corrections (in the PDFs, the product information)
-  ectd <work>              9. the eCTD sequence and its validation
+  ectd <work>              9. the eCTD 3.2.2 sequence, the same as eCTD 4.0 and as ctd.zip (CTD One Submission), each validated
   report <work>           10. the report (Arabic, Word and PDF)
 """
 import sys
@@ -77,6 +77,9 @@ def main(argv):
         elif s == 'ectd':
             from . import ectd
             ectd.run(work)
+            from . import ctdzip, ectd40                     # the other two outputs, from the same documents (9b, 9c)
+            ectd40.run(work)
+            ctdzip.run(work)
         elif s == 'report':
             from . import report
             report.run(work)

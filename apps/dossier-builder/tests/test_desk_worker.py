@@ -93,7 +93,8 @@ def test_the_stages_one_by_one(run):
 def test_the_numbers_and_what_is_needed(run):
     _, _, seen, handed = run
     last = seen['summary']
-    assert last['summary'] == {'pages': 47, 'documents': 21, 'left_out': 6, 'findings': 5, 'leaves': 23, 'failed_rules': 1}
+    assert last['summary'] == {'pages': 47, 'documents': 21, 'left_out': 6, 'findings': 5, 'leaves': 23, 'failed_rules': 1,
+                               'ectd40_failed_rules': 0, 'ctd_required_missing': 56, 'ctd_unplaced': 0}
     assert last['needs'] == ['رقم التتبع الذي تعطيه الهيئة: يُكتب في التسلسل حين يصل.',
                              'تأكيد المتقدم: «Example Pharma Ltd.» — يُغيَّر إن كان المتقدم الوكيل المصري',
                              'شهادة GMP — من الشركة المصنعة، لـ Module 1، البند 1.2.4',
