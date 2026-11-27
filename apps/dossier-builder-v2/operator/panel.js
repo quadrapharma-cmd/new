@@ -28,7 +28,7 @@ const W = {
       needs_reauth: 'ربط «Claude Code Remote» محتاج تسجيل دخول تاني: من إعدادات claude.ai ← Connectors.',
       selection_required: 'عندك أكتر من ربط بنفس الاسم «Claude Code Remote»: اختار واحد لما claude.ai يسألك.',
       not_in_manifest: 'ربط «Claude Code Remote» مقفول للصفحة دي. افتحه من قايمة الصلاحيات بتاعة الصفحة.',
-      blocked_by_policy: 'إعدادات مؤسستك مانعة الأداة دي من هنا.',
+      blocked_by_policy: 'إعدادات حسابك مانعة أداة «{tool}» من الصفحة. افتح claude.ai/customize/connectors ← Claude Code Remote، وخلّي الأدوات دي «مسموح»: list_environments وcreate_session وsend_message وlist_events وget_session. لو الاختيار مش موجود، يبقى مدير المؤسسة قافله.',
       approval_required: 'الطلب محتاج موافقتك: دوس «ابعت» تاني ووافق لما claude.ai يسألك.',
       server_unavailable: 'Claude Code مش بيرد دلوقتي. استنى شوية وجرّب تاني.',
       tool_error: 'Claude Code رفض الطلب:',
@@ -51,7 +51,7 @@ const W = {
       needs_reauth: 'Reconnect «Claude Code Remote» in claude.ai Settings → Connectors.',
       selection_required: 'You have more than one «Claude Code Remote» connector: choose one when claude.ai asks.',
       not_in_manifest: '«Claude Code Remote» is turned off for this page. Turn it on in the page\'s permissions.',
-      blocked_by_policy: 'Your organization blocks this tool here.',
+      blocked_by_policy: 'Your account blocks the tool «{tool}» from this page. Open claude.ai/customize/connectors → Claude Code Remote and set these tools to allowed: list_environments, create_session, send_message, list_events, get_session. If that choice is not offered, an organization admin has capped it.',
       approval_required: 'This needs your approval: press Send again and allow it when claude.ai asks.',
       server_unavailable: 'Claude Code is not answering right now. Wait a little and try again.',
       tool_error: 'Claude Code refused the request:',
@@ -142,7 +142,7 @@ export function mountOperator() {
   function failure(e) {
     const c = w('codes');
     if (e?.code === 'tool_error' || !c[e?.code]) return `${e?.code === 'tool_error' ? c.tool_error : c.other} ${e?.message || e}`;
-    return c[e.code];
+    return c[e.code].replace('{tool}', e.tool || '?');
   }
 
   // Can this view reach the operator? Answered once, when the panel first opens.
@@ -162,7 +162,10 @@ export function mountOperator() {
     st.ready = true;
     return true;
   }
-  const call = async (tool, input) => (await st.mcp.callTool(CONNECTOR, tool, input, { cache: false })).payload;
+  const call = async (tool, input) => {
+    try { return (await st.mcp.callTool(CONNECTOR, tool, input, { cache: false })).payload; }
+    catch (e) { throw { code: e?.code, message: e?.message, retryable: e?.retryable, tool }; }   // which tool, for the message
+  };
 
   // ---- reading the session
   async function poll() {

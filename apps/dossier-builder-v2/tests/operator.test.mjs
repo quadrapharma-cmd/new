@@ -162,6 +162,16 @@ test('a connector that lacks the tools, or refuses, is said plainly — never a 
   await r.page.waitForSelector('.op-msg.err');
   assert.match(await r.page.locator('.op-msg.err').innerText(), /ماوصلتش.*موافقتك/s);
   assert.equal(await r.page.locator('#opText').inputValue(), 'سؤال', 'the text is kept to send again');
+  await r.ctx.close();
+
+  r = await open({}, fakeViewer({ fail: { tool: 'create_session', code: 'blocked_by_policy' } }));
+  await r.page.click('#opFab');
+  await r.page.fill('#opText', 'سؤال');
+  await r.page.click('#opSend');
+  await r.page.waitForSelector('.op-msg.err');
+  const blocked = await r.page.locator('.op-msg.err').innerText();
+  assert.match(blocked, /«create_session»/);
+  assert.match(blocked, /claude\.ai\/customize\/connectors/);
   assert.deepEqual(r.errors, []);
   await r.ctx.close();
 });
