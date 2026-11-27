@@ -80,6 +80,11 @@ def main(argv):
             from . import ctdzip, ectd40                     # the other two outputs, from the same documents (9b, 9c)
             ectd40.run(work)
             ctdzip.run(work)
+            from . import ebox                               # 11: eBOX's full program, for the country the dossier names (Egypt by default)
+            try:
+                ebox.run(work)
+            except Exception as ex:                          # Egypt's three outputs stand whatever happens here: said, not fatal
+                say(f'تعذّر تسليم الملف لبرنامج eBOX الكامل: {ex}')
         elif s == 'report':
             from . import report
             report.run(work)

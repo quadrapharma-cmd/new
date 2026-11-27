@@ -80,7 +80,9 @@ Its first line is «[مكتب eBOX] <kind>», then «المعرّف: <dossier id
    the claude-code-remote tools are in this session; then also `set_session_title` → «eBOX — <name>»). Read
    `config/desk` and `dossiers/<id>`. If the dossier's `session` is another session that is still working (`get_session`
    on it, when you have the tool: `status_bucket` working), the dossier is its: send it the request with `send_message`,
-   and end your turn. `$W start $D/work <session id> [--private]`; send.
+   and end your turn. `$W start $D/work <session id> [--private]`; send. Then `$W country $D/work <the dossier's country>`
+   (`dossiers/<id>.country`, or «الدولة:» in the request; EG when none): Egypt's three outputs are always made, and another
+   country's are added by eBOX's full program at the eCTD stage (its CTD folders and, where it takes one, its eCTD).
 2. **The inputs, into `$D/received`.**
    - Uploads in the page (`source.uploads`): Artifact `read` with the `url`, `path: <asset id>` and `out_dir: $D/received`;
      rename each file to its `name`.

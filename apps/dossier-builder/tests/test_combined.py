@@ -13,7 +13,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / 'engine'))
 sys.path.insert(0, str(HERE))
 
-from dossier_engine.combined import assemble, checks, ctdzip, ectd, ectd40, fix, ocr, read, repeats, report, split  # noqa: E402
+from dossier_engine.combined import assemble, checks, ctdzip, ebox, ectd, ectd40, fix, ocr, read, repeats, report, split  # noqa: E402
 from dossier_engine.combined.common import Work, parse_ranges, ranges  # noqa: E402
 from dossier_engine.combined.pdfedit import edit_page  # noqa: E402
 
@@ -195,6 +195,17 @@ def test_ectd40_and_ctd_zip_carry_the_same_documents(work):
     assert any(n.endswith('00-navigator.html') for n in names) and any(n.endswith('00-checklist.csv') for n in names)
     assert any('/3.2.S Zentorine - ' in n and '3.2.S.7 Stability' in n for n in names)        # 3.2.S.7.1 → EDA's 3.2.S.7 item
     assert not any('3.2.S.1.1 3.2.S.1.1' in n for n in names)                                # the number once in a name
+
+
+@pytest.mark.parametrize('country, outputs, check', [('SA', {'ctd-working', 'ectd32-working'}, 'eCTD 3.2.2 (GCC M1 1.5)'),
+                                                     ('DE', {'ctd-working', 'ectd32-working'}, 'eCTD 3.2.2 (EU M1 3.1.1)'),
+                                                     ('US', {'ctd-working'}, None)])
+def test_another_country_through_the_full_program(work, country, outputs, check):
+    r = ebox.run(work, country)
+    assert r['country'] == country and set(r['files']) == outputs and all(Path(f).exists() for f in r['files'].values())
+    assert r['placed'] >= 18
+    if check:
+        assert r['validation'][check]['ok'], r['validation'][check]
 
 
 def test_reports(work):

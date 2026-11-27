@@ -12,6 +12,7 @@ the dossier's document in the desk page (apps/dossier-builder/desk/WORKER.md say
   python3 desk/worker.py keep    <work>                            Claude's decisions in one JSON file, to keep
   python3 desk/worker.py kept    <work> <asset id>                 where that file was kept
   python3 desk/worker.py restore <work> <decisions file>           Claude's decisions back into a new work folder
+  python3 desk/worker.py country <work> <code>                     the country the dossier is for (EG, SA, DE …; Egypt's outputs always)
   python3 desk/worker.py private <work> on|off                      the page shows the work's progress only, or everything
 
 Each command rewrites <work>/desk/patch.json: the progress fields of dossiers/<id> (status, headline, stages, notes, log,
@@ -262,6 +263,8 @@ def summary(work):
     st['summary'] = s
     save(work, st)
     outs = {k: {'file': dl[k], 'bytes': Path(dl[k]).stat().st_size} for k in ('zip', 'ectd40_zip', 'ctd_zip') if dl.get(k) and Path(dl[k]).exists()}
+    for f in sorted(Path(dl['country_outputs']).iterdir()) if dl.get('country_outputs') else []:     # another country's (eBOX's full program)
+        outs[f'country:{f.name}'] = {'file': str(f), 'bytes': f.stat().st_size}
     print(json.dumps({'summary': s, 'needs': st['needs'], 'reports': files, 'zip': outs.get('zip'), 'outputs': outs},
                      ensure_ascii=False, indent=1))
     return 0
@@ -308,9 +311,24 @@ def private(work, value):
     return 0
 
 
+def country(work, code):
+    """The country the page asked for (dossiers/<id>.country): kept as country.json, read by the ectd stage's hand-over to eBOX's
+    full program. Egypt's three outputs are made whatever it is."""
+    code = (code or 'EG').strip().upper()
+    if not re.fullmatch(r'[A-Z]{2}', code):
+        print('A country is two letters, such as EG, SA or DE.')
+        return 1
+    w = Path(work).resolve()
+    w.mkdir(parents=True, exist_ok=True)
+    (w / 'country.json').write_text(json.dumps({'code': code}), encoding='utf-8')
+    print(f'country {code}')
+    return 0
+
+
 def main(argv):
     cmds = {'private': (private, 2, 2), 'start': (start, 2, 3), 'stage': (stage, 2, 3), 'mark': (mark, 3, 4), 'status': (status, 2, 3), 'need': (need, 2, 2),
-            'result': (result, 3, 5), 'summary': (summary, 1, 1), 'keep': (keep, 1, 1), 'kept': (kept, 2, 2), 'restore': (restore, 2, 2)}
+            'result': (result, 3, 5), 'summary': (summary, 1, 1), 'keep': (keep, 1, 1), 'kept': (kept, 2, 2), 'restore': (restore, 2, 2),
+            'country': (country, 2, 2)}
     if not argv or argv[0] not in cmds:
         print(__doc__)
         return 1

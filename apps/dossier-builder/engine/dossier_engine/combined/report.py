@@ -378,6 +378,16 @@ def ectd_report(w):
                           [[r['rule'], 'راسبة' if r['status'] == 'fail' else 'تنبيه', '؛ '.join(map(str, r['failures'][:3]))] for r in bad4])
         if cz and cz['unplaced']:
             doc.table(['مستند بلا بند في ctd.zip', 'رقمه'], [[u['title'], u['node']] for u in cz['unplaced']])
+    eb = w.load('ebox.json')
+    if eb and eb.get('country') and eb['country'] != 'EG':
+        doc.h1(f"مخرجات الدولة المطلوبة ({eb['country']})")
+        doc.ul([f"أُنشئ الملف في برنامج eBOX الكامل لجهة {eb['pack']}، ووُضع {eb['placed']} مستندًا في بنودها؛ "
+                f"وبقي {eb['missing_required']} بندًا مطلوبًا ناقصًا.",
+                'المخرجات نسخة عمل ليست للتقديم حتى تكتمل البنود المطلوبة: ' + '، '.join(eb.get('files') or {}) + '.'] +
+               [f"{k}: {'مطابق' if v['ok'] else 'غير مطابق'} — الناجحة {v['counts'].get('pass', 0)} والراسبة {v['counts'].get('fail', 0)}"
+                for k, v in (eb.get('validation') or {}).items()])
+        if eb.get('unplaced'):
+            doc.table(['مستند بلا بند عند هذه الجهة', 'رقمه'], [[u['title'], u['node']] for u in eb['unplaced']])
     doc.h1('9. طريقة العمل')
     doc.ul(['أُخذت المستندات من الملف المبني (CTD)، ووُضع كل مستند في عنصره من ICH DTD 3.2 بأسماء المجلدات والملفات في الملحق 4 من ICH.',
             'تُركت الفهارس (ملف XML هو الفهرس) والمستندات التي لا تقول إلا «غير قابل للتطبيق» أو «لا شيء» (EG-BP-E24).',
@@ -467,6 +477,16 @@ def deliver(w, out):
     if cz:
         shutil.copyfile(cz['zip'], root / 'ctd.zip')
         got['ctd_zip'] = str(root / 'ctd.zip')
+    eb = w.load('ebox.json')
+    if eb and eb.get('country') and eb['country'] != 'EG':  # another country's outputs, as eBOX's full program wrote them (working copies)
+        dst = root / f"eBOX {eb['country']} (working copy)"
+        dst.mkdir(parents=True, exist_ok=True)
+        for k, f in (eb.get('files') or {}).items():
+            if Path(f).exists():
+                shutil.copyfile(f, dst / Path(f).name)
+        if eb.get('report') and Path(eb['report']).exists():
+            shutil.copyfile(eb['report'], dst / 'validation-report.html')
+        got['country_outputs'] = str(dst)
     say(f'التسليم: {root}')
     return got
 

@@ -193,6 +193,28 @@ textarea { min-height: 84px; resize: vertical; }
           <span class="hint">للعرض في هذا المكتب، مثل اسم المستحضر.</span>
           <input type="text" id="nf-name" maxlength="80" autocomplete="off" placeholder="مثال: ملف تسجيل المستحضر">
         </label>
+        <label class="f">الدولة التي يُقدَّم إليها الملف
+          <span class="hint">يُبنى لمصر دائمًا بصيغها الثلاث؛ وإذا اخترت دولة أخرى تُضاف مخرجاتها بموديول 1 الخاص بها.</span>
+          <select id="nf-country">
+            <option value="EG" selected>مصر — هيئة الدواء المصرية</option>
+            <option value="SA">المملكة العربية السعودية — دول الخليج</option>
+            <option value="AE">الإمارات العربية المتحدة — دول الخليج</option>
+            <option value="KW">الكويت — دول الخليج</option>
+            <option value="BH">البحرين — دول الخليج</option>
+            <option value="OM">عُمان — دول الخليج</option>
+            <option value="QA">قطر — دول الخليج</option>
+            <option value="DE">ألمانيا — الاتحاد الأوروبي</option>
+            <option value="FR">فرنسا — الاتحاد الأوروبي</option>
+            <option value="IT">إيطاليا — الاتحاد الأوروبي</option>
+            <option value="ES">إسبانيا — الاتحاد الأوروبي</option>
+            <option value="NL">هولندا — الاتحاد الأوروبي</option>
+            <option value="US">الولايات المتحدة الأمريكية — FDA</option>
+            <option value="JO">الأردن</option>
+            <option value="IQ">العراق</option>
+            <option value="LB">لبنان</option>
+            <option value="XX">دولة أخرى (موديول 1 العام)</option>
+          </select>
+        </label>
         <label class="f">رابط مجلد الملف الوارد على Google Drive
           <span class="hint">افتح المجلد في Drive، ثم «مشاركة» ← «نسخ الرابط». فيه الملف المجمّع وملفات Word.</span>
           <input type="url" id="nf-drive" inputmode="url" autocomplete="off" placeholder="https://drive.google.com/drive/folders/…">
@@ -371,6 +393,7 @@ textarea { min-height: 84px; resize: vertical; }
     e.preventDefault();
     const msg = $('#nf-msg'), go = $('#nf-go');
     const name = $('#nf-name').value.trim(), drive = $('#nf-drive').value.trim(), notes = $('#nf-notes').value.trim();
+    const country = ($('#nf-country') && $('#nf-country').value) || 'EG';
     const small = S.picked.filter((f) => f.size <= 20 * 1048576);
     msg.className = 'msg-line';
     if (!drive && !small.length) { msg.className = 'msg-line bad'; msg.textContent = 'ضع رابط مجلد Drive، أو اختر ملفًا واحدًا على الأقل.'; return; }
@@ -389,9 +412,9 @@ textarea { min-height: 84px; resize: vertical; }
       }
       const now = new Date().toISOString();
       const d = { name: name || 'ملف ' + new Date().toLocaleDateString('ar-EG'), status: 'requested', created: now, updated: now,
-                  source: { drive: drive || null, uploads }, request_notes: notes || null, stages: {} };
+                  source: { drive: drive || null, uploads }, request_notes: notes || null, stages: {}, country };
       await S.db.doc('dossiers/' + id).set(d);
-      const text = ['[مكتب eBOX] ملف جديد', 'المعرّف: ' + id, 'الاسم: ' + d.name, drive ? 'مجلد Drive: ' + drive : null,
+      const text = ['[مكتب eBOX] ملف جديد', 'المعرّف: ' + id, 'الاسم: ' + d.name, 'الدولة: ' + country, drive ? 'مجلد Drive: ' + drive : null,
         uploads.length ? 'ملفات مرفوعة إلى المكتب: ' + uploads.map((u) => u.name + ' (' + u.asset + ')').join('، ') : null,
         notes ? 'ملاحظات: ' + notes : null].filter(Boolean).join('\n');
       const sent = await tell(text);
