@@ -261,11 +261,10 @@ def ich_layer(seq, previous=()):
     for xml, t in ((idx, tree), (reg, rtree)):
         if t is None:
             continue
-        w3 = sum(1 for lf in t.iter('{*}leaf') if lf.get(XLINK_W3) is not None)
-        if w3:
-            rid = 'ICH-Q36-03' if xml == idx else 'ICH-Q36-07'
-            out[rid].append((f'{xml.name}: {w3} leaf href(s) in the namespace http://www.w3.org/1999/xlink; the ICH DTD fixes it as '
-                             'http://www.w3c.org/1999/xlink, so a validator reads no xlink:href', True))
+        w3 = sum(1 for lf in t.iter('{*}leaf') if lf.get(XLINK_W3) is not None) if xml == idx else 0
+        if w3:       # the ICH backbone only: a regional XML follows its own DTD or schema (the TGA's au-regional.xsd uses the W3C's)
+            out['ICH-Q36-03'].append((f'{xml.name}: {w3} leaf href(s) in the namespace http://www.w3.org/1999/xlink; the ICH DTD fixes '
+                                      'it as http://www.w3c.org/1999/xlink, so a validator reads no xlink:href', True))
         for lf in t.iter('{*}leaf'):                # any namespace: the TGA's regional XML puts its leaves in «tga_ectd»
             op, href = lf.get('operation') or '', lf.get(XLINK) or lf.get(XLINK_W3) or ''
             lid = lf.get('ID') or ''

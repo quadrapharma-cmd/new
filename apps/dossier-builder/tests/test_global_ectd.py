@@ -205,6 +205,38 @@ def test_a_regional_xml_in_its_own_namespace_is_read(eu_seq, tmp_path):
     assert r['ICH-Q36-11']['status'] == 'fail' and any(m1.name in f for f in r['ICH-Q36-11']['failures'])     # its leaf's MD5 is checked
 
 
+XSD = '''<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://europa.eu.int" elementFormDefault="unqualified">
+  <xs:element name="eu-backbone"><xs:complexType>
+    <xs:sequence><xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip" namespace="##any"/></xs:sequence>
+    <xs:anyAttribute processContents="skip" namespace="##any"/>
+  </xs:complexType></xs:element>
+</xs:schema>
+'''
+
+
+def test_a_schema_based_regional_xml_may_use_the_w3c_xlink_namespace(eu_seq, tmp_path):
+    """The TGA's au-regional.xml is defined by a schema (au-regional.xsd) that uses the W3C's own xlink namespace: only the ICH
+    backbone fixes «w3c.org». Such a regional file is valid against its own schema, its leaves are read, and the package reads
+    their hrefs too (they were all read as one empty href)."""
+    from dossier_engine.validators import package
+    s = as_region(eu_seq, tmp_path, 'au')
+    reg = s / 'm1' / 'au' / 'au-regional.xml'
+    (s / 'util' / 'dtd' / 'au-regional.xsd').write_text(XSD, encoding='utf-8')
+    t = re.sub(r'<!DOCTYPE[^>]*>\s*', '', reg.read_text(encoding='utf-8'), count=1)
+    t = t.replace('xmlns:xlink="http://www.w3c.org/1999/xlink"', 'xmlns:xlink="http://www.w3.org/1999/xlink" '
+                  'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '
+                  'xsi:schemaLocation="http://europa.eu.int ../../util/dtd/au-regional.xsd"', 1)
+    reg.write_text(t, encoding='utf-8')
+    rewrite_index(s, lambda x: re.sub(r'(<leaf [^>]*?)checksum="[0-9a-f]{32}"([^>]*xlink:href="m1/au/au-regional\.xml")',
+                                      lambda m: m.group(1) + f'checksum="{md5(reg)}"' + m.group(2), x))
+    r = {x['rule']: x for x in ich(G.validate(s))['results']}
+    assert r['ICH-Q36-07']['status'] == 'pass', r['ICH-Q36-07']['failures']
+    assert r['ICH-Q36-13']['status'] == 'pass' and r['ICH-Q36-12']['status'] == 'pass'
+    leaves = package.leaves(s)
+    m1 = [k for k in leaves if k.startswith('m1/au/') and k.endswith('.pdf')]
+    assert len(m1) == sum(1 for _ in (s / 'm1' / 'au').rglob('*.pdf')) and '' not in leaves
+
+
 def test_a_leaf_may_point_into_an_earlier_sequence_or_another_application(eu_seq, tmp_path):
     first = copy(eu_seq, tmp_path)
     later = first.parent / '0001'

@@ -46,7 +46,7 @@ def leaves(seq):
             continue
         base = xml.parent.relative_to(seq)
         for lf in tree.iter('{*}leaf'):                  # any namespace (the TGA's regional XML: «tga_ectd»)
-            href = lf.get(XLINK) or ''
+            href = lf.get(XLINK) or lf.get('{http://www.w3.org/1999/xlink}href') or ''      # a regional schema may use the W3C's (the TGA's)
             rel = (base / href).as_posix() if href else ''
             t = lf.find('{*}title')
             out[_norm(rel)] = {'md5': (lf.get('checksum') or '').lower(), 'operation': lf.get('operation'), 'title': (t.text or '').strip() if t is not None else '',
