@@ -30,8 +30,10 @@ def write_files(files, root):
 
 
 def sequences(root):
-    """Every sequence folder (four digits, holding its index.xml), in order."""
-    return sorted((p.parent for p in Path(root).rglob('index.xml') if re.fullmatch(r'\d{4}', p.parent.name)), key=lambda p: p.name)
+    """Every sequence folder (four digits, holding its index.xml), application by application (the folder that holds them), each
+    application's sequences in their order."""
+    return sorted((p.parent for p in Path(root).rglob('index.xml') if re.fullmatch(r'\d{4}', p.parent.name)),
+                  key=lambda p: (p.parent.as_posix(), p.name))
 
 
 def leaves(seq):
@@ -43,10 +45,10 @@ def leaves(seq):
         except (etree.XMLSyntaxError, OSError):
             continue
         base = xml.parent.relative_to(seq)
-        for lf in tree.iter('leaf'):
+        for lf in tree.iter('{*}leaf'):                  # any namespace (the TGA's regional XML: «tga_ectd»)
             href = lf.get(XLINK) or ''
             rel = (base / href).as_posix() if href else ''
-            t = lf.find('title')
+            t = lf.find('{*}title')
             out[_norm(rel)] = {'md5': (lf.get('checksum') or '').lower(), 'operation': lf.get('operation'), 'title': (t.text or '').strip() if t is not None else '',
                                'modified': lf.get('modified-file'), 'xml': xml.name}
     return out
@@ -77,20 +79,23 @@ def validate_files(files, name='package'):
         if not seqs:
             raise PackageError('E-NO-SEQUENCE', 'No eCTD sequence in the package: a four-digit folder (0000, 0001…) holding its index.xml.',
                                'لا يوجد تسلسل eCTD في الملف: مجلد من 4 أرقام (0000، 0001…) بداخله index.xml.')
-        reports, rows, prev, notes = {}, [], [], []
-        for s in seqs:
-            res = global_ectd.validate(s, previous=list(prev))
+        reports, rows, prev, notes = {}, [], {}, []
+        apps = {s.parent for s in seqs}
+        for s in seqs:                                   # the lifecycle runs within one application: its own earlier sequences only
+            app = s.parent.relative_to(tmp).as_posix()
+            name = s.name if len(apps) == 1 else f'{app}/{s.name}'
+            res = global_ectd.validate(s, previous=list(prev.get(s.parent, [])))
             layers = list(res['layers'].values())
             ich, own = layers[0], (layers[1] if len(layers) > 1 else None)
             reg = res['region'] if own is not None else 'ich'
-            reports[f'{s.name} · ICH (every country)'] = ich
+            reports[f'{name} · ICH (every country)'] = ich
             if own is not None:
-                reports[f'{s.name} · {OWN[reg]}'] = own
+                reports[f'{name} · {OWN[reg]}'] = own
             main = own or ich
-            rows.append({'sequence': s.name, 'region': reg, 'm1': res['region'], 'ok': res['ok'], 'counts': main['counts'],
+            rows.append({'sequence': s.name, 'application': app, 'label': name, 'region': reg, 'm1': res['region'], 'ok': res['ok'], 'counts': main['counts'],
                          'coverage': main['coverage'], 'ich': {k: ich[k] for k in ('ok', 'counts', 'coverage')}})
             notes.append(global_ectd.note(res))
-            prev.append(s)
+            prev.setdefault(s.parent, []).append(s)
         note = notes[0] if len(set(notes)) == 1 else (
             'Layer 1 is ICH\'s, the same in every country; each region\'s own criteria follow where the program has them. '
             'Not an authority\'s own validator.',
@@ -106,7 +111,8 @@ def compare_files(files_a, files_b):
     try:
         write_files(files_a, ta)
         write_files(files_b, tb)
-        sa, sb = {s.name: s for s in sequences(ta)}, {s.name: s for s in sequences(tb)}
+        key = lambda root, seqs: {(s.name if len({x.parent for x in seqs}) == 1 else s.relative_to(root).as_posix()): s for s in seqs}   # noqa: E731
+        sa, sb = key(ta, sequences(ta)), key(tb, sequences(tb))
         if not sa or not sb:
             raise PackageError('E-NO-SEQUENCE', 'Each package needs at least one eCTD sequence (a four-digit folder with its index.xml).',
                                'كل حزمة تحتاج إلى تسلسل eCTD واحد على الأقل (مجلد من 4 أرقام بداخله index.xml).')

@@ -61,6 +61,19 @@ def test_a_region_without_criteria_gets_the_ich_checks(tmp_path, seq):
     assert 'ICH-Q36-13' in r['html'] and 'stray.pdf' in r['html'] and 'ICH-Q36-05' in r['html']
 
 
+def test_a_package_of_two_applications_keeps_each_ones_lifecycle(tmp_path, seq):
+    """The TGA's sample (27/11/2026) holds two applications, each with its own 0000: their rows could not be told apart, and the
+    second application's 0000 was checked with the first one's as an «earlier sequence»."""
+    files = [(f'{app}/' + p.relative_to(seq).as_posix(), p.read_bytes()) for app in ('e000222', 'e000111') for p in seq.rglob('*') if p.is_file()]
+    r = package.validate_files(files, 'two applications')
+    rows = r['sequences']
+    assert [(x['application'], x['sequence'], x['label']) for x in rows] == [('e000111', '0000', 'e000111/0000'), ('e000222', '0000', 'e000222/0000')]
+    assert all(x['ok'] and x['coverage'] == '108/111' for x in rows)          # each a first sequence of its own: the EU's lifecycle rules run
+    assert 'e000111/0000 · ICH (every country)' in r['html'] and 'e000222/0000 · ICH (every country)' in r['html']
+    one = package.validate_files([(p.relative_to(seq).as_posix(), p.read_bytes()) for p in seq.rglob('*') if p.is_file()], 'one')
+    assert one['sequences'][0]['label'] == '0000'                                 # one application: the sequence alone, as before
+
+
 def test_two_packages_are_compared_leaf_by_leaf(tmp_path, seq, docs):
     a = [(p.relative_to(seq).as_posix(), p.read_bytes()) for p in seq.rglob('*') if p.is_file()]
     b = []

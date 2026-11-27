@@ -4123,7 +4123,7 @@ function packageView(tok){
   $('#pkgGo').onclick=async()=>{ const fd=new FormData(); fd.append('file', $('#pkgFile').files[0]); $('#pkgGo').disabled=true; $('#pkgOut').innerHTML=`<div class="small muted">${esc(t('pkgBusy'))}</div>`;
     try{ const r=await api('/package/validate',{method:'POST',body:fd});
       $('#pkgOut').innerHTML=`<div class="alert ${r.ok?'ok':'bad'}"><p class="small"><b>${esc(t(r.ok?'pkgOk':'pkgBad'))}</b></p></div>
-        <div class="tablewrap"><table><thead><tr><th>${esc(t('pkgSeq'))}</th><th>${esc(t('pkgRegion'))}</th><th>${esc(t('pkgRes'))}</th></tr></thead><tbody>${r.sequences.map(s=>`<tr><td class="code">${esc(s.sequence)}</td><td>${esc(t('pkgR_'+s.region))}</td>
+        <div class="tablewrap"><table><thead><tr><th>${esc(t('pkgSeq'))}</th><th>${esc(t('pkgRegion'))}</th><th>${esc(t('pkgRes'))}</th></tr></thead><tbody>${r.sequences.map(s=>`<tr><td class="code">${esc(s.label||s.sequence)}</td><td>${esc(t('pkgR_'+s.region))}</td>
         <td class="small">${s.ok?'✓':'✗'} ${esc(t('pkgCounts').replace('{p}',s.counts.pass).replace('{f}',s.counts.fail).replace('{w}',s.counts.warning).replace('{n}',s.counts.not_run))} · ${esc(s.coverage)}${s.ich&&s.region!=='ich'?`<div class="muted" data-ich>${esc(t('pkgIch'))}: ${s.ich.ok?'✓':'✗'} ${esc(t('pkgCounts').replace('{p}',s.ich.counts.pass).replace('{f}',s.ich.counts.fail).replace('{w}',s.ich.counts.warning).replace('{n}',s.ich.counts.not_run))} · ${esc(s.ich.coverage)}</div>`:''}</td></tr>`).join('')}</tbody></table></div>
         <iframe id="pkgRep" title="report" style="width:100%;height:52vh;border:1px solid var(--line);border-radius:10px;background:#fff"></iframe>`;
       $('#pkgRep').srcdoc=r.html; }

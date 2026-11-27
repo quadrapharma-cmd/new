@@ -261,12 +261,12 @@ def ich_layer(seq, previous=()):
     for xml, t in ((idx, tree), (reg, rtree)):
         if t is None:
             continue
-        w3 = sum(1 for lf in t.iter('leaf') if lf.get(XLINK_W3) is not None)
+        w3 = sum(1 for lf in t.iter('{*}leaf') if lf.get(XLINK_W3) is not None)
         if w3:
             rid = 'ICH-Q36-03' if xml == idx else 'ICH-Q36-07'
             out[rid].append((f'{xml.name}: {w3} leaf href(s) in the namespace http://www.w3.org/1999/xlink; the ICH DTD fixes it as '
                              'http://www.w3c.org/1999/xlink, so a validator reads no xlink:href', True))
-        for lf in t.iter('leaf'):
+        for lf in t.iter('{*}leaf'):                # any namespace: the TGA's regional XML puts its leaves in «tga_ectd»
             op, href = lf.get('operation') or '', lf.get(XLINK) or lf.get(XLINK_W3) or ''
             lid = lf.get('ID') or ''
             where = f'{xml.name} leaf {lid or "?"}'
@@ -289,7 +289,7 @@ def ich_layer(seq, previous=()):
                 out['ICH-Q36-04'].append((f'{where}: {op} without an xlink:href', True))
             if op != 'delete' and (lf.get('checksum-type') or '').lower() not in ('md5', ''):
                 out['ICH-Q36-04'].append((f'{where}: checksum-type «{lf.get("checksum-type")}»', True))
-            t_el = lf.find('title')
+            t_el = lf.find('{*}title')
             if op != 'delete' and (t_el is None or not (t_el.text or '').strip()):
                 out['ICH-Q36-20'].append((f'{where}: empty title', True))
             if not href or op == 'delete':
@@ -299,11 +299,12 @@ def ich_layer(seq, previous=()):
                 rel = target.relative_to(seq.resolve()).as_posix()
             except ValueError:
                 rel = None
-            if rel is None:
-                if previous:
-                    hit = any((Path(p) / Path(href).as_posix().split('/', 2)[-1]).exists() for p in previous)
-                    if not hit:
-                        out['ICH-Q36-12'].append((f'{where}: «{href}» outside this sequence and not found in an earlier one', True))
+            if rel is None:                           # an earlier sequence, or another application (the region decides, QA 36 item 12)
+                if target.is_file():                  # found where it points, beside this sequence: its MD5 is checked too
+                    if lf.get('checksum') and lf.get('checksum').lower() != md5(target):
+                        out['ICH-Q36-11'].append((f'{href}: MD5 {md5(target)}, the leaf says {lf.get("checksum")}', True))
+                elif previous:
+                    out['ICH-Q36-12'].append((f'{where}: «{href}» outside this sequence and not found where it points', True))
                 else:
                     not_run.setdefault('ICH-Q36-12-outside', f'{where}: «{href}» points to an earlier sequence (none given)')
                 continue
@@ -312,8 +313,8 @@ def ich_layer(seq, previous=()):
                 out['ICH-Q36-12'].append((f'{where}: «{rel}» missing', True))
             elif lf.get('checksum') and lf.get('checksum').lower() != md5(target):      # a missing checksum is ICH-Q36-04's
                 out['ICH-Q36-11'].append((f'{rel}: MD5 {md5(target)}, the leaf says {lf.get("checksum")}', True))
-        for ne in t.iter('node-extension'):
-            t_el = ne.find('title')
+        for ne in t.iter('{*}node-extension'):
+            t_el = ne.find('{*}title')
             if t_el is None or not (t_el.text or '').strip():
                 out['ICH-Q36-20'].append((f'{xml.name}: node-extension with an empty title', True))
     if tree is not None:                              # a lowest-level heading present must hold a leaf (QA 36 item 16)

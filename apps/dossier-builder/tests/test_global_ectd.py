@@ -182,6 +182,44 @@ def test_what_published_samples_showed(eu_seq, tmp_path):
     assert st(ich(res))['ICH-Q36-05'] == 'fail' and res['region'] == 'eu' and res['region_from_earlier'] and res['own_criteria_run']
 
 
+def namespaced(seq, tmp_path, ns='tga_ectd'):
+    """The sequence moved to region «au» and its regional XML's elements put in a default namespace, as the TGA's own sample does
+    (<tga_ectd xmlns="tga_ectd">): every leaf is then {tga_ectd}leaf. index.xml's leaf for the regional file kept true."""
+    s = as_region(seq, tmp_path, 'au')
+    reg = s / 'm1' / 'au' / 'au-regional.xml'
+    reg.write_text(reg.read_text(encoding='utf-8').replace('<eu:eu-backbone ', f'<eu:eu-backbone xmlns="{ns}" ', 1), encoding='utf-8')
+    rewrite_index(s, lambda t: re.sub(r'(<leaf [^>]*?)checksum="[0-9a-f]{32}"([^>]*xlink:href="m1/au/au-regional\.xml")',
+                                      lambda m: m.group(1) + f'checksum="{md5(reg)}"' + m.group(2), t))
+    return s
+
+
+def test_a_regional_xml_in_its_own_namespace_is_read(eu_seq, tmp_path):
+    """The TGA's sample (27/11/2026): its regional leaves are in the namespace «tga_ectd»; they were not read, and every Module 1 file
+    was reported as having no leaf. They are read now, and checked like any other leaf."""
+    s = namespaced(eu_seq, tmp_path)
+    r = {x['rule']: x for x in ich(G.validate(s))['results']}
+    assert r['ICH-Q36-13']['status'] == 'pass' and r['ICH-Q36-12']['status'] == 'pass', r['ICH-Q36-13']['failures'][:3]
+    m1 = next((s / 'm1' / 'au').rglob('*.pdf'))
+    open(m1, 'ab').write(b'\n%changed')
+    r = {x['rule']: x for x in ich(G.validate(s))['results']}
+    assert r['ICH-Q36-11']['status'] == 'fail' and any(m1.name in f for f in r['ICH-Q36-11']['failures'])     # its leaf's MD5 is checked
+
+
+def test_a_leaf_may_point_into_an_earlier_sequence_or_another_application(eu_seq, tmp_path):
+    first = copy(eu_seq, tmp_path)
+    later = first.parent / '0001'
+    shutil.copytree(first, later)
+    pdf = next((later / 'm3').rglob('*.pdf'))
+    rel = pdf.relative_to(later).as_posix()
+    pdf.unlink()                                       # the file stays in 0000; 0001's leaf points to it there
+    rewrite_index(later, lambda t: t.replace(f'xlink:href="{rel}"', f'xlink:href="../0000/{rel}"', 1))
+    assert st(ich(G.validate(later, previous=[first])))['ICH-Q36-12'] == 'pass'
+    (first / rel).unlink()                             # and now it is nowhere
+    assert st(ich(G.validate(later, previous=[first])))['ICH-Q36-12'] == 'fail'
+    r = next(x for x in ich(G.validate(later))['results'] if x['rule'] == 'ICH-Q36-12')
+    assert r['status'] == 'pass' and 'earlier sequences' in r['reason']        # the hrefs here passed; those outside, said not followed
+
+
 def test_the_pdf_rules_come_from_the_programs_pdf_check(eu_seq, tmp_path):
     s = copy(eu_seq, tmp_path)
     pdf = next((s / 'm3').rglob('*.pdf'))
