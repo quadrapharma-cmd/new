@@ -492,3 +492,21 @@ AU 3.1 eCTD Sample Submissions/e000111/0001 <- previous passed: ['AU 3.1 eCTD Sa
 | CLI e000111/0000, e000111/0001, e000222/0000 | 2.26 s, 0.42 s, 0.45 s |
 | Python validate (same order) | 2.12 s, 0.20 s, 0.13 s |
 | package.validate_files | 2.23 s |
+
+## 8. After the fixes (re-run at commit 90eaf8a, the same zip, SHA-256 confirmed)
+
+What the run above found was fixed in two commits: daa8d67 (regional leaves read in any namespace; a leaf pointing into an earlier
+sequence or another application followed to where it points; each application's lifecycle kept apart, rows naming their application)
+and 90eaf8a (the «w3c.org» xlink rule applies to the ICH backbone only: the TGA's au-regional.xsd uses the W3C's own namespace, and
+the package comparison reads those hrefs too). Each fix has a test that fails without it. The re-run, in the same work session:
+
+| Sequence | previous | pass | fail | warning | not run | ok |
+|---|---|---|---|---|---|---|
+| e000111/0000 | — | 22 | 0 | 1 | 0 | yes |
+| e000111/0001 | e000111/0000 | 22 | 0 | 1 | 0 | yes |
+| e000222/0000 | — | 22 | 0 | 1 | 0 | yes |
+
+- The only non-pass result left in each is ICH-FMT-03 (fonts not embedded: Tahoma, Times New Roman) — what the sample's PDFs are.
+- ICH-Q36-07 and ICH-Q36-13 pass. The package check: ok, rows e000111/0000, e000111/0001, e000222/0000, each with its application.
+- `package.leaves()` reads 51, 7 and 5 leaves' files (49, 6 and 4 regional); in e000111/0001 two «new» leaves point to the same file
+  (104-expert/1041-quality/quality.pdf), which the specification allows (one file, several leaves), so it is not flagged.
