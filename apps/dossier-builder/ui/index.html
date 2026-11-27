@@ -694,7 +694,7 @@ const T = {
   pkgCmp:{en:'Compare two packages',ar:'مقارنة حزمتين'}, pkgCmpSub:{en:'What changed from A to B — e.g. the package made here and the one the consultant delivered.',ar:'ما الذي تغيّر من A إلى B — كالحزمة التي أُعدّت هنا والحزمة التي سلّمها الاستشاري.'}, pkgCmpGo:{en:'Compare',ar:'مقارنة'},
   pkgBusy:{en:'Working…',ar:'جارٍ العمل…'}, pkgOk:{en:'Every sequence conforms to the criteria checked below.',ar:'كل التسلسلات مطابقة للمعايير التي فُحصت أدناه.'}, pkgBad:{en:'Some sequences do not conform: see the report.',ar:'توجد تسلسلات غير مطابقة: راجع التقرير.'},
   pkgSeq:{en:'Sequence',ar:'التسلسل'}, pkgRegion:{en:'Criteria',ar:'المعايير'}, pkgRes:{en:'Result',ar:'النتيجة'}, pkgR_eu:{en:'EU Module 1 3.1.1 · criteria 8.2',ar:'Module 1 الأوروبي 3.1.1 · معايير 8.2'},
-  pkgR_eg:{en:'Egypt · provisional profile',ar:'مصر · ملف مؤقت'}, pkgR_ich:{en:'ICH only (no region criteria here)',ar:'ICH فقط (لا توجد هنا معايير لهذه المنطقة)'},
+  pkgR_eg:{en:'Egypt · provisional profile',ar:'مصر · ملف مؤقت'}, pkgR_ich:{en:'ICH only (no region criteria here)',ar:'ICH فقط (لا توجد هنا معايير لهذه المنطقة)'}, pkgR_gc:{en:'GCC Module 1 1.5',ar:'Module 1 الخليجي 1.5'}, pkgIch:{en:'ICH rules (every country)',ar:'قواعد ICH (لكل الدول)'},
   pkgCounts:{en:'pass {p} · fail {f} · warning {w} · not run {n}',ar:'نجح {p} · فشل {f} · تنبيه {w} · لم يُفحص {n}'}, pkgSame:{en:'The two packages are the same.',ar:'الحزمتان متطابقتان.'},
   pkgOnly:{en:'only in {x}',ar:'موجود في {x} فقط'}, pkgNoCh:{en:'no change',ar:'لا تغيير'}, pkgC_added:{en:'added',ar:'أُضيف'}, pkgC_removed:{en:'removed',ar:'حُذف'}, pkgC_changed:{en:'changed',ar:'تغيّر'},
   pkgC_retitled:{en:'new title',ar:'عنوان جديد'}, pkgC_operation:{en:'other operation',ar:'عملية مختلفة'},
@@ -4124,7 +4124,7 @@ function packageView(tok){
     try{ const r=await api('/package/validate',{method:'POST',body:fd});
       $('#pkgOut').innerHTML=`<div class="alert ${r.ok?'ok':'bad'}"><p class="small"><b>${esc(t(r.ok?'pkgOk':'pkgBad'))}</b></p></div>
         <div class="tablewrap"><table><thead><tr><th>${esc(t('pkgSeq'))}</th><th>${esc(t('pkgRegion'))}</th><th>${esc(t('pkgRes'))}</th></tr></thead><tbody>${r.sequences.map(s=>`<tr><td class="code">${esc(s.sequence)}</td><td>${esc(t('pkgR_'+s.region))}</td>
-        <td class="small">${s.ok?'✓':'✗'} ${esc(t('pkgCounts').replace('{p}',s.counts.pass).replace('{f}',s.counts.fail).replace('{w}',s.counts.warning).replace('{n}',s.counts.not_run))} · ${esc(s.coverage)}</td></tr>`).join('')}</tbody></table></div>
+        <td class="small">${s.ok?'✓':'✗'} ${esc(t('pkgCounts').replace('{p}',s.counts.pass).replace('{f}',s.counts.fail).replace('{w}',s.counts.warning).replace('{n}',s.counts.not_run))} · ${esc(s.coverage)}${s.ich&&s.region!=='ich'?`<div class="muted" data-ich>${esc(t('pkgIch'))}: ${s.ich.ok?'✓':'✗'} ${esc(t('pkgCounts').replace('{p}',s.ich.counts.pass).replace('{f}',s.ich.counts.fail).replace('{w}',s.ich.counts.warning).replace('{n}',s.ich.counts.not_run))} · ${esc(s.ich.coverage)}</div>`:''}</td></tr>`).join('')}</tbody></table></div>
         <iframe id="pkgRep" title="report" style="width:100%;height:52vh;border:1px solid var(--line);border-radius:10px;background:#fff"></iframe>`;
       $('#pkgRep').srcdoc=r.html; }
     catch(e){ $('#pkgOut').innerHTML=`<div class="alert bad"><p class="small">${esc(e.message)}</p></div>`; }

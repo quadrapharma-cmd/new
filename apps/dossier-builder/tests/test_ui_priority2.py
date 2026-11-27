@@ -263,6 +263,7 @@ def test_the_package_page_checks_an_ectd_zip_made_anywhere(server, tmp_path):
         page.wait_for_selector('#pkgOut table')
         out = page.inner_text('#pkgOut')
         assert '0000' in out and 'Module 1 الأوروبي' in out and '108/111' in out
+        assert 'قواعد ICH (لكل الدول)' in out and '23/23' in out                     # the ICH rules, the same in every country
         page.set_input_files('#pkgA', str(z)); page.set_input_files('#pkgB', str(z))
         page.click('#cmpGo')
         page.wait_for_selector('#cmpOut .alert')

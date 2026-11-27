@@ -1,8 +1,8 @@
 """Check any eCTD 3.2.2 package, whoever made it (updates list, item 18): a ZIP of one sequence or of several. Each sequence (a
-four-digit folder with its index.xml) is checked by its region's validator — Egypt's provisional profile (m1/eg/eg-regional.xml) or
-the EU's criteria 8.2 (m1/eu/eu-regional.xml), earlier sequences given for the lifecycle rules — and a region the program has no
-criteria for gets the ICH checks every eCTD must pass: the backbone parses, every leaf's file is there with its MD5, no file is left
-unreferenced, index-md5.txt matches. Two packages can be compared: what was added, removed or changed, sequence by sequence."""
+four-digit folder with its index.xml) goes through the check for any country (global_ectd.py): first the ICH rules every eCTD must
+pass in every region (ICH's validator checklist, eCTD Q&A 36, and the format rules), then its region's own criteria where the program
+has them — Egypt's provisional profile (m1/eg), the EU's criteria 8.2 (m1/eu), the GCC's specification (m1/gc) — earlier sequences
+given for the lifecycle rules. Two packages can be compared: what was added, removed or changed, sequence by sequence."""
 import hashlib, re, shutil, tempfile
 from pathlib import Path, PurePosixPath
 from lxml import etree
@@ -34,13 +34,6 @@ def sequences(root):
     return sorted((p.parent for p in Path(root).rglob('index.xml') if re.fullmatch(r'\d{4}', p.parent.name)), key=lambda p: p.name)
 
 
-def region_of(seq):
-    for reg in ('eu', 'eg'):
-        if (seq / 'm1' / reg / f'{reg}-regional.xml').exists():
-            return reg
-    return None
-
-
 def leaves(seq):
     """{href: {'md5', 'operation', 'title', 'modified', 'xml'}} of the backbone and the regional XML."""
     out = {}
@@ -69,48 +62,14 @@ def _norm(p):
     return '/'.join(parts)
 
 
-def ich_checks(seq):
-    """The checks every eCTD 3.2.2 sequence must pass, whatever its region."""
-    results = []
-
-    def res(rid, text, fails):
-        results.append({'rule': rid, 'severity': 'pass_fail', 'text': text, 'provenance': 'ICH', 'source': 'ICH eCTD Specification v3.2.2',
-                        'status': 'fail' if fails else 'pass', 'failures': fails[:50]})
-    idx = seq / 'index.xml'
-    try:
-        etree.parse(str(idx))
-        res('ICH-XML', 'index.xml is well-formed XML.', [])
-    except etree.XMLSyntaxError as e:
-        res('ICH-XML', 'index.xml is well-formed XML.', [str(e)])
-        return results
-    md5f = seq / 'index-md5.txt'
-    real = hashlib.md5(idx.read_bytes()).hexdigest()
-    got = md5f.read_text(errors='replace').strip().split()[0].lower() if md5f.exists() and md5f.read_text(errors='replace').strip() else ''
-    res('ICH-MD5-INDEX', 'index-md5.txt holds the MD5 of index.xml.', [] if got == real else [f'index-md5.txt: «{got or "missing"}», index.xml: {real}'])
-    lv = leaves(seq)
-    missing, bad = [], []
-    for href, x in lv.items():
-        if x['operation'] == 'delete':
-            continue
-        f = seq / href
-        if not f.exists():
-            missing.append(href)
-        elif x['md5'] and hashlib.md5(f.read_bytes()).hexdigest() != x['md5']:
-            bad.append(href)
-    res('ICH-FILE', 'Every leaf\'s file is in the sequence.', missing)
-    res('ICH-MD5', 'Every leaf\'s file has the MD5 its leaf states.', bad)
-    known = set(lv) | {'index.xml', 'index-md5.txt'}
-    extra = [p.relative_to(seq).as_posix() for p in seq.rglob('*') if p.is_file()]
-    extra = [p for p in extra if p not in known and not p.startswith('util/') and not re.fullmatch(r'm1/[a-z]{2}/[a-z]{2}-regional\.xml', p)]
-    res('ICH-EXTRA', 'No file in the sequence that no leaf refers to.', extra)
-    from .ectd32 import summarise
-    return summarise(results)
+OWN = {'eu': 'EU M1 3.1.1 · criteria 8.2', 'eg': 'EG (provisional profile)', 'gc': 'GCC M1 1.5'}
 
 
 def validate_files(files, name='package'):
-    """files: [(path, bytes)] of the package → {'sequences': [{seq, region, ok, counts, coverage}], 'reports': {...}, 'html'}."""
-    from . import ectd32 as v32, ectd32_eu as v32eu, report
-    from ..writers import ectd32 as w32, ectd32_eu as w32eu
+    """files: [(path, bytes)] of the package → {'sequences': [{sequence, region, m1, ok, counts, coverage, ich}], 'html'}: `region` is
+    the region whose own criteria were run (eu, eg, gc) or «ich» when only the ICH rules were; counts and coverage are those of the
+    region's criteria (of the ICH rules for «ich»); `ich` is the ICH layer's own result; `ok` needs both."""
+    from . import global_ectd, report
     tmp = Path(tempfile.mkdtemp())
     try:
         write_files(files, tmp)
@@ -118,22 +77,24 @@ def validate_files(files, name='package'):
         if not seqs:
             raise PackageError('E-NO-SEQUENCE', 'No eCTD sequence in the package: a four-digit folder (0000, 0001…) holding its index.xml.',
                                'لا يوجد تسلسل eCTD في الملف: مجلد من 4 أرقام (0000، 0001…) بداخله index.xml.')
-        reports, rows, prev, regions = {}, [], [], set()
+        reports, rows, prev, notes = {}, [], [], []
         for s in seqs:
-            reg = region_of(s)
-            regions.add(reg)
-            if reg == 'eu':
-                rep = v32eu.validate(s, w32eu.DEFAULT_PROFILE, previous=list(prev))
-            elif reg == 'eg':
-                rep = v32.validate(s, w32.DEFAULT_PROFILE, previous=list(prev))
-            else:
-                rep = ich_checks(s)
-            label = f"{s.name} · {'EU M1 3.1.1' if reg == 'eu' else 'EG (provisional profile)' if reg == 'eg' else 'ICH only'}"
-            reports[label] = rep
-            rows.append({'sequence': s.name, 'region': reg or 'ich', 'ok': rep['ok'], 'counts': rep['counts'], 'coverage': rep['coverage']})
+            res = global_ectd.validate(s, previous=list(prev))
+            layers = list(res['layers'].values())
+            ich, own = layers[0], (layers[1] if len(layers) > 1 else None)
+            reg = res['region'] if own is not None else 'ich'
+            reports[f'{s.name} · ICH (every country)'] = ich
+            if own is not None:
+                reports[f'{s.name} · {OWN[reg]}'] = own
+            main = own or ich
+            rows.append({'sequence': s.name, 'region': reg, 'm1': res['region'], 'ok': res['ok'], 'counts': main['counts'],
+                         'coverage': main['coverage'], 'ich': {k: ich[k] for k in ('ok', 'counts', 'coverage')}})
+            notes.append(global_ectd.note(res))
             prev.append(s)
-        note = report.EU_NOTE if regions == {'eu'} else report.EG_NOTE if regions == {'eg'} else (
-            'A region this program has no criteria for: only the ICH checks every eCTD must pass were run. Not an authority\'s validator.')
+        note = notes[0] if len(set(notes)) == 1 else (
+            'Layer 1 is ICH\'s, the same in every country; each region\'s own criteria follow where the program has them. '
+            'Not an authority\'s own validator.',
+            'الطبقة الأولى قواعد ICH، وهي نفسها في كل الدول، ثم معايير كل منطقة حيث توجد في البرنامج. وهذه ليست أداة التحقق الخاصة بالجهة.')
         return {'name': name, 'sequences': rows, 'ok': all(r['ok'] for r in rows), 'html': report.render(name, reports, note)}
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
