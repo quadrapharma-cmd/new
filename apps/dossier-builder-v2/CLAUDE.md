@@ -880,6 +880,12 @@ When a part is done or an open item is closed, update «What exists» and «Open
   because the 23/11 yes was for DTP-HB alone; and the worker sessions have no Google Drive tools, so a folder link is
   turned into `source.drive_files` (listed here with the Drive connector) for the worker to download by link.
 
+- **27/11/2026, «عايزه يشتغل بيك بس يكون متبرمج انه برنامج يعمل ايه ملف مش كل خطوة تقولي»** (after «برنامج كامل … بكل
+  الصلاحيات لعمل اي عمليه … شغل تجاري»): a standing yes for EVERY dossier on the desk — `config/desk` `drive_read`, `drive_write`
+  and `results_in_page` all true (his words in `said.all`). Never ask him again per dossier for these. It runs on his account
+  through the work sessions (no API key); the commercial questions (a desktop program for clients or a hosted service, Windows,
+  the key) were put to him and are still open.
+
 ## Open items (propose when relevant; do when he asks)
 - Old program, next pieces (one at a time, each on his real files first): the 14/11 update and measuring Claude's reading (need
   the API key: `ANTHROPIC_API_KEY` in the environment's settings, added by him), «شروط الشكل لكل دولة», the Assistant on his
