@@ -102,9 +102,14 @@ def test_a_new_dossier_starts_its_own_session(page):
     assert 'لم تُفعَّل' in note.inner_text()                                     # Drive folders are not read yet
     page.fill('#nf-name', 'ملف للتجربة')
     page.fill('#nf-drive', 'https://drive.google.com/drive/folders/abc123')
+    assert page.locator('#nf-country').input_value() == 'EG'                     # Egypt unless another country is chosen
+    page.select_option('#nf-country', 'SA')
     page.click('#nf-go')
     page.wait_for_function('window.__calls.length >= 1')
     c = calls(page)
+    assert '\nالدولة: SA\n' in c[0]['input']['text']
+    d = page.evaluate("[...window.__docs.entries()].find(([p]) => p.startsWith('dossiers/'))[1]")
+    assert d['country'] == 'SA'
     assert len(c) == 1 and c[0]['server'] == 'Claude Code Remote' and c[0]['tool'] == 'fire_trigger'
     assert c[0]['input']['trigger_id'] == 'trig_0DeskTest1' and c[0]['input']['text'].startswith('[مكتب eBOX] ملف جديد\nالمعرّف: d-')
     assert 'مجلد Drive: https://drive.google.com/drive/folders/abc123' in c[0]['input']['text']
