@@ -17,12 +17,15 @@ def _norm(s):
     return re.sub(r'\s+', ' ', s)
 
 
-def _ctd_tokens(name):
+def _ctd_tokens(name, compact=True):
     """CTD numbers in a file name: '3.2.P.5.1' / '3_2_p_5_1' / '1.1.13' (separated) and the ICH
-    App. 4 compact form '32p51' (single digits after the letter) -> '3.2.p.5.1'."""
+    App. 4 compact form '32p51' (single digits after the letter) -> '3.2.p.5.1'. compact=False: the separated form only (a strength
+    such as «250 mg» reads as the compact «2.5.0», so it never decides a place alone)."""
     out = set()
     for m in re.finditer(r'(?<![\w.])([1-5](?:[._ ](?:\d{1,2}|[spar]))+)(?![\w])', name, re.I):
         out.add('.'.join(re.split(r'[._ ]', m.group(1).lower())))
+    if not compact:
+        return out
     for m in re.finditer(r'(?<![a-z0-9])([1-5])([1-9])([spar])?(\d*)(?![0-9])', name, re.I):
         parts = [m[1], m[2]] + ([m[3].lower()] if m[3] else []) + list(m[4])
         if m[3] or m[4]:
@@ -49,6 +52,8 @@ class Classifier:
         """`filename` stays in the signature for the callers; it is not read."""
         tx = _norm(text)[:6000]
         nums = _ctd_tokens(tx[:400])                     # the section number a document prints in its heading
+        dotted = _ctd_tokens(tx[:400], compact=False)    # written with its dots (3.2.S.7.1): the document's own numbering
+        start = _ctd_tokens(tx[:60], compact=False)      # at its very start: its own heading, not a section it refers to further on
         scored = []
         for s in slots:
             if not s.active:
@@ -59,8 +64,14 @@ class Classifier:
             score, why = 0, []
             for sec in r['secs']:
                 if sec in nums:                          # the section a document prints in its heading decides over the words
-                    score += 10                          # it shares with other items («specification» is said by 1.2.3.2 too)
-                    why.append({'en': f'section {sec} in its heading', 'ar': f'رقم البند {sec} في عنوانه'})
+                    score += 15 if sec in start else 10  # it shares with other items («specification» is said by 1.2.3.2 too)
+                    why.append({'en': f'section {sec} in its heading', 'ar': f'رقم البند {sec} في عنوانه'} if sec in dotted else
+                               {'en': f'section {sec} in its text', 'ar': f'رقم البند {sec} في نصه'})
+            if score < 10:                               # a sub-section of the item's own (3.2.S.7.1 of 3.2.S.7), counted once
+                sub = sorted(n for n in dotted for sec in r['secs'] if sec.count('.') >= 1 and n.startswith(sec + '.'))
+                if sub:
+                    score += 8
+                    why.append({'en': f'section {sub[0]} in its heading', 'ar': f'رقم البند {sub[0]} في عنوانه'})
             for p in r['phrases']:
                 if p and re.search(r'(?<![a-z])' + re.escape(p) + r'(?![a-z])', tx):
                     score += 3

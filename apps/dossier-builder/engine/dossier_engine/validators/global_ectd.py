@@ -21,7 +21,8 @@ from pathlib import Path
 import yaml
 from lxml import etree
 
-XLINK = '{http://www.w3c.org/1999/xlink}href'
+XLINK = '{http://www.w3c.org/1999/xlink}href'          # the namespace the ICH DTD fixes («w3c.org», as written in the DTD)
+XLINK_W3 = '{http://www.w3.org/1999/xlink}href'        # the W3C's own: a common slip the DTD does not accept
 ICH_DTD_MD5 = '1d6f631cc6b6357f0f4fe378e5f79a27'      # ich-ectd-3-2.dtd (KB §0; the value the EU and GCC profiles use too)
 ICH_XSL_MD5 = '3a07a202455e954a2eb203c5bb443f77'      # ectd-2-0.xsl
 NAME = re.compile(r'[a-z0-9-]+')
@@ -229,6 +230,8 @@ def ich_layer(seq, previous=()):
     if idx.is_file():
         tree, errs = parse(idx, dtd if dtd.is_file() else None)
         out['ICH-Q36-03'] += [(e, True) for e in errs]
+        if not dtd.is_file():
+            not_run['ICH-Q36-03'] = 'util/dtd/ich-ectd-3-2.dtd is not in the sequence (ICH-Q36-02): index.xml could not be validated against it'
         if tree is not None and not (tree.docinfo.system_url or '').endswith('util/dtd/ich-ectd-3-2.dtd'):
             out['ICH-Q36-03'].append((f'DOCTYPE names «{tree.docinfo.system_url}»', True))
         if md5f.is_file() and md5f.read_bytes() != md5(idx).encode():
@@ -236,8 +239,8 @@ def ich_layer(seq, previous=()):
             out['ICH-Q36-11'].append((f'index-md5.txt holds {got!r}; index.xml\'s MD5 is {md5(idx)}', True))
     region, reg = regional_xml(seq)
     rtree = None
-    if (seq / 'm1').is_dir() and reg is None:
-        out['ICH-Q36-05'].append(('no m1/xx/xx-regional.xml', True))
+    if reg is None:                                   # every sequence carries its region's index, even with no Module 1 document
+        out['ICH-Q36-05'].append(('no m1/xx/xx-regional.xml' + ('' if (seq / 'm1').is_dir() else ' (no m1 folder)'), True))
     if reg is not None:
         rtree, errs = parse(reg)
         if rtree is not None:
@@ -258,8 +261,13 @@ def ich_layer(seq, previous=()):
     for xml, t in ((idx, tree), (reg, rtree)):
         if t is None:
             continue
+        w3 = sum(1 for lf in t.iter('leaf') if lf.get(XLINK_W3) is not None)
+        if w3:
+            rid = 'ICH-Q36-03' if xml == idx else 'ICH-Q36-07'
+            out[rid].append((f'{xml.name}: {w3} leaf href(s) in the namespace http://www.w3.org/1999/xlink; the ICH DTD fixes it as '
+                             'http://www.w3c.org/1999/xlink, so a validator reads no xlink:href', True))
         for lf in t.iter('leaf'):
-            op, href = lf.get('operation') or '', lf.get(XLINK) or ''
+            op, href = lf.get('operation') or '', lf.get(XLINK) or lf.get(XLINK_W3) or ''
             lid = lf.get('ID') or ''
             where = f'{xml.name} leaf {lid or "?"}'
             for a in ('ID', 'operation', 'checksum-type'):
@@ -302,7 +310,7 @@ def ich_layer(seq, previous=()):
             referenced.add(rel)
             if not target.is_file():
                 out['ICH-Q36-12'].append((f'{where}: «{rel}» missing', True))
-            elif (lf.get('checksum') or '').lower() != md5(target):
+            elif lf.get('checksum') and lf.get('checksum').lower() != md5(target):      # a missing checksum is ICH-Q36-04's
                 out['ICH-Q36-11'].append((f'{rel}: MD5 {md5(target)}, the leaf says {lf.get("checksum")}', True))
         for ne in t.iter('node-extension'):
             t_el = ne.find('title')
@@ -364,6 +372,10 @@ def validate(seq, previous=None):
     seq = Path(seq)
     earlier = [Path(p) for p in previous] if previous is not None else ([] if seq.name == '0000' else None)
     region, ich = ich_layer(seq, earlier or ())
+    inherited = None
+    if region is None:                                # a later sequence without its regional index: the application's region
+        inherited = next((r for r in (regional_xml(Path(p))[0] for p in earlier or ()) if r), None)
+        region = inherited
     code, row = country(region)
     authority = row.get('authority') or (f'the authority of region «{region}»' if region else 'no regional Module 1')
     layers = {'1 · ICH — every country': ich}
@@ -382,8 +394,8 @@ def validate(seq, previous=None):
     if own is not None:
         layers[f'2 · {authority} — its own criteria'] = own
     criteria = row.get('criteria') or 'unknown'
-    return {'region': region, 'country': code, 'authority': authority, 'criteria': criteria, 'evidence': row.get('evidence'),
-            'own_criteria_run': own is not None, 'layers': layers, 'ok': all(x['ok'] for x in layers.values())}
+    return {'region': region, 'region_from_earlier': bool(inherited), 'country': code, 'authority': authority, 'criteria': criteria,
+            'evidence': row.get('evidence'), 'own_criteria_run': own is not None, 'layers': layers, 'ok': all(x['ok'] for x in layers.values())}
 
 
 def note(res):
@@ -417,7 +429,7 @@ def main(argv):
         elif a == '--html':
             out = Path(next(it))
     res = validate(seq, prev or None)
-    print(f"region: {res['region'] or 'none'} · {res['authority']} · its criteria: {res['criteria']}")
+    print(f"region: {res['region'] or 'none'}{' (from the earlier sequences)' if res.get('region_from_earlier') else ''} · {res['authority']} · its criteria: {res['criteria']}")
     for name, layer in res['layers'].items():
         c = layer['counts']
         print(f"{name}: {layer['label']} — pass {c['pass']} · fail {c['fail']} · warning {c['warning']} · not run {c['not_run']}")

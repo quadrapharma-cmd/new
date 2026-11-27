@@ -162,6 +162,26 @@ def test_the_folder_and_the_stylesheet(eu_seq, tmp_path):
     assert r['status'] == 'warning' and 'ectd-2-0.xsl' in r['failures'][0]       # the stylesheet: a warning, never a failure
 
 
+def test_what_published_samples_showed(eu_seq, tmp_path):
+    """Three slips found in public sample sequences: the W3C's own xlink namespace (the ICH DTD fixes «w3c.org»), a sequence without
+    the ICH DTD (its index.xml cannot be validated: said, not passed), and a later sequence without its regional index."""
+    s = copy(eu_seq, tmp_path)
+    rewrite_index(s, lambda t: t.replace('xmlns:xlink="http://www.w3c.org/1999/xlink"', 'xmlns:xlink="http://www.w3.org/1999/xlink"'))
+    r = {x['rule']: x for x in ich(G.validate(s))['results']}
+    assert r['ICH-Q36-03']['status'] == 'fail' and any('http://www.w3.org/1999/xlink' in f for f in r['ICH-Q36-03']['failures'])
+    assert r['ICH-Q36-04']['status'] == 'pass' and r['ICH-Q36-12']['status'] == 'pass'      # the hrefs are still followed
+    s = copy(eu_seq, tmp_path / 'b')
+    (s / 'util' / 'dtd' / 'ich-ectd-3-2.dtd').unlink()
+    r = {x['rule']: x for x in ich(G.validate(s))['results']}
+    assert r['ICH-Q36-02']['status'] == 'fail' and r['ICH-Q36-03']['status'] == 'not_run' and 'could not be validated' in r['ICH-Q36-03']['reason']
+    first = copy(eu_seq, tmp_path / 'c')
+    later = first.parent / '0001'
+    shutil.copytree(first, later)
+    shutil.rmtree(later / 'm1')
+    res = G.validate(later, previous=[first])
+    assert st(ich(res))['ICH-Q36-05'] == 'fail' and res['region'] == 'eu' and res['region_from_earlier'] and res['own_criteria_run']
+
+
 def test_the_pdf_rules_come_from_the_programs_pdf_check(eu_seq, tmp_path):
     s = copy(eu_seq, tmp_path)
     pdf = next((s / 'm3').rglob('*.pdf'))

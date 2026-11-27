@@ -1380,6 +1380,19 @@ def create_app(workspace, auth_enabled=None):
             rows.append(row)
         return rows
 
+    def _ctd_heading(text):
+        """The CTD section a document prints in its first line or two as its own heading («3.2.A.1 Facilities», «MODULE 1.3 — …»,
+        «2.4 Nonclinical overview»), or an empty set. Not taken: a plain «1.0» or «1.2» numbering (a procedure's «1.0 Purpose»), a
+        «2.0», a version («Version 2.1»)."""
+        t = ' '.join((text or '').lower().split())[:80]           # its first line or two: a running header may come before it
+        for m in re.finditer(r'(?<![\w.])(module\s+|section\s+|ctd\s+)?([1-5](?:\.(?:[0-9]{1,2}|[spar]))+)(?![\w.])', t):
+            if re.search(r'(version|revision|rev\.?|edition|issue|v)\s*$', t[max(0, m.start() - 12):m.start()]):
+                continue                                         # «Version 2.1», «Rev. 3.0»: a document's version, not a section
+            n = m.group(2)
+            if m.group(1) or n.count('.') >= 2 or re.search(r'[spar]', n) or (n[0] in '2345' and not n.endswith('.0')):
+                return {n}
+        return set()
+
     def _suggest_with_kind(clf, slots, filename, text, kind=None, product=None, fpp=None):
         """The classifier's suggestions, with the document kind's home item first (a licence goes to the licence item whatever the keywords say),
         and `auto`: the one item the file may go into without asking. Among the per-API items (CEP, CoA, GMP of each active) the substance
@@ -1401,6 +1414,19 @@ def create_app(workspace, auth_enabled=None):
             return kind, [], None          # recognised, and this dossier has no item for it (a sampling form; a variation approval in a new
                                            # registration): nothing else is offered in its place — the user decides, or removes it
         decided = unsure = False                                         # decided: the document names the active substance its item is for
+        headed = [x for x in sugg if any('in its heading' in (w.get('en') or '') for w in x['why'])]
+        if headed:                                                       # the closest section leads (its own heading over a section it cites)
+            top_h = max(x['score'] for x in headed)
+            headed = [x for x in headed if x['score'] == top_h]
+        if not unread and headed and len({x['req_id'] for x in headed}) == 1:
+            # the document prints its own CTD section in its heading («3.2.S.4.1 Specification»): that section decides, over the kind
+            # its words suggest (a specification that cites a «reference standard», a substance section that names its DMF); found
+            # with public sample dossiers laid out by CTD section (27/11/2026)
+            rest = [x for x in sugg if x['req_id'] != headed[0]['req_id']]
+            top = max(x['score'] for x in headed)
+            best = [x for x in headed if x['score'] == top]
+            sugg = sorted(headed, key=lambda x: -x['score']) + rest
+            return kind, sugg, (best[0]['slot_id'] if len(best) == 1 else None)
         if kind == 'gmp' and (fpp or makers) and _extract.gmp_whose(text, fpp, makers) is None:
             unsure = True                                                # it names neither the product's manufacturer nor an API's: offered, never placed
         for req in homes:                                                # the kind's own item leads, whatever the keywords say
@@ -1438,6 +1464,9 @@ def create_app(workspace, auth_enabled=None):
                 auto = None                                                         # a tie between two actives: never a guess
         if by_name or unread or (unsure and not decided):
             auto = None                                                             # a file that was not read, or that names none of the actives its kind belongs to, is offered — never placed on a guess
+        own = _ctd_heading(text)
+        if auto and own and not headed:                                             # it prints its own section (3.2.A.1) and this dossier has no
+            auto = None                                                             # item for it: offered, never placed elsewhere on its words
         return kind, sugg, auto
 
     @app.post('/api/dossiers/{did}/classify/text')
