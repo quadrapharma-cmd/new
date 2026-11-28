@@ -1,7 +1,8 @@
 """Stage «build» — what the dossier lacks and the company itself issues, written; after the corrections, before the eCTD.
 
 eBOX's full program makes this dossier's own copy (ebox.make, in build/store, without anything this stage wrote) and its matrix
-says which required items are still open, and who issues each one's document (api.py `/missing`). The company's own — a letter, a
+says which required items are still open, and who issues each one's document (api.py `/missing`); an item that has its document
+(open for another reason: not prepared in eBOX's copy, not signed) is not missing and is left alone. The company's own — a letter, a
 declaration, an undertaking, a commitment, a certificate, a table, a section or a summary — are written here. A document of
 another party (a certificate, a licence, the substance manufacturer's analysis) is never written: it stays in that party's
 request letter at the eCTD stage, as before. A study report or a batch record is never written either: its template says so
@@ -21,7 +22,8 @@ document in the three outputs (ectd.py: Module 1 at its EG element, Modules 2–
   python -m dossier_engine.combined.build <work> pages <ranges>        the dossier's pages as read (e.g. 12-15,40)
   python -m dossier_engine.combined.build <work> write <item> @<answers.json>       a template's sections (the brief says the form)
   python -m dossier_engine.combined.build <work> generate <item> @<data.json>       a generator's data
-  python -m dossier_engine.combined.build <work> cannot <item> '<why, formal Arabic>'
+  python -m dossier_engine.combined.build <work> cannot <item> '<why, formal Arabic>'    the pages do not give it: the company's
+  python -m dossier_engine.combined.build <work> later <item> '<why, formal Arabic>'     the pages give it, this run does not write it
   python -m dossier_engine.combined.build <work> finish                built.json, for the eCTD stage
 """
 import datetime
@@ -80,9 +82,11 @@ def run(work):
     items, others = [], 0
     for g in miss.get('parties') or []:
         if g['kind'] != 'company':
-            others += len(g['items'])
+            others += sum(1 for i in g['items'] if not i.get('documents'))
             continue
         for i in g['items']:
+            if i.get('documents'):                    # it has its document: open for another reason (not prepared, unsigned) — not missing
+                continue
             s = slots.get(i['slot_id'])
             req = i['req_id']
             entry = draft.template(req) or {}
@@ -202,14 +206,37 @@ def cmd_brief(w, item):
         return (head + f"\nGENERATOR «{kind}»: the program writes the document from the data you give.\n"
                 f"FIELDS (JSON schema of the data): {json.dumps(schema.get('fields') or [], ensure_ascii=False)}\n"
                 f"WHAT THE DOSSIER ALREADY KNOWS (prefill; correct it from the pages): {json.dumps(pre, ensure_ascii=False)}\n" + rules +
-                f"- Answer: `generate {it['item']} @<file>` with ONE JSON object of the fields' values.")
+                f"- Answer: `generate {it['item']} @<file>` with ONE JSON object of the fields' values.\n"
+                f"- If the generator does not fit this product (its fields cannot hold what the pages say, e.g. amounts per dose that are "
+                f"not in mg): `write {it['item']} @<file>` with the general letter template instead — ONE JSON object "
+                f"{{\"sections\": {{\"addressee\": \"…\", \"subject\": \"…\", \"body\": \"…\", \"table\": {{\"rows\": [[item, quantity or value, "
+                f"function or detail, reference], …]}}, \"enclosures\": [\"…\"], \"signature\": {{\"signatory\": \"…\", \"signatory_title\": \"…\", "
+                f"\"applicant\": \"…\", \"date\": \"…\"}}}}, \"gaps\": [{{\"what\": \"…\", \"why\": \"…\", \"ar\": \"…\"}}], \"sources\": {{\"<section>\": "
+                f"\"<document>\"}}, \"notes\": \"…\"}}.")
     entry = draft.template(it['req'])
     ctx = draft.context(st, rec['dossier'], slot, with_texts=True)
     return head + rules + f"- Answer: `write {it['item']} @<file>` with the JSON object the prompt below asks for.\n\n" + draft.prompt(entry, ctx)
 
 
+def letter_entry(it):
+    """The general template for an item whose generator does not fit this product (its fields cannot hold what the pages say,
+    e.g. amounts per dose in units other than mg): a letter on the company's letterhead with one table."""
+    T = lambda en, ar: {'en': en, 'ar': ar}                                                      # noqa: E731
+    t = it['title']
+    return {'id': it['req'], 'lang': 'en', 'kind': 'certificate', 'draft': 'full', 'letterhead': True, 'derived': True, 'sections': [
+        {'id': 'addressee', 'title': T('Addressed to', 'موجَّه إلى'), 'kind': 'para'},
+        {'id': 'subject', 'title': T('Subject', 'الموضوع'), 'kind': 'para'},
+        {'id': 'body', 'title': T('Text', 'النص'), 'kind': 'para'},
+        {'id': 'table', 'title': T(t.get('en') or it['req'], t.get('ar') or ''), 'kind': 'table',
+         'columns': ['Item', 'Quantity / value', 'Function / detail', 'Reference']},
+        {'id': 'enclosures', 'title': T('Enclosures', 'المرفقات'), 'kind': 'list'},
+        {'id': 'signature', 'title': T('Signature', 'التوقيع'), 'kind': 'fields', 'fields': [
+            {'key': 'signatory', 'label': T('Name', 'الاسم')}, {'key': 'signatory_title', 'label': T('Position', 'الوظيفة')},
+            {'key': 'applicant', 'label': T('Company', 'الشركة')}, {'key': 'date', 'label': T('Date', 'التاريخ')}]}]}
+
+
 def _built(rec, it, pdf, docx, how, gaps=None, sign=False, notes=None):
-    it.update(state='built', pdf=str(pdf), docx=str(docx) if docx else None, how=how, gaps=gaps or [], sign=sign, note=notes or '')
+    it.update(state='built', pdf=str(pdf), docx=str(docx) if docx else None, how=how, gaps=gaps or [], sign=sign, note='', reviewer_notes=notes or '')
 
 
 def cmd_write(w, item, answers):
@@ -217,20 +244,22 @@ def cmd_write(w, item, answers):
     from ..generate.docx_kit import to_pdf
     rec = _rec(w)
     it = _item(rec, item)
-    if it.get('generator'):
-        raise Refused(f'«{item}» is written by its generator: `generate {item} @<data.json>`.')
     if it['state'] in ('later',) or it.get('template') in (None, 'none'):
         raise Refused(f'«{item}» is not written here: {it["note"]}')
     if not isinstance(answers, dict) or not isinstance(answers.get('sections'), dict) or not answers['sections']:
         raise Refused('the answer is one JSON object with "sections" (each section id of the template with its text), "gaps", "sources".')
-    entry = draft.template(it['req'])
+    entry = letter_entry(it) if it.get('generator') else draft.template(it['req'])     # a generator item: the general letter
     ids = {s['id'] for s in entry.get('sections') or []}
     unknown = [k for k in answers['sections'] if k not in ids]
     if unknown:
         raise Refused(f'sections not in the template: {", ".join(unknown)} (the template\'s: {", ".join(sorted(ids))}).')
     st, slots = _open(rec)
     slot = slots[it['item']]
-    filled, how, ctx = draft.compute(st, rec['dossier'], slot, answers=answers, use_ai=False)
+    if it.get('generator'):
+        ctx = draft.context(st, rec['dossier'], slot, with_texts=False)
+        filled = {**answers, 'gaps': [g for g in answers.get('gaps') or [] if g]}
+    else:
+        filled, how, ctx = draft.compute(st, rec['dossier'], slot, answers=answers, use_ai=False)
     name = f"{it['req']}-{_slug(it['title'].get('en'))}" + (f"-{_slug(it['substance'])}" if it.get('substance') else '')
     out = w.root / 'built' / f'{name}.docx'
     draft.render(entry, filled, ctx, out)
@@ -287,11 +316,23 @@ def cmd_cannot(w, item, why):
     return f'left to the company: {it["req"]}'
 
 
+def cmd_later(w, item, why):
+    """An item the pages could give but this run does not write (it needs more than this session can read now): said, with what
+    it needs, and left for a later run — never counted as built, never as the company's."""
+    rec = _rec(w)
+    it = _item(rec, item)
+    if not why or not re.search(r'[\u0600-\u06FF]', why):
+        raise Refused('say why, in formal Arabic: what writing it needs.')
+    it.update(state='later', by='claude', note=why.strip(), pdf=None, docx=None)
+    w.save('build.json', rec)
+    return f'left for a later run: {it["req"]}'
+
+
 def cmd_finish(w):
     rec = _rec(w)
     todo = [x['item'] for x in rec['items'] if x['state'] == 'to do']
     if todo:
-        raise Refused(f'still to do: {", ".join(todo)} — write, generate or cannot each.')
+        raise Refused(f'still to do: {", ".join(todo)} — write, generate, cannot or later each.')
     built = [{'item': x['item'], 'req': x['req'], 'node': x['node'], 'ctd': x['ctd'], 'title': x['title'].get('en') or x['req'],
               'title_ar': x['title'].get('ar'), 'substance': x.get('substance'), 'pdf': x['pdf'], 'docx': x.get('docx'),
               'how': x.get('how'), 'sign': x.get('sign'), 'gaps': x.get('gaps') or []}
@@ -345,6 +386,8 @@ def main(argv):
             out = cmd_generate(w, args[0], load(args[1]))
         elif cmd == 'cannot' and len(args) == 2:
             out = cmd_cannot(w, args[0], args[1])
+        elif cmd == 'later' and len(args) == 2:
+            out = cmd_later(w, args[0], args[1])
         elif cmd == 'finish':
             out = cmd_finish(w)
         else:

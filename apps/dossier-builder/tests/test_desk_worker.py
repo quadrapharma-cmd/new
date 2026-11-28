@@ -102,7 +102,7 @@ def test_the_numbers_and_what_is_needed(run):
                              'شهادة GMP — من الشركة المصنعة، لـ Module 1، البند 1.2.4',
                              '1.1.1 نموذج الطلب والتعهد (غير موجود) — من الشركة',
                              'تقارير دراسات وسجلات تشغيلات مطلوبة يقدّمها أصحابها: 7 (تفاصيلها في تقرير التسلسل).',
-                             'مستندات ناقصة تُصدرها الشركة لم تُكتب بعد: 40 (مرحلة «بناء المستندات الناقصة»).']
+                             'مستندات ناقصة تُصدرها الشركة لم تُكتب بعد: 28 (مرحلة «بناء المستندات الناقصة»).']
     assert [r['title'] for r in handed['reports']] == ['تقرير الملف (CTD)', 'تقرير تسلسل eCTD 0000']
     assert all(Path(r['file']).stat().st_size == r['bytes'] > 5000 and r['fits_page'] for r in handed['reports'])
     assert handed['zip'] and Path(handed['zip']['file']).exists() and handed['zip']['bytes'] > 10000

@@ -249,6 +249,8 @@ def summary(work):
             found.append(f'بيانات ناقصة في «{name}» ({x["req"]}) التي كتبها البرنامج: {what}')
         if x['state'] == 'cannot' and x.get('by') == 'claude':
             found.append(f'«{name}» ({x["req"]}) — من الشركة: {x.get("note")}')
+        if x['state'] == 'later' and x.get('by') == 'claude':
+            found.append(f'«{name}» ({x["req"]}) لم يُكتب في هذا التشغيل: {x.get("note")}')
     reports = sum(1 for x in bd.get('items') or [] if x['state'] == 'cannot' and x.get('by') == 'program')
     if reports:
         found.append(f'تقارير دراسات وسجلات تشغيلات مطلوبة يقدّمها أصحابها: {reports} (تفاصيلها في تقرير التسلسل).')

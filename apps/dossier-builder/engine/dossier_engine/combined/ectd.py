@@ -420,10 +420,11 @@ class Builder:
                 self.built_out.append({'item': b['item'], 'node': c, 'why': 'no eCTD folder for this heading'})
                 continue
             attrs = {}
-            if '/32s-drug-sub/' in folder:
+            if c.startswith('3.2.S'):                    # a substance's own: in its folder, with its substance and manufacturer
                 name = b.get('substance') or (order[0] if order else None)
                 s = subst.get(name, {}) if name else {}
-                folder = folder.replace('substance-1-manufacturer-1', s.get('folder', slug(name or 'substance')))
+                own = f"m3/32-body-data/32s-drug-sub/{s.get('folder', slug(name or 'substance'))}"
+                folder = own if c == '3.2.S' else folder.replace('m3/32-body-data/32s-drug-sub/substance-1-manufacturer-1', own)
                 attrs = {'3.2.S': {'substance': s.get('substance', (name or '').lower()), 'manufacturer': manuf}}
             elif '/32p-drug-prod/' in folder:
                 folder = folder.replace('product-1', pslug)

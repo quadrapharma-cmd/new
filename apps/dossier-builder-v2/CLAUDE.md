@@ -951,6 +951,13 @@ When a part is done or an open item is closed, update «What exists» and «Open
   Tests: `tests/test_desk_build.py` (made-up dossier: 2 written, 56 → 54 missing in ctd.zip and eBOX's copy, both at their EG
   elements, 4.0 with nothing left out), `tests/test_desk_worker.py` (the new stage, numbers and needs). The page shows the
   stage and two numbers (`desk/index.html`).
+  Then tried on his real dossier on this machine (its data stays in the scratchpad), which found three faults, each fixed with a
+  test on the made-up dossier: eBOX's copy counts an item «open» while its document is there (not prepared in that copy), so the
+  build stage takes only items with no document; a generator made for amounts in mg per unit cannot hold a product whose amounts
+  are in other units, so a generator item may be written with the general letter template (`build.letter_entry`); a document at
+  the head of 3.2.S had no substance attributes (invalid index.xml, unplaced in ctd.zip) and now goes into its substance's folder.
+  A new answer, `later`, names an item the pages give but a run does not write. A large dossier needs about 5 GB of disk through
+  the eCTD stage and the delivery; a fresh work session has room, a cluttered machine does not.
 
 ## Open items (propose when relevant; do when he asks)
 - Old program, next pieces (one at a time, each on his real files first): the 14/11 update and measuring Claude's reading (need
