@@ -878,6 +878,10 @@ class Store:
                                      'op': lf['op'], 'replaces': lid, 'node': node, 'title': lf['title']})
                         continue                         # the tracking table: the program makes it again for every sequence
                     cands = [x for x in slots if node and node in (x.ectd or [])]
+                    up = node
+                    while not cands and up.count('.') > 1 and not up.startswith('1.'):     # 3.2.S.7.1 → the item of 3.2.S.7 (EDA's
+                        up = up.rsplit('.', 1)[0]                                          # matrix holds a section whole)
+                        cands = [x for x in slots if up in (x.ectd or [])]
                     for attr, field in (('substance', 'name'), ('manufacturer', 'manufacturer')):
                         if lf.get(attr) and len(cands) > 1:
                             v = lf[attr].lower()

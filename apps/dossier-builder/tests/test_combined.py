@@ -232,3 +232,20 @@ def test_reports(work):
     assert 'الصيغتان الأخريان' in etext
     ctext = subprocess.run(['pdftotext', out['ctd']['pdf'], '-'], capture_output=True, text=True).stdout
     assert 'مراجعة المق' in ctext and Path(out['deliver']['review']).exists()
+
+
+def test_the_delivered_sequence_opens_in_the_full_program(work, tmp_path):
+    """The desk's eCTD zip imported into eBOX's full program («import earlier sequences»): every document of Modules 3 finds its
+    item — a sub-section's (3.2.S.7.1) in EDA's whole-section item (3.2.S.7)."""
+    import dataclasses
+    import zipfile
+    from dossier_engine.app.store import Store
+    from dossier_engine.profile import Api, Profile
+    rep = work.load('report.json')
+    st = Store(tmp_path / 'ebox')
+    did = st.create_dossier('Zentorix', dataclasses.asdict(Profile(origin='imported', licence='imported', apis=[Api('Zentorine', 'example pharma ltd.')])),
+                            {'name': 'Zentorix', 'dosageform': 'film-coated tablet', 'manufacturer': 'example pharma ltd.'}, {'applicant': 'Example Pharma Ltd.'})
+    z = zipfile.ZipFile(rep['deliver']['zip'])
+    r = st.import_ectd(did, [(n, z.read(n)) for n in z.namelist() if not n.endswith('/')])
+    assert not [u for u in r['unplaced'] if u['href'].startswith('m3/')], r['unplaced']
+    assert [h['seq'] for h in st.history(did, 'ectd32')] == ['0000']
