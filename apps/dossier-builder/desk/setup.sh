@@ -9,6 +9,8 @@ apt-get install -y -q tesseract-ocr tesseract-ocr-ara tesseract-ocr-eng ghostscr
 if [ -d new/apps/dossier-builder ]; then
   # --ignore-installed: PyYAML and packaging came with the machine from Debian, and pip cannot uninstall them otherwise
   python3 -m pip install -q --disable-pip-version-check --ignore-installed -r new/apps/dossier-builder/mac/requirements.txt
+  # eBOX's full program's interface, which the desk's last stages call in-process (combined/ebox.py, combined/assess.py)
+  python3 -m pip install -q --disable-pip-version-check fastapi httpx python-multipart
 fi
 tesseract --list-langs 2>&1 | grep -qx ara && tesseract --list-langs 2>&1 | grep -qx eng
 echo "eBOX tools ready: $(tesseract --version 2>&1 | head -1), ghostscript $(gs --version)"
