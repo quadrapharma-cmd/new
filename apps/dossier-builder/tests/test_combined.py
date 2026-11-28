@@ -288,7 +288,7 @@ def test_a_sequence_with_the_introduction_of_23_is_written_and_validated_in_40(w
 
 
 def test_a_document_at_a_heading_40_takes_none_at_is_left_out_by_name_not_the_stage(work):
-    # 28/11/2026: his real dossier filed the nonclinical summaries at 2.6 itself, which ICH eCTD 3.2.2 allows and 4.0 does not
+    # a dossier may file the nonclinical summaries at 2.6 itself, which ICH eCTD 3.2.2 allows and 4.0 does not
     import copy
     e = copy.deepcopy(work.load('ectd.json'))
     two = next(l for l in e['leaves'] if l['code'] == '2.2')
@@ -300,7 +300,7 @@ def test_a_document_at_a_heading_40_takes_none_at_is_left_out_by_name_not_the_st
 
 
 def test_a_failing_40_or_ctd_zip_is_said_and_the_stage_goes_on(work, monkeypatch, capsys):
-    # 28/11/2026: four times the new outputs stopped his real dossier's whole eCTD stage (and its review and report)
+    # a failing new output must never stop the whole eCTD stage (and its review and report)
     from dossier_engine.combined import __main__ as cli, ectd40 as m40
     def boom(*a, **k):
         raise ValueError('made-up fault')
@@ -317,29 +317,29 @@ def test_a_failing_40_or_ctd_zip_is_said_and_the_stage_goes_on(work, monkeypatch
 
 
 def test_a_file_whose_40_path_is_too_long_gets_a_shorter_name(work):
-    # 28/11/2026: his real dossier's «3-2-s-4-2-analytical-procedures-diphther.pdf» under a long substance-manufacturer folder made
-    # a 189-character path; ICH eCTD 4.0 allows 180 (eCTD4-067), and sets no file names
+    # a file under a long substance-manufacturer folder can make a path over 180 characters; ICH eCTD 4.0 allows 180
+    # (eCTD4-067), and sets no file names (made-up names)
     import copy
     e = copy.deepcopy(work.load('ectd.json'))
     s = next(l for l in e['leaves'] if l['code'].startswith('3.2.S.4'))
-    long = dict(s, code='3.2.S.4.2', title='3.2.S.4.2 Analytical procedures diphtheria toxoid', id='leaf-long', href=s['href'])
-    long['attrs'] = {k: dict(v, substance='diphtheria toxoid adsorbed purified', manufacturer='serum institute of india private limited')
+    long = dict(s, code='3.2.S.4.2', title='3.2.S.4.2 Analytical procedures examplomycin bulk', id='leaf-long', href=s['href'])
+    long['attrs'] = {k: dict(v, substance='examplomycin adsorbed purified bulk', manufacturer='example biologicals private company limited')
                      for k, v in (s.get('attrs') or {}).items()}
     e['leaves'].append(long)
     from dossier_engine.writers import ectd32
     from dossier_engine.writers.ectd40 import Profile40
-    d = ectd32.Doc(node='3.2.S.4.2', file='x.pdf', title=long['title'], substance='diphtheria toxoid adsorbed purified',
-                   manufacturer='serum institute of india private limited')
+    d = ectd32.Doc(node='3.2.S.4.2', file='x.pdf', title=long['title'], substance='examplomycin adsorbed purified bulk',
+                   manufacturer='example biologicals private company limited')
     assert len(ectd32.rel_path(d, ectd32.Product(name='P', dosageform='t', manufacturer='M'), Profile40().v32)) + 39 > 180   # too long as named
     r4 = ectd40.run(work, rec=e)
     assert r4['validation']['fail'] == 0
     paths = [p.relative_to(Path(r4['sequence']).parent.parent).as_posix() for p in Path(r4['sequence']).rglob('*.pdf')]
-    assert paths and max(len(p) for p in paths) <= 180 and any('serum' in p for p in paths)
+    assert paths and max(len(p) for p in paths) <= 180 and any('example-biologicals' in p for p in paths)
     ectd40.run(work)                                             # the work folder's own 4.0 sequence again, for what follows
 
 
 def test_study_reports_carry_their_study_and_type_and_what_cannot_be_known_is_said(work):
-    # 28/11/2026: his real dossier's 4.2.3.1 report stopped 4.0 (required «study id_study title»): the study is the report's own title
+    # a 4.2.3.1 report stopped 4.0 (required «study id_study title»): the study is the report's own title
     # and its type a whole report; species and route of a toxicity study are not in 3.2.2 and are never guessed
     import copy
     e = copy.deepcopy(work.load('ectd.json'))

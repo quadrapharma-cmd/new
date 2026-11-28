@@ -1,6 +1,5 @@
 """An eCTD v3.2.2 sequence checked against Egypt's provisional profile v0 (its Pass/Fail and Best Practice criteria,
-validation-criteria.csv) — the checks that validated the hand-built DTP-HB sequence, independent of the program's other
-validator (validators/). Each result: {rule, kind: P/F | BP, ok, detail}.
+validation-criteria.csv), independent of the program's other validator (validators/). Each result: {rule, kind: P/F | BP, ok, detail}.
     validate(sequence folder, profile folder, header=running-header lines to ignore when a PDF is read)"""
 import hashlib
 import re

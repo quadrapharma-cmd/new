@@ -1,4 +1,4 @@
-"""The «decide» stage: Claude makes, through the Claude API, the decisions a person made by hand for the DTP-HB dossier — task by
+"""The «decide» stage: Claude makes, through the Claude API, the decisions a person would make by hand — task by
 task, the program's stages run again after each task whose decisions change them. A dossier whose decisions file was made by a
 person is left as it is (unless told again). Without a key the program goes on with its rules alone, and says so."""
 import datetime

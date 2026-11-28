@@ -1,6 +1,6 @@
 """Stage 4 — the documents: what the program proposes, the dossier's decisions laid over it, the plan.
 
-How the program cuts (the same reading that cut the DTP-HB dossier by hand):
+How the program cuts:
   · the top blocks are the top-level bookmarks (or the files), less the repeated blocks; each block is a drug substance, the
     drug product, annexures, appendices or a module, by its title or by the CTD numbers on its pages;
   · a page's CTD heading is read from its own text (never from the OCR: a scanned page belongs to the document before it), in its

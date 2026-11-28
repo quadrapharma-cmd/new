@@ -1,6 +1,5 @@
 """The five tasks Claude does inside the program, in order: the documents, the product and Egypt's Module 1, the product
-information, the reviewer's findings, the eCTD sequence. Each: its part of the playbook (written from how the DTP-HB dossier was
-made ready by hand on 17/11/2026, as general rules), its writing tools, and its case file (the first message, made by the
+information, the reviewer's findings, the eCTD sequence. Each: its part of the playbook (general rules), its writing tools, and its case file (the first message, made by the
 program from the work folder)."""
 import json
 

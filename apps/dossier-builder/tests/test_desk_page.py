@@ -148,7 +148,7 @@ def test_a_dossiers_requests_go_to_its_session(page):
 
 def test_resume_always_starts_a_new_session(page):
     # «متابعة» goes to a new work session (the latest program): the dossier's old session may hold an older copy of it and,
-    # rightly, refuse to update itself on another session's word (28/11, d-20261127-jn56hf)
+    # rightly, refuse to update itself on another session's word (28/11)
     page.open()
     seed(page, 'config/desk', {'trigger_id': 'trig_0DeskTest1'})
     seed(page, 'dossiers/d-1', {**RUNNING, 'status': 'stopped'})
