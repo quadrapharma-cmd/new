@@ -67,3 +67,29 @@ def test_sequences_made_elsewhere_become_this_dossiers_history(tmp_path):
     assert j['sequences']['ectd32']['sequence'] == '0001' and j['sequences']['ectd32']['operations']['replace'] == 1
     assert j['sequences']['ectd32']['operations']['delete'] == 0, j['sequences']['ectd32']
     assert j['validation']['eCTD 3.2.2']['ok'], j['validation']['eCTD 3.2.2']
+
+
+def test_a_sub_sections_leaf_finds_its_sections_item(tmp_path):
+    """A sequence made elsewhere (the eBOX desk's) names its stability file as ICH Appendix 4 does, «32s7-stab/stability-summary.pdf»:
+    3.2.S.7.1, which EDA's matrix has no item of — it holds 3.2.S.7 whole. The leaf goes to the item of its section (28/11/2026)."""
+    c = TestClient(create_app(tmp_path / 'ws'))
+    pdf = make_pdf(tmp_path / 'd.pdf', 'doc').read_bytes()
+    src = new(c)
+    fill_all(c, src, pdf)
+    assert c.post(f'/api/dossiers/{src}/export', json={'acknowledge_provisional': True, 'outputs': ['ectd32']}).status_code == 201
+    made = tmp_path / 'ws' / 'lifecycle' / src / 'ectd-3.2.2'
+    ix = made / '0000' / 'index.xml'
+    s = ix.read_text(encoding='utf-8')
+    a, b = s.index('<m3-2-s-7-stability>'), s.index('</m3-2-s-7-stability>')
+    part = s[a:b]
+    old_href = part.split('xlink:href="', 1)[1].split('"', 1)[0]
+    new_href = old_href.rsplit('/', 1)[0] + '/stability-summary.pdf'
+    ix.write_text(s[:a] + part.replace(old_href, new_href) + s[b:], encoding='utf-8')
+    (made / '0000' / old_href).rename(made / '0000' / new_href)
+    did = new(c)
+    r = c.post(f'/api/dossiers/{did}/import-ectd', files={'file': ('app.zip', zipped(made), 'application/zip')})
+    assert r.status_code == 201, r.text
+    assert not r.json()['unplaced'], r.json()['unplaced']
+    board = c.get(f'/api/dossiers/{did}/board').json()
+    item = next(x for x in board['slots'] if x['slot_id'].startswith('S-14@'))          # 3.2.S.7, the drug substance's stability
+    assert [d['filename'] for d in item['documents']] == ['stability-summary.pdf'], r.json()
