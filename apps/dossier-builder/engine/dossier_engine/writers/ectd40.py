@@ -153,6 +153,12 @@ def write(out_dir, env: Envelope4, product: Product, docs, profile: Profile40 = 
             rel = f'm1/{stem}.pdf'
         else:                                     # v4 names a study by its keyword, not a folder (a node-extension is 3.2.2's)
             rel = rel_path(dc_replace(d, study=None), product, p.v32)
+        over = len(f'{first}/{env.sequence}/{rel}') - MAX_PATH + 3       # room for a «-2» that tells two files apart
+        if over > 0:                              # eCTD4-067: the file's own name is shortened (4.0 sets no file names), never its folder
+            d0, b0 = os.path.split(rel)
+            stem = b0[:-4]
+            if len(stem) - over >= 8:
+                rel = f'{d0}/{stem[:len(stem) - over].rstrip("-.")}.pdf'
         n, k = rel, 2
         while n in used:
             n = rel[:-4] + f'-{k}.pdf'

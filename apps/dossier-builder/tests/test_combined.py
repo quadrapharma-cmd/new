@@ -314,3 +314,25 @@ def test_a_failing_40_or_ctd_zip_is_said_and_the_stage_goes_on(work, monkeypatch
     monkeypatch.undo()
     assert cli.main(['ectd', str(work.root)]) == 0 and work.load('outputs-failed.json') == {}
     report.run(work)
+
+
+def test_a_file_whose_40_path_is_too_long_gets_a_shorter_name(work):
+    # 28/11/2026: his real dossier's «3-2-s-4-2-analytical-procedures-diphther.pdf» under a long substance-manufacturer folder made
+    # a 189-character path; ICH eCTD 4.0 allows 180 (eCTD4-067), and sets no file names
+    import copy
+    e = copy.deepcopy(work.load('ectd.json'))
+    s = next(l for l in e['leaves'] if l['code'].startswith('3.2.S.4'))
+    long = dict(s, code='3.2.S.4.2', title='3.2.S.4.2 Analytical procedures diphtheria toxoid', id='leaf-long', href=s['href'])
+    long['attrs'] = {k: dict(v, substance='diphtheria toxoid adsorbed purified', manufacturer='serum institute of india private limited')
+                     for k, v in (s.get('attrs') or {}).items()}
+    e['leaves'].append(long)
+    from dossier_engine.writers import ectd32
+    from dossier_engine.writers.ectd40 import Profile40
+    d = ectd32.Doc(node='3.2.S.4.2', file='x.pdf', title=long['title'], substance='diphtheria toxoid adsorbed purified',
+                   manufacturer='serum institute of india private limited')
+    assert len(ectd32.rel_path(d, ectd32.Product(name='P', dosageform='t', manufacturer='M'), Profile40().v32)) + 39 > 180   # too long as named
+    r4 = ectd40.run(work, rec=e)
+    assert r4['validation']['fail'] == 0
+    paths = [p.relative_to(Path(r4['sequence']).parent.parent).as_posix() for p in Path(r4['sequence']).rglob('*.pdf')]
+    assert paths and max(len(p) for p in paths) <= 180 and any('serum' in p for p in paths)
+    ectd40.run(work)                                             # the work folder's own 4.0 sequence again, for what follows
