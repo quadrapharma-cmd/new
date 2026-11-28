@@ -258,9 +258,8 @@ def summary(work):
     if e4:
         s['ectd40_failed_rules'] = e4['validation']['fail']
         s['ectd40_left_out'] = len(e4.get('left_out') or [])
-    bad = w.load('outputs-failed.json', {}) or {}
-    if bad:
-        s['outputs_failed'] = sorted(bad)
+    if w.load('outputs-failed.json') is not None:          # always written, empty too: a fault of an earlier run never stays on the desk
+        s['outputs_failed'] = sorted(w.load('outputs-failed.json') or {})
     rv = w.load('review.json', {}) or {}
     if rv:
         s['review_critical'] = rv['counts'].get('critical', 0)
