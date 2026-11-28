@@ -529,7 +529,8 @@ def deliver(w, out):
         got['ctd_zip'] = str(root / 'ctd.zip')
     rv = w.load('review.json')
     if rv and (w.root / 'review').exists():                 # the assessor's reports and letters, and one request letter per party
-        link_tree(w.root / 'review', root / 'review and requests')
+        # real copies, not hard links: these are the files uploaded to the desk page, and an upload of a hard link asks for consent
+        shutil.copytree(w.root / 'review', root / 'review and requests', dirs_exist_ok=True)
         got['review'] = str(root / 'review and requests')
     eb = w.load('ebox.json')
     if eb and eb.get('country') and eb['country'] != 'EG':  # another country's outputs, as eBOX's full program wrote them (working copies)

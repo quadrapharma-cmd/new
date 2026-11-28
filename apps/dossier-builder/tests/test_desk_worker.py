@@ -108,6 +108,15 @@ def test_the_numbers_and_what_is_needed(run):
     assert handed['zip'] and Path(handed['zip']['file']).exists() and handed['zip']['bytes'] > 10000
 
 
+def test_what_is_uploaded_is_a_real_copy(run):
+    # the reports, the review's PDFs and what the build stage wrote go to the page as assets: never a hard link (its upload asks)
+    import os
+    _, _, _, handed = run
+    files = [r['file'] for r in handed['reports']] + [o['file'] for k, o in handed['outputs'].items() if k.startswith(('review:', 'built:'))]
+    assert any('review and requests' in f for f in files)
+    assert all(os.stat(f).st_nlink == 1 for f in files), [f for f in files if os.stat(f).st_nlink != 1]
+
+
 def test_results_status_and_needs(run, tmp_path):
     _, w, _, handed = run
     work = tmp_path / 'w'
