@@ -1149,6 +1149,8 @@ KIND_HOME = {'pricing': ['M1-05'], 'gmp': ['M1-37', 'M1-38'], 'cpp': ['M1-14'], 
              'import': ['M1-13'], 'refstd': ['S-12', 'P-14'], 'sampling': []}
 PER_API_ONLY = ('M1-38', 'M1-13', 'S-12')      # items kept one per active substance: an unresolved document is offered among them, not elsewhere
 TECHNICAL = ('spec', 'method', 'validation')        # one document often holds two of them (a specification with its test methods): any of their items takes it
+NEAR = {'spec': ('S-11', 'P-13')}   # items where a document of the kind is at home too, though never sent there: a justification of the
+                                    # specification (3.2.S.4.5, 3.2.P.5.6) reads as a specification — it discusses and repeats it
 KIND_NAMES = {'pricing': {'en': 'pricing certificate', 'ar': 'شهادة تسعير'}, 'gmp': {'en': 'GMP certificate', 'ar': 'شهادة GMP'}, 'cpp': {'en': 'CPP', 'ar': 'شهادة CPP'},
               'cep': {'en': 'CEP', 'ar': 'شهادة CEP'}, 'coa': {'en': 'certificate of analysis', 'ar': 'شهادة تحليل'}, 'licence': {'en': 'registration licence / notification', 'ar': 'إخطار / رخصة تسجيل'},
               'commercial': {'en': 'commercial register', 'ar': 'سجل تجاري'}, 'poa': {'en': 'power of attorney', 'ar': 'توكيل'}, 'contract': {'en': 'agreement', 'ar': 'عقد'},
@@ -1256,7 +1258,8 @@ def kind_check(req_id, filename, data_or_text, known_kind=None, pack=None):
         kind = known_kind                                   # the file says nothing itself: an earlier reading of it does
     homes = kind_homes(kind, pack, text)
     family = {h for k in TECHNICAL for h in kind_homes(k, pack)} if kind in TECHNICAL else set()
-    return {'kind': kind, 'homes': homes, 'ok': kind == 'other' or not homes or req_id in homes or req_id in family, 'kind_name': KIND_NAMES.get(kind),
+    return {'kind': kind, 'homes': homes, 'ok': kind == 'other' or not homes or req_id in homes or req_id in family or req_id in NEAR.get(kind, ()),
+            'kind_name': KIND_NAMES.get(kind),
             'unread': kind == 'other' and len(re.sub(r'\s', '', text)) < 20}
 
 

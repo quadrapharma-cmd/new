@@ -106,19 +106,22 @@ def test_the_sign_says_what_is_left_and_the_vault_holds_every_document_once(serv
         page.click('[data-rsf="not_prepared"]')
         assert page.get_attribute('[data-vf="not_prepared"]', 'aria-pressed') == 'true' and page.locator('#offList [data-pdoc]').count() == 4
         assert page.evaluate("() => [...document.querySelectorAll('#vaultF [data-vf]')].map(x => x.textContent.replace(/\\s+/g, ' ').trim())") == ['الكل 4', 'تحتاج إجراءً منك 0', 'جاهز 0', 'لم يُجهَّز بعد 4']
-        # «تجهيز الكل»: read, fixed, checked — and the sign counts again
+        # «تجهيز الكل»: read, fixed, checked — and the sign counts again. The Word file where a PDF is asked is turned into its PDF
+        # and that PDF prepared (17/11: «fix it by itself»); a justification of the specification stays in its own item (3.2.P.5.6)
         page.click('#prepAll')
         page.wait_for_function("() => !S.prepBusy && !S.prepDoing && S.prep && S.prep.placed.length === 4 && S.prep.placed.every(d => d.prepared) && document.getElementById('readyStats').textContent.includes('لم يُجهَّز بعد: 0')", timeout=240000)
-        assert page.evaluate(STATS) == 'في الخزنة: 4 · جاهز: 1 · تحتاج إجراءً منك: 3 · لم يُجهَّز بعد: 0'
+        assert page.evaluate(STATS) == 'في الخزنة: 4 · جاهز: 2 · تحتاج إجراءً منك: 2 · لم يُجهَّز بعد: 0'
         assert page.evaluate(LINES) == ['needs_you', 'waiting', 'cross', 'missing'] and page.get_attribute('#readySign', 'data-ready') == 'no'
         # the documents he was looking at have all moved on: the list is not left empty under the choice he had made
         assert page.get_attribute('[data-vf="all"]', 'aria-pressed') == 'true'
-        assert sorted(page.evaluate(BUCKETS)) == [['M1-31', 'needs_you'], ['M1-37', 'needs_you'], ['P-13', 'needs_you'], ['P-16', 'ready']]
+        assert sorted(page.evaluate(BUCKETS)) == [['M1-31', 'needs_you'], ['M1-37', 'needs_you'], ['P-13', 'ready'], ['P-16', 'ready']]
+        assert page.inner_text('[data-vslot="P-13"] [data-vname]').strip() == 'made-up-justification.pdf'      # the Word file, now its PDF
+        assert page.evaluate(POINT, 'P-13') == ['closed', 'مُغلق']
         # ready, and the card says what was done to the document on its way. Its point is still open: the stability summary was
         # read as one, and the cross-document check now asks for the batches — said on the point, and on the sign with where it
         # is looked at (a point stayed open under a «ready» document, and nothing said why)
         page.click('[data-vf="ready"]')
-        assert page.evaluate(BUCKETS) == [['P-16', 'ready']] and page.evaluate(POINT, 'P-16') == ['open', 'مفتوح: ملاحظة من فحوص التطابق بين المستندات']
+        assert page.evaluate(BUCKETS) == [['P-13', 'ready'], ['P-16', 'ready']] and page.evaluate(POINT, 'P-16') == ['open', 'مفتوح: ملاحظة من فحوص التطابق بين المستندات']
         assert page.inner_text('[data-rs="cross"]').strip().startswith('ملاحظات فحوص التطابق بين المستندات على هذه المستندات: 1') and page.get_attribute('[data-rs="cross"] a', 'href') == f'#/d/{did}/checks'
         assert page.inner_text('[data-vslot="P-16"] [data-vread="text"]').strip() == 'قُرئ من نصه'
         assert page.inner_text('[data-vslot="P-16"] [data-vfixed]').strip() == 'إصلاحات البرنامج: 1'
@@ -126,10 +129,9 @@ def test_the_sign_says_what_is_left_and_the_vault_holds_every_document_once(serv
         # needs you: the reason on the point, and the conditions open on the card
         page.click('[data-rsf="needs_you"]')
         assert page.get_attribute('[data-vf="needs_you"]', 'aria-pressed') == 'true'
-        assert sorted(x[0] for x in page.evaluate(BUCKETS)) == ['M1-31', 'M1-37', 'P-13']
+        assert sorted(x[0] for x in page.evaluate(BUCKETS)) == ['M1-31', 'M1-37']
         assert page.evaluate("() => [...document.querySelectorAll('#offList details[data-vcond]')].every(x => x.open)")
         assert page.evaluate(POINT, 'M1-31') == ['open', 'مفتوح: أمر يحتاج إلى تحقُّقك']
-        assert page.evaluate(POINT, 'P-13') == ['open', 'مفتوح: مستند يحتاج إجراءً منك، أمر يحتاج إلى تحقُّقك']
         # a choice that matches nothing says so
         page.click('[data-vf="not_prepared"]')
         assert page.inner_text('#vaultNone').strip() == 'لا يوجد مستند يطابق اختيارك.'
@@ -142,7 +144,7 @@ def test_the_sign_says_what_is_left_and_the_vault_holds_every_document_once(serv
         # an answer given on the card: the document is ready, its point closes, the sign counts again
         page.click('[data-vslot="M1-31"] [data-pslotans][data-ans="yes"]')
         page.wait_for_function("() => (document.querySelector('[data-vslot=\"M1-31\"]') || {dataset: {}}).dataset.bucket === 'ready'", timeout=60000)
-        assert page.evaluate(STATS) == 'في الخزنة: 4 · جاهز: 2 · تحتاج إجراءً منك: 2 · لم يُجهَّز بعد: 0'
+        assert page.evaluate(STATS) == 'في الخزنة: 4 · جاهز: 3 · تحتاج إجراءً منك: 1 · لم يُجهَّز بعد: 0'
         assert page.evaluate(POINT, 'M1-31') == ['closed', 'مُغلق']
         assert page.evaluate('() => location.hash').endswith('/prepare')
         b.close()
@@ -308,6 +310,7 @@ def test_while_everything_is_being_prepared_a_documents_buttons_wait_and_say_so(
                     return
             r.continue_()
         page.route('**/api/dossiers/*/prepare/*', hold)
+        first = {d['id'] for d in call(server, f'/api/dossiers/{did}/prepare')['placed']}
         page.click('#prepAll')
         for _ in range(100):
             if held:
@@ -332,7 +335,11 @@ def test_while_everything_is_being_prepared_a_documents_buttons_wait_and_say_so(
         page.evaluate('() => closeDrawer()')
         held[0].continue_()
         page.wait_for_function("() => !S.prepBusy && !S.prepDoing && S.prep.placed.every(d => d.prepared)", timeout=240000)
-        assert len(posts) == 4 == len(set(posts)), posts                                 # each document prepared once
+        # each document prepared once: the four, and the PDF the Word file became (17/11: «تجهيز الكل» turns it into its PDF by itself)
+        ids = [u.rsplit('/', 1)[1] for u in posts]
+        assert len(ids) == 5 == len(set(ids)) and first <= set(ids), posts
+        pdf = next(x for s in call(server, f'/api/dossiers/{did}/board')['slots'] if s['slot_id'] == 'P-13' for x in s['documents'])
+        assert pdf['filename'] == 'made-up-justification.pdf' and pdf['meta']['converted_from'] == 'made-up-justification.docx'
         b.close()
     assert not errors, errors
     assert not bad, bad

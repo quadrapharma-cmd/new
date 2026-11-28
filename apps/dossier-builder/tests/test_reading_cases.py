@@ -21,6 +21,9 @@ NOTIF_AR = 'هيئة الدواء المصرية\nإخطار تسجيل مستح
 COMP = 'Composition Certificate\nProduct: Dermacure 500 mg film coated tablets\nEach film coated tablet contains:\nParacetamol 500 mg\nExcipients: starch, povidone, magnesium stearate'
 
 
+JUSTIF = 'Justification of the specification\nThe limits follow the pharmacopoeial monograph and the batch data (made up).\nSpecification: assay 95.0-105.0 per cent.'
+
+
 @pytest.mark.parametrize('req,text,ok', [
     ('M1-05', PRICE_EN, True),             # a pricing certificate of a coated product («coa» is not the start of «coated»)
     ('M1-05', PRICE_AR, True),             # it cites the registration notification by its number: still a pricing letter
@@ -35,6 +38,9 @@ COMP = 'Composition Certificate\nProduct: Dermacure 500 mg film coated tablets\n
     ('M1-14', CPP, True),
     ('M1-04', NOTIF_AR, True),             # a notification states the price and the shelf life as fields
     ('M1-31', COMP, True),
+    ('P-13', JUSTIF, True),                # a justification of the specification reads as a specification: at home in 3.2.P.5.6
+    ('S-11', JUSTIF, True),                # and in 3.2.S.4.5 (27/11/2026: it was told to move to «Specifications»)
+    ('M1-05', JUSTIF, False),              # elsewhere it is still not the document the item asks for
 ])
 def test_kind_rule_judges_a_document_by_its_title(req, text, ok):
     assert X.kind_check(req, 'document.pdf', text)['ok'] is ok
