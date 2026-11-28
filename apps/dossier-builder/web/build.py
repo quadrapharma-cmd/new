@@ -137,12 +137,16 @@ def ocr_tag():
     return h.hexdigest()[:16]
 
 
+CARRIED_OCR_TAG = None      # main(--carry): the scan reader's tag as the published version carries it (its files are carried unchanged)
+
+
 def ocr_script():
     """The scan reader (ui/assets/ocr.js) in the page, with where its files are; nothing when they were not fetched (no OCR then)."""
-    if not OCR.is_dir():
+    if not OCR.is_dir() and not CARRIED_OCR_TAG:
         return ''
     js = (UI / 'assets' / 'ocr.js').read_text(encoding='utf-8')
-    return f"<script>window.DB_OCR_BASE='assets/ocr/';window.DB_OCR_TAG='{ocr_tag()}';\n{js}\n</script>\n"
+    tag = ocr_tag() if OCR.is_dir() else CARRIED_OCR_TAG
+    return f"<script>window.DB_OCR_BASE='assets/ocr/';window.DB_OCR_TAG='{tag}';\n{js}\n</script>\n"
 
 
 # the first screen, in the page's first bytes: shown before anything loads; boot.js replaces it with its progress screen
@@ -207,7 +211,7 @@ def put(dst, data):
         dst.write_bytes(data)
 
 
-def engine_zip(out):
+def engine_zip(out, ocr=None):
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as z:
         for rel in BUNDLE:
@@ -216,7 +220,7 @@ def engine_zip(out):
                                                    and 'combined' not in x.parts)     # the combined-dossier program needs OCR and Chromium: not in the page
             for f in files:
                 z.write(f, str(f.relative_to(REPO)))
-        if OCR.is_dir():                                 # the engine offers the scan reader's fixes only where the page has it (extract.reads_in_browser)
+        if OCR.is_dir() if ocr is None else ocr:         # the engine offers the scan reader's fixes only where the page has it (extract.reads_in_browser)
             z.writestr(zipfile.ZipInfo('apps/dossier-builder/engine/dossier_engine/BROWSER_OCR', (2026, 1, 1, 0, 0, 0)),
                        'This build reads scans in the page: ui/assets/ocr.js, assets/ocr/.\n')
     put(out, buf.getvalue())
@@ -227,23 +231,48 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--pyodide', default=str(HERE / 'vendor' / 'pyodide'))
     ap.add_argument('--wheels', default=str(HERE / 'vendor' / 'wheels'))
+    ap.add_argument('--carry', default=None, help='a folder holding a published version\'s files (Artifact read of its paths): '
+                    'what this machine has not built (the runtime, the scan reader, PdfCraft, the editing programs) is taken from '
+                    'it unchanged, so only the pages and the engine are new')
     a = ap.parse_args()
+    carry = pathlib.Path(a.carry) if a.carry else None
+    global CARRIED_OCR_TAG
+    if carry and not OCR.is_dir() and (carry / 'assets' / 'ocr').is_dir():
+        CARRIED_OCR_TAG = re.search(r"window\.DB_OCR_TAG='([0-9a-f]+)'", (carry / 'index.html').read_text(encoding='utf-8')).group(1)
+
+    def carried(sub):
+        """Copy <carry>/<sub> into the dist as it was published → True when there was something to copy."""
+        src = carry / sub if carry else None
+        if not src or not src.is_dir():
+            return False
+        for f in sorted(x for x in src.rglob('*') if x.is_file()):
+            dst = DIST / sub / f.relative_to(src)
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(f, dst)
+        print(f'(carried {sub} from {carry})')
+        return True
     if DIST.exists():
         shutil.rmtree(DIST)
     (DIST / 'assets').mkdir(parents=True)
     programs = programs_dist(DIST / 'assets' / 'programs')
+    if not programs['apps'] and carried('assets/programs'):           # the published version's programs, and its list of them
+        m = re.search(r'window\.DB_PROGRAMS=(\{.*?\});\n', (carry / 'index.html').read_text(encoding='utf-8'))
+        programs = json.loads(m.group(1))
+        carried('fonts')
     if 'photocraft' in programs['apps']:        # the photo program asks for the fonts a host serves beside the page (fonts/manifest.txt): none here — said, not a 404
         put(DIST / 'fonts' / 'manifest.txt', b'# eBOX serves no extra fonts: the photo program uses the ones built into it.\n')
     content, full = page(UI / 'index.html', builder=True, programs=programs)
     (DIST / 'index.html').write_text(content, encoding='utf-8')
     (DIST / 'index.local.html').write_text(full, encoding='utf-8')
     (DIST / 'suite.html').write_text(page(UI / 'suite' / 'index.html', builder=False)[1], encoding='utf-8')
-    n = engine_zip(DIST / 'assets' / 'engine.zip')
+    ocr_carried = not OCR.is_dir() and carry is not None and (carry / 'assets' / 'ocr').is_dir()
+    n = engine_zip(DIST / 'assets' / 'engine.zip', ocr=True if ocr_carried else None)
     put(DIST / 'assets' / 'engine.worker.js', SHARED().encode('utf-8') + (HERE / 'pdfcraft.wasi.js').read_bytes() + b'\n'
         + (HERE / 'engine.worker.js').read_bytes())      # the engine's own thread (boot.js starts it), with PdfCraft for WebAssembly beside it
     for src, sub in ((pathlib.Path(a.pyodide), 'pyodide'), (pathlib.Path(a.wheels), 'wheels')):
         if not src.is_dir():
-            print(f'(no {sub} assets at {src}; skipped)')
+            if not carried(f'assets/{sub}'):
+                print(f'(no {sub} assets at {src}; skipped)')
             continue
         for f in sorted(src.iterdir()):
             if f.is_file():
@@ -254,12 +283,12 @@ def main():
                 pdfcraft_parts(f, DIST / 'assets' / 'pdfcraft')
             else:
                 put(DIST / 'assets' / 'pdfcraft' / f.relative_to(PDFCRAFT_WASM), f.read_bytes())
-    else:
+    elif not carried('assets/pdfcraft'):
         print(f'(no PdfCraft for WebAssembly at {PDFCRAFT_WASM}: run tools/pdfcraft/build-wasm.sh; this build has no PdfCraft)')
     if OCR.is_dir():                                                     # the scan reader's files, as web/ocr_assets.py wrote them
         for f in sorted(x for x in OCR.rglob('*') if x.is_file()):
             put(DIST / 'assets' / 'ocr' / f.relative_to(OCR), f.read_bytes())
-    else:
+    elif not carried('assets/ocr'):
         print(f'(no scan reader at {OCR}: run web/ocr_assets.py; scans are not read in this build)')
     manifest(DIST)
     total = sum(f.stat().st_size for f in DIST.rglob('*') if f.is_file())
