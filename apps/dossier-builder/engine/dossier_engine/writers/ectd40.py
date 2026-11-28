@@ -206,14 +206,15 @@ def write(out_dir, env: Envelope4, product: Product, docs, profile: Profile40 = 
         c['priority'] = prio[c['code']]
         kw = ''.join(f'\n            <referencedBy typeCode="REFR"><keyword><code code="{escape(v)}" codeSystem="{cs}"/></keyword></referencedBy>'
                      for v, cs in c['kws'])
+        rep = ('\n            <replacementOf typeCode="RPLC"><relatedContextOfUse><id root="' + c['replaces'] + '"/></relatedContextOfUse></replacementOf>'
+               if c['replaces'] else '')                 # outside the f-string: a quote inside one needs Python 3.12
         comps += f'''
         <component>
           <priorityNumber value="{prio[c['code']]}"/>
           <contextOfUse>
             <id root="{c['id']}"/>
             <code code="{c['code']}" codeSystem="{c['cs']}"/>
-            <statusCode code="active"/>{f'''
-            <replacementOf typeCode="RPLC"><relatedContextOfUse><id root="{c['replaces']}"/></relatedContextOfUse></replacementOf>''' if c['replaces'] else ''}
+            <statusCode code="active"/>{rep}
             <derivedFrom><documentReference><id root="{c['doc']}"/></documentReference></derivedFrom>{kw}
           </contextOfUse>
         </component>'''
