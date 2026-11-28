@@ -63,14 +63,25 @@ def run(work, rec=None):
         import shutil
         shutil.rmtree(out_root)
     say(f'كتابة تسلسل eCTD 4.0 رقم {seq} من التسلسل {env.get("sequence")}')
-    docs = docs_of(rec, seq_dir, p40.v32)
+    docs, left_out = [], []
+    for d in docs_of(rec, seq_dir, p40.v32):
+        try:
+            p40.cou(d.node)
+            docs.append(d)
+        except w40.WriterError:                    # a heading 3.2.2 takes a document at and 4.0 does not (2.6, 5.3.5): named, not dropped
+            left_out.append({'node': d.node, 'title': d.title, 'file': Path(d.file).name,
+                             'why': {'en': f'eCTD 4.0 has no context of use at {d.node}: its documents go in its sub-sections',
+                                     'ar': f'لا يقبل eCTD 4.0 مستندًا في {d.node} نفسه، بل في أقسامه الفرعية'}})
+    if left_out:
+        say(f'مستندات لا يقبلها eCTD 4.0 في موضعها (تبقى في 3.2.2 وctd.zip): {len(left_out)} — '
+            + '، '.join(sorted({x["node"] for x in left_out})))
     r = w40.write(out_root, e4, product, docs, profile=p40)
     say('التحقق من تسلسل eCTD 4.0')
     report = v40.validate(r['path'], p40, IG_ZIP, w.root / 'cache')
     rows = report['results']
     fails = [x for x in rows if x.get('status') == 'fail']
     warns = [x for x in rows if x.get('status') == 'warning']
-    out = {'sequence': str(r['path']), 'number': seq, 'documents': len(docs),
+    out = {'sequence': str(r['path']), 'number': seq, 'documents': len(docs), 'left_out': left_out,
            'files': sum(1 for p in Path(r['path']).rglob('*') if p.is_file()),
            'validation': {'pass': report['counts']['pass'], 'fail': len(fails), 'warning': len(warns),
                           'not_run': report['counts']['not_run']},

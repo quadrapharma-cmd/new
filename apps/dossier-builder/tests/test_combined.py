@@ -181,7 +181,7 @@ def test_ectd40_and_ctd_zip_carry_the_same_documents(work):
     e = work.load('ectd.json')
     r4 = ectd40.run(work)
     assert r4['validation']['fail'] == 0, [x for x in r4['results'] if x['status'] == 'fail']
-    assert r4['number'] == 1 and r4['documents'] == len(e['leaves']) + len(e['m1'])
+    assert r4['number'] == 1 and r4['documents'] + len(r4['left_out']) == len(e['leaves']) + len(e['m1'])
     seq4 = Path(r4['sequence'])
     assert seq4.parent.name == e['envelope']['identifier'].lower() and (seq4 / 'submissionunit.xml').exists()
     if any(l['code'] == '2.3.intro' for l in e['leaves']):       # 2.3's introduction: its own heading in 4.0 (a real dossier, 28/11)
@@ -283,4 +283,17 @@ def test_a_sequence_with_the_introduction_of_23_is_written_and_validated_in_40(w
     assert r4['validation']['fail'] == 0, [x for x in r4['results'] if x['status'] == 'fail']
     su = (Path(r4['sequence']) / 'submissionunit.xml').read_text(encoding='utf-8')
     assert 'code="ich_2.3.i"' in su and any(p.as_posix().endswith('m2/23-qos/introduction.pdf') for p in Path(r4['sequence']).rglob('*.pdf'))
+    ectd40.run(work)                                             # the work folder's own 4.0 sequence again, for what follows
+
+
+
+def test_a_document_at_a_heading_40_takes_none_at_is_left_out_by_name_not_the_stage(work):
+    # 28/11/2026: his real dossier filed the nonclinical summaries at 2.6 itself, which ICH eCTD 3.2.2 allows and 4.0 does not
+    import copy
+    e = copy.deepcopy(work.load('ectd.json'))
+    two = next(l for l in e['leaves'] if l['code'] == '2.2')
+    e['leaves'].append(dict(two, code='2.6', title='2.6 Nonclinical written and tabulated summaries', id='leaf-26'))
+    r4 = ectd40.run(work, rec=e)
+    assert [x['node'] for x in r4['left_out']] == ['2.6'] and r4['left_out'][0]['why']['ar']
+    assert r4['validation']['fail'] == 0 and r4['documents'] == len(e['leaves']) + len(e['m1']) - 1
     ectd40.run(work)                                             # the work folder's own 4.0 sequence again, for what follows

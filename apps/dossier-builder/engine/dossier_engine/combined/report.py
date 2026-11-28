@@ -386,7 +386,8 @@ def ectd_report(w):
             rows.append(['CTD One Submission ‏(ctd.zip)', f"{cz['documents']} مستندًا في بنود NP.CAPP.065",
                          f"بنود مطلوبة ناقصة {len(cz['required_missing'])}؛ مستندات بلا بند {len(cz['unplaced'])}"])
         doc.table(['الصيغة', 'المحتوى', 'النتيجة'], rows)
-        doc.ul(['المستندات في الصيغ الثلاث هي ملفات تسلسل eCTD 3.2.2 نفسها، بايتًا ببايت.',
+        doc.ul(['المستندات في الصيغ الثلاث هي ملفات تسلسل eCTD 3.2.2 نفسها، بايتًا ببايت'
+                + ('، إلا ما لا يقبله eCTD 4.0 في موضعه (الجدول أدناه).' if e4 and e4.get('left_out') else '.'),
                 'eCTD 4.0 مكتوب على الملف المصري المؤقت للإصدار 4.0 (مسودات الهيئة)؛ وأرقام OID الإقليمية فيه مؤقتة حتى تسجلها الهيئة.',
                 'ctd.zip هو ما تستلمه الهيئة اليوم (NP.CAPP.065 v5)، ومعه 00-navigator.html و00-checklist.csv لكل بند وحالته.'])
         if e4:
@@ -394,6 +395,9 @@ def ectd_report(w):
             if bad4:
                 doc.table(['قاعدة eCTD 4.0', 'النتيجة', 'التفصيل'],
                           [[r['rule'], 'راسبة' if r['status'] == 'fail' else 'تنبيه', '؛ '.join(map(str, r['failures'][:3]))] for r in bad4])
+        if e4 and e4.get('left_out'):
+            doc.table(['مستند لم يدخل eCTD 4.0', 'موضعه في 3.2.2', 'السبب'],
+                      [[x['title'], x['node'], x['why']['ar']] for x in e4['left_out']])
         if cz and cz['unplaced']:
             doc.table(['مستند بلا بند في ctd.zip', 'رقمه'], [[u['title'], u['node']] for u in cz['unplaced']])
     eb = w.load('ebox.json')
