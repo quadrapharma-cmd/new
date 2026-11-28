@@ -119,7 +119,24 @@ Its first line is «[مكتب eBOX] <kind>», then «المعرّف: <dossier id
    - `finish <task> '<a short summary of what you decided>'`. Between tasks, now and then:
      `$W mark $D/work decide running '<the next task's Arabic name>'` and send.
    - After the fifth: `$W mark $D/work decide done 'اتُّخذت القرارات الخمس.'`; send.
-5. **Stages 8–10.** `$W stage $D/work fix`, then `ectd`, `report` — send after each.
+5. **Stages 8–10.** `$W stage $D/work fix`, then `build`; send after each. Then **build what is missing (you write it)**, from
+   `$APP/engine`: `B="python3 -m dossier_engine.combined.build $D/work"`.
+   - `$B list`: the open items the company itself issues (eBOX's own copy of the dossier says which are missing). The other
+     parties' items are not here: they stay in the request letters. «cannot» already set: a study report or a batch record
+     (never written); «later»: written elsewhere (the cover letter, the product information).
+   - For each item «to do», in the order listed: `$B brief <item>` (an item by its number in the list, `#3`, or its
+     requirement, `M1-31`) gives its template or its generator, what the dossier already knows and its documents' texts.
+     Read more of the dossier before you write: `$B docs` (its documents, with their pages), `$B pages 12-15`.
+   - Then one of: `$B write <item> @<file>` (a template: the JSON its brief asks for), `$B generate <item> @<file>` (a
+     generator: its fields' values), or `$B cannot <item> '<what is missing, formal Arabic>'` when the pages do not give what
+     the document needs. Only what the pages say: never a number, a name, a date, a batch or a result of your own; a fact
+     a document needs and the pages lack is `[…]` in it and in its gaps. Who signs: named in the pages, or the lines left
+     blank to be signed. Correct every «REFUSED» by its reason.
+   - `$B finish` (refused while an item is «to do»); then `$W mark $D/work build done '<what you wrote, formal Arabic>'`
+     and send. A document the company must sign, and every gap left in one, go to the needs by themselves.
+   Then `$W stage $D/work ectd`, then `report` — send after each. The eCTD stage puts what you wrote in the three outputs (Module 1
+   at its EG element, Modules 2–5 at their headings) and in eBOX's copy, and runs the check for any country (ICH and the
+   authority's own criteria) on the sequence: `global.json`, its counts in the eCTD report.
 6. **The numbers.** `$W summary $D/work` (it prints the two reports and the three outputs: the eCTD 3.2.2 zip, `ectd40.zip`
    and `ctd.zip` — CTD One Submission, what EDA receives today — and, under `review:`, the assessor's reports and letters
    and one request letter per party); send. The two reports go to the page as before; of the review's PDFs, upload the

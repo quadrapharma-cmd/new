@@ -67,11 +67,16 @@ def run(work):
     say('النواقص حسب الجهة المُصدِرة، وخطاب طلب واحد لكل جهة')
     m = c.get(f'/api/dossiers/{did}/missing').json()
     parties = []
+    built = {x['item'] for x in (w.load('build.json', {}) or {}).get('items') or [] if x['state'] == 'built'}
     for g in m.get('parties') or []:
+        mine = [i for i in g['items'] if i['slot_id'] in built]           # written by the build stage: there, to be signed
+        g = {**g, 'items': [i for i in g['items'] if i['slot_id'] not in built]}
+        if not g['items'] and not mine:
+            continue
         ids = [i['slot_id'] for i in g['items'] if not i.get('request')]
         p = {'kind': g['kind'], 'name': g['name'] if isinstance(g['name'], str) else (g['name'] or {}).get('ar') or (g['name'] or {}).get('en'),
              'items': [{'ctd': i.get('ctd'), 'title': (i.get('title') or {}).get('ar') or (i.get('title') or {}).get('en'),
-                        'en': (i.get('title') or {}).get('en'), 'generable': i.get('generable')} for i in g['items']]}
+                        'en': (i.get('title') or {}).get('en'), 'generable': i.get('generable')} for i in g['items']], 'built': len(mine)}
         if ids and g['kind'] != 'company':                    # the company's own papers are written, not asked for
             sign = (w.load('dossier.json', {}) or {}).get('signatory') or {}       # who signs for the company: blank lines to sign until it is said
             q = c.post(f'/api/dossiers/{did}/requests', json={'issuer': p['name'] or KIND_AR[g['kind']], 'slot_ids': ids, 'lang': 'en',

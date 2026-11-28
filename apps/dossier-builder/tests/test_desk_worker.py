@@ -65,7 +65,7 @@ def run(tmp_path_factory):
     decisions_by_session(w)
     assert wk('mark', w.root, 'decide', 'done', 'اتُّخذت القرارات الخمس.')[0] == 0
     seen['decide'] = patch(w.root)
-    for s in ('fix', 'ectd', 'report'):
+    for s in ('fix', 'build', 'ectd', 'report'):
         code, out = wk('stage', w.root, s)
         assert code == 0, out
     code, out = wk('summary', w.root)
@@ -95,11 +95,14 @@ def test_the_numbers_and_what_is_needed(run):
     last = seen['summary']
     assert last['summary'] == {'pages': 47, 'documents': 21, 'left_out': 6, 'findings': 5, 'leaves': 23, 'failed_rules': 1,
                                'ectd40_failed_rules': 0, 'ectd40_left_out': 0, 'outputs_failed': [], 'ctd_required_missing': 56, 'ctd_unplaced': 0,
-                               'review_critical': 26, 'review_major': 67, 'parties_asked': 3}
+                               'review_critical': 26, 'review_major': 67, 'parties_asked': 3,
+                               'built': 0, 'built_to_sign': 0, 'left_to_company': 7, 'global_failed_rules': 1}
     assert last['needs'] == ['رقم التتبع الذي تعطيه الهيئة: يُكتب في التسلسل حين يصل.',
                              'تأكيد المتقدم: «Example Pharma Ltd.» — يُغيَّر إن كان المتقدم الوكيل المصري',
                              'شهادة GMP — من الشركة المصنعة، لـ Module 1، البند 1.2.4',
-                             '1.1.1 نموذج الطلب والتعهد (غير موجود) — من الشركة']
+                             '1.1.1 نموذج الطلب والتعهد (غير موجود) — من الشركة',
+                             'تقارير دراسات وسجلات تشغيلات مطلوبة يقدّمها أصحابها: 7 (تفاصيلها في تقرير التسلسل).',
+                             'مستندات ناقصة تُصدرها الشركة لم تُكتب بعد: 40 (مرحلة «بناء المستندات الناقصة»).']
     assert [r['title'] for r in handed['reports']] == ['تقرير الملف (CTD)', 'تقرير تسلسل eCTD 0000']
     assert all(Path(r['file']).stat().st_size == r['bytes'] > 5000 and r['fits_page'] for r in handed['reports'])
     assert handed['zip'] and Path(handed['zip']['file']).exists() and handed['zip']['bytes'] > 10000
@@ -118,7 +121,7 @@ def test_results_status_and_needs(run, tmp_path):
     for i in range(12):
         assert wk('need', work, f'بند {i}')[0] == 0
     n = patch(work)['needs']
-    assert len(n) == 13 and n[0] == 'بند 0' and n[-1] == 'وبنود أخرى في تقرير الملف (العدد: 4).'
+    assert len(n) == 13 and n[0] == 'بند 0' and n[-1] == 'وبنود أخرى في تقرير الملف (العدد: 6).'
     assert wk('status', work, 'finished', 'اكتمل إعداد الملف.')[0] == 0
     p = patch(work)
     assert p['status'] == 'finished' and p['headline'] == 'اكتمل إعداد الملف.' and p['log'][-1] == 'اكتمل إعداد الملف.'
@@ -137,8 +140,8 @@ def test_private_shows_the_progress_only(run, tmp_path):
     assert p['needs'] == ['الوصول إلى مجلد Drive']                                # the session's own, not the dossier's
     names = {'— ' + n for n in ('قراءة الملفات الواردة صفحةً صفحة', 'الكتل المكررة', 'التعرف الضوئي على الصفحات الممسوحة',
                                 'تقسيم الملف إلى مستندات CTD', 'بناء مجلد CTD ومطابقة كل صفحة بأصلها', 'الفحوص',
-                                'التصحيحات ومعلومات المستحضر', 'تسلسل eCTD والتحقق منه', 'التقريران والتسليم')}
-    assert set(p['log']) <= names | {'بدأ العمل على الملف.'} and len(p['log']) == 10
+                                'التصحيحات ومعلومات المستحضر', 'بناء المستندات الناقصة', 'تسلسل eCTD والتحقق منه', 'التقريران والتسليم')}
+    assert set(p['log']) <= names | {'بدأ العمل على الملف.'} and len(p['log']) == 11
     assert not any(ch.isdigit() for line in p['log'] for ch in line)
     assert wk('private', work, 'off')[0] == 0
     p = patch(work)

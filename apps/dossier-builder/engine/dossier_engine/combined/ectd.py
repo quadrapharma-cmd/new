@@ -188,6 +188,8 @@ class Builder:
         self.folder = w.ctd / (self.dec.get('ctd_folder') or 'CTD')
         self.fixed = (w.load('fixed.json', {}) or {}).get('docs', {})
         self.pi = (w.load('fixed.json', {}) or {}).get('pi', [])
+        self.built = w.load('built.json', []) or []          # what the build stage wrote for a missing item (build.py)
+        self.built_out = []
         self.gen = w.ectd / 'generated'
         self.out_root = w.ectd / 'out'
         self.seq_dir = self.out_root / self._env()['sequence']
@@ -410,6 +412,26 @@ class Builder:
                 folder += '/' + slug(re.sub(r'^\d(?:\.\d+)*\s+', '', d['title']), 30)        # one folder a study
                 fname = slug(re.sub(r'^\d(?:\.\d+)*\s+', '', d['title']), 40) + '.pdf'
             leaf(d, c, folder, fname, self.title_of(d), attrs)
+        # what the build stage wrote for a missing item of Modules 2–5 (build.py), at its heading
+        for b in (x for x in self.built if not x['node'].startswith('1.')):
+            c = b['node']
+            folder = self.folders.get(c)
+            if not folder:
+                self.built_out.append({'item': b['item'], 'node': c, 'why': 'no eCTD folder for this heading'})
+                continue
+            attrs = {}
+            if '/32s-drug-sub/' in folder:
+                name = b.get('substance') or (order[0] if order else None)
+                s = subst.get(name, {}) if name else {}
+                folder = folder.replace('substance-1-manufacturer-1', s.get('folder', slug(name or 'substance')))
+                attrs = {'3.2.S': {'substance': s.get('substance', (name or '').lower()), 'manufacturer': manuf}}
+            elif '/32p-drug-prod/' in folder:
+                folder = folder.replace('product-1', pslug)
+                attrs = {'3.2.P': product}
+            elif c == '2.3.P':
+                attrs = {'2.3.P': product}
+            self.add(c, folder.replace('indication-1', islug), slug(b['title']) + '.pdf', b['title'], Path(b['pdf']), attrs, [],
+                     'written by the program for a missing item (build stage)', None)
 
     def shared_file(self, c, fname):
         m = re.search(r'Annexure\s+(\d+)(?:\s*\(part\s+(\d+)\s+of\s+\d+\))?', c['title'], re.I)
@@ -523,6 +545,15 @@ class Builder:
             el, href = EU_TO_EG[d['ctd']]
             self.m1.append((o.get('element', el), None, o.get('href', href), o.get('title', self.title_of(d).split(' ', 1)[1]),
                             self.folder / d['path'], keep, d['path']))
+        from ..writers.ectd32 import Profile32
+        rows = Profile32(PROFILE_EG).m1
+        for b in (x for x in self.built if x['node'].startswith('1.')):
+            row = rows.get(b['node'])
+            if not row or not row.get('directory', '').startswith('m1/eg/'):
+                self.built_out.append({'item': b['item'], 'node': b['node'], 'why': 'no EG Module 1 element for this node'})
+                continue
+            href = f"{row['directory'][len('m1/eg/'):]}/{slug(b['title'])}.pdf"
+            self.m1.append((row['element'], None, href, b['title'], Path(b['pdf']), None, None))
         content = E.get('cover', {}).get('content') or self.default_content()
         self.make_cover(env, content)
 
@@ -718,6 +749,27 @@ class Builder:
         (self.seq_dir / 'index-md5.txt').write_text(md5_file(p), encoding='ascii')
 
 
+def global_check(w, seq_dir):
+    """The check for any country (validators/global_ectd.py) on this sequence: ICH's layer, then the region's own criteria; the
+    whole result in global.json, its counts in ectd.json. A failure of the check itself is said, never fatal to the sequence."""
+    try:
+        from ..validators import global_ectd
+        res = global_ectd.validate(seq_dir)
+    except Exception as ex:                                   # the sequence stands: the check's own fault is said, kept and shown
+        say(f'تعذّر الفحص العالمي للتسلسل: {type(ex).__name__}: {ex}')
+        return {'ok': None, 'error': f'{type(ex).__name__}: {ex}'}
+    w.save('global.json', res)
+    counts = {}
+    for name, layer in (res.get('layers') or {}).items():
+        c = layer.get('counts') or {}
+        counts[name] = {'ok': layer.get('ok'), 'pass': c.get('pass', 0), 'fail': c.get('fail', 0), 'warn': c.get('warn', 0)}
+    en, ar = global_ectd.note(res)
+    say(f"الفحص العالمي ({res.get('authority')}): " + ' · '.join(f"{k}: {'مطابق' if v['ok'] else 'غير مطابق'} ({v['fail']} راسبة)"
+                                                            for k, v in counts.items()))
+    return {'ok': res.get('ok'), 'region': res.get('region'), 'authority': res.get('authority'), 'criteria': res.get('criteria'),
+            'layers': counts, 'note': {'en': en, 'ar': ar}}
+
+
 def run(work):
     w = work if isinstance(work, Work) else Work(work)
     b = Builder(w)
@@ -742,6 +794,10 @@ def run(work):
            'bytes': sum(p.stat().st_size for p in b.seq_dir.rglob('*') if p.is_file()),
            'validation': {'pf_pass': sum(r['ok'] for r in pf), 'pf_fail': sum(not r['ok'] for r in pf),
                           'bp_met': sum(r['ok'] for r in bp), 'bp_not': sum(not r['ok'] for r in bp)}}
+    out_items = {x['item'] for x in b.built_out}
+    rec['built'] = [x['item'] for x in b.built if x['item'] not in out_items]
+    rec['built_out'] = b.built_out
+    rec['global'] = global_check(w, b.seq_dir)
     w.save('ectd.json', rec)
     w.save('validation.json', results)
     v = rec['validation']

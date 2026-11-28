@@ -260,13 +260,14 @@ textarea { min-height: 84px; resize: vertical; }
     ['ocr', 'التعرف الضوئي على الصفحات الممسوحة', 'i-scan'], ['split', 'تقسيم الملف إلى مستندات CTD', 'i-cut'],
     ['assemble', 'بناء مجلد CTD ومطابقة كل صفحة بأصلها', 'i-layers'], ['checks', 'الفحوص', 'i-check'],
     ['decide', 'قرارات Claude', 'i-spark'], ['fix', 'التصحيحات ومعلومات المستحضر', 'i-wrench'],
+    ['build', 'بناء المستندات الناقصة', 'i-doc'],
     ['ectd', 'تسلسل eCTD والتحقق منه', 'i-box'], ['report', 'التقريران والتسليم', 'i-doc']];
   const STATUS = { requested: 'أُرسل إلى Claude', queued: 'في الانتظار', running: 'يعمل', needs: 'يحتاج إليك',
                    finished: 'اكتمل', stopped: 'توقّف', failed: 'تعذّر' };
   const STAGE_STATE = { done: 'تمّت', running: 'جارية', waiting: 'لم تبدأ', failed: 'تعذّرت', skipped: 'لم تلزم', needs: 'تحتاج إليك' };
   const NUMS = [['pages', 'الصفحات'], ['documents', 'مستندات CTD'], ['left_out', 'صفحات تُركت'], ['findings', 'ملاحظات المراجع'],
                 ['leaves', 'أوراق eCTD'], ['failed_rules', 'قواعد راسبة'], ['review_critical', 'ملاحظات حرجة عند المقيّم'],
-                ['review_major', 'ملاحظات رئيسية عند المقيّم'], ['parties_asked', 'خطابات طلب للجهات'], ['spent_usd', 'تكلفة Claude (دولار)']];
+                ['review_major', 'ملاحظات رئيسية عند المقيّم'], ['parties_asked', 'خطابات طلب للجهات'], ['built', 'مستندات ناقصة كتبها Claude'], ['built_to_sign', 'منها للتوقيع'], ['spent_usd', 'تكلفة Claude (دولار)']];
 
   const $ = (s, r = document) => r.querySelector(s);
   const el = (tag, attrs = {}, ...kids) => {

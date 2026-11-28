@@ -323,7 +323,8 @@ def ctd_report(w):
             doc.h2('النواقص حسب الجهة المُصدِرة')
             doc.table(['الجهة', 'عدد البنود', 'خطاب الطلب'],
                       [[p['name'] or KIND_AR.get(p['kind'], p['kind']), len(p['items']),
-                        'مُعدّ' if p.get('letter') else ('تكتبه الشركة' if p['kind'] == 'company' else (p.get('letter_refused') or '—'))]
+                        'مُعدّ' if p.get('letter') else ((f"كتب البرنامج {p['built']} للتوقيع؛ والباقي على الشركة" if p.get('built') else 'تكتبه الشركة')
+                                                        if p['kind'] == 'company' else (p.get('letter_refused') or '—'))]
                        for p in rv['parties']])
     doc.h1('الملحق: فهرس الوثائق')
     doc.table(['CTD', 'المستند', 'صفحات الملف الأصلي', 'العدد', 'قابلة للبحث'],
@@ -414,6 +415,25 @@ def ectd_report(w):
                 for k, v in (eb.get('validation') or {}).items()])
         if eb.get('unplaced'):
             doc.table(['مستند بلا بند عند هذه الجهة', 'رقمه'], [[u['title'], u['node']] for u in eb['unplaced']])
+    bd = w.load('build.json')
+    if bd and bd.get('items'):
+        items = bd['items']
+        built = [x for x in items if x['state'] == 'built']
+        doc.h1('المستندات الناقصة التي تُصدرها الشركة')
+        doc.ul([f"البنود المطلوبة الناقصة التي تُصدرها الشركة نفسها: {len(items)}؛ كتب البرنامج منها {len(built)} من صفحات الملف وبياناته "
+                f"({sum(1 for x in built if x.get('sign'))} منها جاهزة لتوقيع الشركة وختمها)، وبقي على الشركة "
+                f"{sum(1 for x in items if x['state'] == 'cannot')}؛ وبنود الجهات الأخرى ({bd.get('others', 0)}) في خطابات الطلب.",
+                'لم يُكتب في هذه المستندات إلا ما في صفحات الملف؛ وما لم تذكره الصفحات تُرك فارغًا وذُكر في «ما يلزم».'])
+        doc.table(['البند', 'المستند', 'الحالة', 'ملاحظة'],
+                  [[x['req'], (x.get('title') or {}).get('ar') or (x.get('title') or {}).get('en', ''),
+                    {'built': 'كُتب' + (' — للتوقيع' if x.get('sign') else ''), 'cannot': 'على الشركة', 'later': 'في مرحلة أخرى',
+                     'to do': 'لم يُكتب بعد'}.get(x['state'], x['state']),
+                    x.get('note') or ('بيانات ناقصة فيه: ' + str(len(x.get('gaps') or [])) if x.get('gaps') else '')] for x in items], [10, 40, 16, 34])
+    g = (w.load('ectd.json') or {}).get('global') or {}
+    if g.get('layers'):
+        doc.h1('الفحص العالمي (ICH ومعايير الجهة)')
+        doc.ul([f"{k}: {'مطابق' if v.get('ok') else 'غير مطابق'} — الناجحة {v.get('pass', 0)} والراسبة {v.get('fail', 0)} والتنبيهات {v.get('warn', 0)}"
+                for k, v in g['layers'].items()] + [(g.get('note') or {}).get('ar', '')])
     doc.h1('9. طريقة العمل')
     doc.ul(['أُخذت المستندات من الملف المبني (CTD)، ووُضع كل مستند في عنصره من ICH DTD 3.2 بأسماء المجلدات والملفات في الملحق 4 من ICH.',
             'تُركت الفهارس (ملف XML هو الفهرس) والمستندات التي لا تقول إلا «غير قابل للتطبيق» أو «لا شيء» (EG-BP-E24).',

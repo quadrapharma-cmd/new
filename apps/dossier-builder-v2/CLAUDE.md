@@ -936,6 +936,22 @@ When a part is done or an open item is closed, update «What exists» and «Open
   with and rightly refuses to update itself on another session's word. Each new session starts the dossier again from the
   Drive files (about 40 minutes to the eCTD stage).
 
+- **28/11/2026, «كمل البرنامج السحابي … عايز النهارده استلمه منك كامل» (to the planning session, which builds the desk from
+  then; the operator session was told).** The desk now **builds what is missing**: a new stage «build» (`combined/build.py`,
+  after fix, before ectd) asks eBOX's own copy of the dossier (`ebox.make`, `build/store`) which required items are open and who
+  issues each; the company's own are written by the work session's Claude from the dossier's pages — `list`, `brief` (eBOX's
+  «make it for me» template or generator, what the dossier knows, the documents' texts), `docs`, `pages`, `write` / `generate`
+  / `cannot`, `finish` → `built.json`. Study reports and batch records are never written (template «none»); the cover letter and
+  the product information are written elsewhere («later»); the other parties' items stay in the request letters. The eCTD stage
+  puts every built document in the three outputs (Module 1 at its EG element from folders.csv, Modules 2–5 at their App. 4
+  folder) and in eBOX's copy (`ebox.documents`, by its requirement), so ctd.zip and the review stop counting it missing; what
+  must be signed and every gap left go to the needs. The eCTD stage also runs **the check for any country**
+  (`validators/global_ectd.py`) on the 3.2.2 sequence: `global.json`, its counts in `ectd.json`, the eCTD report and the
+  summary (`global_failed_rules`). Kind rule: a specification is accepted in a justification item (S-11, P-13; `bf82df9`).
+  Tests: `tests/test_desk_build.py` (made-up dossier: 2 written, 56 → 54 missing in ctd.zip and eBOX's copy, both at their EG
+  elements, 4.0 with nothing left out), `tests/test_desk_worker.py` (the new stage, numbers and needs). The page shows the
+  stage and two numbers (`desk/index.html`).
+
 ## Open items (propose when relevant; do when he asks)
 - Old program, next pieces (one at a time, each on his real files first): the 14/11 update and measuring Claude's reading (need
   the API key: `ANTHROPIC_API_KEY` in the environment's settings, added by him), «شروط الشكل لكل دولة», the Assistant on his

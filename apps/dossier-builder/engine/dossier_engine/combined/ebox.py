@@ -23,9 +23,10 @@ from .ctdzip import profile_of
 from .ectd40 import IG_ZIP
 
 
-def documents(w):
-    """(node, file, title, substance, meta) for every document of the CTD folder, the corrected copy where there is one, and the
-    product information the corrections stage wrote."""
+def documents(w, built=True):
+    """(node, file, title, substance, meta) for every document of the CTD folder, the corrected copy where there is one, the
+    product information the corrections stage wrote, and (built) what the build stage wrote for a missing item (built.json),
+    each with the item it was written for."""
     plan = w.load('plan.json')
     folder = Path(w.load('assembled.json')['folder'])
     fixed = w.load('fixed.json', {}) or {}
@@ -39,7 +40,17 @@ def documents(w):
     for p in fixed.get('pi') or []:
         out.append({'node': '1.3.1', 'file': Path(p['pdf']), 'title': p.get('title') or 'Product information', 'substance': None,
                     'meta': {'pi_type': p.get('type'), 'lang': p.get('lang')}, 'path': p['pdf']})
+    for b in (w.load('built.json', []) or []) if built else []:
+        out.append({'node': b['node'], 'file': Path(b['pdf']), 'title': b['title'], 'substance': b.get('substance'),
+                    'meta': {'built': b.get('how'), 'draft_unsigned': bool(b.get('sign'))}, 'path': b['pdf'], 'req': b['req']})
     return out
+
+
+def slot_of_req(slots, doc):
+    """The item a built document was written for: its requirement, and its substance where the item is one a substance."""
+    mine = [s for s in slots if s.req_id == doc['req']]
+    per = [s for s in mine if s.item and s.item.get('name') == doc.get('substance')]
+    return (per or [s for s in mine if not s.item] or mine or [None])[0]
 
 
 def slot_for(slots, doc):
@@ -55,8 +66,10 @@ def slot_for(slots, doc):
     return cands[0] if cands else None
 
 
-def run(work, country=None):
-    w = work if isinstance(work, Work) else Work(work)
+def make(w, country=None, root=None, built=True):
+    """eBOX's dossier made from this work folder in its own store (root: <work>/ebox), every document placed in its item:
+    {st, did, pk, meta, country, root, placed, unplaced, not_asked}. built=False: without what the build stage wrote (the build
+    stage asks this dossier what is missing)."""
     dec = w.load('dossier.json', {}) or {}
     E = dec.get('ectd') or {}
     env = E.get('envelope') or {}
@@ -64,7 +77,7 @@ def run(work, country=None):
     meta = packs.for_country(country)
     if not meta:
         raise SystemExit(f'لا توجد جهة رقابية للدولة {country} في البرنامج.')
-    root = w.root / 'ebox'
+    root = Path(root or w.root / 'ebox')
     if root.exists():
         shutil.rmtree(root)
     st = Store(root)
@@ -89,8 +102,8 @@ def run(work, country=None):
         did = st.create_dossier(name, pdict, product, envelope, pack=meta['id'])
     slots = st.slots(did)
     placed, unplaced, not_asked = [], [], []
-    for doc in documents(w):
-        s = slot_for(slots, doc)
+    for doc in documents(w, built=built):
+        s = slot_of_req(slots, doc) if doc.get('req') else slot_for(slots, doc)
         if not s:
             unplaced.append({'node': doc['node'], 'title': doc['title'], 'from': doc['path']})
             continue
@@ -104,6 +117,15 @@ def run(work, country=None):
         except StoreError as ex:
             unplaced.append({'node': doc['node'], 'title': doc['title'], 'from': doc['path'], 'refused': ex.args[0] if ex.args else str(ex)})
     say(f'المستندات في بنود الجهة: {len(placed)} · بلا بند: {len(unplaced)} · لا يطلبها جدول الجهة لهذه الحالة: {len(not_asked)}')
+    return {'st': st, 'did': did, 'pk': pk, 'meta': meta, 'country': country, 'root': root, 'placed': placed, 'unplaced': unplaced,
+            'not_asked': not_asked}
+
+
+def run(work, country=None):
+    w = work if isinstance(work, Work) else Work(work)
+    m = make(w, country)
+    st, did, pk, meta, country, root = m['st'], m['did'], m['pk'], m['meta'], m['country'], m['root']
+    placed, unplaced, not_asked = m['placed'], m['unplaced'], m['not_asked']
     say('نسخة العمل بمخرجات الجهة كلها، مع التحقق')
     res = exporter.export(st, did, list(pk.outputs_for(country)), True, {}, Profile40(), IG_ZIP, working=True)
     base = Path(st.root) / 'exports' / did / res['id']

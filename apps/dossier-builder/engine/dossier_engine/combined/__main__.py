@@ -10,6 +10,8 @@
   decide <work>            7. Claude makes the decisions the rules cannot (needs ANTHROPIC_API_KEY; options: --again,
                               --budget <US dollars>, --only <task>); a decisions file made by a person is left as it is
   fix <work>               8. the corrections (in the PDFs, the product information)
+  build <work>             8b. what is missing and the company issues: listed here, written by Claude (python -m
+                              dossier_engine.combined.build <work> …), placed by the eCTD stage
   ectd <work>              9. the eCTD 3.2.2 sequence, the same as eCTD 4.0 and as ctd.zip (CTD One Submission), each validated
   report <work>           10. the report (Arabic, Word and PDF)
 """
@@ -40,7 +42,7 @@ def main(argv):
         src, work = Path(rest[0]), Work(rest[1])
     else:
         src, work = None, Work(rest[0])
-    stages = ['read', 'repeats', 'ocr', 'split', 'assemble', 'checks', 'decide', 'fix', 'ectd', 'report']
+    stages = ['read', 'repeats', 'ocr', 'split', 'assemble', 'checks', 'decide', 'fix', 'build', 'ectd', 'report']
     todo = stages if stage == 'run' else [stage]
     for s in todo:
         if stage == 'run' and done(work, s):
@@ -74,6 +76,9 @@ def main(argv):
         elif s == 'fix':
             from . import fix
             fix.run(work)
+        elif s == 'build':
+            from . import build
+            build.run(work)
         elif s == 'ectd':
             from . import ectd
             ectd.run(work)
@@ -107,7 +112,7 @@ def main(argv):
 
 def done(work, stage):
     marks = {'read': 'read/pages.json', 'repeats': 'repeats.json', 'ocr': 'parts.json', 'split': 'plan.json',
-             'assemble': 'assembled.json', 'checks': 'findings.json', 'decide': 'decide.json', 'fix': 'fixed.json', 'ectd': 'ectd.json', 'report': 'report.json'}
+             'assemble': 'assembled.json', 'checks': 'findings.json', 'decide': 'decide.json', 'fix': 'fixed.json', 'build': 'build.json', 'ectd': 'ectd.json', 'report': 'report.json'}
     return (work.root / marks[stage]).exists()
 
 

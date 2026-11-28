@@ -30,10 +30,10 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ENGINE = HERE.parent / 'engine'
-STAGES = ('read', 'repeats', 'ocr', 'split', 'assemble', 'checks', 'decide', 'fix', 'ectd', 'report')
+STAGES = ('read', 'repeats', 'ocr', 'split', 'assemble', 'checks', 'decide', 'fix', 'build', 'ectd', 'report')
 NAMES = {'read': 'قراءة الملفات الواردة صفحةً صفحة', 'repeats': 'الكتل المكررة', 'ocr': 'التعرف الضوئي على الصفحات الممسوحة',
          'split': 'تقسيم الملف إلى مستندات CTD', 'assemble': 'بناء مجلد CTD ومطابقة كل صفحة بأصلها', 'checks': 'الفحوص',
-         'decide': 'قرارات Claude', 'fix': 'التصحيحات ومعلومات المستحضر', 'ectd': 'تسلسل eCTD والتحقق منه',
+         'decide': 'قرارات Claude', 'fix': 'التصحيحات ومعلومات المستحضر', 'build': 'بناء المستندات الناقصة', 'ectd': 'تسلسل eCTD والتحقق منه',
          'report': 'التقريران والتسليم'}                                     # as the page names them (desk/index.html)
 STATUSES = ('requested', 'queued', 'running', 'needs', 'finished', 'stopped', 'failed')
 STATES = ('done', 'running', 'waiting', 'failed', 'skipped', 'needs')
@@ -235,8 +235,26 @@ def summary(work):
         found.append(f'تأكيد {item}: «{value}» — {why}')
     for item, place, who in (cells(x, 3) for x in rep.get('company_gaps', [])):          # [what, where it is needed, who]
         found.append(f'{item} — من {who}، لـ {place}')
+    bd = w.load('build.json', {}) or {}                                                 # the build stage: what was written, what is left
+    done_ctd = {x['ctd'] for x in bd.get('items') or [] if x['state'] == 'built' and x.get('ctd')}
     for item, state, who in (cells(x, 3) for x in rep.get('eg_m1_needs', [])):           # [Module 1 item, its state, who]
-        found.append(f'{item} ({state}) — من {who}')
+        if str(item).split(' ', 1)[0] not in done_ctd:                                   # written since by the build stage: not needed
+            found.append(f'{item} ({state}) — من {who}')
+    for x in bd.get('items') or []:
+        name = (x.get('title') or {}).get('ar') or (x.get('title') or {}).get('en') or x['req']
+        if x['state'] == 'built' and x.get('sign'):
+            found.append(f'توقيع الشركة وختمها على «{name}» ({x["req"]}): كتبه البرنامج جاهزًا للتوقيع.')
+        if x['state'] == 'built' and x.get('gaps'):
+            what = '؛ '.join(str((g.get('ar') or g.get('what')) if isinstance(g, dict) else g) for g in x['gaps'][:4])
+            found.append(f'بيانات ناقصة في «{name}» ({x["req"]}) التي كتبها البرنامج: {what}')
+        if x['state'] == 'cannot' and x.get('by') == 'claude':
+            found.append(f'«{name}» ({x["req"]}) — من الشركة: {x.get("note")}')
+    reports = sum(1 for x in bd.get('items') or [] if x['state'] == 'cannot' and x.get('by') == 'program')
+    if reports:
+        found.append(f'تقارير دراسات وسجلات تشغيلات مطلوبة يقدّمها أصحابها: {reports} (تفاصيلها في تقرير التسلسل).')
+    todo = sum(1 for x in bd.get('items') or [] if x['state'] == 'to do')
+    if todo:
+        found.append(f'مستندات ناقصة تُصدرها الشركة لم تُكتب بعد: {todo} (مرحلة «بناء المستندات الناقصة»).')
     st = load(work)
     st['summary'] = s
     st['needs_found'] = found
@@ -265,6 +283,13 @@ def summary(work):
         s['review_critical'] = rv['counts'].get('critical', 0)
         s['review_major'] = rv['counts'].get('major', 0)
         s['parties_asked'] = sum(1 for p in rv.get('parties') or [] if p.get('letter'))
+    if bd:
+        s['built'] = sum(1 for x in bd.get('items') or [] if x['state'] == 'built')
+        s['built_to_sign'] = sum(1 for x in bd.get('items') or [] if x['state'] == 'built' and x.get('sign'))
+        s['left_to_company'] = sum(1 for x in bd.get('items') or [] if x['state'] == 'cannot')
+    g = e.get('global') or {}
+    if g.get('layers'):
+        s['global_failed_rules'] = sum(v.get('fail', 0) for v in g['layers'].values())
     if cz:
         s['ctd_required_missing'] = len(cz.get('required_missing', []))
         s['ctd_unplaced'] = len(cz.get('unplaced', []))
@@ -273,6 +298,10 @@ def summary(work):
     outs = {k: {'file': dl[k], 'bytes': Path(dl[k]).stat().st_size} for k in ('zip', 'ectd40_zip', 'ctd_zip') if dl.get(k) and Path(dl[k]).exists()}
     for f in sorted(Path(dl['country_outputs']).iterdir()) if dl.get('country_outputs') else []:     # another country's (eBOX's full program)
         outs[f'country:{f.name}'] = {'file': str(f), 'bytes': f.stat().st_size}
+    for x in bd.get('items') or [] if bd else []:                                       # what the build stage wrote: PDF and Word
+        for k in ('pdf', 'docx'):
+            if x['state'] == 'built' and x.get(k) and Path(x[k]).exists():
+                outs[f'built:{Path(x[k]).name}'] = {'file': x[k], 'bytes': Path(x[k]).stat().st_size}
     for f in sorted(Path(dl['review']).iterdir()) if dl.get('review') else []:          # the assessor's reports and letters, the requests
         if f.suffix == '.pdf':
             outs[f'review:{f.name}'] = {'file': str(f), 'bytes': f.stat().st_size}
