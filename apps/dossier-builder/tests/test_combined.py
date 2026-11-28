@@ -184,6 +184,8 @@ def test_ectd40_and_ctd_zip_carry_the_same_documents(work):
     assert r4['number'] == 1 and r4['documents'] == len(e['leaves']) + len(e['m1'])
     seq4 = Path(r4['sequence'])
     assert seq4.parent.name == e['envelope']['identifier'].lower() and (seq4 / 'submissionunit.xml').exists()
+    if any(l['code'] == '2.3.intro' for l in e['leaves']):       # 2.3's introduction: its own heading in 4.0 (a real dossier, 28/11)
+        assert 'ich_2.3.i"' in (seq4 / 'submissionunit.xml').read_text(encoding='utf-8')
     md5s = {l['md5'] for l in e['leaves']}                       # the same bytes as the 3.2.2 sequence's
     import hashlib
     pdfs4 = [p for p in seq4.rglob('*.pdf')]
@@ -260,3 +262,25 @@ def test_every_product_information_type_of_the_322_profile_is_taken_by_the_40_pr
     spec = Profile40().cou('1.3.1')[2]
     allowed = next(a for name, _c, _cs, a in spec if name == 'eg document type (product information)')
     assert 'impack' in t322 and t322 <= set(allowed)
+
+
+def test_the_introduction_of_23_is_its_own_heading_in_both_writers():
+    # 28/11/2026: the desk's 3.2.2 stage files 2.3's introduction as «2.3.intro»; the 4.0 writer knew no ICH element for it
+    from dossier_engine.writers import ectd32
+    from dossier_engine.writers.ectd40 import Profile40
+    p = Profile40()
+    assert ectd40.CODES['2.3.intro'] == '2.3.I' and p.cou('2.3.I')[0] == 'ich_2.3.i'
+    d = ectd32.Doc(node='2.3.I', file='x.pdf', title='Introduction')
+    assert ectd32.rel_path(d, ectd32.Product(name='P', dosageform='tablet', manufacturer='M'), p.v32) == 'm2/23-qos/introduction.pdf'
+
+
+def test_a_sequence_with_the_introduction_of_23_is_written_and_validated_in_40(work):
+    import copy
+    e = copy.deepcopy(work.load('ectd.json'))
+    two = next(l for l in e['leaves'] if l['code'] == '2.2')
+    e['leaves'].append(dict(two, code='2.3.intro', title='2.3 Introduction', id='leaf-23-intro'))
+    r4 = ectd40.run(work, rec=e)
+    assert r4['validation']['fail'] == 0, [x for x in r4['results'] if x['status'] == 'fail']
+    su = (Path(r4['sequence']) / 'submissionunit.xml').read_text(encoding='utf-8')
+    assert 'code="ich_2.3.i"' in su and any(p.as_posix().endswith('m2/23-qos/introduction.pdf') for p in Path(r4['sequence']).rglob('*.pdf'))
+    ectd40.run(work)                                             # the work folder's own 4.0 sequence again, for what follows

@@ -109,6 +109,8 @@ class Profile32:
         self.app4 = list(csv.DictReader(open(APP4, encoding='utf-8')))
 
     def ich_element(self, node):
+        if node.upper() == '2.3.I':                  # 2.3's introduction: its own element (App. 4 row 12), eCTD 4.0's ich_2.3.i
+            return 'm2-3-introduction'
         stem = 'm' + node.lower().replace('.', '-') + '-'
         hits = [e for e in self.ich_children if e.startswith(stem) and not e[len(stem)].isdigit()]
         if len(hits) > 1:                        # 2.3 is m2-3-quality-overall-summary, not one of its parts: App. 4 names it by its number

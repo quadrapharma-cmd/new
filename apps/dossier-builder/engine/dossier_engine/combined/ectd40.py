@@ -15,6 +15,7 @@ from ..validators import ectd40 as v40
 from .common import Work, say
 
 IG_ZIP = Path(__file__).resolve().parents[5] / 'docs' / 'ctd' / 'sources' / 'ectd' / 'ICH_eCTD_v4.0_IG_v1.7_with_XSD.zip'
+CODES = {'2.3.intro': '2.3.I'}                 # the 3.2.2 stage's own code → the heading's number (eCTD 4.0 ich_2.3.i)
 ATTRS = {'substance': 'substance', 'manufacturer': 'manufacturer', 'excipient': 'excipient', 'indication': 'indication'}
 
 
@@ -32,7 +33,7 @@ def docs_of(rec, seq_dir, profile32):
             d.pi_type, d.lang = pidoc['type'], pidoc['xml:lang']
         docs.append(d)
     for l in rec['leaves']:
-        d = ectd32.Doc(node=l['code'], file=str(Path(seq_dir) / l['href']), title=l['title'], leaf_id=l.get('id'))
+        d = ectd32.Doc(node=CODES.get(l['code'], l['code']), file=str(Path(seq_dir) / l['href']), title=l['title'], leaf_id=l.get('id'))
         for attrs in (l.get('attrs') or {}).values():
             for k, field in ATTRS.items():
                 if attrs.get(k) and not getattr(d, field):
