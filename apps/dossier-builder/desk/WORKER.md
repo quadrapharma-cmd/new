@@ -118,7 +118,10 @@ Its first line is «[مكتب eBOX] <kind>», then «المعرّف: <dossier id
    - After the fifth: `$W mark $D/work decide done 'اتُّخذت القرارات الخمس.'`; send.
 5. **Stages 8–10.** `$W stage $D/work fix`, then `ectd`, `report` — send after each.
 6. **The numbers.** `$W summary $D/work` (it prints the two reports and the three outputs: the eCTD 3.2.2 zip, `ectd40.zip`
-   and `ctd.zip` — CTD One Submission, what EDA receives today); send.
+   and `ctd.zip` — CTD One Submission, what EDA receives today — and, under `review:`, the assessor's reports and letters
+   and one request letter per party); send. The two reports go to the page as before; of the review's PDFs, upload the
+   screening desk's assessment report (`review:report-screening.pdf`) as a third result, «تقرير مراجعة المقيّم — الفحص الأولي»;
+   the others stay in the delivery.
 7. **The results.**
    - The two reports (PDF): if `results_in_page` is true or the dossier is an example, check the page's asset store
      (Artifact `list`, `scope: assets`, with the `url`), then Artifact publish with the `url`, `asset: true`,

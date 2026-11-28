@@ -16,6 +16,7 @@ import subprocess
 from collections import Counter, defaultdict
 from pathlib import Path
 
+from .assess import DESK_VERDICT_AR, KIND_AR, VERDICT_AR
 from .common import Work, count, ranges, say
 from .fix import AR, LRM, ZWSP, keep, pieces, print_html
 
@@ -307,6 +308,23 @@ def ctd_report(w):
             f'عددها {len(edits)}.',
             'نُسخت الصفحات دون تغيير، ثم طوبقت صور كل صفحة بصفحتها الأصلية بايتًا ببايت، وقيس أثر طبقة النص على شكل الصفحة '
             f'(أسوأ نسبة بكسلات تغيرت: {asm.get("worst_look_change", 0)}).'])
+    rv = w.load('review.json')
+    if rv:
+        au = (rv.get('authority') or {}).get('name') or {}
+        doc.h1('مراجعة المقيّم (محاكاة البرنامج، لا قرار الجهة الرقابية)')
+        cn = rv['counts']
+        doc.ul([f"الجهة: {au.get('ar') or au.get('en') or ''}. النتيجة: {VERDICT_AR.get(rv['verdict'], rv['verdict'])} — {(rv.get('why') or {}).get('ar', '')}",
+                f"الملاحظات المفتوحة: حرجة {cn.get('critical', 0)}، رئيسية {cn.get('major', 0)}، ثانوية {cn.get('minor', 0)}؛ "
+                f"وأسئلة لم تُقيَّم آليًا {cn.get('not_assessable', 0)}.",
+                'تقرير التقييم وخطاب الاستيفاء لكل إدارة في مجلد «review and requests» بالتسليم.'])
+        doc.table(['الإدارة', 'التوصية', 'حرجة', 'رئيسية', 'ثانوية'],
+                  [[d.get('name') or d['dept'], DESK_VERDICT_AR.get(d['verdict'], d['verdict']), d['counts'].get('critical', 0), d['counts'].get('major', 0), d['counts'].get('minor', 0)] for d in rv['desks']])
+        if rv.get('parties'):
+            doc.h2('النواقص حسب الجهة المُصدِرة')
+            doc.table(['الجهة', 'عدد البنود', 'خطاب الطلب'],
+                      [[p['name'] or KIND_AR.get(p['kind'], p['kind']), len(p['items']),
+                        'مُعدّ' if p.get('letter') else ('تكتبه الشركة' if p['kind'] == 'company' else (p.get('letter_refused') or '—'))]
+                       for p in rv['parties']])
     doc.h1('الملحق: فهرس الوثائق')
     doc.table(['CTD', 'المستند', 'صفحات الملف الأصلي', 'العدد', 'قابلة للبحث'],
               [[d['ctd'], d['title'], ranges(d['pages']), len(d['pages']), d.get('searchable', '')] for d in docs], [12, 50, 20, 8, 10])
@@ -477,6 +495,10 @@ def deliver(w, out):
     if cz:
         shutil.copyfile(cz['zip'], root / 'ctd.zip')
         got['ctd_zip'] = str(root / 'ctd.zip')
+    rv = w.load('review.json')
+    if rv and (w.root / 'review').exists():                 # the assessor's reports and letters, and one request letter per party
+        link_tree(w.root / 'review', root / 'review and requests')
+        got['review'] = str(root / 'review and requests')
     eb = w.load('ebox.json')
     if eb and eb.get('country') and eb['country'] != 'EG':  # another country's outputs, as eBOX's full program wrote them (working copies)
         dst = root / f"eBOX {eb['country']} (working copy)"

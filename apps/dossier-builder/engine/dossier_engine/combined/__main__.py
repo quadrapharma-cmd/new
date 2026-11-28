@@ -83,8 +83,10 @@ def main(argv):
             from . import ebox                               # 11: eBOX's full program, for the country the dossier names (Egypt by default)
             try:
                 ebox.run(work)
+                from . import assess                         # 12: the assessor's review, and the missing items by party with their letters
+                assess.run(work)
             except Exception as ex:                          # Egypt's three outputs stand whatever happens here: said, not fatal
-                say(f'تعذّر تسليم الملف لبرنامج eBOX الكامل: {ex}')
+                say(f'تعذّر تسليم الملف لبرنامج eBOX الكامل أو مراجعته: {ex}')
         elif s == 'report':
             from . import report
             report.run(work)

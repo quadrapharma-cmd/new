@@ -257,6 +257,11 @@ def summary(work):
     e4, cz = w.load('ectd40.json', {}) or {}, w.load('ctdzip.json', {}) or {}
     if e4:
         s['ectd40_failed_rules'] = e4['validation']['fail']
+    rv = w.load('review.json', {}) or {}
+    if rv:
+        s['review_critical'] = rv['counts'].get('critical', 0)
+        s['review_major'] = rv['counts'].get('major', 0)
+        s['parties_asked'] = sum(1 for p in rv.get('parties') or [] if p.get('letter'))
     if cz:
         s['ctd_required_missing'] = len(cz.get('required_missing', []))
         s['ctd_unplaced'] = len(cz.get('unplaced', []))
@@ -265,6 +270,9 @@ def summary(work):
     outs = {k: {'file': dl[k], 'bytes': Path(dl[k]).stat().st_size} for k in ('zip', 'ectd40_zip', 'ctd_zip') if dl.get(k) and Path(dl[k]).exists()}
     for f in sorted(Path(dl['country_outputs']).iterdir()) if dl.get('country_outputs') else []:     # another country's (eBOX's full program)
         outs[f'country:{f.name}'] = {'file': str(f), 'bytes': f.stat().st_size}
+    for f in sorted(Path(dl['review']).iterdir()) if dl.get('review') else []:          # the assessor's reports and letters, the requests
+        if f.suffix == '.pdf':
+            outs[f'review:{f.name}'] = {'file': str(f), 'bytes': f.stat().st_size}
     print(json.dumps({'summary': s, 'needs': st['needs'], 'reports': files, 'zip': outs.get('zip'), 'outputs': outs},
                      ensure_ascii=False, indent=1))
     return 0

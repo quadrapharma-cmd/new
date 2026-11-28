@@ -13,7 +13,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / 'engine'))
 sys.path.insert(0, str(HERE))
 
-from dossier_engine.combined import assemble, checks, ctdzip, ebox, ectd, ectd40, fix, ocr, read, repeats, report, split  # noqa: E402
+from dossier_engine.combined import assemble, assess, checks, ctdzip, ebox, ectd, ectd40, fix, ocr, read, repeats, report, split  # noqa: E402
 from dossier_engine.combined.common import Work, parse_ranges, ranges  # noqa: E402
 from dossier_engine.combined.pdfedit import edit_page  # noqa: E402
 
@@ -208,6 +208,19 @@ def test_another_country_through_the_full_program(work, country, outputs, check)
         assert r['validation'][check]['ok'], r['validation'][check]
 
 
+def test_the_assessors_review_and_one_request_per_party(work):
+    ebox.run(work, 'EG')
+    r = assess.run(work)
+    assert r['verdict'] in ('ready', 'ready_with_risks', 'not_ready') and r['counts']['total'] > 50
+    screening = next(d for d in r['desks'] if d['dept'] == 'screening')
+    assert screening['name'] == 'الفحص الأولي' and Path(screening['files']['report_pdf']).exists()
+    asked = [p for p in r['parties'] if p['kind'] != 'company']
+    assert asked and all(p.get('letter') and Path(p['letter']).exists() for p in asked)
+    assert all(':' not in Path(p['letter']).name for p in asked)                 # a name every computer can keep
+    text = subprocess.run(['pdftotext', asked[0]['letter'], '-'], capture_output=True, text=True).stdout
+    assert 'Request for documents' in text and 'Zentorix' in text
+
+
 def test_reports(work):
     out = report.run(work)
     for kind in ('ctd', 'ectd'):
@@ -217,3 +230,5 @@ def test_reports(work):
     assert Path(out['deliver']['ctd_zip']).exists() and Path(out['deliver']['ectd40_zip']).exists()
     etext = subprocess.run(['pdftotext', out['ectd']['pdf'], '-'], capture_output=True, text=True).stdout
     assert 'الصيغتان الأخريان' in etext
+    ctext = subprocess.run(['pdftotext', out['ctd']['pdf'], '-'], capture_output=True, text=True).stdout
+    assert 'مراجعة المق' in ctext and Path(out['deliver']['review']).exists()
