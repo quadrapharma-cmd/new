@@ -894,6 +894,26 @@ When a part is done or an open item is closed, update «What exists» and «Open
   (8) after submission, (9) variations, (10) the library beside each step. Each piece tried on his real files before it
   reaches him (rule 13).
 
+- **27–28/11/2026, the desk gets the full program's features (this session, his «كمل على طول من غير ما تستناني»).** Built,
+  tested on the made-up dossier, pushed (commits 71e4b61, 4eada2b, 8d3f9cc, faebba9, d810b79, 126d901):
+  · (1) the three outputs: the ectd stage also writes eCTD 4.0 (`combined/ectd40.py`, the full program's writer and validator,
+    from the 3.2.2 sequence's own files) and ctd.zip (`combined/ctdzip.py`, NP.CAPP.065 layout, a sub-section to its section's
+    item); the delivery holds `0000.zip`, `ectd40.zip`, `ctd.zip`.
+  · (2) any country: `combined/ebox.py` hands the work folder to eBOX's full program (`ebox/` store, the country's pack) and asks
+    its working-copy export (EU M1 3.1.1, GCC M1 1.5, US and others' CTD folders); the desk page asks the country (version 3),
+    the worker keeps it (`worker.py country`).
+  · (3)+(7) `combined/assess.py`: the full program's review (desks, reports and deficiency letters) and the missing items by issuer
+    with one request letter per party, through `app/api.py` in-process (needs fastapi, httpx — requirements-dev.txt); a review
+    section in the CTD report, «review and requests» in the delivery, three numbers on the desk page (version 4).
+  · eBOX's own «import earlier sequences» fixed for a sub-section leaf (store.import_ectd): the desk's 0000.zip opens in eBOX with
+    every Module 3 document placed — the door to the vault, the editing programs, the product card, after submission and the
+    variations, which are eBOX's screens (the desk page is a status page and a chat). Not yet in the published eBOX (needs its
+    whole publish procedure).
+  · Not yet tried on his real files: the worker session of d-20261127-jn56hf was asked to pull and run ectd + report again; its
+    first try stopped (it tried `git reset --hard`, refused); told to `git pull --ff-only`.
+  · The Mac app runs the same stages (`__main__`): ebox/assess need fastapi there (not in mac/requirements.txt) — they say so and
+    the stage goes on; a Mac rebuild is needed for the new outputs.
+
 ## Open items (propose when relevant; do when he asks)
 - Old program, next pieces (one at a time, each on his real files first): the 14/11 update and measuring Claude's reading (need
   the API key: `ANTHROPIC_API_KEY` in the environment's settings, added by him), «شروط الشكل لكل دولة», the Assistant on his
