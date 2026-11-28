@@ -37,6 +37,9 @@ the prompt, wrapped as the payload of a manual firing: the first turn has the pr
   (`gh repo clone` does not work here), then
   `python3 -m pip install -q --disable-pip-version-check --ignore-installed -r apps/dossier-builder/mac/requirements.txt`
   (`--ignore-installed`: the machine's PyYAML and packaging came from Debian, and pip cannot replace them otherwise).
+- eBOX's full program (the review and the request letters, stages 11–12) needs `python3 -c "import fastapi, httpx, multipart"`
+  to answer; if it does not: `python3 -m pip install -q --disable-pip-version-check fastapi httpx python-multipart` before the
+  ectd stage (28/11: a session without them gave no review, «No module named 'fastapi'»).
 - The tools (the environment's setup script, `desk/setup.sh`, installs them): `tesseract --list-langs` lists `ara` and
   `eng`; `ocrmypdf --version`, `pdftoppm -v`, `soffice --version` answer. One missing and not installable: the dossier
   fails at once (`worker.py status … failed '<why, formal Arabic>'`), and you say why in the chat.

@@ -6,6 +6,7 @@ index.xml (Modules 2–5) and of eg-regional.xml (Module 1) becomes a document o
 the product information's type and language) carried over. The envelope is the 3.2.2 one: the same application (its UUID), the
 first 4.0 sequence (1), a new submission. Then the full program's 4.0 validator (`validators/ectd40.py`: the ICH IG v1.7 rules and
 the XSD, and the EG provisional rules). ectd40.json is written."""
+import re
 import uuid
 from pathlib import Path
 
@@ -42,6 +43,21 @@ def docs_of(rec, seq_dir, profile32):
     return docs
 
 
+KW_AR = {'species': 'نوع الحيوان', 'route of admin': 'طريق الإعطاء', 'study id_study title': 'معرّف الدراسة أو عنوانها',
+         'document type': 'نوع المستند', 'substance': 'المادة الفعالة', 'manufacturer': 'الشركة المصنّعة'}
+DOC_TYPE = {'4': 'ich_document_type_1', '5': 'ich_document_type_2'}    # preclinical study report; legacy clinical study report
+
+
+def study_keywords(d, spec):
+    """A study report of Modules 4–5 is one document of one study in the desk's sequence (ectd.py: one folder a study, named by the
+    document's title): 4.0's study keyword is that title, and its document type the whole report's (ICH document types 1 and 2)."""
+    names = {n for n, *_ in spec}
+    if 'study id_study title' in names and not d.study:
+        d.study = re.sub(r'^\d(?:\.\d+)*\s+', '', d.title or '').strip()[:200] or d.leaf_id
+    if 'document type' in names and not d.doc_type and d.node[0] in DOC_TYPE:
+        d.doc_type = DOC_TYPE[d.node[0]]
+
+
 def run(work, rec=None):
     w = work if isinstance(work, Work) else Work(work)
     rec = rec or w.load('ectd.json')
@@ -66,12 +82,20 @@ def run(work, rec=None):
     docs, left_out = [], []
     for d in docs_of(rec, seq_dir, p40.v32):
         try:
-            p40.cou(d.node)
-            docs.append(d)
+            spec = p40.cou(d.node)[2]
         except w40.WriterError:                    # a heading 3.2.2 takes a document at and 4.0 does not (2.6, 5.3.5): named, not dropped
             left_out.append({'node': d.node, 'title': d.title, 'file': Path(d.file).name,
                              'why': {'en': f'eCTD 4.0 has no context of use at {d.node}: its documents go in its sub-sections',
                                      'ar': f'لا يقبل eCTD 4.0 مستندًا في {d.node} نفسه، بل في أقسامه الفرعية'}})
+            continue
+        study_keywords(d, spec)
+        missing = [name for name, card, _cs, _a in spec if card == 'R' and w40._kw_value(name, d, product) is None]
+        if missing:                                # what 3.2.2 does not carry and the documents do not say (species, route): never guessed
+            left_out.append({'node': d.node, 'title': d.title, 'file': Path(d.file).name,
+                             'why': {'en': 'eCTD 4.0 requires keywords this dossier does not give: ' + ', '.join(missing),
+                                     'ar': 'يطلب eCTD 4.0 كلمات مفتاحية لا يذكرها الملف: ' + '، '.join(KW_AR.get(m, m) for m in missing)}})
+            continue
+        docs.append(d)
     if left_out:
         say(f'مستندات لا يقبلها eCTD 4.0 في موضعها (تبقى في 3.2.2 وctd.zip): {len(left_out)} — '
             + '، '.join(sorted({x["node"] for x in left_out})))

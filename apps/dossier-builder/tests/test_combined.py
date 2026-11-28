@@ -336,3 +336,21 @@ def test_a_file_whose_40_path_is_too_long_gets_a_shorter_name(work):
     paths = [p.relative_to(Path(r4['sequence']).parent.parent).as_posix() for p in Path(r4['sequence']).rglob('*.pdf')]
     assert paths and max(len(p) for p in paths) <= 180 and any('serum' in p for p in paths)
     ectd40.run(work)                                             # the work folder's own 4.0 sequence again, for what follows
+
+
+def test_study_reports_carry_their_study_and_type_and_what_cannot_be_known_is_said(work):
+    # 28/11/2026: his real dossier's 4.2.3.1 report stopped 4.0 (required «study id_study title»): the study is the report's own title
+    # and its type a whole report; species and route of a toxicity study are not in 3.2.2 and are never guessed
+    import copy
+    e = copy.deepcopy(work.load('ectd.json'))
+    two = next(l for l in e['leaves'] if l['code'] == '2.2')
+    e['leaves'] += [dict(two, code='4.2.1.1', title='4.2.1.1 Primary pharmacodynamics study PD-01', id='leaf-pd', attrs={}),
+                    dict(two, code='5.3.1.2', title='5.3.1.2 Bioequivalence study BE-07', id='leaf-be', attrs={}),
+                    dict(two, code='4.2.3.1', title='4.2.3.1 Single-dose toxicity in rats', id='leaf-tox', attrs={})]
+    r4 = ectd40.run(work, rec=e)
+    assert r4['validation']['fail'] == 0, [x for x in r4['results'] if x['status'] == 'fail']
+    out = {x['node']: x for x in r4['left_out']}
+    assert '4.2.3.1' in out and 'species' in out['4.2.3.1']['why']['en'] and 'نوع الحيوان' in out['4.2.3.1']['why']['ar']
+    su = (Path(r4['sequence']) / 'submissionunit.xml').read_text(encoding='utf-8')
+    assert 'ich_4.2.1.1' in su and 'ich_5.3.1.2' in su and 'BE-07' in su and 'ich_document_type_2' in su and 'ich_document_type_1' in su
+    ectd40.run(work)                                             # the work folder's own 4.0 sequence again, for what follows
