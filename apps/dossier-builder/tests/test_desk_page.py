@@ -146,17 +146,35 @@ def test_a_dossiers_requests_go_to_its_session(page):
     assert c['input']['message'].startswith('[مكتب eBOX] رسالة\nالمعرّف: d-1\n')
 
 
+def test_resume_always_starts_a_new_session(page):
+    # «متابعة» goes to a new work session (the latest program): the dossier's old session may hold an older copy of it and,
+    # rightly, refuse to update itself on another session's word (28/11, d-20261127-jn56hf)
+    page.open()
+    seed(page, 'config/desk', {'trigger_id': 'trig_0DeskTest1'})
+    seed(page, 'dossiers/d-1', {**RUNNING, 'status': 'stopped'})
+    page.locator('button.card').first.click()
+    page.locator('button.btn', has_text='متابعة من حيث توقّف').click()
+    page.wait_for_function('window.__calls.length >= 1')
+    page.wait_for_timeout(300)
+    c = calls(page)
+    assert [x['tool'] for x in c] == ['fire_trigger']
+    assert c[0]['input']['trigger_id'] == 'trig_0DeskTest1'
+    assert c[0]['input']['text'].startswith('[مكتب eBOX] متابعة\nالمعرّف: d-1')
+
+
 def test_a_session_gone_hands_the_request_to_a_new_one(page):
     page.open()
     seed(page, 'config/desk', {'trigger_id': 'trig_0DeskTest1'})
     seed(page, 'dossiers/d-1', {**RUNNING, 'status': 'stopped'})
     page.evaluate("window.__fail['send_message:session_0WorkerTest1'] = 'tool_error'")
     page.locator('button.card').first.click()
-    page.locator('button.btn', has_text='متابعة من حيث توقّف').click()
+    page.locator('button.btn', has_text='اسأل Claude عن هذا الملف').click()
+    page.fill('#chat-in', 'عن ملف «ملف للتجربة»: أين وصل؟')
+    page.click('#chat-go')
     page.wait_for_function('window.__calls.length >= 2')
     c = calls(page)
     assert [x['tool'] for x in c] == ['send_message', 'fire_trigger']
-    assert c[1]['input']['text'] == c[0]['input']['message'] and c[1]['input']['text'].startswith('[مكتب eBOX] متابعة\nالمعرّف: d-1')
+    assert c[1]['input']['text'] == c[0]['input']['message'] and c[1]['input']['text'].startswith('[مكتب eBOX] رسالة\nالمعرّف: d-1')
 
 
 def test_a_general_message_starts_a_session(page):

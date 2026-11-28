@@ -466,7 +466,8 @@ textarea { min-height: 84px; resize: vertical; }
   }
   async function request(d, kind, text) {
     const full = '[مكتب eBOX] ' + kind + '\nالمعرّف: ' + d.id + '\nالاسم: ' + (d.name || '') + '\n' + text;
-    const sent = await tell(full, { session: d.session, now: kind === 'إيقاف' });
+    // «متابعة» starts a new work session (the latest program); an old one may run an older copy and refuse to update it
+    const sent = await tell(full, kind === 'متابعة' ? {} : { session: d.session, now: kind === 'إيقاف' });
     await addMessage('you', kind + ': ' + (d.name || ''), sent, full, d.id);
     if (!wide()) setTab('chat');
   }
