@@ -96,7 +96,7 @@ def test_the_numbers_and_what_is_needed(run):
     assert last['summary'] == {'pages': 47, 'documents': 21, 'left_out': 6, 'findings': 5, 'leaves': 23, 'failed_rules': 1,
                                'ectd40_failed_rules': 0, 'ectd40_left_out': 0, 'outputs_failed': [], 'ctd_required_missing': 56, 'ctd_unplaced': 0,
                                'review_critical': 26, 'review_major': 67, 'parties_asked': 3,
-                               'built': 0, 'built_to_sign': 0, 'left_to_company': 7, 'global_failed_rules': 1}
+                               'built': 0, 'built_to_sign': 0, 'built_signed': 0, 'left_to_company': 7, 'global_failed_rules': 1}
     assert last['needs'] == ['رقم التتبع الذي تعطيه الهيئة: يُكتب في التسلسل حين يصل.',
                              'تأكيد المتقدم: «Example Pharma Ltd.» — يُغيَّر إن كان المتقدم الوكيل المصري',
                              'شهادة GMP — من الشركة المصنعة، لـ Module 1، البند 1.2.4',

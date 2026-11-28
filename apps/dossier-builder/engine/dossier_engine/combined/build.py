@@ -24,7 +24,14 @@ document in the three outputs (ectd.py: Module 1 at its EG element, Modules 2–
   python -m dossier_engine.combined.build <work> generate <item> @<data.json>       a generator's data
   python -m dossier_engine.combined.build <work> cannot <item> '<why, formal Arabic>'    the pages do not give it: the company's
   python -m dossier_engine.combined.build <work> later <item> '<why, formal Arabic>'     the pages give it, this run does not write it
+  python -m dossier_engine.combined.build <work> seal <stamp image> <signature image> '<name>' '<title>' '<the owner's words>'
+                                                                       the company's stamp and its signatory's signature
   python -m dossier_engine.combined.build <work> finish                built.json, for the eCTD stage
+
+The seal (optional, a dossier at a time): the company uploads its stamp and its authorised signatory's signature as images, with
+the signatory's name and title, and the owner says yes to their use on this dossier. Then a company document the program writes
+whole — no gap left in it — is signed and stamped (the images in its signature block, the draft mark taken off) and needs no
+printing or scanning; one with a gap stays a draft to sign. Never on another party's document: the program writes none.
 """
 import datetime
 import json
@@ -195,10 +202,13 @@ def cmd_brief(w, item):
     slot = slots.get(it['item'])
     if not slot:
         raise Refused('the item is not in the copy of the dossier any more: run the build stage again.')
+    seal = seal_of(w)
     rules = ('\nHOW TO ANSWER\n- Read the pages before you write: `docs` lists the dossier\'s documents with their pages, `pages 12-15` reads them.\n'
              '- Only facts found in these pages or in the data below. Never invent a number, a date, a name, a batch, a limit or a result.\n'
              '- If what the document needs is not in the pages: `cannot <item> \'<what is missing, formal Arabic>\'` — the company gives it.\n'
-             '- The signatory: who signs is named in the pages, or the lines are left blank (____) to be signed; never a made-up name.\n')
+             + (f"- The company gave its stamp and the signature of {seal['name']}" + (f", {seal['title']}" if seal.get('title') else '') +
+                ': write this signatory in the signature fields; the program signs and stamps a document written whole (no gap).\n'
+                if seal else '- The signatory: who signs is named in the pages, or the lines are left blank (____) to be signed; never a made-up name.\n'))
     if it.get('generator'):
         kind = it['generator']
         schema = letters.SCHEMAS.get(kind) or {}
@@ -218,6 +228,105 @@ def cmd_brief(w, item):
     return head + rules + f"- Answer: `write {it['item']} @<file>` with the JSON object the prompt below asks for.\n\n" + draft.prompt(entry, ctx)
 
 
+SEAL = 'seal.json'
+
+
+def seal_of(w):
+    """The dossier's seal, when the company gave both images, whose signature it is, and the owner's yes; else None."""
+    s = w.load(SEAL)
+    if not s or not s.get('name') or not s.get('said'):
+        return None
+    if not (Path(s.get('stamp') or '').is_file() and Path(s.get('signature') or '').is_file()):
+        return None
+    return s
+
+
+def cmd_seal(w, stamp, signature, name, title, said):
+    from PIL import Image
+    for f in (stamp, signature):
+        q = Path(f)
+        if not q.is_file():
+            raise Refused(f'no such file: {f}')
+        if q.suffix.lower() not in ('.png', '.jpg', '.jpeg'):
+            raise Refused('the stamp and the signature are PNG or JPEG images.')
+        try:
+            with Image.open(q) as im:
+                im.verify()
+        except Exception:
+            raise Refused(f'{q.name} is not an image that can be read.')
+    if not (name or '').strip():
+        raise Refused('whose signature it is: the signatory\'s name.')
+    if not re.search(r'[\u0600-\u06FF]', said or ''):
+        raise Refused("the owner's words that allow the stamp and the signature on this dossier's company documents, as he gave them.")
+    d = w.root / 'seal'
+    d.mkdir(parents=True, exist_ok=True)
+    kept = {}
+    for key, f in (('stamp', stamp), ('signature', signature)):
+        dst = d / (key + Path(f).suffix.lower())
+        shutil.copyfile(f, dst)
+        kept[key] = str(dst)
+    w.save(SEAL, {**kept, 'name': name.strip(), 'title': (title or '').strip(), 'said': said.strip(),
+                  'at': datetime.datetime.now().isoformat(timespec='seconds')})
+    return f"sealed: the company documents written whole are signed by {name.strip()} and stamped"
+
+
+def apply_seal(docx_path, seal, company=''):
+    """The signature and the stamp put in a written document: the draft mark and the «print, sign, scan» line taken off, the
+    images in its signature line (a generated letter) or under its signature block (a template), the signatory's name and title
+    where they were left blank."""
+    from docx import Document
+    from docx.shared import Cm
+    from ..generate.docx_kit import DRAFT
+    d = Document(str(docx_path))
+    for sec in d.sections:
+        for q in list(sec.header.paragraphs):
+            if DRAFT in q.text:
+                q._element.getparent().remove(q._element)
+    placed = False
+    for q in list(d.paragraphs):
+        t = q.text
+        if t.startswith(('Print on company letterhead', 'يُطبع على ورق الشركة')):
+            q._element.getparent().remove(q._element)
+        elif t.startswith('Signature:') and 'stamp' in t.lower():
+            for r in list(q.runs):
+                r._element.getparent().remove(r._element)
+            q.add_run('Signature: ')
+            q.add_run().add_picture(seal['signature'], width=Cm(4))
+            q.add_run('     Company stamp: ')
+            q.add_run().add_picture(seal['stamp'], width=Cm(3.2))
+            placed = True
+        elif t.startswith('Name: ') and '__' in t:
+            for r in q.runs[1:]:
+                r._element.getparent().remove(r._element)
+            q.runs[0].text = f"Name: {seal['name']}"
+        elif t.startswith('Date: ') and '__' in t:
+            for r in q.runs[1:]:
+                r._element.getparent().remove(r._element)
+            q.runs[0].text = f"Date: {datetime.date.today().isoformat()}"
+        elif t.startswith('Title: ') and '__' in t and seal.get('title'):
+            for r in q.runs[1:]:
+                r._element.getparent().remove(r._element)
+            q.runs[0].text = f"Title: {seal['title']}"
+    blanks = {'name': seal['name'], 'signatory': seal['name'], 'الاسم': seal['name'], 'position': seal.get('title'),
+              'title': seal.get('title'), 'signatory title': seal.get('title'), 'الوظيفة': seal.get('title'),
+              'date': datetime.date.today().isoformat(), 'التاريخ': datetime.date.today().isoformat()}
+    for tb in d.tables:
+        for row in tb.rows:
+            if len(row.cells) == 2:
+                label, value = row.cells[0].text.strip().lower(), row.cells[1].text.strip()
+                if label in blanks and blanks[label] and (not value or '__' in value or '[…]' in value):
+                    row.cells[1].paragraphs[0].text = blanks[label]
+    if not placed:
+        q = d.add_paragraph()
+        q.add_run(f"Signed for {company or 'the company'} by {seal['name']}" + (f", {seal['title']}" if seal.get('title') else '') +
+                  f" — {datetime.date.today().isoformat()}").bold = True
+        tb = d.add_table(rows=1, cols=2)
+        tb.cell(0, 0).paragraphs[0].add_run().add_picture(seal['signature'], width=Cm(4))
+        tb.cell(0, 1).paragraphs[0].add_run().add_picture(seal['stamp'], width=Cm(3.2))
+    d.save(str(docx_path))
+    return Path(docx_path)
+
+
 def letter_entry(it):
     """The general template for an item whose generator does not fit this product (its fields cannot hold what the pages say,
     e.g. amounts per dose in units other than mg): a letter on the company's letterhead with one table."""
@@ -235,8 +344,9 @@ def letter_entry(it):
             {'key': 'applicant', 'label': T('Company', 'الشركة')}, {'key': 'date', 'label': T('Date', 'التاريخ')}]}]}
 
 
-def _built(rec, it, pdf, docx, how, gaps=None, sign=False, notes=None):
-    it.update(state='built', pdf=str(pdf), docx=str(docx) if docx else None, how=how, gaps=gaps or [], sign=sign, note='', reviewer_notes=notes or '')
+def _built(rec, it, pdf, docx, how, gaps=None, sign=False, notes=None, signed=False):
+    it.update(state='built', pdf=str(pdf), docx=str(docx) if docx else None, how=how, gaps=gaps or [], sign=sign, note='',
+              reviewer_notes=notes or '', signed=signed)
 
 
 def cmd_write(w, item, answers):
@@ -263,12 +373,16 @@ def cmd_write(w, item, answers):
     name = f"{it['req']}-{_slug(it['title'].get('en'))}" + (f"-{_slug(it['substance'])}" if it.get('substance') else '')
     out = w.root / 'built' / f'{name}.docx'
     draft.render(entry, filled, ctx, out)
-    pdf = to_pdf(out)
     sign = entry.get('kind') in ('declaration', 'letter', 'statement', 'commitment', 'form', 'certificate') or bool(entry.get('letterhead'))
     gaps = [g for g in filled.get('gaps') or [] if g]
-    _built(rec, it, pdf, out, 'written', gaps, sign, filled.get('notes'))
+    seal, signed = seal_of(w), False
+    if sign and seal and not gaps and draft.GAP not in json.dumps(filled.get('sections') or {}, ensure_ascii=False):
+        apply_seal(out, seal, company=(ctx.get('product') or {}).get('applicant') or '')
+        sign, signed = False, True
+    pdf = to_pdf(out)
+    _built(rec, it, pdf, out, 'written', gaps, sign, filled.get('notes'), signed)
     w.save('build.json', rec)
-    return (f"written: {pdf.name}" + (' — to be signed by the company' if sign else '') +
+    return (f"written: {pdf.name}" + (' — to be signed by the company' if sign else '') + (' — signed and stamped' if signed else '') +
             (f" — gaps left in it ({len(gaps)}): " + '; '.join(str(g.get('what') if isinstance(g, dict) else g) for g in gaps[:8]) if gaps else ''))
 
 
@@ -300,10 +414,24 @@ def cmd_generate(w, item, data):
     shutil.copyfile(src, dst)
     if ext != '.pdf':
         raise Refused('the program could not make the PDF (LibreOffice is missing on this machine).')
-    from .. app.store import SIGN_KINDS
-    _built(rec, it, dst, None, 'generated', [], kind in SIGN_KINDS)
+    from ..app.store import SIGN_KINDS
+    from ..app.api import GEN
+    seal, signed, docx = seal_of(w), False, None
+    if kind in SIGN_KINDS and seal and GEN[kind][0] != 'm3':      # the same letter again, signed and stamped
+        from ..generate import letters
+        from ..generate.docx_kit import to_pdf
+        docx = w.root / 'built' / f'{name}.docx'
+        if kind == 'annex1':
+            letters.annex1(data, dict(st.dossier(rec['dossier']).get('profile') or {}), docx)
+        else:
+            getattr(letters, GEN[kind][0])(data, docx)
+        apply_seal(docx, seal, company=data.get('company') or data.get('applicant') or '')
+        dst.unlink()
+        dst = to_pdf(docx)
+        signed = True
+    _built(rec, it, dst, docx, 'generated', [], kind in SIGN_KINDS and not signed, signed=signed)
     w.save('build.json', rec)
-    return f"generated: {dst.name}" + (' — to be signed by the company' if kind in SIGN_KINDS else '')
+    return f"generated: {dst.name}" + (' — to be signed by the company' if kind in SIGN_KINDS and not signed else '') + (' — signed and stamped' if signed else '')
 
 
 def cmd_cannot(w, item, why):
@@ -335,7 +463,7 @@ def cmd_finish(w):
         raise Refused(f'still to do: {", ".join(todo)} — write, generate, cannot or later each.')
     built = [{'item': x['item'], 'req': x['req'], 'node': x['node'], 'ctd': x['ctd'], 'title': x['title'].get('en') or x['req'],
               'title_ar': x['title'].get('ar'), 'substance': x.get('substance'), 'pdf': x['pdf'], 'docx': x.get('docx'),
-              'how': x.get('how'), 'sign': x.get('sign'), 'gaps': x.get('gaps') or []}
+              'how': x.get('how'), 'sign': x.get('sign'), 'signed': x.get('signed', False), 'gaps': x.get('gaps') or []}
              for x in rec['items'] if x['state'] == 'built']
     w.save('built.json', built)
     rec['finished'] = True
@@ -388,6 +516,8 @@ def main(argv):
             out = cmd_cannot(w, args[0], args[1])
         elif cmd == 'later' and len(args) == 2:
             out = cmd_later(w, args[0], args[1])
+        elif cmd == 'seal' and len(args) == 5:
+            out = cmd_seal(w, *args)
         elif cmd == 'finish':
             out = cmd_finish(w)
         else:

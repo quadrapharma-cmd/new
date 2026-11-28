@@ -41,6 +41,19 @@ COMPOSITION = {"trade_name": "Zentorix", "dosage_form": "film-coated tablet",
                "signatory": "____________________", "signatory_title": "____________________", "company": "Example Pharma Ltd."}
 
 
+def made_up_image(path, kind):
+    from PIL import Image, ImageDraw
+    im = Image.new('RGB', (160, 90), 'white')
+    dr = ImageDraw.Draw(im)
+    if kind == 'stamp':
+        dr.ellipse([10, 5, 150, 85], outline='darkblue', width=4)
+        dr.text((30, 38), 'EXAMPLE PHARMA', fill='darkblue')
+    else:
+        dr.line([(8, 70), (40, 20), (75, 65), (110, 15), (150, 60)], fill='black', width=3)
+    im.save(path, 'PNG')
+    return path
+
+
 def bt(w, *args):
     p = subprocess.run([sys.executable, '-m', 'dossier_engine.combined.build', str(w), *map(str, args)], cwd=str(APP / 'engine'),
                        capture_output=True, text=True, timeout=600)
@@ -74,6 +87,11 @@ def built(tmp_path_factory):
                        bt(w.root, 'cannot', 'M1-15', 'not written'),                           # a reason not in Arabic
                        bt(w.root, 'brief', 'S-01'),                                            # it has its document: not an open item
                        bt(w.root, 'finish')]                                                   # items still to do
+    stamp, sig = made_up_image(root / 'stamp.png', 'stamp'), made_up_image(root / 'signature.png', 'signature')
+    yes = 'أوافق على أن يضع البرنامج هذا الختم وهذا التوقيع على مستندات الشركة التي يكتبها لهذا الملف.'
+    seen['seal_refused'] = [bt(w.root, 'seal', root / 'countries.json', sig, 'A. Example', 'Manager', yes),     # not an image
+                            bt(w.root, 'seal', stamp, sig, 'A. Example', 'Manager', 'yes')]                    # not his words
+    seen['seal'] = bt(w.root, 'seal', stamp, sig, 'A. Example', 'Regulatory Affairs Manager', yes)
     seen['write'] = bt(w.root, 'write', 'M1-15', '@' + str(root / 'countries.json'))
     seen['generate'] = bt(w.root, 'generate', 'M1-31', '@' + str(root / 'composition.json'))
     rec = json.loads((w.root / 'build.json').read_text(encoding='utf-8'))
@@ -125,11 +143,12 @@ def test_wrong_answers_are_refused_with_their_reason(built):
 def test_written_and_generated_then_placed_in_the_three_outputs(built):
     w, seen = built
     assert seen['write'][0] == 0 and 'to be signed by the company' in seen['write'][1] and 'gaps left in it (1)' in seen['write'][1]
-    assert seen['generate'][0] == 0 and 'M1-31-composition.pdf' in seen['generate'][1]
-    assert seen['option'][0] == 0 and seen['later'][0] == 0
+    assert seen['generate'][0] == 0 and 'M1-31-composition.pdf' in seen['generate'][1] and 'signed and stamped' in seen['generate'][1]
+    assert seen['option'][0] == 0 and 'signed and stamped' in seen['option'][1] and seen['later'][0] == 0
     assert seen['finish'][0] == 0 and seen['finish'][1].startswith('built: 3 ')
     b = json.loads((w.root / 'built.json').read_text(encoding='utf-8'))
-    assert {x['req'] for x in b} == {'M1-15', 'M1-31', 'S-15'} and all(Path(x['pdf']).exists() and x['sign'] for x in b)
+    assert all(Path(x['pdf']).exists() for x in b)
+    assert {x['req']: (x['sign'], x['signed']) for x in b} == {'M1-15': (True, False), 'M1-31': (False, True), 'S-15': (False, True)}
     index = (w.root / 'ectd' / 'out' / '0000' / 'index.xml').read_text(encoding='utf-8')
     assert 'statement-of-s-part-option' in index and index.count('<m3-2-s-drug-substance ') == index.count('<m3-2-s-drug-substance')
     assert not (w.root / 'build' / 'store').exists()                                # eBOX's copy is made again at the eCTD stage
@@ -147,18 +166,41 @@ def test_written_and_generated_then_placed_in_the_three_outputs(built):
     assert eb['missing_required'] == 53 and not eb['unplaced']
 
 
+def test_the_company_seal_signs_what_is_written_whole(built):
+    from docx import Document
+    from dossier_engine.generate.docx_kit import DRAFT
+    w, seen = built
+    bad_image, english = seen['seal_refused']
+    assert bad_image[0] == 2 and 'PNG or JPEG' in bad_image[1]
+    assert english[0] == 2 and "the owner's words" in english[1]
+    assert seen['seal'][0] == 0 and json.loads((w.root / 'seal.json').read_text(encoding='utf-8'))['name'] == 'A. Example'
+    b = {x['req']: x for x in json.loads((w.root / 'built.json').read_text(encoding='utf-8'))}
+    for req in ('M1-31', 'S-15'):                                                   # written whole: signed and stamped
+        d = Document(b[req]['docx'])
+        assert len(d.inline_shapes) == 2, req                                        # the signature and the stamp
+        assert not any(DRAFT in q.text for sec in d.sections for q in sec.header.paragraphs), req
+        assert not any(q.text.startswith('Print on company letterhead') for q in d.paragraphs), req
+    letter = Document(b['M1-31']['docx'])
+    text = '\n'.join(q.text for q in letter.paragraphs) + '\n'.join(c.text for t in letter.tables for r in t.rows for c in r.cells)
+    assert 'A. Example' in text and 'Date: 20' in text and '____' not in text   # the signatory, the day it is signed
+    assert '250' in text and 'E+' not in text                                    # 250 mg, never 2.5E+2
+    d = Document(b['M1-15']['docx'])                                                 # a gap left in it: a draft to sign
+    assert len(d.inline_shapes) == 0 and any(DRAFT in q.text for sec in d.sections for q in sec.header.paragraphs)
+
+
 def test_the_global_check_and_what_the_page_says(built):
     w, seen = built
     g = json.loads((w.root / 'ectd.json').read_text(encoding='utf-8'))['global']
     assert g['region'] == 'eg' and list(g['layers'])[0].startswith('1 · ICH') and g['layers'][list(g['layers'])[0]]['fail'] == 0
     assert (w.root / 'global.json').exists() and g['note']['ar']
     s = seen['patch']['summary']
-    assert s['built'] == 3 and s['built_to_sign'] == 3 and s['left_to_company'] >= 25 and s['global_failed_rules'] == 1
+    assert s['built'] == 3 and s['built_to_sign'] == 1 and s['built_signed'] == 2 and s['left_to_company'] >= 25 and s['global_failed_rules'] == 1
     assert s['ctd_required_missing'] == 53
     found = json.loads((w.root / 'desk' / 'state.json').read_text(encoding='utf-8'))['needs_found']      # all of them; the page shows the first
     assert any('لم يُكتب في هذا التشغيل' in n and 'P-13' in n for n in found)
     needs = seen['patch']['needs']
-    assert any('توقيع الشركة وختمها على' in n and 'M1-31' in n for n in needs)
+    assert any('توقيع الشركة وختمها على' in n and 'M1-15' in n for n in needs)           # the draft; the signed ones need nothing
+    assert not any('توقيع الشركة وختمها على' in n and 'M1-31' in n for n in needs)
     assert all(v == 'done' for v in seen['patch']['stages'].values())
     files = seen['handed']['outputs']
     assert any(k.startswith('built:M1-31') for k in files) and any(k.endswith('.docx') for k in files if k.startswith('built:M1-15'))

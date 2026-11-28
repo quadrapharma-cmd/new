@@ -99,6 +99,11 @@ Its first line is «[مكتب eBOX] <kind>», then «المعرّف: <dossier id
      `curl -sS -L --retry 3 -o "$D/received/<name>" "https://drive.usercontent.google.com/download?id=<id>&export=download&confirm=t"`,
      then check the file's size is `size` (a page of HTML instead means the link is not shared: say so). A file of hundreds
      of MB: in the background. Check the free disk first (`df -h /`): a dossier of 600 MB needs about 4 GB.
+   - The company's seal (`seal` in the dossier: its stamp and its signatory's signature as images, the signatory's `name` and
+     `title`, and the owner's yes in `said`): Artifact `read` each image's asset (`seal.stamp.asset`, `seal.signature.asset`)
+     with `out_dir: $D/seal`, then from `$APP/engine`:
+     `python3 -m dossier_engine.combined.build $D/work seal <the stamp file> <the signature file> '<name>' '<title>' '<said>'`.
+     No `said`, or not both images: no seal, and what the company must sign stays a draft to sign.
    - Not allowed, not reachable, or nothing there: `$W need $D/work '<what is needed, formal Arabic>'`,
      `$W status $D/work needs '<headline>'`, send, and tell him in the chat what to do (share the folder, or upload the
      files in the page).
@@ -133,7 +138,8 @@ Its first line is «[مكتب eBOX] <kind>», then «المعرّف: <dossier id
      a document needs and the pages lack is `[…]` in it and in its gaps. Who signs: named in the pages, or the lines left
      blank to be signed. Correct every «REFUSED» by its reason.
    - `$B finish` (refused while an item is «to do»); then `$W mark $D/work build done '<what you wrote, formal Arabic>'`
-     and send. A document the company must sign, and every gap left in one, go to the needs by themselves.
+     and send. A document the company must sign, and every gap left in one, go to the needs by themselves. With the company's
+     seal (step 2), a document you write whole (no gap) comes out signed and stamped; one with a gap stays a draft to sign.
    Then `$W stage $D/work ectd`, then `report` — send after each. The eCTD stage puts what you wrote in the three outputs (Module 1
    at its EG element, Modules 2–5 at their headings) and in eBOX's copy, and runs the check for any country (ICH and the
    authority's own criteria) on the sequence: `global.json`, its counts in the eCTD report.

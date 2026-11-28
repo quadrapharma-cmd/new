@@ -123,6 +123,42 @@ def test_a_new_dossier_starts_its_own_session(page):
     assert not note.is_visible()
 
 
+def _png():
+    import io
+    from PIL import Image, ImageDraw
+    im = Image.new('RGB', (120, 60), 'white')
+    ImageDraw.Draw(im).line([(5, 50), (40, 10), (70, 45), (115, 8)], fill='navy', width=3)      # a made-up mark
+    buf = io.BytesIO()
+    im.save(buf, 'PNG')
+    return buf.getvalue()
+
+
+def test_the_company_stamp_and_signature_with_the_owners_yes(page):
+    page.open()
+    seed(page, 'config/desk', {'trigger_id': 'trig_0DeskTest1'})
+    page.click('nav.tabs button[data-tab="new"]')
+    page.fill('#nf-name', 'ملف للتجربة')
+    page.fill('#nf-drive', 'https://drive.google.com/drive/folders/abc123')
+    png = _png()
+    page.set_input_files('#nf-stamp', files=[{'name': 'stamp.png', 'mimeType': 'image/png', 'buffer': png}])
+    page.click('#nf-go')
+    assert page.locator('#nf-msg').inner_text() == 'ارفع صورة الختم وصورة التوقيع معًا.'
+    page.set_input_files('#nf-sign', files=[{'name': 'sign.png', 'mimeType': 'image/png', 'buffer': png}])
+    page.fill('#nf-signer', 'Example Signatory')
+    page.fill('#nf-signer-title', 'Regulatory Affairs Manager')
+    page.click('#nf-go')
+    assert 'وافق على استخدام الختم والتوقيع' in page.locator('#nf-msg').inner_text()   # never without his yes
+    assert calls(page) == []
+    page.check('#nf-seal-ok')
+    page.click('#nf-go')
+    page.wait_for_function('window.__calls.length >= 1')
+    text = calls(page)[0]['input']['text']
+    assert 'الختم والتوقيع: مرفوعان (' in text and 'باسم Example Signatory، Regulatory Affairs Manager' in text
+    d = page.evaluate("[...window.__docs.entries()].find(([p]) => p.startsWith('dossiers/'))[1]")
+    assert d['seal']['name'] == 'Example Signatory' and d['seal']['stamp']['asset'] and d['seal']['signature']['asset']
+    assert d['seal']['said'].startswith('أوافق على أن يضع البرنامج هذا الختم وهذا التوقيع')
+
+
 def test_a_dossiers_requests_go_to_its_session(page):
     page.open()
     seed(page, 'config/desk', {'trigger_id': 'trig_0DeskTest1'})

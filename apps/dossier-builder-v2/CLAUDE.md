@@ -959,6 +959,17 @@ When a part is done or an open item is closed, update «What exists» and «Open
   A new answer, `later`, names an item the pages give but a run does not write. A large dossier needs about 5 GB of disk through
   the eCTD stage and the delivery; a fresh work session has room, a cluttered machine does not.
 
+- **28/11/2026, «ممكن تضيف كمان اوبشن ان الشركة ترفع الختم كصورة و التوقيع كصورة و انت تنشيء الملفات الناقصه»** — the company's
+  seal: on the desk page (version 7) a new dossier may carry the company's stamp and its signatory's signature as images, with
+  the signatory's name and title and the owner's yes (a checkbox whose words are kept in `dossiers/<id>.seal.said`); without the
+  yes nothing is uploaded. The work session reads both images and runs `build seal …` (desk/WORKER.md §4 step 2). Then a company
+  document the build stage writes whole (no gap) is signed and stamped — the images in its signature line or under its signature
+  block, the draft mark and the «print, sign, scan» line taken off, the signatory and the date filled — and needs no printing;
+  one with a gap stays a draft to sign; another party's document is never written. The report and the page count the signed
+  ones (`built_signed`). Found on the way, fixed: the generators printed 250 mg as «2.5E+2» (`letters._fmt`). Tests:
+  `tests/test_desk_build.py` (made-up stamp and signature: two documents signed, one with a gap left a draft, refusals),
+  `tests/test_desk_page.py` (the fields, the refusals, nothing sent before the yes).
+
 ## Open items (propose when relevant; do when he asks)
 - Old program, next pieces (one at a time, each on his real files first): the 14/11 update and measuring Claude's reading (need
   the API key: `ANTHROPIC_API_KEY` in the environment's settings, added by him), «شروط الشكل لكل دولة», the Assistant on his

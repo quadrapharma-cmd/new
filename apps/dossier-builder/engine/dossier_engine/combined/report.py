@@ -421,14 +421,16 @@ def ectd_report(w):
         built = [x for x in items if x['state'] == 'built']
         doc.h1('المستندات الناقصة التي تُصدرها الشركة')
         doc.ul([f"البنود المطلوبة الناقصة التي تُصدرها الشركة نفسها: {len(items)}؛ كتب البرنامج منها {len(built)} من صفحات الملف وبياناته "
-                f"({sum(1 for x in built if x.get('sign'))} منها جاهزة لتوقيع الشركة وختمها)، وبقي على الشركة "
+                f"({sum(1 for x in built if x.get('signed'))} منها وُقِّع وخُتم بصورتَي التوقيع والختم المرفوعتين، و{sum(1 for x in built if x.get('sign'))} "
+                f"جاهزة لتوقيع الشركة وختمها)، وبقي على الشركة "
                 f"{sum(1 for x in items if x['state'] == 'cannot')}، وأُجّل إلى تشغيل لاحق {sum(1 for x in items if x['state'] == 'later' and x.get('by') == 'claude')}؛ "
                 f"وبنود الجهات الأخرى ({bd.get('others', 0)}) في خطابات الطلب.",
                 'لم يُكتب في هذه المستندات إلا ما في صفحات الملف؛ وما لم تذكره الصفحات تُرك فارغًا وذُكر في «ما يلزم».'])
         doc.table(['البند', 'المستند', 'الحالة', 'ملاحظة'],
                   [[x['req'], (x.get('title') or {}).get('ar') or (x.get('title') or {}).get('en', ''),
                     ('يُكتب لاحقًا' if x['state'] == 'later' and x.get('by') == 'claude' else
-                     {'built': 'كُتب' + (' — للتوقيع' if x.get('sign') else ''), 'cannot': 'على الشركة', 'later': 'في مرحلة أخرى',
+                     {'built': 'كُتب' + (' ووُقِّع وخُتم بالصورتين المرفوعتين' if x.get('signed') else ' — للتوقيع' if x.get('sign') else ''),
+                      'cannot': 'على الشركة', 'later': 'في مرحلة أخرى',
                       'to do': 'لم يُكتب بعد'}.get(x['state'], x['state'])),
                     x.get('note') or ('بيانات ناقصة فيه: ' + str(len(x.get('gaps') or [])) if x.get('gaps') else '')] for x in items], [10, 40, 16, 34])
     g = (w.load('ectd.json') or {}).get('global') or {}

@@ -117,7 +117,9 @@ main { flex: 1; width: 100%; max-width: 1180px; margin: 0 auto;
   font-size: 12.5px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
 /* form */
 label.f { display: grid; gap: 6px; font-weight: 600; font-size: 14px; }
-label.f .hint { font-weight: 400; font-size: 12.5px; color: var(--soft); }
+label.f .hint, .seal .hint { font-weight: 400; font-size: 12.5px; color: var(--soft); }
+fieldset.seal { border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin: 0; min-width: 0; }
+fieldset.seal legend { font-weight: 600; padding: 0 6px; }
 input[type=text], input[type=url], textarea, select { width: 100%; border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 10px 12px; }
 input[type=url] { direction: ltr; text-align: left; }
 textarea { min-height: 84px; resize: vertical; }
@@ -227,6 +229,15 @@ textarea { min-height: 84px; resize: vertical; }
           <input type="file" id="nf-files" multiple accept="application/pdf,image/png,image/jpeg">
           <div class="files-in" id="nf-list"></div>
         </div>
+        <fieldset class="f stack seal" id="nf-seal-box">
+          <legend>ختم الشركة وتوقيع المفوَّض (اختياري)</legend>
+          <span class="hint">صورتان بصيغة PNG أو JPEG. يضعهما البرنامج على مستندات الشركة التي يكتبها كاملةً لهذا الملف فلا تحتاج إلى طباعة وتوقيع ومسح، ولا يضعهما على مستندات الجهات الأخرى، ويبقى المستند الذي تنقصه بيانات مسودةً للتوقيع.</span>
+          <label class="f" for="nf-stamp">صورة الختم <input type="file" id="nf-stamp" accept="image/png,image/jpeg"></label>
+          <label class="f" for="nf-sign">صورة التوقيع <input type="file" id="nf-sign" accept="image/png,image/jpeg"></label>
+          <label class="f">اسم المفوَّض بالتوقيع <input type="text" id="nf-signer" maxlength="120" autocomplete="off"></label>
+          <label class="f">وظيفته <input type="text" id="nf-signer-title" maxlength="120" autocomplete="off"></label>
+          <label class="row small"><input type="checkbox" id="nf-seal-ok"> <span class="grow" id="nf-seal-words">أوافق على أن يضع البرنامج هذا الختم وهذا التوقيع على مستندات الشركة التي يكتبها لهذا الملف.</span></label>
+        </fieldset>
         <label class="f">ملاحظات لـ Claude (اختياري)
           <textarea id="nf-notes" maxlength="2000" placeholder="مثال: المتقدّم هو الوكيل المصري، والتسويق محلي."></textarea>
         </label>
@@ -267,7 +278,7 @@ textarea { min-height: 84px; resize: vertical; }
   const STAGE_STATE = { done: 'تمّت', running: 'جارية', waiting: 'لم تبدأ', failed: 'تعذّرت', skipped: 'لم تلزم', needs: 'تحتاج إليك' };
   const NUMS = [['pages', 'الصفحات'], ['documents', 'مستندات CTD'], ['left_out', 'صفحات تُركت'], ['findings', 'ملاحظات المراجع'],
                 ['leaves', 'أوراق eCTD'], ['failed_rules', 'قواعد راسبة'], ['review_critical', 'ملاحظات حرجة عند المقيّم'],
-                ['review_major', 'ملاحظات رئيسية عند المقيّم'], ['parties_asked', 'خطابات طلب للجهات'], ['built', 'مستندات ناقصة كتبها Claude'], ['built_to_sign', 'منها للتوقيع'], ['spent_usd', 'تكلفة Claude (دولار)']];
+                ['review_major', 'ملاحظات رئيسية عند المقيّم'], ['parties_asked', 'خطابات طلب للجهات'], ['built', 'مستندات ناقصة كتبها Claude'], ['built_signed', 'منها موقَّعة ومختومة'], ['built_to_sign', 'منها للتوقيع'], ['spent_usd', 'تكلفة Claude (دولار)']];
 
   const $ = (s, r = document) => r.querySelector(s);
   const el = (tag, attrs = {}, ...kids) => {
@@ -401,6 +412,16 @@ textarea { min-height: 84px; resize: vertical; }
     if (!drive && !small.length) { msg.className = 'msg-line bad'; msg.textContent = 'ضع رابط مجلد Drive، أو اختر ملفًا واحدًا على الأقل.'; return; }
     if (drive && !/^https:\/\/(drive|docs)\.google\.com\//.test(drive)) { msg.className = 'msg-line bad'; msg.textContent = 'هذا ليس رابطًا من Google Drive. انسخ الرابط من «مشاركة» في Drive.'; return; }
     if (!S.db) { msg.className = 'msg-line bad'; msg.textContent = 'لا يُحفظ الملف في هذا العرض. افتح المكتب من حسابك على claude.ai.'; return; }
+    const stamp = $('#nf-stamp').files[0], sign = $('#nf-sign').files[0];
+    const signer = $('#nf-signer').value.trim(), signerTitle = $('#nf-signer-title').value.trim(), sealOk = $('#nf-seal-ok').checked;
+    if (stamp || sign || signer) {
+      const why = !(stamp && sign) ? 'ارفع صورة الختم وصورة التوقيع معًا.' : !signer ? 'اكتب اسم المفوَّض بالتوقيع.'
+        : !sealOk ? 'وافق على استخدام الختم والتوقيع في هذا الملف، أو احذف الصورتين.'
+        : [stamp, sign].some((f) => !/^image\/(png|jpeg)$/.test(f.type)) ? 'الختم والتوقيع صورتان بصيغة PNG أو JPEG.'
+        : [stamp, sign].some((f) => f.size > 5 * 1048576) ? 'صورة الختم أو التوقيع أكبر من 5 ميجابايت.' : '';
+      if (why) { msg.className = 'msg-line bad'; msg.textContent = why; return; }
+      if (!S.assets) { msg.className = 'msg-line bad'; msg.textContent = 'لا تُرفع الصور من هذا العرض. افتح المكتب من حسابك على claude.ai.'; return; }
+    }
     go.disabled = true; msg.textContent = 'جارٍ التسجيل…';
     const id = uid('d'), uploads = [];
     try {
@@ -412,12 +433,20 @@ textarea { min-height: 84px; resize: vertical; }
           uploads.push({ asset: r.id, name: f.name, size: f.size });
         }
       }
+      let seal = null;
+      if (stamp && sign && signer && sealOk) {
+        msg.textContent = 'رفع الختم والتوقيع…';
+        const a1 = await S.assets.upload(stamp), a2 = await S.assets.upload(sign);
+        seal = { stamp: { asset: a1.id, name: stamp.name }, signature: { asset: a2.id, name: sign.name }, name: signer, title: signerTitle || null,
+                 said: $('#nf-seal-words').textContent.trim(), at: new Date().toISOString() };
+      }
       const now = new Date().toISOString();
       const d = { name: name || 'ملف ' + new Date().toLocaleDateString('ar-EG'), status: 'requested', created: now, updated: now,
-                  source: { drive: drive || null, uploads }, request_notes: notes || null, stages: {}, country };
+                  source: { drive: drive || null, uploads }, request_notes: notes || null, stages: {}, country, seal };
       await S.db.doc('dossiers/' + id).set(d);
       const text = ['[مكتب eBOX] ملف جديد', 'المعرّف: ' + id, 'الاسم: ' + d.name, 'الدولة: ' + country, drive ? 'مجلد Drive: ' + drive : null,
         uploads.length ? 'ملفات مرفوعة إلى المكتب: ' + uploads.map((u) => u.name + ' (' + u.asset + ')').join('، ') : null,
+        seal ? 'الختم والتوقيع: مرفوعان (' + seal.stamp.asset + '، ' + seal.signature.asset + ') باسم ' + seal.name + (seal.title ? '، ' + seal.title : '') + '؛ وافق المالك على استخدامهما في هذا الملف.' : null,
         notes ? 'ملاحظات: ' + notes : null].filter(Boolean).join('\n');
       const sent = await tell(text);
       await addMessage('you', 'ابدأ ملفًا جديدًا: ' + d.name + (drive ? '\n' + drive : '') + (notes ? '\n' + notes : ''), sent, text, id);
@@ -524,7 +553,7 @@ textarea { min-height: 84px; resize: vertical; }
     const use = (n) => (window.claude && typeof window.claude.use === 'function' ? window.claude.use(n) : Promise.resolve(null)).catch(() => null);
     const [db, mcp, assets, user] = await Promise.all(['db', 'mcp', 'assets', 'user'].map(use));
     S.db = db; S.mcp = mcp; S.assets = assets;
-    if (!assets) { const box = $('#nf-files-box'); if (box) box.hidden = true; }
+    if (!assets) { for (const id of ['#nf-files-box', '#nf-seal-box']) { const box = $(id); if (box) box.hidden = true; } }
     if (user) { try { const w = await user.can('data.write'); if (w === false) S.canWrite = false; } catch (e) {} }
     if (!S.canWrite) { const f = $('#new-form'); if (f) f.querySelectorAll('input,textarea,button').forEach((x) => { x.disabled = true; }); }
     if (!db) { S.loading = false; render(); return; }

@@ -21,7 +21,7 @@ def _d(x):
 
 
 def _fmt(x, places='0.001'):
-    return str(_d(x).quantize(Decimal(places), rounding=ROUND_HALF_UP).normalize())
+    return format(_d(x).quantize(Decimal(places), rounding=ROUND_HALF_UP).normalize(), 'f')      # 250, never 2.5E+2
 
 
 # ---------------------------------------------------------------- Annex I

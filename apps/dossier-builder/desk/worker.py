@@ -288,6 +288,7 @@ def summary(work):
     if bd:
         s['built'] = sum(1 for x in bd.get('items') or [] if x['state'] == 'built')
         s['built_to_sign'] = sum(1 for x in bd.get('items') or [] if x['state'] == 'built' and x.get('sign'))
+        s['built_signed'] = sum(1 for x in bd.get('items') or [] if x['state'] == 'built' and x.get('signed'))
         s['left_to_company'] = sum(1 for x in bd.get('items') or [] if x['state'] == 'cannot')
     g = e.get('global') or {}
     if g.get('layers'):
