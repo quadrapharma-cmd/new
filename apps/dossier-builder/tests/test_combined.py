@@ -249,3 +249,14 @@ def test_the_delivered_sequence_opens_in_the_full_program(work, tmp_path):
     r = st.import_ectd(did, [(n, z.read(n)) for n in z.namelist() if not n.endswith('/')])
     assert not [u for u in r['unplaced'] if u['href'].startswith('m3/')], r['unplaced']
     assert [h['seq'] for h in st.history(did, 'ectd32')] == ['0000']
+
+
+def test_every_product_information_type_of_the_322_profile_is_taken_by_the_40_profile():
+    # 28/11/2026: a real dossier's separate immediate-label text («impack», a 3.2.2 type) stopped its eCTD 4.0 sequence
+    import yaml
+    from dossier_engine.writers.ectd40 import Profile40
+    v0 = Path(ectd40.__file__).resolve().parents[5] / 'docs/ctd/ectd/EG-PROVISIONAL-PROFILE-v0/vocab/pi-doc-type.yaml'
+    t322 = {v['value'] for v in yaml.safe_load(v0.read_text(encoding='utf-8'))['values']}
+    spec = Profile40().cou('1.3.1')[2]
+    allowed = next(a for name, _c, _cs, a in spec if name == 'eg document type (product information)')
+    assert 'impack' in t322 and t322 <= set(allowed)

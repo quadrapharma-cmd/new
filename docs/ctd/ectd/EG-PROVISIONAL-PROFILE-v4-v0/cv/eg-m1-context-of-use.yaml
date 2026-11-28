@@ -2272,6 +2272,7 @@ codes:
     - interpack
     - combined
     - outer
+    - impack
     - other
     provenance: 'EG-DRAFT pi-doc@type Mandatory (SPEC p.27; App.2.3 p.78; TG p.19 l.471-473) + EU-DERIVED (EU-IG
       "Product Information Texts in EU Module 1.3.1": PI document type as CoU keyword)'

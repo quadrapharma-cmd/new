@@ -102,7 +102,7 @@ for s in sections:
         if ctd == '1.3.1':
             kws = [
                 dict(type='eg document type (product information)', cardinality='R', code_system=OIDS['doctype'],
-                     allowed_values=['spc', 'pl', 'interpack', 'combined', 'outer', 'other'],
+                     allowed_values=['spc', 'pl', 'interpack', 'combined', 'outer', 'impack', 'other'],
                      provenance='EG-DRAFT pi-doc@type Mandatory (SPEC p.27; App.2.3 p.78; TG p.19 l.471-473) + EU-DERIVED (EU-IG "Product Information Texts in EU Module 1.3.1": PI document type as CoU keyword)'),
                 dict(type='eg language', cardinality='R', code_system=OIDS['lang'], allowed_values=['ar', 'en'],
                      provenance='EG-DRAFT pi-doc@xml:lang Mandatory + language folder LL (SPEC p.27, App.2 rows 129-130, App.2.2 p.78) + EU-DERIVED (EU-IG keyword-definition sample: language code "fr" as CoU keyword)'),
@@ -381,6 +381,7 @@ kw_doc = dict(
                  dict(code='interpack', display_name='Outer and immediate labelling in one file', use_on='eg_1.3.1', provenance='EG-DRAFT App.2.3 footnote p.78'),
                  dict(code='combined', display_name='Combined product information', use_on='eg_1.3.1', provenance='EG-DRAFT App.1.2 example p.27; SPEC p.11 l.172; TG p.19 l.471'),
                  dict(code='outer', display_name='Outer labelling', use_on='eg_1.3.1', provenance='EG-DRAFT file-name example SPEC p.11 l.171'),
+                 dict(code='impack', display_name='Immediate packaging (labelling)', use_on='eg_1.3.1', provenance='EU-DERIVED: the 3.2.2 profile\'s own pi-doc type (EG-PROVISIONAL-PROFILE-v0 D-16), counterpart of interpack when outer and immediate labelling are separate files'),
                  dict(code='other', display_name='Other product information', use_on='eg_1.3.1', provenance='EG-DRAFT TG p.19 l.473'),
                  dict(code='cover', display_name='Cover letter', use_on='eg_1.0', provenance='EG-DRAFT SPEC App.2 row 4 (fixed file component)'),
                  dict(code='tracking', display_name='Tracking table', use_on='eg_1.0', provenance='EG-DRAFT SPEC App.2 row 5; TG p.28 l.776-780'),
@@ -388,7 +389,7 @@ kw_doc = dict(
                  dict(code='hybrid', display_name='Hybrid application information', use_on='eg_1.5.2', provenance='EG-DRAFT SPEC App.2 row 150'),
                  dict(code='biosimilar', display_name='Biosimilar application information', use_on='eg_1.5.2', provenance='EG-DRAFT SPEC App.2 row 150'),
              ],
-             gap='SPEC App.2.3 lists only spc and pl, but the drafts themselves use interpack, combined, outer, other (EG ref §10 item 16). All six kept.'),
+             gap='SPEC App.2.3 lists only spc and pl, but the drafts themselves use interpack, combined, outer, other (EG ref §10 item 16). All six kept, and impack, as the 3.2.2 profile takes it (v0 D-16): one list for both profiles.'),
         dict(code_system=dict(name='EG Language (constrained ISO 639-1)', short_name='eg-language', oid=OIDS['lang'], version='0 (provisional)',
                               note='Also used for document/text@language (ISO 639-1 two-letter, IG §6.4, §9.2.15.2) — that attribute carries the bare ISO code, no codeSystem.'),
              codes=[dict(code='ar', display_name='Arabic', provenance='EG-DRAFT App.2.2 p.78'),

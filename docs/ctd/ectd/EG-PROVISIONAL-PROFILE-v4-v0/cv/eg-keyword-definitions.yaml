@@ -75,6 +75,11 @@ eg_keyword_code_systems:
     display_name: Outer labelling
     use_on: eg_1.3.1
     provenance: EG-DRAFT file-name example SPEC p.11 l.171
+  - code: impack
+    display_name: Immediate packaging (labelling)
+    use_on: eg_1.3.1
+    provenance: 'EU-DERIVED: the 3.2.2 profile''s own pi-doc type (EG-PROVISIONAL-PROFILE-v0 D-16), counterpart
+      of interpack when outer and immediate labelling are separate files'
   - code: other
     display_name: Other product information
     use_on: eg_1.3.1
@@ -99,8 +104,8 @@ eg_keyword_code_systems:
     display_name: Biosimilar application information
     use_on: eg_1.5.2
     provenance: EG-DRAFT SPEC App.2 row 150
-  gap: SPEC App.2.3 lists only spc and pl, but the drafts themselves use interpack, combined, outer, other (EG ref
-    §10 item 16). All six kept.
+  gap: 'SPEC App.2.3 lists only spc and pl, but the drafts themselves use interpack, combined, outer, other (EG
+    ref §10 item 16). All six kept, and impack, as the 3.2.2 profile takes it (v0 D-16): one list for both profiles.'
 - code_system:
     name: EG Language (constrained ISO 639-1)
     short_name: eg-language
