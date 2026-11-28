@@ -297,3 +297,20 @@ def test_a_document_at_a_heading_40_takes_none_at_is_left_out_by_name_not_the_st
     assert [x['node'] for x in r4['left_out']] == ['2.6'] and r4['left_out'][0]['why']['ar']
     assert r4['validation']['fail'] == 0 and r4['documents'] == len(e['leaves']) + len(e['m1']) - 1
     ectd40.run(work)                                             # the work folder's own 4.0 sequence again, for what follows
+
+
+def test_a_failing_40_or_ctd_zip_is_said_and_the_stage_goes_on(work, monkeypatch, capsys):
+    # 28/11/2026: four times the new outputs stopped his real dossier's whole eCTD stage (and its review and report)
+    from dossier_engine.combined import __main__ as cli, ectd40 as m40
+    def boom(*a, **k):
+        raise ValueError('made-up fault')
+    monkeypatch.setattr(m40, 'run', boom)
+    assert cli.main(['ectd', str(work.root)]) == 0
+    assert work.load('outputs-failed.json') == {'ectd40': 'ValueError: made-up fault'}
+    assert not (work.root / 'ectd40.json').exists() and work.load('ctdzip.json')     # the other one is made all the same
+    out = report.run(work)
+    text = subprocess.run(['pdftotext', out['ectd']['pdf'], '-'], capture_output=True, text=True).stdout
+    assert 'made-up fault' in text and 'ectd40_zip' not in out['deliver']
+    monkeypatch.undo()
+    assert cli.main(['ectd', str(work.root)]) == 0 and work.load('outputs-failed.json') == {}
+    report.run(work)

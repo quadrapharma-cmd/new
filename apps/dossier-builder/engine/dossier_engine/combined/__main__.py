@@ -78,8 +78,20 @@ def main(argv):
             from . import ectd
             ectd.run(work)
             from . import ctdzip, ectd40                     # the other two outputs, from the same documents (9b, 9c)
-            ectd40.run(work)
-            ctdzip.run(work)
+            import traceback
+            w = work
+            failed = {}
+            for name, step in (('ectd40', ectd40.run), ('ctdzip', ctdzip.run)):
+                stale = w.root / f'{name}.json'
+                if stale.exists():
+                    stale.unlink()
+                try:
+                    step(work)
+                except Exception as ex:                      # the 3.2.2 sequence stands: the failure is said, kept and shown, never silent
+                    traceback.print_exc()
+                    failed[name] = f'{type(ex).__name__}: {ex}'
+                    say(f'تعذّرت صيغة {"eCTD 4.0" if name == "ectd40" else "ctd.zip"}: {failed[name]}')
+            w.save('outputs-failed.json', failed)
             from . import ebox                               # 11: eBOX's full program, for the country the dossier names (Egypt by default)
             try:
                 ebox.run(work)

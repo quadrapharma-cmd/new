@@ -375,8 +375,12 @@ def ectd_report(w):
         doc.ul([f'{k}: ' + ('الكتل نفسها بالترتيب نفسه، والأرقام نفسها في كل كتلة، وقيم التركيب متطابقة.' if not v2 else '؛ '.join(v2))
                 for k, v2 in fixed['translation_checks'].items()] + (R.get('translation_notes') or []))
     e4, cz = w.load('ectd40.json'), w.load('ctdzip.json')
-    if e4 or cz:
+    failed = w.load('outputs-failed.json', {}) or {}
+    if e4 or cz or failed:
         doc.h1('8. الصيغتان الأخريان')
+        if failed:
+            doc.ul([f"تعذّرت صيغة {'eCTD 4.0' if k == 'ectd40' else 'ctd.zip'} لهذا الملف: {v}. تسلسل eCTD 3.2.2 سليم ومُسلَّم، "
+                    'وتُبنى هذه الصيغة بعد تصحيح البرنامج.' for k, v in failed.items()])
         rows = []
         if e4:
             v4 = e4['validation']
