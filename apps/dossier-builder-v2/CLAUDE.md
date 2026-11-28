@@ -914,6 +914,28 @@ When a part is done or an open item is closed, update «What exists» and «Open
   · The Mac app runs the same stages (`__main__`): ebox/assess need fastapi there (not in mac/requirements.txt) — they say so and
     the stage goes on; a Mac rebuild is needed for the new outputs.
 
+- **28/11/2026, eBOX version 55 published** (his «دوست متابعة، كمل وانشر eBOX»; version id `1795832297-b4a2`). It is **version
+  54 (`c12c8ac`) plus `126d901`'s store.py change only** (import of earlier sequences: a sub-section's leaf, «32s7-stab/
+  stability-summary.pdf» = 3.2.S.7.1, goes to EDA's 3.2.S.7 item — the desk's 0000.zip opens with its stability in place), built
+  with `web/build.py --carry` from v54's published files (the engine archive differs from v54's in store.py alone). NOT stage 4:
+  the branch's tree holds stage 4 and `bb5c173` (unfinished, stopped by him), never tried on his files, and the whole suite on it
+  found 3 failures after v54 (`test_office_web` …the office edits, `test_ui_vault` sign + buttons wait, `test_programs_web` Word to
+  PDF) — they pass on v54's code: fix them before stage 4 is ever published. The v55 tree is a detached worktree
+  (`scratchpad/wt54`), not a commit; its test is on the branch (`27df271`, test_import_ectd: fails on v54, passes with the fix).
+  Tested: the whole suite on the v55 tree, 910 passed once the machine had what the tests need (PdfCraft built with
+  `tools/pdfcraft/build.sh`, `apt-get install p7zip-full libarchive-tools`, the RAR samples and wheels of `web/vendor.sh`, the
+  second reader `tools/ocr/fetch.py` — without it the phone-photo test fails on v54 too); the click sweep (7 passed); read back
+  byte for byte; the served page's tests 24 passed, 2 skipped (the sweep) — they need `index.local.html` from the same build in
+  the served folder (it is not published), or 9 fail with «DBWEB is not defined».
+- **28/11/2026, his real dossier (DTP-HB, d-20261127-jn56hf) found three faults of the desk's new eCTD 4.0 stage**, each fixed with a
+  test that fails before: the 4.0 profile lacked the 3.2.2 profile's pi-doc type «impack» (`ba1cdb9`); `writers/ectd40.py` had an
+  f-string quoting inside itself, which the work sessions' Python 3.11 refuses (`6cfe381`, `tests/test_python311.py` compiles every
+  file with 3.11); 2.3's introduction («2.3.intro») had no ICH element in the writers (`0fe9d14`: 2.3.I = m2-3-introduction,
+  ich_2.3.i). The made-up dossier has none of the three: a new stage is not done until it has met his real file. The desk's
+  «متابعة» now always starts a new work session (`d1ec83c`, desk version 5): the old session keeps the program it was cloned
+  with and rightly refuses to update itself on another session's word. Each new session starts the dossier again from the
+  Drive files (about 40 minutes to the eCTD stage).
+
 ## Open items (propose when relevant; do when he asks)
 - Old program, next pieces (one at a time, each on his real files first): the 14/11 update and measuring Claude's reading (need
   the API key: `ANTHROPIC_API_KEY` in the environment's settings, added by him), «شروط الشكل لكل دولة», the Assistant on his
